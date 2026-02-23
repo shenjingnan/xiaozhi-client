@@ -54,6 +54,7 @@ export const ByteDanceV2AudioSchema = z.object({
     .optional()
     .default("raw")
     .describe("音频编码格式：raw / opus，默认为 raw(pcm)"),
+  language: z.string().optional().describe("音频语言"),
   rate: z
     .number()
     .int()
@@ -113,6 +114,8 @@ export const ByteDanceV2RequestSchema = z.object({
     .describe(
       "输出语音停顿、分句、分词信息。默认每次返回所有分句结果。如果想每次只返回当前分句结果，则设置 show_utterances=true 和 result_type=single；如果当前分句结果是中间结果则返回的 definite=false，如果是分句最终结果则返回的 definite=true"
     ),
+  show_utterances: z.boolean().optional().describe("输出分句信息"),
+  show_language: z.boolean().optional().describe("输出语言信息"),
   result_type: z.string().optional().describe("返回结果类型"),
   boosting_table_name: z
     .string()

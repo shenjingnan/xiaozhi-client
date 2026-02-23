@@ -97,7 +97,6 @@ function readAllOpusFiles(dirPath: string): Buffer[] {
   return files.map((f: string) => readV2OpusFile(path.join(dirPath, f)));
 }
 
-
 /**
  * 创建异步可迭代的 PCM 流
  * 读取 Opus 文件，解码为 PCM，然后逐帧yield

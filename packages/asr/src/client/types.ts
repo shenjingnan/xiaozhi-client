@@ -5,38 +5,10 @@
 import type { AudioFormat } from "@/audio";
 import type { AuthMethod } from "@/auth";
 import type { ByteDanceOption } from "@/platforms";
+import type { ByteDanceV2ASRRequest } from "@/platforms/bytedance/request.js";
 
-// Request configuration
-export interface ASRRequestConfig {
-  app: {
-    appid: string;
-    cluster: string;
-    token: string;
-  };
-  user: {
-    uid: string;
-  };
-  request: {
-    reqid: string;
-    nbest: number;
-    workflow: string;
-    show_language: boolean;
-    show_utterances: boolean;
-    result_type: string;
-    sequence: number;
-    vad_signal: boolean;
-    start_silence_time: string;
-    vad_silence_time: string;
-  };
-  audio: {
-    format: string;
-    rate: number;
-    language: string;
-    bits: number;
-    channel: number;
-    codec: string;
-  };
-}
+// Request configuration (向后兼容，重新导出 ByteDanceV2ASRRequest)
+export type ASRRequestConfig = ByteDanceV2ASRRequest;
 
 // Client options
 export interface ASROption {

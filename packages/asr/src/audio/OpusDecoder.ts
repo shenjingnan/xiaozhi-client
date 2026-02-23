@@ -4,8 +4,8 @@
  * 提供将 Opus 音频数据解码为 PCM 格式的功能
  */
 
-import prism from "prism-media";
 import { Readable } from "node:stream";
+import prism from "prism-media";
 
 export interface OpusDecoderOptions {
   /** 采样率，默认 16000 Hz */

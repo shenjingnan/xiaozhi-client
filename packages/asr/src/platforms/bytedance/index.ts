@@ -24,6 +24,12 @@ export * from "@/platforms/bytedance/protocol/index.js";
 // 重新导出 Schema，供外部使用
 export * from "@/platforms/bytedance/schemas/index.js";
 
+// 重新导出请求相关类型，供外部使用
+export * from "./request.js";
+
+// 重新导出请求构造器，供外部使用
+export { ByteDanceV2RequestBuilder } from "./request-builder.js";
+
 /**
  * ByteDance 平台实现
  */

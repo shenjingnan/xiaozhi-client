@@ -17,6 +17,7 @@ import {
 } from "@/platforms/index.js";
 import {
   ByteDanceV2Controller,
+  ByteDanceV2RequestBuilder,
   ByteDanceV3Controller,
 } from "@/platforms/index.js";
 import {
@@ -99,6 +100,9 @@ export class ASR extends EventEmitter {
   // Record triggered VAD end sequences to prevent duplicate triggers
   private triggeredVADSequences: Set<number | string> = new Set();
 
+  // V2 请求构造器
+  private v2RequestBuilder: ByteDanceV2RequestBuilder | null = null;
+
   constructor(options: ASROption) {
     super();
 
@@ -164,6 +168,27 @@ export class ASR extends EventEmitter {
     // Success code
     this.successCode = options.successCode || 1000;
 
+    // 初始化 V2 请求构造器
+    if (this.apiVersion === "v2") {
+      this.v2RequestBuilder = new ByteDanceV2RequestBuilder({
+        appid: this.appid,
+        cluster: this.cluster,
+        token: this.token,
+        uid: this.uid,
+        format: this.format,
+        sampleRate: this.sampleRate,
+        language: this.language,
+        bits: this.bits,
+        channel: this.channel,
+        codec: this.codec,
+        nbest: this.nbest,
+        workflow: this.workflow,
+        showLanguage: this.showLanguage,
+        showUtterances: this.showUtterances,
+        resultType: this.resultType,
+      });
+    }
+
     // 初始化 ByteDance 控制器
     this.bytedance = {
       v2: new ByteDanceV2Controller(this),
@@ -192,41 +217,10 @@ export class ASR extends EventEmitter {
    * Construct ASR request
    */
   private constructRequest(reqid: string): ASRRequestConfig {
-    return {
-      app: {
-        appid: this.appid,
-        cluster: this.cluster,
-        token: this.token,
-      },
-      user: {
-        uid: this.uid,
-      },
-      request: {
-        reqid,
-        nbest: this.nbest,
-        workflow: this.workflow,
-        show_language: this.showLanguage,
-        show_utterances: this.showUtterances,
-        vad_signal: true,
-        start_silence_time: "5000",
-        vad_silence_time: "800",
-        result_type: this.resultType,
-        sequence: 1,
-      },
-      audio: {
-        format:
-          this.format === AudioFormat.OGG
-            ? "ogg"
-            : this.format === AudioFormat.WAV
-              ? "wav"
-              : this.format,
-        rate: this.sampleRate,
-        language: this.language,
-        bits: this.bits,
-        channel: this.channel,
-        codec: this.codec,
-      },
-    };
+    if (!this.v2RequestBuilder) {
+      throw new Error("V2 request builder not initialized");
+    }
+    return this.v2RequestBuilder.build(reqid);
   }
 
   /**
