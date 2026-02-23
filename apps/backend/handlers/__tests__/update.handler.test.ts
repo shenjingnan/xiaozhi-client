@@ -1,4 +1,4 @@
-import { NPMManager } from "@/lib/npm";
+import { NPMManager } from "@/lib/npm/index.js";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../../Logger.js";

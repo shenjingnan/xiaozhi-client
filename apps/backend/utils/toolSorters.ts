@@ -4,7 +4,7 @@
  */
 
 import { logger } from "@/Logger.js";
-import type { EnhancedToolInfo } from "@/lib/mcp";
+import type { EnhancedToolInfo } from "@/lib/mcp/index.js";
 
 export type ToolSortField = "name" | "enabled" | "usageCount" | "lastUsedTime";
 

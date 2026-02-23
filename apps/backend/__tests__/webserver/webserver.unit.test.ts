@@ -1,4 +1,4 @@
-import { MCPServiceManager } from "@/lib/mcp";
+import { MCPServiceManager } from "@/lib/mcp/index.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WebServer } from "../../WebServer";
 

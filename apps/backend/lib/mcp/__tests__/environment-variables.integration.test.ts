@@ -3,7 +3,7 @@
  * 验证 MCP 服务环境变量传递修复是否正确工作
  */
 
-import { MCPTransportType } from "@/lib/mcp";
+import { MCPTransportType } from "@/lib/mcp/index.js";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import type { LocalMCPServerConfig } from "@xiaozhi-client/config";
 import { describe, expect, it } from "vitest";

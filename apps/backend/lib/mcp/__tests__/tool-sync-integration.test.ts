@@ -199,7 +199,7 @@ vi.mock("@/lib/mcp", () => {
 });
 
 // Now import the mocked MCPServiceManager
-import { MCPServiceManager } from "@/lib/mcp";
+import { MCPServiceManager } from "@/lib/mcp/index.js";
 
 // Mock logger
 vi.mock("@/utils/Logger.js", () => ({

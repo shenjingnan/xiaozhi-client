@@ -3,7 +3,7 @@ import type { ChildProcess } from "node:child_process";
 import { logger } from "@/Logger.js";
 import type { Logger } from "@/Logger.js";
 import { SERVICE_RESTART_DELAYS } from "@/constants/timeout.constants.js";
-import type { MCPServiceManager } from "@/lib/mcp";
+import type { MCPServiceManager } from "@/lib/mcp/index.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { StatusService } from "@/services/status.service.js";

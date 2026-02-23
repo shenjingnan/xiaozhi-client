@@ -11,7 +11,7 @@
  */
 
 import { createHash } from "node:crypto";
-import type { MCPToolsCache } from "@/lib/mcp";
+import type { MCPToolsCache } from "@/lib/mcp/index.js";
 import type { TimeoutResponse } from "./timeout.js";
 
 // 工具调用结果接口（与 MCPServiceManager 保持一致）

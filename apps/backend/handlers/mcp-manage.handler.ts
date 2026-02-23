@@ -15,8 +15,8 @@
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { ErrorCategory, MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
-import type { MCPServiceManager } from "@/lib/mcp";
-import type { MCPService } from "@/lib/mcp";
+import type { MCPServiceManager } from "@/lib/mcp/index.js";
+import type { MCPService } from "@/lib/mcp/index.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";

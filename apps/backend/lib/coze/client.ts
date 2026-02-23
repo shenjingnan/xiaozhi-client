@@ -3,7 +3,7 @@
  * 提供统一的客户端创建和配置
  */
 
-import { CozeAPI } from "@/lib/coze";
+import { CozeAPI } from "@/lib/coze/index.js";
 import config from "./config";
 
 export type Language = "zh" | "en";

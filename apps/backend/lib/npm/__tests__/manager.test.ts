@@ -6,7 +6,7 @@ vi.mock("node:util");
 vi.mock("semver");
 vi.mock("../../../services/event-bus.service.js");
 
-import { NPMManager } from "@/lib/npm";
+import { NPMManager } from "@/lib/npm/index.js";
 // Import after mocking
 import type { EventBus } from "@/services/event-bus.service.js";
 

@@ -1,4 +1,4 @@
-import { MCPServiceManager } from "@/lib/mcp";
+import { MCPServiceManager } from "@/lib/mcp/index.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

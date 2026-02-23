@@ -1,4 +1,4 @@
-import { MCPService, MCPTransportType } from "@/lib/mcp";
+import { MCPService, MCPTransportType } from "@/lib/mcp/index.js";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { describe, expect, it } from "vitest";
 

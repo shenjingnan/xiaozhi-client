@@ -6,9 +6,9 @@
 
 import { EventEmitter } from "node:events";
 import { logger } from "@/Logger.js";
-import { MCPService } from "@/lib/mcp";
-import { MCPCacheManager } from "@/lib/mcp";
-import { ConnectionState } from "@/lib/mcp/types";
+import { MCPService } from "@/lib/mcp/index.js";
+import { MCPCacheManager } from "@/lib/mcp/index.js";
+import { ConnectionState } from "@/lib/mcp/types.js";
 import type {
   CustomMCPTool,
   EnhancedToolInfo,
@@ -20,7 +20,7 @@ import type {
   ToolStatusFilter,
   UnifiedServerConfig,
   UnifiedServerStatus,
-} from "@/lib/mcp/types";
+} from "@/lib/mcp/types.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { MCPMessage } from "@/types/mcp.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
