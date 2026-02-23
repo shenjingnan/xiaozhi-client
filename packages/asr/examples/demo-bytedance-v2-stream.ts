@@ -206,6 +206,7 @@ async function main() {
       const status = result.isFinal ? "最终" : "中间";
       console.log(status, result);
       // console.log(`[${status}] #${result.seq || resultCount} ${result.text}`);
+      if (result.isFinal) break;
     }
 
     console.log("\n=== 识别完成 ===");
