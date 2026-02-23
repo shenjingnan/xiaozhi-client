@@ -2,8 +2,8 @@
  * Logger 工具测试
  */
 
-import { describe, expect, it, vi } from "vitest";
-import { LogLevel, Logger, logger } from "../../utils/index.js";
+import { LogLevel, Logger, logger } from "@/utils/index.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("Logger", () => {
   beforeEach(() => {

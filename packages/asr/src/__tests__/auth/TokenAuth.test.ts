@@ -2,8 +2,8 @@
  * Token 认证测试
  */
 
+import { TokenAuth } from "@/auth/index.js";
 import { describe, expect, it } from "vitest";
-import { TokenAuth } from "../../auth/index.js";
 
 describe("TokenAuth", () => {
   it("应正确生成认证头", () => {

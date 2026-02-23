@@ -10,13 +10,20 @@
  * 3. Calling end() when all frames are sent
  */
 
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
+
+// 加载 .env 文件
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
 import { ASR, AudioFormat, AuthMethod } from "../src/index.js";
 
-// Configuration
-// TODO: Replace with your actual credentials
-const APP_ID = "your-appid";
-const TOKEN = "your-token";
-const CLUSTER = "volcengine_streaming_common";
+// 从环境变量读取配置
+const APP_ID = process.env.BYTEDANCE_APP_ID || "your-app-id";
+const TOKEN = process.env.BYTEDANCE_TOKEN || "your-token";
+const CLUSTER = process.env.BYTEDANCE_CLUSTER || "volcengine_streaming_common";
 const AUDIO_PATH = new URL("./demo-60ms-16khz.ogg", import.meta.url).pathname;
 
 async function main() {

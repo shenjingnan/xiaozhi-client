@@ -13,12 +13,7 @@ import { Readable } from "node:stream";
 import { logger } from "@/Logger.js";
 import type { ESP32Connection } from "@/lib/esp32/connection.js";
 import { synthesizeSpeechStream } from "@/lib/tts/binary.js";
-import {
-  ASR,
-  type ASRResult,
-  AudioFormat,
-  AuthMethod,
-} from "@xiaozhi-client/asr";
+import { ASR, AudioFormat, AuthMethod, OpusDecoder } from "@xiaozhi-client/asr";
 import { configManager } from "@xiaozhi-client/config";
 import * as prism from "prism-media";
 import type { ESP32Service } from "./esp32.service.js";
@@ -62,6 +57,15 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
   /** 每个设备的 ASR 客户端（用于语音识别） */
   private readonly asrClients = new Map<string, ASR>();
+
+  /** 每个设备的音频数据队列（用于 V2 listen API） */
+  private readonly audioQueues = new Map<string, Buffer[]>();
+
+  /** 每个设备的是否已结束音频输入 */
+  private readonly audioEnded = new Map<string, boolean>();
+
+  /** 每个设备的 V2 listen 任务 */
+  private readonly listenTasks = new Map<string, Promise<void>>();
 
   /**
    * 设置 ESP32 服务引用
@@ -195,7 +199,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
   /**
    * 处理音频数据（ASR 语音识别）
-   * 平滑发送音频到 ASR 服务
+   * 将音频数据推入队列，由 listen() 异步生成器消费
    * @param deviceId - 设备 ID
    * @param audioData - 裸 Opus 音频数据
    */
@@ -208,64 +212,76 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       `[TestVoiceSessionService] 收到音频数据(ASR): deviceId=${deviceId}, size=${audioData.length}`
     );
 
-    // 获取 ASR 客户端
+    // 检查 ASR 客户端是否存在
     const asrClient = this.asrClients.get(deviceId);
     if (!asrClient) {
       logger.warn(
-        `[TestVoiceSessionService] ASR 客户端初始化失败: deviceId=${deviceId}`
+        `[TestVoiceSessionService] ASR 客户端未初始化: deviceId=${deviceId}`
       );
       return;
     }
 
-    // 解码 Opus 为 PCM 并发送
-    try {
-      const pcmData = await this.decodeOpusToPcm(audioBuffer);
-      await asrClient.sendFrame(pcmData);
+    // 检查是否已经结束
+    if (this.audioEnded.get(deviceId)) {
       logger.debug(
-        `[TestVoiceSessionService] 已发送PCM数据: deviceId=${deviceId}, pcmSize=${pcmData.length}`
+        `[TestVoiceSessionService] 音频已结束，忽略新数据: deviceId=${deviceId}`
+      );
+      return;
+    }
+
+    // 解码 Opus 为 PCM 并推入队列
+    try {
+      // 使用 OpusDecoder 解码
+      const pcmData = await OpusDecoder.toPcm(audioBuffer);
+
+      // 获取或创建队列
+      let queue = this.audioQueues.get(deviceId);
+      if (!queue) {
+        queue = [];
+        this.audioQueues.set(deviceId, queue);
+      }
+
+      // 推入队列
+      queue.push(pcmData);
+      logger.debug(
+        `[TestVoiceSessionService] 已将PCM推入队列: deviceId=${deviceId}, pcmSize=${pcmData.length}, queueLength=${queue.length}`
       );
     } catch (error) {
       logger.error(
-        `[TestVoiceSessionService] PCM解码或发送失败: deviceId=${deviceId}`,
+        `[TestVoiceSessionService] PCM解码失败: deviceId=${deviceId}`,
         error
       );
     }
   }
 
   /**
-   * 将 Opus 音频数据解码为 PCM
-   * @param opusData - 裸 Opus 数据
-   * @param sampleRate - 采样率（默认16000）
-   * @param channels - 声道数（默认1）
-   * @returns PCM 数据
+   * 创建异步生成器，从队列中读取 PCM 数据
+   * @param deviceId - 设备 ID
+   * @returns 异步生成器
    */
-  private async decodeOpusToPcm(
-    opusData: Buffer,
-    sampleRate = 16000,
-    channels = 1
-  ): Promise<Buffer> {
-    const frameSize = Math.floor(sampleRate * 0.06); // 16kHz * 60ms = 960
-    const chunks: Buffer[] = [];
+  private async *createAudioStream(
+    deviceId: string
+  ): AsyncGenerator<Buffer, void, unknown> {
+    const queue = this.audioQueues.get(deviceId) || [];
 
-    await new Promise<void>((resolve, reject) => {
-      const stream = Readable.from(opusData);
-      const decoder = new prism.opus.Decoder({
-        rate: sampleRate,
-        channels: channels,
-        frameSize: frameSize,
-      });
+    while (true) {
+      // 等待队列中有数据
+      while (queue.length === 0) {
+        // 检查是否已结束
+        if (this.audioEnded.get(deviceId)) {
+          logger.debug(
+            `[TestVoiceSessionService] 音频流结束: deviceId=${deviceId}`
+          );
+          return;
+        }
+        // 短暂等待
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
 
-      decoder.on("data", (chunk: Buffer) => {
-        chunks.push(chunk);
-      });
-
-      decoder.on("end", () => resolve());
-      decoder.on("error", reject);
-
-      stream.pipe(decoder);
-    });
-
-    return Buffer.concat(chunks);
+      // 从队列取出数据
+      const pcmData = queue.shift()!;
+      yield pcmData;
+    }
   }
 
   /**
@@ -298,6 +314,7 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
   /**
    * 执行实际的 ASR 初始化
+   * 使用 V2 API 配置
    * @param deviceId - 设备 ID
    */
   private async doInitASR(deviceId: string): Promise<void> {
@@ -308,64 +325,36 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       return;
     }
 
+    // 使用 V2 配置格式
     const asrClient = new ASR({
-      wsUrl: asrConfig.wsUrl || "wss://openspeech.bytedance.com/api/v2/asr",
-      cluster: asrConfig.cluster || "volcengine_streaming_common",
-      appid: asrConfig.appid,
-      token: asrConfig.accessToken,
-      format: AudioFormat.RAW, // 裸 Opus 数据
+      bytedance: {
+        v2: {
+          app: {
+            appid: asrConfig.appid,
+            token: asrConfig.accessToken,
+            cluster: asrConfig.cluster || "volcengine_streaming_common",
+          },
+          user: {
+            uid: `device_${deviceId}`,
+          },
+          audio: {
+            format: AudioFormat.RAW,
+            language: "zh-CN",
+          },
+          request: {
+            reqid: `req_${deviceId}_${Date.now()}`,
+            sequence: 1,
+          },
+        },
+      },
       authMethod: AuthMethod.TOKEN,
-      sampleRate: 16000,
-      language: "zh-CN",
-      channel: 1,
-      bits: 16,
-      codec: "raw", // RAW 编解码（发送PCM数据）
-      segDuration: 15000,
-      nbest: 1,
-      resultType: "single", // 设置为 single 以获取 definite 字段
-      workflow: "audio_in,resample,partition,vad,fe,decode,itn,nlu_punctuate",
-      showLanguage: false,
-      showUtterances: true, // 开启分句信息，用于 VAD 检测
     });
 
     // 设置事件监听
-    asrClient.on("result", (result: ASRResult) => {
-      logger.info(
-        `[TestVoiceSessionService] ASR 识别结果: ${JSON.stringify(result)}`
-      );
-    });
-
-    asrClient.on("full_response", (response: ASRResult) => {
-      logger.info(
-        `[TestVoiceSessionService] ASR 完整响应: ${JSON.stringify(response)}`
-      );
-    });
-
-    asrClient.on("audio_end", () => {
-      logger.info(
-        `[TestVoiceSessionService] ASR 音频发送完成: deviceId=${deviceId}`
-      );
-    });
-
     asrClient.on("error", (error: Error) => {
-      logger.error(`[TestVoiceSessionService] ASR 错误: ${error.message}`);
-    });
-
-    // 监听 VAD 结束事件，检测用户说话结束
-    asrClient.on("vad_end", (finalText: string) => {
-      this.handleTTSData(deviceId, finalText);
-      logger.info(
-        `[TestVoiceSessionService] VAD 检测到用户说话结束: deviceId=${deviceId}, text=${finalText}`
+      logger.error(
+        `[TestVoiceSessionService] ASR 错误: deviceId=${deviceId}, error=${error.message}`
       );
-
-      // 通知设备端用户已说完话
-      const connection = this.getConnection(deviceId);
-      if (connection) {
-        connection.send({
-          type: "asr_end",
-          text: finalText,
-        });
-      }
     });
 
     asrClient.on("close", () => {
@@ -373,39 +362,123 @@ export class TestVoiceSessionService implements IVoiceSessionService {
         `[TestVoiceSessionService] ASR 连接关闭: deviceId=${deviceId}`
       );
       this.asrClients.delete(deviceId);
+      this.audioQueues.delete(deviceId);
+      this.audioEnded.delete(deviceId);
+      this.listenTasks.delete(deviceId);
     });
 
-    await asrClient.connect();
+    // 初始化音频队列
+    this.audioQueues.set(deviceId, []);
+    this.audioEnded.set(deviceId, false);
+
+    // 保存 ASR 客户端
     this.asrClients.set(deviceId, asrClient);
 
+    // 启动 listen 任务处理音频流
+    const listenTask = this.startListenTask(deviceId, asrClient);
+    this.listenTasks.set(deviceId, listenTask);
+
     logger.info(
-      `[TestVoiceSessionService] ASR 客户端已创建: deviceId=${deviceId}`
+      `[TestVoiceSessionService] ASR 客户端已创建（V2）: deviceId=${deviceId}`
     );
   }
 
   /**
+   * 启动 listen 任务
+   * 使用 V2 API 的 listen() 方法处理音频流
+   * @param deviceId - 设备 ID
+   * @param asrClient - ASR 客户端
+   */
+  private async startListenTask(
+    deviceId: string,
+    asrClient: ASR
+  ): Promise<void> {
+    try {
+      // 创建音频流生成器
+      const audioStream = this.createAudioStream(deviceId);
+
+      // 使用 V2 listen API 进行流式识别
+      for await (const result of asrClient.bytedance.v2.listen(audioStream)) {
+        logger.info(
+          `[TestVoiceSessionService] ASR 识别结果: deviceId=${deviceId}, isFinal=${result.isFinal}, text=${result.text}`
+        );
+
+        // 如果是最终结果，触发 TTS
+        if (result.isFinal) {
+          const finalText = result.text;
+          if (finalText) {
+            this.handleTTSData(deviceId, finalText);
+
+            // 通知设备端用户已说完话
+            const connection = this.getConnection(deviceId);
+            if (connection) {
+              connection.send({
+                type: "asr_end",
+                text: finalText,
+              });
+            }
+          }
+        }
+      }
+
+      logger.info(
+        `[TestVoiceSessionService] listen 任务完成: deviceId=${deviceId}`
+      );
+    } catch (error) {
+      logger.error(
+        `[TestVoiceSessionService] listen 任务出错: deviceId=${deviceId}`,
+        error
+      );
+    }
+  }
+
+  /**
    * 结束 ASR 语音识别
-   * 发送结束信号、关闭连接并清理资源
+   * 标记音频结束，由 listen() 任务自动处理关闭
    * @param deviceId - 设备 ID
    */
   async endASR(deviceId: string): Promise<void> {
-    const asrClient = this.asrClients.get(deviceId);
-    if (asrClient) {
+    // 标记音频已结束
+    this.audioEnded.set(deviceId, true);
+
+    // 等待 listen 任务完成
+    const listenTask = this.listenTasks.get(deviceId);
+    if (listenTask) {
       try {
-        const result = await asrClient.end();
+        await listenTask;
         logger.info(
-          `[TestVoiceSessionService] ASR 最终识别结果: ${JSON.stringify(result)}`
+          `[TestVoiceSessionService] ASR listen 任务已结束: deviceId=${deviceId}`
         );
       } catch (error) {
         logger.error(
-          `[TestVoiceSessionService] ASR 结束失败: deviceId=${deviceId}`,
+          `[TestVoiceSessionService] 等待 listen 任务失败: deviceId=${deviceId}`,
           error
         );
-      } finally {
-        await asrClient.close();
-        this.asrClients.delete(deviceId);
       }
     }
+
+    // 关闭 ASR 客户端
+    const asrClient = this.asrClients.get(deviceId);
+    if (asrClient) {
+      try {
+        await asrClient.close();
+      } catch (error) {
+        logger.error(
+          `[TestVoiceSessionService] ASR 关闭失败: deviceId=${deviceId}`,
+          error
+        );
+      }
+    }
+
+    // 清理资源
+    this.asrClients.delete(deviceId);
+    this.audioQueues.delete(deviceId);
+    this.audioEnded.delete(deviceId);
+    this.listenTasks.delete(deviceId);
+
+    logger.info(
+      `[TestVoiceSessionService] ASR 资源已清理: deviceId=${deviceId}`
+    );
   }
 
   /**
@@ -926,6 +999,10 @@ export class TestVoiceSessionService implements IVoiceSessionService {
       asrClient.close();
     }
     this.asrClients.clear();
+    // 清理 V2 API 相关状态
+    this.audioQueues.clear();
+    this.audioEnded.clear();
+    this.listenTasks.clear();
     logger.debug("[TestVoiceSessionService] 服务已销毁");
   }
 }

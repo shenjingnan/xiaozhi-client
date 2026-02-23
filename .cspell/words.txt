@@ -10,6 +10,7 @@ amap
 appender
 Appender
 appenders
+bigmodel
 buildx
 bytedance
 cdnurl
@@ -48,6 +49,7 @@ healthcheck
 HTTPMCP
 httpx
 IMCP
+IMEI
 infile
 iostat
 iotop
@@ -74,6 +76,7 @@ nemo
 nextra
 nframes
 nonexistenttool
+nonstream
 NOTW
 npmjs
 ntohl
@@ -84,6 +87,7 @@ oneline
 openspeech
 phantomjs
 postbuild
+punc
 pydantic
 pyenv
 pypi
@@ -96,6 +100,7 @@ REUSEPORT
 rollbacked
 rssi
 sampwidth
+sauc
 Segoe
 shadcn
 Shen

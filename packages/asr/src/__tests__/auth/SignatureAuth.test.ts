@@ -2,8 +2,8 @@
  * HMAC256 签名认证测试
  */
 
+import { SignatureAuth } from "@/auth/index.js";
 import { describe, expect, it } from "vitest";
-import { SignatureAuth } from "../../auth/index.js";
 
 describe("SignatureAuth", () => {
   const token = "test_token";

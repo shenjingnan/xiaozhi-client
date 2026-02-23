@@ -27,7 +27,8 @@
     ".cspell/**",
     "xiaozhi.cache.json",
     "tool-calls.jsonl",
-    "worktrees/**"
+    "worktrees/**",
+    "packages/asr/docs/*"
   ],
   "ignoreWords": [],
   "flagWords": []

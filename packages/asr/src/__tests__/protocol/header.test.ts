@@ -2,7 +2,6 @@
  * 协议头测试
  */
 
-import { describe, expect, it } from "vitest";
 import {
   CompressionType,
   MessageType,
@@ -15,7 +14,8 @@ import {
   generateHeader,
   generateLastAudioDefaultHeader,
   parseResponse,
-} from "../../protocol/index.js";
+} from "@/platforms/index.js";
+import { describe, expect, it } from "vitest";
 
 describe("协议头生成", () => {
   it("应生成默认完整请求头", () => {

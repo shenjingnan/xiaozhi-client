@@ -2,8 +2,8 @@
  * UUID 工具测试
  */
 
+import { generateReqId, generateShortId } from "@/utils/index.js";
 import { describe, expect, it } from "vitest";
-import { generateReqId, generateShortId } from "../../utils/index.js";
 
 describe("UUID 工具", () => {
   describe("generateReqId", () => {
@@ -59,13 +59,9 @@ describe("UUID 工具", () => {
     });
 
     it("生成的 ID 应为 UUID 的第一段", () => {
-      const fullId = generateReqId();
       const shortId = generateShortId();
 
-      const firstPart = fullId.split("-")[0];
-
-      // 由于每次调用都会生成新的 UUID，shortId 和 firstPart 可能不相等
-      // 但 shortId 应该是有效的 UUID 第一段格式
+      // shortId 应该是有效的 UUID 第一段格式
       expect(shortId).toMatch(/^[0-9a-f]{8}$/i);
     });
 

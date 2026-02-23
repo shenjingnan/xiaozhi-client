@@ -1,8 +1,8 @@
 /**
- * Demo: V2 协议裸 Opus 流式 ASR
+ * Demo: ByteDance V2 流式 ASR（使用 listen API）
  *
- * 本示例展示如何将 V2 协议封装的 Opus 数据解析为裸 Opus，
- * 解码为 PCM，然后通过流式方式发送给字节跳动的 ASR 服务。
+ * 本示例展示如何使用 listen() API 进行流式语音识别。
+ * 读取 V2 协议的 Opus 音频文件，解码为 PCM，然后通过 listen() API 发送。
  *
  * V2 协议格式（16字节头部 + Opus payload）：
  * ┌──────────┬──────┬──────────┬──────────┬──────────┬──────────┐
@@ -23,14 +23,16 @@ dotenv.config({ path: path.resolve(__dirname, ".env") });
 import fs from "node:fs";
 import { ASR, AudioFormat, AuthMethod, OpusDecoder } from "../src/index.js";
 
-// V2 协议头部常量
-const PROTOCOL_HEADER_SIZE = 16;
-
 // 从环境变量读取配置
 const APP_ID = process.env.BYTEDANCE_APP_ID || "your-app-id";
 const TOKEN = process.env.BYTEDANCE_TOKEN || "your-token";
 const CLUSTER = process.env.BYTEDANCE_CLUSTER || "volcengine_streaming_common";
+
+// 音频文件目录
 const OPUS_DIR = new URL("./v2-opus-stream", import.meta.url).pathname;
+
+// V2 协议头部常量
+const PROTOCOL_HEADER_SIZE = 16;
 
 /**
  * 解析 V2 协议头部，提取 Opus payload
@@ -65,7 +67,7 @@ function parseProtocol2(buffer: Buffer): Buffer {
 }
 
 /**
- * 读取并解析 V2 协议的 Opus 文件
+ * 读取 V2 协议的 Opus 文件
  *
  * @param filePath V2 协议文件路径
  * @returns 裸 Opus 数据
@@ -95,35 +97,74 @@ function readAllOpusFiles(dirPath: string): Buffer[] {
   return files.map((f: string) => readV2OpusFile(path.join(dirPath, f)));
 }
 
-async function main() {
-  console.log("=== V2 协议裸 Opus 流式 ASR 示例 ===\n");
+/**
+ * 创建异步可迭代的 PCM 流
+ * 读取 Opus 文件，解码为 PCM，然后逐帧yield
+ */
+async function* createPcmStream(): AsyncGenerator<Buffer> {
+  // 读取所有 Opus 文件
+  console.log(`读取音频文件目录: ${OPUS_DIR}`);
+  const opusChunks = readAllOpusFiles(OPUS_DIR);
+  console.log(`读取到 ${opusChunks.length} 个 Opus 帧\n`);
 
-  // 创建 ASR 客户端，使用 RAW 格式
-  // 关键配置：format = AudioFormat.RAW，codec = "raw"（解码后的 PCM）
+  // 解码所有 Opus 帧为 PCM
+  console.log("正在解码 Opus 为 PCM...");
+  const pcmChunks: Buffer[] = [];
+  for (let i = 0; i < opusChunks.length; i++) {
+    const pcmData = await OpusDecoder.toPcm(opusChunks[i]);
+    pcmChunks.push(pcmData);
+
+    if ((i + 1) % 20 === 0) {
+      console.log(`  已解码 ${i + 1}/${opusChunks.length} 帧...`);
+    }
+  }
+  console.log(`解码完成，共 ${pcmChunks.length} 个 PCM 帧\n`);
+
+  // 逐帧 yield PCM 数据
+  let frameCount = 0;
+  for (const pcmData of pcmChunks) {
+    yield pcmData;
+    frameCount++;
+
+    if (frameCount % 20 === 0) {
+      console.log(`  已发送 ${frameCount} 帧...`);
+    }
+  }
+  console.log(`  总共发送: ${frameCount} 帧\n`);
+}
+
+async function main() {
+  console.log("=== ByteDance V2 流式 ASR 示例（listen API）===\n");
+
+  // 创建 ASR 客户端
+  // 使用新版配置方式：音频配置通过 bytedance.v2.audio 传入
   const client = new ASR({
-    wsUrl: "wss://openspeech.bytedance.com/api/v2/asr",
-    cluster: CLUSTER,
-    appid: APP_ID,
-    token: TOKEN,
-    // 关键：使用 RAW 格式 + raw 编解码器（发送 PCM 数据）
-    format: AudioFormat.RAW,
+    bytedance: {
+      v2: {
+        app: {
+          appid: APP_ID,
+          token: TOKEN,
+          cluster: CLUSTER,
+        },
+        user: {
+          uid: "streaming_asr_client",
+        },
+        audio: {
+          format: AudioFormat.RAW,
+          // 语言配置
+          language: "zh-CN",
+        },
+        request: {
+          reqid: "uuid",
+          sequence: 1,
+        },
+      },
+    },
+    // 认证配置
     authMethod: AuthMethod.TOKEN,
-    // 音频配置
-    sampleRate: 16000,
-    language: "zh-CN",
-    channel: 1,
-    bits: 16,
-    codec: "raw",
-    // 请求配置
-    segDuration: 15000,
-    nbest: 1,
-    resultType: "full",
-    workflow: "audio_in,resample,partition,vad,fe,decode,itn,nlu_punctuate",
-    showLanguage: false,
-    showUtterances: false,
   });
 
-  // 设置事件处理器
+  // 设置事件监听器
   client.on("open", () => {
     console.log("[事件] 连接已打开");
   });
@@ -136,12 +177,16 @@ async function main() {
     console.error("[事件] 错误:", error.message);
   });
 
-  client.on("result", (result) => {
-    console.log("[事件] 识别结果:", JSON.stringify(result, null, 2));
-  });
+  // client.on("result", (result) => {
+  //   console.log("[事件] 识别结果:", JSON.stringify(result, null, 2));
+  // });
 
-  client.on("full_response", (response) => {
-    console.log("[事件] 完整响应:", JSON.stringify(response, null, 2));
+  // client.on("full_response", (response) => {
+  //   console.log("[事件] 完整响应:", JSON.stringify(response, null, 2));
+  // });
+
+  client.on("vad_end", (text: string) => {
+    console.log("[事件] VAD 结束:", text);
   });
 
   client.on("audio_end", () => {
@@ -149,52 +194,23 @@ async function main() {
   });
 
   try {
-    console.log("开始流式 ASR 识别...");
-    console.log(`音频目录: ${OPUS_DIR}\n`);
+    console.log("开始流式 ASR 识别...\n");
 
-    // 步骤 1: 连接并发送初始配置
-    console.log("步骤 1: 连接到 ASR 服务器...");
-    await client.connect();
-    console.log("已连接!\n");
+    // 使用 listen() API 进行流式识别
+    // 传入异步可迭代的 PCM 流
+    console.log("正在连接并发送音频...\n");
 
-    // 步骤 2: 读取 V2 Opus 文件，解码为 PCM 并发送
-    console.log("步骤 2: 读取 Opus 文件，解码为 PCM 并发送...");
-
-    const opusChunks = readAllOpusFiles(OPUS_DIR);
-    console.log(`读取到 ${opusChunks.length} 个 Opus 帧`);
-
-    // 解码所有 Opus 帧为 PCM
-    console.log("正在解码 Opus 为 PCM...");
-    const pcmChunks: Buffer[] = [];
-    for (let i = 0; i < opusChunks.length; i++) {
-      const pcmData = await OpusDecoder.toPcm(opusChunks[i]);
-      pcmChunks.push(pcmData);
-
-      if ((i + 1) % 20 === 0) {
-        console.log(`  已解码 ${i + 1}/${opusChunks.length} 帧...`);
-      }
-    }
-    console.log(`解码完成，共 ${pcmChunks.length} 个 PCM 帧\n`);
-
-    // 流式发送每个 PCM chunk
-    let frameCount = 0;
-    for (const pcmData of pcmChunks) {
-      await client.sendFrame(pcmData);
-      frameCount++;
-
-      if (frameCount % 20 === 0) {
-        console.log(`  已发送 ${frameCount} 帧...`);
-      }
+    let resultCount = 0;
+    for await (const result of client.bytedance.v2.listen(createPcmStream())) {
+      resultCount++;
+      const status = result.isFinal ? "最终" : "中间";
+      console.log(status, result);
+      // console.log(`[${status}] #${result.seq || resultCount} ${result.text}`);
+      if (result.isFinal) break;
     }
 
-    console.log(`  总共发送: ${frameCount} 帧\n`);
-
-    // 步骤 3: 结束流并获取最终结果
-    console.log("步骤 3: 结束流并获取最终结果...");
-    const result = await client.end();
-
-    console.log("\n=== 最终结果 ===");
-    console.log(JSON.stringify(result, null, 2));
+    console.log("\n=== 识别完成 ===");
+    console.log(`共收到 ${resultCount} 个识别结果`);
   } catch (error) {
     console.error("错误:", (error as Error).message);
     process.exit(1);

@@ -2,55 +2,31 @@
  * Client type definitions
  */
 
-import type { AudioFormat } from "../audio";
-import type { AuthMethod } from "../auth";
+import type { AudioFormat } from "@/audio";
+import type { AuthMethod } from "@/auth";
+import type { ByteDanceOption } from "@/platforms";
+import type { ByteDanceV2ASRRequest } from "@/platforms/bytedance/request.js";
 
-// Request configuration
-export interface ASRRequestConfig {
-  app: {
-    appid: string;
-    cluster: string;
-    token: string;
-  };
-  user: {
-    uid: string;
-  };
-  request: {
-    reqid: string;
-    nbest: number;
-    workflow: string;
-    show_language: boolean;
-    show_utterances: boolean;
-    result_type: string;
-    sequence: number;
-    vad_signal: boolean;
-    start_silence_time: string;
-    vad_silence_time: string;
-  };
-  audio: {
-    format: string;
-    rate: number;
-    language: string;
-    bits: number;
-    channel: number;
-    codec: string;
-  };
-}
+// Request configuration (向后兼容，重新导出 ByteDanceV2ASRRequest)
+export type ASRRequestConfig = ByteDanceV2ASRRequest;
 
 // Client options
 export interface ASROption {
-  // Server
+  // ByteDance 配置（V2 或 V3）
+  bytedance?: ByteDanceOption;
+
+  // Server（用于旧版兼容）
   wsUrl?: string;
   cluster?: string;
 
-  // App
+  // App（用于旧版兼容）
   appid?: string;
   token?: string;
 
-  // User
+  // User（用于旧版兼容）
   uid?: string;
 
-  // Audio
+  // Audio（用于旧版兼容）
   audioPath?: string;
   format?: AudioFormat;
   sampleRate?: number;
@@ -59,7 +35,7 @@ export interface ASROption {
   channel?: number;
   codec?: string;
 
-  // Request
+  // Request（用于旧版兼容）
   segDuration?: number;
   nbest?: number;
   workflow?: string;
@@ -67,7 +43,7 @@ export interface ASROption {
   showUtterances?: boolean;
   resultType?: string;
 
-  // Auth
+  // Auth（用于旧版兼容）
   authMethod?: AuthMethod;
   secret?: string;
 

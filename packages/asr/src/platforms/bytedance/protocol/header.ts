@@ -4,7 +4,7 @@
 
 import { Buffer } from "node:buffer";
 import { gunzipSync, gzip, gzipSync } from "node:zlib";
-import { PROTOCOL_VERSION } from "./constants.js";
+import { PROTOCOL_VERSION } from "@/platforms/bytedance/protocol/constants.js";
 import {
   CompressionType,
   type HeaderOptions,
@@ -12,7 +12,7 @@ import {
   MessageTypeSpecificFlags,
   type ParsedResponse,
   SerializationMethod,
-} from "./types.js";
+} from "@/platforms/bytedance/protocol/types.js";
 
 /**
  * Generate protocol header
