@@ -174,16 +174,14 @@ describe("TemplateManagerImpl", () => {
       });
     });
 
-    it("should handle invalid config file gracefully", async () => {
+    it("should throw error when config file has invalid JSON", async () => {
       (PathUtils.getTemplatePath as any).mockReturnValue("/templates/test");
       (FileUtils.exists as any).mockReturnValue(true);
       (FileUtils.readFile as any).mockReturnValue("invalid json");
-      (FileUtils.listDirectory as any).mockReturnValue([]);
 
-      const result = await templateManager.getTemplateInfo("test");
-
-      expect(result?.description).toBe("test 模板");
-      expect(result?.version).toBe("1.0.0");
+      await expect(templateManager.getTemplateInfo("test")).rejects.toThrow(
+        "模板配置文件解析失败"
+      );
     });
 
     it("should cache template info", async () => {
@@ -242,8 +240,14 @@ describe("TemplateManagerImpl", () => {
     it("should create project successfully", async () => {
       (PathUtils.getTemplatePath as any).mockReturnValue("/templates/default");
       (FileUtils.exists as any).mockImplementation((path: string) => {
-        return path !== "/resolved/my-project"; // Target doesn't exist
+        // Config file exists, target doesn't
+        return (
+          path.includes("template.json") || path !== "/resolved/my-project"
+        );
       });
+      (FileUtils.readFile as any).mockReturnValue(
+        JSON.stringify({ description: "Default template" })
+      );
       (FileUtils.listDirectory as any).mockReturnValue([
         "/templates/default/package.json",
       ]);
@@ -311,6 +315,9 @@ describe("TemplateManagerImpl", () => {
     it("should return true if template is valid", async () => {
       (PathUtils.getTemplatePath as any).mockReturnValue("/templates/test");
       (FileUtils.exists as any).mockReturnValue(true);
+      (FileUtils.readFile as any).mockReturnValue(
+        JSON.stringify({ description: "Test template" })
+      );
       (FileUtils.listDirectory as any).mockReturnValue([]);
 
       const isValid = await templateManager.validateTemplate("test");
