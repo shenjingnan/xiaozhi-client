@@ -129,6 +129,7 @@ Turborepo
 uids
 Ulza
 unmarshal
+unmarshalled
 unref
 unstub
 unsubscribers
