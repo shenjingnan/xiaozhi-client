@@ -117,6 +117,7 @@ export default defineConfig({
     "@xiaozhi-client/mcp-core",
     "@xiaozhi-client/shared-types",
     "@xiaozhi-client/asr",
+    "@xiaozhi-client/tts",
   ],
   onSuccess: async () => {
     // 复制配置文件到 dist/backend
