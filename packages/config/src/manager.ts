@@ -130,6 +130,13 @@ export interface ASRConfig {
   wsUrl?: string; // WebSocket 端点
 }
 
+// LLM 配置接口
+export interface LLMConfig {
+  model: string; // 模型名称
+  apiKey: string; // API 密钥
+  baseURL: string; // API 基础地址
+}
+
 export interface ToolCallLogConfig {
   maxRecords?: number; // 最大记录条数，默认 100
   logFilePath?: string; // 自定义日志文件路径（可选）
@@ -279,6 +286,7 @@ export interface AppConfig {
   toolCallLog?: ToolCallLogConfig; // 工具调用日志配置（可选）
   tts?: TTSConfig; // TTS 配置（可选）
   asr?: ASRConfig; // ASR 配置（可选）
+  llm?: LLMConfig; // LLM 配置（可选）
 }
 
 /**
@@ -2324,6 +2332,30 @@ export class ConfigManager {
   public getASRConfig(): Readonly<ASRConfig> {
     const config = this.getConfig();
     return config.asr || {};
+  }
+
+  /**
+   * 获取 LLM 配置
+   */
+  public getLLMConfig(): LLMConfig | null {
+    const config = this.getConfig();
+    return config.llm || null;
+  }
+
+  /**
+   * 检查 LLM 配置是否有效
+   */
+  public isLLMConfigValid(): boolean {
+    const llmConfig = this.getLLMConfig();
+    return (
+      llmConfig !== null &&
+      typeof llmConfig.model === "string" &&
+      llmConfig.model.trim() !== "" &&
+      typeof llmConfig.apiKey === "string" &&
+      llmConfig.apiKey.trim() !== "" &&
+      typeof llmConfig.baseURL === "string" &&
+      llmConfig.baseURL.trim() !== ""
+    );
   }
 
   /**

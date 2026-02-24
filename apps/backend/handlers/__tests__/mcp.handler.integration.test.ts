@@ -21,6 +21,10 @@ vi.mock("@xiaozhi-client/config", () => ({
     cleanupInvalidServerToolsConfig: vi.fn(),
     getToolCallLogConfig: vi.fn().mockReturnValue({}),
     getConfigDir: vi.fn().mockReturnValue("/tmp"),
+    getLLMConfig: vi.fn(() => null),
+    isLLMConfigValid: vi.fn(() => false),
+    getTTSConfig: vi.fn(() => ({})),
+    getASRConfig: vi.fn(() => ({})),
   },
 }));
 
