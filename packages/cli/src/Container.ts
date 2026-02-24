@@ -2,10 +2,18 @@
  * 依赖注入容器
  */
 
+import type { ConfigManager } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
+import type { VersionUtilsType } from "@xiaozhi-client/version";
 import { VersionUtils } from "@xiaozhi-client/version";
 import { ErrorHandler } from "./errors/ErrorHandlers";
 import type { IDIContainer } from "./interfaces/Config";
+import type {
+  DaemonManager as IDaemonManager,
+  ProcessManager as IProcessManager,
+  ServiceManager as IServiceManager,
+  TemplateManager as ITemplateManager,
+} from "./interfaces/Service";
 import { FileUtils } from "./utils/FileUtils";
 import { FormatUtils } from "./utils/FormatUtils";
 import { PathUtils } from "./utils/PathUtils";
@@ -13,18 +21,66 @@ import { PlatformUtils } from "./utils/PlatformUtils";
 import { Validation } from "./utils/Validation";
 
 /**
+ * 服务类型映射
+ * 定义容器中所有注册服务的类型
+ */
+export interface ServiceTypes {
+  /** 进程管理器 */
+  processManager: IProcessManager;
+  /** 守护进程管理器 */
+  daemonManager: IDaemonManager;
+  /** 服务管理器 */
+  serviceManager: IServiceManager;
+  /** 模板管理器 */
+  templateManager: ITemplateManager;
+  /** 配置管理器 */
+  configManager: ConfigManager;
+  /** 错误处理器 */
+  errorHandler: typeof ErrorHandler;
+  /** 版本工具类 */
+  versionUtils: VersionUtilsType;
+  /** 平台工具类 */
+  platformUtils: typeof PlatformUtils;
+  /** 格式化工具类 */
+  formatUtils: typeof FormatUtils;
+  /** 文件工具类 */
+  fileUtils: typeof FileUtils;
+  /** 路径工具类 */
+  pathUtils: typeof PathUtils;
+  /** 验证工具类 */
+  validation: typeof Validation;
+}
+
+/**
+ * 服务键类型：从 ServiceTypes 中提取所有键的联合类型
+ */
+export type ServiceKey = keyof ServiceTypes;
+
+/**
  * 依赖注入容器实现
+ * 使用类型映射提供类型安全的服务注册和获取
  */
 export class DIContainer implements IDIContainer {
-  private instances = new Map<string, any>();
-  private factories = new Map<string, () => any>();
-  private asyncFactories = new Map<string, () => Promise<any>>();
-  private singletons = new Set<string>();
+  /** 已创建的服务实例 */
+  private instances = new Map<ServiceKey, unknown>();
+  /** 服务工厂函数 */
+  private factories = new Map<ServiceKey, () => unknown>();
+  /** 异步服务工厂函数（预留，当前未使用） */
+  private asyncFactories = new Map<ServiceKey, () => Promise<unknown>>();
+  /** 单例服务键集合 */
+  private singletons = new Set<ServiceKey>();
 
   /**
    * 注册服务工厂
+   * @param key 服务键
+   * @param factory 工厂函数
+   * @param singleton 是否为单例
    */
-  register<T>(key: string, factory: () => T, singleton = false): void {
+  register<K extends ServiceKey>(
+    key: K,
+    factory: () => ServiceTypes[K],
+    singleton = false
+  ): void {
     this.factories.set(key, factory);
     if (singleton) {
       this.singletons.add(key);
@@ -33,36 +89,49 @@ export class DIContainer implements IDIContainer {
 
   /**
    * 注册单例服务
+   * @param key 服务键
+   * @param factory 工厂函数
    */
-  registerSingleton<T>(key: string, factory: () => T): void {
+  registerSingleton<K extends ServiceKey>(
+    key: K,
+    factory: () => ServiceTypes[K]
+  ): void {
     this.register(key, factory, true);
   }
 
   /**
    * 注册实例
+   * @param key 服务键
+   * @param instance 服务实例
    */
-  registerInstance<T>(key: string, instance: T): void {
+  registerInstance<K extends ServiceKey>(
+    key: K,
+    instance: ServiceTypes[K]
+  ): void {
     this.instances.set(key, instance);
     this.singletons.add(key);
   }
 
   /**
    * 获取服务实例
+   * @param key 服务键
+   * @returns 服务实例
+   * @throws 当服务未注册时抛出错误
    */
-  get<T>(key: string): T {
+  get<K extends ServiceKey>(key: K): ServiceTypes[K] {
     // 如果是单例且已经创建过实例，直接返回
     if (this.singletons.has(key) && this.instances.has(key)) {
-      return this.instances.get(key);
+      return this.instances.get(key) as ServiceTypes[K];
     }
 
     // 获取工厂函数
     const factory = this.factories.get(key);
     if (!factory) {
-      throw new Error(`Service ${key} not registered`);
+      throw new Error(`Service ${String(key)} not registered`);
     }
 
     // 创建实例
-    const instance = factory();
+    const instance = factory() as ServiceTypes[K];
 
     // 如果是单例，缓存实例
     if (this.singletons.has(key)) {
@@ -74,8 +143,10 @@ export class DIContainer implements IDIContainer {
 
   /**
    * 检查服务是否已注册
+   * @param key 服务键
+   * @returns 是否已注册
    */
-  has(key: string): boolean {
+  has(key: ServiceKey): boolean {
     return this.factories.has(key) || this.instances.has(key);
   }
 
@@ -90,8 +161,9 @@ export class DIContainer implements IDIContainer {
 
   /**
    * 获取所有已注册的服务键
+   * @returns 服务键数组
    */
-  getRegisteredKeys(): string[] {
+  getRegisteredKeys(): ServiceKey[] {
     const factoryKeys = Array.from(this.factories.keys());
     const instanceKeys = Array.from(this.instances.keys());
     return [...new Set([...factoryKeys, ...instanceKeys])];
@@ -146,14 +218,14 @@ export class DIContainer implements IDIContainer {
 
     container.registerSingleton("daemonManager", () => {
       const DaemonManagerModule = require("./services/DaemonManager.js");
-      const processManager = container.get("processManager") as any;
+      const processManager = container.get("processManager");
       return new DaemonManagerModule.DaemonManagerImpl(processManager);
     });
 
     container.registerSingleton("serviceManager", () => {
       const ServiceManagerModule = require("./services/ServiceManager.js");
-      const processManager = container.get("processManager") as any;
-      const configManager = container.get("configManager") as any;
+      const processManager = container.get("processManager");
+      const configManager = container.get("configManager");
       return new ServiceManagerModule.ServiceManagerImpl(
         processManager,
         configManager
