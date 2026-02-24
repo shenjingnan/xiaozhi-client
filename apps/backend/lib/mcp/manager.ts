@@ -1818,6 +1818,14 @@ export class MCPServiceManager extends EventEmitter {
   async cleanup(): Promise<void> {
     await this.stopAllServices();
 
+    // 清理所有重试定时器，防止内存泄漏和错误的回调执行
+    for (const [serviceName, timer] of this.retryTimers) {
+      clearTimeout(timer);
+      console.debug(`[MCPManager] 清理服务 ${serviceName} 的重试定时器`);
+    }
+    this.retryTimers.clear();
+    this.failedServices.clear();
+
     // 清理事件监听器，防止内存泄漏
     this.eventBus.offEvent(
       "mcp:service:connected",
