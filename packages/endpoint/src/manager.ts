@@ -290,7 +290,7 @@ export class EndpointManager extends EventEmitter {
         throw new Error(`接入点不存在: ${sliceEndpoint(endpoint)}`);
       }
 
-      endpointInstance.disconnect();
+      await endpointInstance.disconnect();
 
       const status = this.connectionStates.get(endpoint);
       if (status) {
@@ -310,11 +310,7 @@ export class EndpointManager extends EventEmitter {
     const promises: Promise<void>[] = [];
 
     for (const endpoint of this.endpoints.values()) {
-      promises.push(
-        Promise.resolve().then(() => {
-          endpoint.disconnect();
-        })
-      );
+      promises.push(endpoint.disconnect());
     }
 
     await Promise.allSettled(promises);
