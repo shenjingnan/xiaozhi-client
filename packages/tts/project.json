@@ -1,0 +1,66 @@
+{
+  "name": "tts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/tts/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter tts run build",
+        "cwd": "packages/tts"
+      },
+      "outputs": ["{workspaceRoot}/packages/tts/dist"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter tts run test",
+        "cwd": "packages/tts"
+      },
+      "outputs": ["{workspaceRoot}/coverage"]
+    },
+    "test:watch": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter tts run test:watch",
+        "cwd": "packages/tts"
+      }
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter tts run test:coverage",
+        "cwd": "packages/tts"
+      },
+      "outputs": ["{workspaceRoot}/coverage"]
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter tts run type-check",
+        "cwd": "packages/tts"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter tts run lint"
+      }
+    },
+    "lint:fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter tts run lint:fix"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter tts run dev",
+        "cwd": "packages/tts"
+      }
+    }
+  },
+  "tags": ["type:lib", "scope:tts"]
+}

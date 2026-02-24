@@ -1,8 +1,3 @@
-import { Buffer } from "node:buffer";
-import type WebSocket from "ws";
-
-import { logger } from "@/Logger.js";
-
 /**
  * TTS 协议消息类型定义
  *
@@ -12,11 +7,10 @@ import { logger } from "@/Logger.js";
  * - Message 接口: 协议消息结构
  * - 消息序列化/反序列化函数
  * - WebSocket 通信辅助函数
- *
- * @module protocols
- *
- * @see binary.ts - TTS 二进制协议实现
  */
+
+import { Buffer } from "node:buffer";
+import type WebSocket from "ws";
 
 /**
  * 事件类型定义，对应 protobuf 生成的事件类型
@@ -196,7 +190,9 @@ export function messageToString(msg: Message): string {
   }
 }
 
-// To implement the toString method for Message interface, we need to modify the createMessage function
+/**
+ * 创建消息对象
+ */
 export function createMessage(
   msgType: MsgType,
   flag: MsgTypeFlagBits
@@ -211,7 +207,7 @@ export function createMessage(
     payload: new Uint8Array(0),
   };
 
-  // Use Object.defineProperty to add toString method
+  // 使用 Object.defineProperty 添加 toString 方法
   Object.defineProperty(msg, "toString", {
     enumerable: false,
     configurable: true,
@@ -230,7 +226,7 @@ export function createMessage(
 export function marshalMessage(msg: Message): Uint8Array {
   const buffers: Uint8Array[] = [];
 
-  // Build base header
+  // 构建基础头部
   const headerSize = 4 * msg.headerSize;
   const header = new Uint8Array(headerSize);
 
@@ -240,14 +236,14 @@ export function marshalMessage(msg: Message): Uint8Array {
 
   buffers.push(header);
 
-  // Write fields based on message type and flags
+  // 根据消息类型和标志位写入字段
   const writers = getWriters(msg);
   for (const writer of writers) {
     const data = writer(msg);
     if (data) buffers.push(data);
   }
 
-  // Merge all buffers
+  // 合并所有缓冲区
   const totalLength = buffers.reduce((sum, buf) => sum + buf.length, 0);
   const result = new Uint8Array(totalLength);
   let offset = 0;
@@ -272,7 +268,7 @@ export function unmarshalMessage(data: Uint8Array): Message {
 
   let offset = 0;
 
-  // Read base header
+  // 读取基础头部
   const versionAndHeaderSize = data[offset++];
   const typeAndFlag = data[offset++];
   const serializationAndCompression = data[offset++];
@@ -296,10 +292,10 @@ export function unmarshalMessage(data: Uint8Array): Message {
     },
   });
 
-  // Skip remaining header bytes
+  // 跳过剩余的头部字节
   offset = 4 * msg.headerSize;
 
-  // Read fields based on message type and flags
+  // 根据消息类型和标志位读取字段
   const readers = getReaders(msg as Message);
   for (const reader of readers) {
     offset = reader(msg as Message, data, offset);
@@ -308,7 +304,7 @@ export function unmarshalMessage(data: Uint8Array): Message {
   return msg as Message;
 }
 
-// Internal helper functions for serialization/deserialization
+// 序列化辅助函数
 function getWriters(msg: Message): Array<(msg: Message) => Uint8Array | null> {
   const writers: Array<(msg: Message) => Uint8Array | null> = [];
 
@@ -375,7 +371,7 @@ function getReaders(
   return readers;
 }
 
-// Writer functions
+// 写入函数
 function writeEvent(msg: Message): Uint8Array | null {
   if (msg.event === undefined) return null;
   const buffer = new ArrayBuffer(4);
@@ -392,6 +388,7 @@ function writeSessionId(msg: Message): Uint8Array | null {
     case EventType.FinishConnection:
     case EventType.ConnectionStarted:
     case EventType.ConnectionFailed:
+    case EventType.ConnectionFinished:
       return null;
   }
 
@@ -462,7 +459,7 @@ function writePayload(msg: Message): Uint8Array | null {
   return result;
 }
 
-// Reader functions
+// 读取函数
 function readEvent(msg: Message, data: Uint8Array, offset: number): number {
   if (offset + 4 > data.length) {
     throw new Error("insufficient data for event");
@@ -602,11 +599,11 @@ function setupMessageHandler(ws: WebSocket) {
         const callbacks = messageCallbacks.get(ws)!;
 
         if (callbacks.length > 0) {
-          // If there are waiting callbacks, process message immediately
+          // 如果有等待的回调，立即处理消息
           const callback = callbacks.shift()!;
           callback(msg);
         } else {
-          // Otherwise, queue the message
+          // 否则，将消息加入队列
           queue.push(msg);
         }
       } catch (error) {
@@ -621,6 +618,11 @@ function setupMessageHandler(ws: WebSocket) {
   }
 }
 
+/**
+ * 接收消息
+ * @param ws - WebSocket 连接实例
+ * @returns 消息对象
+ */
 export async function ReceiveMessage(ws: WebSocket): Promise<Message> {
   setupMessageHandler(ws);
 
@@ -628,13 +630,13 @@ export async function ReceiveMessage(ws: WebSocket): Promise<Message> {
     const queue = messageQueues.get(ws)!;
     const callbacks = messageCallbacks.get(ws)!;
 
-    // If there are messages in the queue, process one immediately
+    // 如果队列中有消息，立即处理
     if (queue.length > 0) {
       resolve(queue.shift()!);
       return;
     }
 
-    // Otherwise, wait for the next message
+    // 否则，等待下一条消息
     const errorHandler = (error: WebSocket.ErrorEvent) => {
       const index = callbacks.findIndex((cb) => cb === resolver);
       if (index !== -1) {
@@ -687,7 +689,6 @@ export async function FullClientRequest(
 ): Promise<void> {
   const msg = createMessage(MsgType.FullClientRequest, MsgTypeFlagBits.NoSeq);
   msg.payload = payload;
-  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -711,7 +712,6 @@ export async function AudioOnlyClient(
 ): Promise<void> {
   const msg = createMessage(MsgType.AudioOnlyClient, flag);
   msg.payload = payload;
-  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -733,7 +733,6 @@ export async function StartConnection(ws: WebSocket): Promise<void> {
   );
   msg.event = EventType.StartConnection;
   msg.payload = new TextEncoder().encode("{}");
-  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -755,7 +754,6 @@ export async function FinishConnection(ws: WebSocket): Promise<void> {
   );
   msg.event = EventType.FinishConnection;
   msg.payload = new TextEncoder().encode("{}");
-  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -784,7 +782,6 @@ export async function StartSession(
   msg.event = EventType.StartSession;
   msg.sessionId = sessionId;
   msg.payload = payload;
-  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -811,7 +808,6 @@ export async function FinishSession(
   msg.event = EventType.FinishSession;
   msg.sessionId = sessionId;
   msg.payload = new TextEncoder().encode("{}");
-  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -838,7 +834,6 @@ export async function CancelSession(
   msg.event = EventType.CancelSession;
   msg.sessionId = sessionId;
   msg.payload = new TextEncoder().encode("{}");
-  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {
@@ -867,7 +862,6 @@ export async function TaskRequest(
   msg.event = EventType.TaskRequest;
   msg.sessionId = sessionId;
   msg.payload = payload;
-  logger.debug(`${msg.toString()}`);
   const data = marshalMessage(msg);
   return new Promise((resolve, reject) => {
     ws.send(data, (error?: Error) => {

@@ -1,6 +1,10 @@
+/**
+ * TTS 二进制协议实现
+ */
+
 import { randomUUID } from "node:crypto";
 import WebSocket from "ws";
-import { FullClientRequest, MsgType, ReceiveMessage } from "./protocols";
+import { FullClientRequest, MsgType, ReceiveMessage } from "./protocols.js";
 
 /**
  * TTS 合成选项
@@ -25,11 +29,59 @@ export interface TTSOptions {
 /**
  * 根据声音类型自动判断集群类型
  */
-export function VoiceToCluster(voice: string): string {
+export function voiceToCluster(voice: string): string {
   if (voice.startsWith("S_")) {
     return "volcano_icl";
   }
   return "volcano_tts";
+}
+
+/**
+ * 创建 TTS 请求对象
+ */
+export function createTTSRequest(options: TTSOptions): object {
+  const encoding = options.encoding || "wav";
+  return {
+    app: {
+      appid: options.appid,
+      token: options.accessToken,
+      cluster: options.cluster?.trim() || voiceToCluster(options.voice_type),
+    },
+    user: {
+      uid: randomUUID(),
+    },
+    audio: {
+      voice_type: options.voice_type,
+      encoding: encoding,
+    },
+    request: {
+      reqid: randomUUID(),
+      text: options.text,
+      operation: "submit",
+      extra_param: JSON.stringify({
+        disable_markdown_filter: false,
+      }),
+      with_timestamp: "1",
+    },
+  };
+}
+
+/**
+ * 获取 TTS WebSocket 端点
+ */
+export function getEndpoint(options: TTSOptions): string {
+  return (
+    options.endpoint || "wss://openspeech.bytedance.com/api/v1/tts/ws_binary"
+  );
+}
+
+/**
+ * 获取认证头
+ */
+export function getAuthHeaders(options: TTSOptions): Record<string, string> {
+  return {
+    Authorization: `Bearer;${options.accessToken}`,
+  };
 }
 
 /**
@@ -41,13 +93,10 @@ export function VoiceToCluster(voice: string): string {
 export async function synthesizeSpeech(
   options: TTSOptions
 ): Promise<Uint8Array> {
-  const endpoint =
-    options.endpoint || "wss://openspeech.bytedance.com/api/v1/tts/ws_binary";
+  const endpoint = getEndpoint(options);
   const encoding = options.encoding || "wav";
 
-  const headers = {
-    Authorization: `Bearer;${options.accessToken}`,
-  };
+  const headers = getAuthHeaders(options);
 
   const ws = new WebSocket(endpoint, {
     headers,
@@ -63,7 +112,7 @@ export async function synthesizeSpeech(
     app: {
       appid: options.appid,
       token: options.accessToken,
-      cluster: options.cluster?.trim() || VoiceToCluster(options.voice_type),
+      cluster: options.cluster?.trim() || voiceToCluster(options.voice_type),
     },
     user: {
       uid: randomUUID(),
@@ -142,13 +191,10 @@ export async function synthesizeSpeechStream(
   options: TTSOptions,
   onAudioChunk: (chunk: Uint8Array, isLast: boolean) => Promise<void>
 ): Promise<void> {
-  const endpoint =
-    options.endpoint || "wss://openspeech.bytedance.com/api/v1/tts/ws_binary";
+  const endpoint = getEndpoint(options);
   const encoding = options.encoding || "wav";
 
-  const headers = {
-    Authorization: `Bearer;${options.accessToken}`,
-  };
+  const headers = getAuthHeaders(options);
 
   const ws = new WebSocket(endpoint, {
     headers,
@@ -164,7 +210,7 @@ export async function synthesizeSpeechStream(
     app: {
       appid: options.appid,
       token: options.accessToken,
-      cluster: options.cluster?.trim() || VoiceToCluster(options.voice_type),
+      cluster: options.cluster?.trim() || voiceToCluster(options.voice_type),
     },
     user: {
       uid: randomUUID(),

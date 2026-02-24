@@ -201,6 +201,9 @@ importers:
       '@xiaozhi-client/mcp-core':
         specifier: workspace:*
         version: link:../../packages/mcp-core
+      '@xiaozhi-client/tts':
+        specifier: workspace:*
+        version: link:../../packages/tts
       '@xiaozhi-client/version':
         specifier: workspace:*
         version: link:../../packages/version
@@ -691,6 +694,37 @@ importers:
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
+
+  packages/tts:
+    dependencies:
+      ws:
+        specifier: ^8.16.0
+        version: 8.19.0
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.33
+      '@types/ws':
+        specifier: ^8.5.10
+        version: 8.18.1
+      dotenv:
+        specifier: ^16.4.0
+        version: 16.4.7
+      tsup:
+        specifier: ^8.3.5
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      tsx:
+        specifier: ^4.7.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.33)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/version:
     devDependencies:
