@@ -1,3 +1,25 @@
+/**
+ * 状态服务
+ *
+ * 负责管理客户端连接状态和服务重启状态。
+ *
+ * ## 核心功能
+ * - 客户端状态管理：跟踪连接状态、MCP 端点、活跃服务器
+ * - 心跳超时检测：35秒无心跳自动标记为断开连接
+ * - 重启状态跟踪：记录服务重启的进度和结果
+ * - 事件发射：通过 EventBus 发射状态变更事件
+ *
+ * ## 使用方式
+ * - 由 WebServer 在初始化阶段创建单例实例
+ * - 通过 heartbeat.handler.ts 接收心跳更新
+ * - 通过各 handler 获取和更新状态信息
+ *
+ * ## 注意事项
+ * - 心跳超时默认为 35 秒
+ * - 状态更新时会触发 EventBus 事件
+ * - 提供状态重置和销毁方法用于清理资源
+ */
+
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
