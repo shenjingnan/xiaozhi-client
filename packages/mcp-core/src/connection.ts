@@ -9,15 +9,42 @@
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { MCPServerTransport, MCPServiceConfig, MCPServiceStatus, ToolCallResult } from "./types.js";
-import { ConnectionState, MCPTransportType } from "./types.js";
 import { TransportFactory } from "./transport-factory.js";
+import type {
+  MCPServerTransport,
+  MCPServiceConfig,
+  MCPServiceStatus,
+  ToolCallResult,
+} from "./types.js";
+import { ConnectionState, MCPTransportType } from "./types.js";
+import type {
+  HeartbeatConfig,
+  InternalMCPServiceConfig,
+  MCPServiceEventCallbacks,
+} from "./types.js";
 import { inferTransportTypeFromConfig } from "./utils/index.js";
-import type { HeartbeatConfig, MCPServiceEventCallbacks, InternalMCPServiceConfig } from './types.js';
 
 /**
  * MCP 连接类
- * 负责管理单个 MCP 服务的连接、工具管理和调用
+ *
+ * @description
+ * 负责管理单个 MCP 服务的连接生命周期，包括连接建立、工具列表管理、
+ * 工具调用、心跳检测和自动重连等功能。
+ *
+ * @example
+ * ```typescript
+ * const connection = new MCPConnection('my-service', {
+ *   type: 'http',
+ *   url: 'https://api.example.com/mcp'
+ * }, {
+ *   onConnected: (event) => console.log('已连接', event),
+ *   onDisconnected: (event) => console.log('已断开', event)
+ * });
+ *
+ * await connection.connect();
+ * const tools = connection.getTools();
+ * const result = await connection.callTool('my_tool', { param: 'value' });
+ * ```
  */
 export class MCPConnection {
   private name: string; // 服务名称（独立字段）
@@ -33,6 +60,33 @@ export class MCPConnection {
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private heartbeatConfig?: HeartbeatConfig;
 
+  /**
+   * 创建 MCP 连接实例
+   *
+   * @param name - 服务名称，用于标识和管理此 MCP 服务
+   * @param config - MCP 服务配置，包含连接类型（http/stdio/modelscope）和相关参数
+   * @param callbacks - 可选的事件回调函数，用于监听连接状态变化
+   *
+   * @throws {Error} 当服务名称为空或不是字符串时抛出错误
+   * @throws {Error} 当配置验证失败时抛出错误
+   *
+   * @example
+   * ```typescript
+   * // HTTP 服务配置
+   * const connection = new MCPConnection('weather-service', {
+   *   type: 'http',
+   *   url: 'https://api.example.com/mcp',
+   *   heartbeat: { enabled: true, interval: 30000 }
+   * });
+   *
+   * // STDIO 服务配置
+   * const localConnection = new MCPConnection('local-service', {
+   *   type: 'stdio',
+   *   command: 'node',
+   *   args: ['server.js']
+   * });
+   * ```
+   */
   constructor(
     name: string,
     config: MCPServiceConfig,
@@ -44,8 +98,8 @@ export class MCPConnection {
     this.callbacks = callbacks;
     // 保存心跳配置 - 优先使用用户配置
     this.heartbeatConfig = {
-      enabled: config.heartbeat?.enabled ?? true,  // 默认启用
-      interval: config.heartbeat?.interval ?? 30 * 1000,  // 默认 30 秒
+      enabled: config.heartbeat?.enabled ?? true, // 默认启用
+      interval: config.heartbeat?.interval ?? 30 * 1000, // 默认 30 秒
     };
 
     // 验证配置
@@ -70,6 +124,27 @@ export class MCPConnection {
 
   /**
    * 连接到 MCP 服务
+   *
+   * @description
+   * 建立与服务器的连接，初始化 MCP 客户端并获取工具列表。
+   * 连接成功后会启动心跳检测（非 STDIO 类型）。如果已经在连接中，
+   * 会抛出错误。
+   *
+   * @throws {Error} 当连接正在进行中时抛出错误
+   * @throws {Error} 当连接超时（30秒）时抛出错误
+   * @throws {Error} 当获取工具列表失败时抛出错误
+   *
+   * @example
+   * ```typescript
+   * const connection = new MCPConnection('my-service', config);
+   * try {
+   *   await connection.connect();
+   *   console.log('连接成功');
+   *   console.log('可用工具:', connection.getTools());
+   * } catch (error) {
+   *   console.error('连接失败:', error.message);
+   * }
+   * ```
    */
   async connect(): Promise<void> {
     // 如果正在连接中，等待当前连接完成
@@ -88,9 +163,7 @@ export class MCPConnection {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    console.debug(
-      `[MCP-${this.name}] 正在连接 MCP 服务: ${this.name}`
-    );
+    console.debug(`[MCP-${this.name}] 正在连接 MCP 服务: ${this.name}`);
 
     return new Promise((resolve, reject) => {
       // 设置连接超时（使用固定默认值 30 秒）
@@ -161,9 +234,7 @@ export class MCPConnection {
     this.connectionState = ConnectionState.CONNECTED;
     this.initialized = true;
 
-    console.info(
-      `[MCP-${this.name}] MCP 服务 ${this.name} 连接已建立`
-    );
+    console.info(`[MCP-${this.name}] MCP 服务 ${this.name} 连接已建立`);
 
     // 启动心跳检测
     this.startHeartbeat();
@@ -263,6 +334,23 @@ export class MCPConnection {
 
   /**
    * 断开连接
+   *
+   * @description
+   * 主动断开与 MCP 服务的连接，清理所有资源（客户端、传输层、定时器等）。
+   * 断开后会触发 `onDisconnected` 回调事件。
+   *
+   * @example
+   * ```typescript
+   * // 正常断开连接
+   * await connection.disconnect();
+   * console.log('已断开连接');
+   *
+   * // 应用关闭时断开所有连接
+   * process.on('SIGINT', async () => {
+   *   await connection.disconnect();
+   *   process.exit(0);
+   * });
+   * ```
    */
   async disconnect(): Promise<void> {
     console.info(`主动断开 MCP 服务 ${this.name} 连接`);
@@ -283,6 +371,25 @@ export class MCPConnection {
 
   /**
    * 获取工具列表
+   *
+   * @description
+   * 返回当前 MCP 服务提供的所有工具。工具列表在连接成功后自动获取，
+   * 并在会话过期自动重连后更新。
+   *
+   * @returns 工具数组，每个工具包含 name、description、inputSchema 等属性
+   *
+   * @example
+   * ```typescript
+   * const tools = connection.getTools();
+   * console.log(`可用工具数量: ${tools.length}`);
+   *
+   * // 查找特定工具
+   * const weatherTool = tools.find(t => t.name === 'get_weather');
+   * if (weatherTool) {
+   *   console.log('工具描述:', weatherTool.description);
+   *   console.log('参数 schema:', weatherTool.inputSchema);
+   * }
+   * ```
    */
   getTools(): Tool[] {
     return Array.from(this.tools.values());
@@ -309,9 +416,7 @@ export class MCPConnection {
    */
   private async reconnect(): Promise<void> {
     this.connectionState = ConnectionState.RECONNECTING;
-    console.debug(
-      `[MCP-${this.name}] 检测到会话过期，正在重新连接...`
-    );
+    console.debug(`[MCP-${this.name}] 检测到会话过期，正在重新连接...`);
 
     // 清理旧连接
     this.cleanupConnection();
@@ -343,9 +448,7 @@ export class MCPConnection {
       });
     }, interval);
 
-    console.debug(
-      `[MCP-${this.name}] 心跳检测已启动，间隔: ${interval}ms`
-    );
+    console.debug(`[MCP-${this.name}] 心跳检测已启动，间隔: ${interval}ms`);
   }
 
   /**
@@ -382,7 +485,37 @@ export class MCPConnection {
   }
 
   /**
-   * 调用工具
+   * 调用 MCP 工具
+   *
+   * @description
+   * 调用指定名称的 MCP 工具并传递参数。如果检测到会话过期错误，
+   * 会自动重连并重试调用。
+   *
+   * @param name - 工具名称，必须存在于当前服务的工具列表中
+   * @param arguments_ - 工具调用参数，应符合工具的 inputSchema 定义
+   * @returns 工具调用结果，包含 content 数组和 isError 标志
+   *
+   * @throws {Error} 当服务未连接时抛出错误
+   * @throws {Error} 当工具不存在时抛出错误
+   * @throws {Error} 当工具调用失败时抛出错误
+   *
+   * @example
+   * ```typescript
+   * // 调用天气查询工具
+   * const result = await connection.callTool('get_weather', {
+   *   city: '北京',
+   *   unit: 'celsius'
+   * });
+   *
+   * if (result.isError) {
+   *   console.error('工具调用失败');
+   * } else {
+   *   console.log('工具返回:', result.content);
+   * }
+   *
+   * // 调用无参数工具
+   * const status = await connection.callTool('get_status', {});
+   * ```
    */
   async callTool(
     name: string,
@@ -441,6 +574,20 @@ export class MCPConnection {
 
   /**
    * 获取服务配置
+   *
+   * @description
+   * 返回当前连接的完整配置信息，包括服务名称和连接参数。
+   * 注意：返回的对象是配置的副本，修改它不会影响实际连接。
+   *
+   * @returns 服务配置对象，包含 name 字段和原始配置
+   *
+   * @example
+   * ```typescript
+   * const config = connection.getConfig();
+   * console.log('服务名称:', config.name);
+   * console.log('连接类型:', config.type);
+   * console.log('是否启用心跳:', config.heartbeat?.enabled);
+   * ```
    */
   getConfig(): MCPServiceConfig & { name: string } {
     return {
@@ -451,6 +598,23 @@ export class MCPConnection {
 
   /**
    * 获取服务状态
+   *
+   * @description
+   * 返回当前连接的详细状态信息，包括连接状态、初始化状态、
+   * 传输类型和可用工具数量等。
+   *
+   * @returns 服务状态对象，包含连接状态和统计信息
+   *
+   * @example
+   * ```typescript
+   * const status = connection.getStatus();
+   * console.log('服务名称:', status.name);
+   * console.log('是否已连接:', status.connected);
+   * console.log('是否已初始化:', status.initialized);
+   * console.log('传输类型:', status.transportType);
+   * console.log('工具数量:', status.toolCount);
+   * console.log('连接状态:', status.connectionState);
+   * ```
    */
   getStatus(): MCPServiceStatus {
     return {
@@ -466,6 +630,27 @@ export class MCPConnection {
 
   /**
    * 检查是否已连接
+   *
+   * @description
+   * 快速检查服务是否已连接并初始化完成。这比 `getStatus()` 更轻量，
+   * 适合频繁调用的场景。
+   *
+   * @returns 如果已连接且初始化完成返回 true，否则返回 false
+   *
+   * @example
+   * ```typescript
+   * if (connection.isConnected()) {
+   *   // 安全地调用工具
+   *   const result = await connection.callTool('my_tool', {});
+   * } else {
+   *   console.log('服务未连接，请先调用 connect()');
+   * }
+   *
+   * // 轮询等待连接
+   * while (!connection.isConnected()) {
+   *   await new Promise(resolve => setTimeout(resolve, 1000));
+   * }
+   * ```
    */
   isConnected(): boolean {
     return (
