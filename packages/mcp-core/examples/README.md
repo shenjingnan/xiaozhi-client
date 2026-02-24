@@ -59,6 +59,14 @@ pnpm connect:streamable-http
 
 所有格式都会被自动规范化为 `http` 类型并正常连接。
 
+### 工具调用示例
+
+展示如何连接到 MCP 服务并调用工具，包括获取工具列表、查看参数结构、传递不同类型的参数以及处理错误情况：
+
+```bash
+pnpm connect:call-tool
+```
+
 ### 多服务管理示例
 
 使用 MCPManager 管理多个 stdio MCP 服务（calculator-mcp 和 datetime-mcp）：
@@ -107,6 +115,123 @@ const result = await connection.callTool("calculator", {
 
 ```typescript
 await connection.disconnect();
+```
+
+---
+
+## 工具调用示例说明
+
+示例文件 `call-tool.ts` 展示了如何连接到 MCP 服务并调用工具，包括以下功能：
+
+### 主要功能
+
+- **获取工具列表**：列出所有可用的工具及其描述
+- **查看参数结构**：展示工具的输入参数类型和是否必填
+- **调用工具**：传递简单和复杂参数调用工具
+- **处理返回结果**：解析和展示工具调用的返回值
+- **错误处理**：处理无效参数和不存在的工具等错误情况
+
+### 1. 创建连接实例（带回调）
+
+```typescript
+const connection = new MCPConnection(
+  serviceName,
+  {
+    type: "stdio",
+    command: "npx",
+    args: ["-y", "@xiaozhi-client/calculator-mcp"],
+  },
+  {
+    // 连接成功回调
+    onConnected: (data) => {
+      console.log(`✅ 服务 ${data.serviceName} 已连接`);
+      console.log(`   发现 ${data.tools.length} 个工具`);
+    },
+
+    // 连接失败回调
+    onConnectionFailed: (data) => {
+      console.error(`❌ 服务 ${data.serviceName} 连接失败`);
+      console.error(`   错误: ${data.error.message}`);
+    },
+
+    // 断开连接回调
+    onDisconnected: (data) => {
+      console.log(`👋 服务 ${data.serviceName} 已断开`);
+      console.log(`   原因: ${data.reason || "正常关闭"}`);
+    },
+  }
+);
+```
+
+### 2. 获取工具列表和参数结构
+
+```typescript
+const tools = connection.getTools();
+for (const tool of tools) {
+  console.log(`- ${tool.name}: ${tool.description}`);
+
+  // 展示工具的输入参数结构
+  if (tool.inputSchema) {
+    const schema = tool.inputSchema as {
+      type: string;
+      properties?: Record<string, { description?: string; type: string }>;
+      required?: string[];
+    };
+
+    for (const [paramName, paramInfo] of Object.entries(schema.properties)) {
+      const required = schema.required?.includes(paramName) ? "必填" : "可选";
+      console.log(`  - ${paramName} (${required}, ${paramInfo.type})`);
+    }
+  }
+}
+```
+
+### 3. 调用工具（简单参数）
+
+```typescript
+const result = await connection.callTool("calculator", {
+  expression: "1 + 1",
+});
+```
+
+### 4. 调用工具（复杂表达式）
+
+```typescript
+const result = await connection.callTool("calculator", {
+  expression: "12 * 3 + 4",
+});
+```
+
+### 5. 多次调用同一个工具
+
+```typescript
+const expressions = ["2 ** 8", "Math.sqrt(144)", "100 / 4 + 5"];
+for (const expr of expressions) {
+  const result = await connection.callTool("calculator", {
+    expression: expr,
+  });
+  console.log(`${expr} = ${result.content[0]?.text}`);
+}
+```
+
+### 6. 错误处理示例
+
+```typescript
+// 无效参数
+try {
+  const errorResult = await connection.callTool("calculator", {
+    expression: "invalid syntax ###",
+  });
+} catch (error) {
+  console.error("捕获到错误:", error.message);
+}
+
+// 不存在的工具
+try {
+  await connection.callTool("non_existent_tool", {});
+} catch (error) {
+  console.error("捕获到错误:", error.message);
+}
 ```
 
 ---
