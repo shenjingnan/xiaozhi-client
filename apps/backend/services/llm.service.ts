@@ -10,6 +10,11 @@ import OpenAI from "openai";
 const DEFAULT_SYSTEM_PROMPT =
   "你是一个友好的语音助手，请用简洁的中文回答用户的问题。";
 
+function removeThinkTags(content: string): string {
+  // 移除 <think>...</think> 及其内容
+  return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+}
+
 // LLM 服务类
 export class LLMService {
   private client: OpenAI | null = null;
@@ -68,7 +73,8 @@ export class LLMService {
         ],
       });
 
-      const content = response.choices[0]?.message?.content || "";
+      let content = response.choices[0]?.message?.content || "";
+      content = removeThinkTags(content);
 
       if (!content) {
         console.warn("[LLMService] LLM 返回空内容");
