@@ -7,10 +7,7 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cross-env NODE_ENV=${NODE_ENV:-production} tsup --config apps/backend/tsup.config.ts",
-        "env": {
-          "PWD": "{workspaceRoot}"
-        }
+        "command": "pnpm --filter backend run build"
       },
       "outputs": ["{workspaceRoot}/dist/backend"],
       "dependsOn": ["shared-types:build", "config:build"]
@@ -18,59 +15,52 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --coverage.enabled=false",
-        "cwd": "apps/backend"
+        "command": "pnpm --filter backend run test"
       },
       "outputs": ["{workspaceRoot}/coverage"]
     },
     "test:watch": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest",
-        "cwd": "apps/backend"
+        "command": "pnpm --filter backend run test:watch"
       }
     },
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run --coverage",
-        "cwd": "apps/backend"
+        "command": "pnpm --filter backend run test:coverage"
       },
       "outputs": ["{workspaceRoot}/coverage"]
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check apps/backend"
+        "command": "pnpm --filter backend run lint"
       }
     },
     "lint:fix": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check --write apps/backend"
+        "command": "pnpm --filter backend run lint:fix"
       }
     },
     "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome format --write apps/backend"
+        "command": "pnpm --filter backend run format"
       }
     },
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm check:type",
-        "cwd": "apps/backend"
+        "command": "pnpm --filter backend run check:type"
       },
       "dependsOn": ["config:build", "endpoint:build", "version:build"]
     },
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cross-env NODE_ENV=development tsup --config apps/backend/tsup.config.ts --watch",
-        "env": {
-          "PWD": "{workspaceRoot}"
-        }
+        "command": "pnpm --filter backend run dev"
       }
     }
   },
