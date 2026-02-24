@@ -3,6 +3,20 @@ import WebSocket from "ws";
 import { FullClientRequest, MsgType, ReceiveMessage } from "./protocols";
 
 /**
+ * TTS 二进制协议实现
+ *
+ * 提供 WebSocket 方式的语音合成功能，包括：
+ * - 连接 WebSocket 服务器并发送 TTS 请求
+ * - 接收并处理返回的音频二进制数据
+ * - 支持批量合成和流式合成两种模式
+ * - 支持多种声音类型和编码格式
+ *
+ * @module binary
+ *
+ * @see protocols.ts - TTS 协议消息类型定义
+ */
+
+/**
  * TTS 合成选项
  */
 export interface TTSOptions {
