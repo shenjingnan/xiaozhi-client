@@ -43,6 +43,7 @@
 export { Endpoint } from "./endpoint.js";
 export { EndpointManager } from "./manager.js";
 export { SharedMCPAdapter } from "./shared-mcp-adapter.js";
+export { createLogger, LogLevel } from "./logger.js";
 
 // =========================
 // 类型导出
