@@ -13,6 +13,7 @@
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import WebSocket from "ws";
+import { validateConnectionState } from "@xiaozhi-client/mcp-core";
 import type { ExtendedMCPMessage, MCPMessage } from "./mcp.js";
 import type {
   IMCPServiceManager,
@@ -196,10 +197,8 @@ export class Endpoint {
     // 初始化 MCP 适配器
     await this.mcpAdapter.initialize();
 
-    // 如果正在连接中，等待当前连接完成
-    if (this.connectionState === ConnectionState.CONNECTING) {
-      throw new Error("连接正在进行中，请等待连接完成");
-    }
+    // 验证连接状态（如果正在连接中，抛出错误）
+    validateConnectionState(this.connectionState);
 
     // 清理之前的连接
     this.cleanupConnection();

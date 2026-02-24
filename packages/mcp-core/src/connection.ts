@@ -12,7 +12,7 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { MCPServerTransport, MCPServiceConfig, MCPServiceStatus, ToolCallResult } from "./types.js";
 import { ConnectionState, MCPTransportType } from "./types.js";
 import { TransportFactory } from "./transport-factory.js";
-import { inferTransportTypeFromConfig } from "./utils/index.js";
+import { inferTransportTypeFromConfig, validateConnectionState } from "./utils/index.js";
 import type { HeartbeatConfig, MCPServiceEventCallbacks, InternalMCPServiceConfig } from './types.js';
 
 /**
@@ -72,10 +72,8 @@ export class MCPConnection {
    * 连接到 MCP 服务
    */
   async connect(): Promise<void> {
-    // 如果正在连接中，等待当前连接完成
-    if (this.connectionState === ConnectionState.CONNECTING) {
-      throw new Error("连接正在进行中，请等待连接完成");
-    }
+    // 验证连接状态（如果正在连接中，抛出错误）
+    validateConnectionState(this.connectionState);
 
     // 清理之前的连接
     this.cleanupConnection();
