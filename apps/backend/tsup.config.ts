@@ -43,11 +43,7 @@ function copyDirectory(
 }
 
 export default defineConfig({
-  entry: [
-    "./WebServer.ts",
-    "./WebServerLauncher.ts",
-    "./Logger.ts",
-  ],
+  entry: ["./WebServer.ts", "./WebServerLauncher.ts", "./Logger.ts"],
   format: ["esm"],
   target: "node20",
   outDir: "../../dist/backend",
