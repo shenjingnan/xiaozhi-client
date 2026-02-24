@@ -43,14 +43,10 @@ function copyDirectory(
 }
 
 export default defineConfig({
-  entry: [
-    "apps/backend/WebServer.ts",
-    "apps/backend/WebServerLauncher.ts",
-    "apps/backend/Logger.ts",
-  ],
+  entry: ["./WebServer.ts", "./WebServerLauncher.ts", "./Logger.ts"],
   format: ["esm"],
   target: "node20",
-  outDir: "dist/backend",
+  outDir: "../../dist/backend",
   clean: true,
   sourcemap: true,
   dts: false, // 禁用 DTS 以避免类型错误
@@ -59,7 +55,7 @@ export default defineConfig({
   bundle: true,
   keepNames: true,
   platform: "node",
-  tsconfig: "apps/backend/tsconfig.json",
+  tsconfig: "./tsconfig.json",
   esbuildOptions: (options) => {
     // 在生产环境移除 console 和 debugger
     if (process.env.NODE_ENV === "production") {
@@ -124,7 +120,7 @@ export default defineConfig({
   ],
   onSuccess: async () => {
     // 复制配置文件到 dist/backend
-    const distDir = "dist/backend";
+    const distDir = "../../dist/backend";
 
     // 确保 dist/backend 目录存在
     if (!existsSync(distDir)) {
@@ -132,24 +128,24 @@ export default defineConfig({
     }
 
     // 复制 xiaozhi.config.default.json
-    if (existsSync("xiaozhi.config.default.json")) {
+    if (existsSync("../../xiaozhi.config.default.json")) {
       copyFileSync(
-        "xiaozhi.config.default.json",
+        "../../xiaozhi.config.default.json",
         join(distDir, "xiaozhi.config.default.json")
       );
       console.log("✅ 已复制 xiaozhi.config.default.json 到 dist/backend/");
     }
 
     // 复制 package.json 到 dist/backend 目录，以便运行时能读取版本号
-    if (existsSync("package.json")) {
-      copyFileSync("package.json", join(distDir, "package.json"));
+    if (existsSync("../../package.json")) {
+      copyFileSync("../../package.json", join(distDir, "package.json"));
       console.log("✅ 已复制 package.json 到 dist/backend/");
     }
 
     // 复制 templates 目录到 dist/backend 目录
-    if (existsSync("templates")) {
+    if (existsSync("../../templates")) {
       try {
-        copyDirectory("templates", join(distDir, "templates"));
+        copyDirectory("../../templates", join(distDir, "templates"));
         console.log("✅ 已复制 templates 目录到 dist/backend/");
       } catch (error) {
         console.warn("⚠️ 复制 templates 目录失败:", error);
@@ -159,7 +155,7 @@ export default defineConfig({
     console.log("✅ 构建完成，产物现在为 ESM 格式");
 
     // 创建向后兼容的 dist/WebServerLauncher.js
-    const compatLauncherPath = "dist/WebServerLauncher.js";
+    const compatLauncherPath = "../../dist/WebServerLauncher.js";
     writeFileSync(
       compatLauncherPath,
       `// 向后兼容包装脚本 - 重定向到新的路径
