@@ -1,6 +1,7 @@
 {
   "name": "@xiaozhi-client/config",
   "version": "1.10.9",
+  "description": "小智客户端配置管理模块，提供统一的配置读取和管理功能",
   "private": false,
   "repository": {
     "type": "git",
