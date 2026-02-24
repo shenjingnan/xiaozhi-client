@@ -35,7 +35,7 @@
  * });
  * ```
  */
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as commentJson from "comment-json";
@@ -304,6 +304,10 @@ export class ConfigManager {
   private eventCallbacks: Map<string, Array<(data: unknown) => void>> =
     new Map();
 
+  // getConfig() 缓存机制
+  private configCache: Readonly<AppConfig> | null = null;
+  private configLastModified: number = 0;
+
   private constructor() {
     // 使用模板目录中的默认配置文件
     // 在不同环境中尝试不同的路径
@@ -548,12 +552,39 @@ export class ConfigManager {
 
   /**
    * 获取配置（只读）
+   * 使用缓存机制，仅当配置文件被修改时才重新读取
    */
   public getConfig(): Readonly<AppConfig> {
+    // 检查缓存是否有效
+    if (this.configCache) {
+      try {
+        const configPath = this.getConfigFilePath();
+        const stats = statSync(configPath);
+        // 如果文件未修改，返回缓存
+        if (stats.mtimeMs === this.configLastModified) {
+          return this.configCache;
+        }
+      } catch {
+        // 如果获取文件状态失败，继续重新加载
+      }
+    }
+
+    // 加载配置并更新缓存
     this.config = this.loadConfig();
 
-    // 返回深度只读副本
-    return JSON.parse(JSON.stringify(this.config));
+    // 使用 structuredClone 替代 JSON.parse(JSON.stringify())，性能更好
+    this.configCache = structuredClone(this.config) as Readonly<AppConfig>;
+
+    // 更新文件修改时间记录
+    try {
+      const configPath = this.getConfigFilePath();
+      const stats = statSync(configPath);
+      this.configLastModified = stats.mtimeMs;
+    } catch {
+      // 如果获取文件状态失败，继续使用当前缓存
+    }
+
+    return this.configCache;
   }
 
   /**
@@ -1039,6 +1070,9 @@ export class ConfigManager {
       // 更新缓存
       this.config = config;
 
+      // 失效 getConfig() 的缓存（配置已修改）
+      this.invalidateConfigCache();
+
       console.log("配置保存成功");
 
       // 通知 Web 界面配置已更新（如果 Web 服务器正在运行）
@@ -1064,6 +1098,17 @@ export class ConfigManager {
     this.config = null;
     this.currentConfigPath = null; // 清除配置文件路径缓存
     this.json5Writer = null; // 清除 json5Writer 实例
+    this.invalidateConfigCache(); // 清除 getConfig() 缓存
+  }
+
+  /**
+   * 失效 getConfig() 的缓存
+   * 当配置被修改或重新加载时调用
+   * @private
+   */
+  private invalidateConfigCache(): void {
+    this.configCache = null;
+    this.configLastModified = 0;
   }
 
   /**
