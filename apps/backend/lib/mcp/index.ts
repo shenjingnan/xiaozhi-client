@@ -37,3 +37,7 @@ export * from "./message.js";
 export * from "@/lib/mcp/cache.js";
 export * from "./custom.js";
 export * from "./log.js";
+export * from "./service-registry.js";
+export * from "./retry-handler.js";
+export * from "./tool-stats.js";
+export * from "./status-reporter.js";
