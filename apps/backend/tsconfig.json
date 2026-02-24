@@ -6,12 +6,14 @@
     "declarationMap": true,
     "outDir": "../../dist/backend",
     "rootDir": ".",
-    "baseUrl": ".",
+    "baseUrl": "../../",
     "types": ["vitest/globals"],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["apps/backend/*"],
+      "@xiaozhi-client/shared-types/src/*": ["packages/shared-types/src/*"]
     }
   },
+  "references": [{ "path": "../../packages/shared-types" }],
   "include": ["./**/*.ts"],
   "exclude": [
     "node_modules",
