@@ -47,6 +47,9 @@ importers:
       '@xiaozhi-client/mcp-core':
         specifier: workspace:*
         version: link:packages/mcp-core
+      '@xiaozhi-client/tts':
+        specifier: workspace:*
+        version: link:packages/tts
       '@xiaozhi-client/version':
         specifier: workspace:*
         version: link:packages/version
