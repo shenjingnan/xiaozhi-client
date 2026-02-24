@@ -7,7 +7,6 @@
  * - 支持多个 store 订阅 WebSocket 事件
  */
 
-import { WEBSOCKET_RECONNECT_DELAY } from "@/constants/timeouts";
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 
 /**
@@ -402,7 +401,9 @@ export class WebSocketManager {
       // 如果当前已连接，重新连接到新 URL
       if (this.isConnected()) {
         this.disconnect();
-        setTimeout(() => this.connect(), WEBSOCKET_RECONNECT_DELAY);
+        // 使用现有的重连机制，确保定时器可以被正确清理
+        this.reconnectAttempts = 0;
+        this.scheduleReconnect();
       }
     }
   }
