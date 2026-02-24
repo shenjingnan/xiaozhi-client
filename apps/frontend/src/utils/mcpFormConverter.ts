@@ -269,12 +269,14 @@ function buildCommandString(config: {
 export function keyValuePairsToMultilineText(
   obj: Record<string, string> | undefined
 ): string {
-  if (!obj || Object.keys(obj).length === 0) {
+  if (!obj) {
     return "";
   }
-  return Object.entries(obj)
-    .map(([key, value]) => `${key}: ${value}`)
-    .join("\n");
+  const entries = Object.entries(obj);
+  if (entries.length === 0) {
+    return "";
+  }
+  return entries.map(([key, value]) => `${key}: ${value}`).join("\n");
 }
 
 /**
