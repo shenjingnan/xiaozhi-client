@@ -51,6 +51,14 @@ interface LegacyAddCustomToolRequest {
  * MCP 工具调用 API 处理器
  */
 export class MCPToolHandler {
+  // 预编译的正则表达式常量，避免在频繁调用时重复创建
+  private static readonly UNDERSCORE_TRIM_REGEX = /^_+|_+$/g;
+  private static readonly LETTER_START_REGEX = /^[a-zA-Z]/;
+  private static readonly CHINESE_CHAR_REGEX = /[\u4e00-\u9fa5]/;
+  private static readonly DIGITS_ONLY_REGEX = /^\d+$/;
+  private static readonly ALPHANUMERIC_UNDERSCORE_REGEX = /^[a-zA-Z0-9_-]+$/;
+  private static readonly IDENTIFIER_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
   private logger: Logger;
   private ajv: Ajv;
 
@@ -1184,10 +1192,10 @@ export class MCPToolHandler {
     sanitized = sanitized.replace(/_+/g, "_");
 
     // 移除开头和结尾的下划线
-    sanitized = sanitized.replace(/^_+|_+$/g, "");
+    sanitized = sanitized.replace(MCPToolHandler.UNDERSCORE_TRIM_REGEX, "");
 
     // 确保以字母开头
-    if (!/^[a-zA-Z]/.test(sanitized)) {
+    if (!MCPToolHandler.LETTER_START_REGEX.test(sanitized)) {
       sanitized = `coze_workflow_${sanitized}`;
     }
 
@@ -1258,7 +1266,7 @@ export class MCPToolHandler {
     }
 
     // 如果还有中文字符，用拼音前缀替代
-    if (/[\u4e00-\u9fa5]/.test(result)) {
+    if (MCPToolHandler.CHINESE_CHAR_REGEX.test(result)) {
       result = `chinese_${result}`;
     }
 
@@ -1317,7 +1325,7 @@ export class MCPToolHandler {
       }
 
       // 验证工作流ID格式（数字字符串）
-      if (!/^\d+$/.test(workflow.workflow_id)) {
+      if (!MCPToolHandler.DIGITS_ONLY_REGEX.test(workflow.workflow_id)) {
         throw MCPError.validationError(
           MCPErrorCode.TOOL_VALIDATION_FAILED,
           "工作流ID格式无效，应为数字字符串"
@@ -1359,7 +1367,7 @@ export class MCPToolHandler {
       }
 
       // 验证应用ID格式
-      if (!/^[a-zA-Z0-9_-]+$/.test(workflow.app_id)) {
+      if (!MCPToolHandler.ALPHANUMERIC_UNDERSCORE_REGEX.test(workflow.app_id)) {
         throw MCPError.validationError(
           MCPErrorCode.TOOL_VALIDATION_FAILED,
           "应用ID格式无效，只能包含字母、数字、下划线和连字符"
@@ -1406,7 +1414,7 @@ export class MCPToolHandler {
    */
   private validateFieldFormats(workflow: CozeWorkflow): void {
     // 验证工作流ID格式（数字字符串）
-    if (!/^\d+$/.test(workflow.workflow_id)) {
+    if (!MCPToolHandler.DIGITS_ONLY_REGEX.test(workflow.workflow_id)) {
       throw MCPError.validationError(
         MCPErrorCode.TOOL_VALIDATION_FAILED,
         "工作流ID格式无效，应为数字字符串"
@@ -1414,7 +1422,7 @@ export class MCPToolHandler {
     }
 
     // 验证应用ID格式
-    if (!/^[a-zA-Z0-9_-]+$/.test(workflow.app_id)) {
+    if (!MCPToolHandler.ALPHANUMERIC_UNDERSCORE_REGEX.test(workflow.app_id)) {
       throw MCPError.validationError(
         MCPErrorCode.TOOL_VALIDATION_FAILED,
         "应用ID格式无效，只能包含字母、数字、下划线和连字符"
@@ -1755,7 +1763,7 @@ export class MCPToolHandler {
       // 验证token格式（应该是环境变量引用或实际token）
       if (
         !auth.token.startsWith("${") &&
-        !auth.token.match(/^[a-zA-Z0-9_-]+$/)
+        !MCPToolHandler.ALPHANUMERIC_UNDERSCORE_REGEX.test(auth.token)
       ) {
         throw MCPError.validationError(
           MCPErrorCode.TOOL_VALIDATION_FAILED,
@@ -1790,7 +1798,7 @@ export class MCPToolHandler {
     if (templateVars) {
       for (const templateVar of templateVars) {
         const varName = templateVar.slice(2, -2).trim();
-        if (!varName || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(varName)) {
+        if (!varName || !MCPToolHandler.IDENTIFIER_REGEX.test(varName)) {
           throw MCPError.validationError(
             MCPErrorCode.TOOL_VALIDATION_FAILED,
             `模板变量格式无效: ${templateVar}`
@@ -2690,7 +2698,7 @@ export class MCPToolHandler {
     }
 
     // 验证服务名称格式
-    if (!/^[a-zA-Z0-9_-]+$/.test(serverName)) {
+    if (!MCPToolHandler.ALPHANUMERIC_UNDERSCORE_REGEX.test(serverName)) {
       throw MCPError.validationError(
         MCPErrorCode.TOOL_VALIDATION_FAILED,
         "服务名称格式无效，只能包含字母、数字、下划线和连字符"
@@ -2698,7 +2706,7 @@ export class MCPToolHandler {
     }
 
     // 验证工具名称格式
-    if (!/^[a-zA-Z0-9_-]+$/.test(toolName)) {
+    if (!MCPToolHandler.ALPHANUMERIC_UNDERSCORE_REGEX.test(toolName)) {
       throw MCPError.validationError(
         MCPErrorCode.TOOL_VALIDATION_FAILED,
         "工具名称格式无效，只能包含字母、数字、下划线和连字符"
