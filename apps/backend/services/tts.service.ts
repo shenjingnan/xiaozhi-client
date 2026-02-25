@@ -207,7 +207,12 @@ export class TTSService implements ITTSService {
 
       // 缓冲区已清空且不在处理中
       if ((!buffer || buffer.length === 0) && !isProcessing) {
-        this.sendStopAndCleanup(deviceId);
+        void this.sendStopAndCleanup(deviceId).catch((error) => {
+          logger.error(
+            `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
+            error
+          );
+        });
         return true;
       }
 
@@ -216,7 +221,12 @@ export class TTSService implements ITTSService {
         logger.warn(
           `[TTSService] 缓冲区排空超时，强制发送 stop: deviceId=${deviceId}`
         );
-        this.sendStopAndCleanup(deviceId);
+        void this.sendStopAndCleanup(deviceId).catch((error) => {
+          logger.error(
+            `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
+            error
+          );
+        });
         return true;
       }
 
