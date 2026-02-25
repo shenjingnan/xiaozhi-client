@@ -228,6 +228,7 @@ export class ESP32Service {
           error
         );
       },
+      asrService: this.asrService,
     });
 
     this.connections.set(deviceId, connection);
