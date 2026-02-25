@@ -235,8 +235,28 @@ export class ASRService implements IASRService {
           `[ASRService] ASR 识别结果: deviceId=${deviceId}, isFinal=${result.isFinal}, text=${result.text}`
         );
 
-        // 触发结果回调
-        this.events.onResult?.(deviceId, result.text || "", result.isFinal);
+        // isFinal 时标记音频结束，停止 listen 循环，避免重复触发 LLM
+        if (result.isFinal) {
+          this.audioEnded.set(deviceId, true);
+          logger.info(
+            `[ASRService] ASR 识别完成，停止 listen: deviceId=${deviceId}`
+          );
+        }
+
+        // 触发结果回调，使用异常隔离避免回调抛错导致整条链路终止
+        try {
+          this.events.onResult?.(deviceId, result.text || "", result.isFinal);
+        } catch (callbackError) {
+          logger.error(
+            `[ASRService] onResult 回调执行失败: deviceId=${deviceId}`,
+            callbackError
+          );
+        }
+
+        // isFinal 时 break 停止 listen 循环
+        if (result.isFinal) {
+          break;
+        }
       }
 
       logger.info(`[ASRService] listen 任务完成: deviceId=${deviceId}`);

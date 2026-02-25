@@ -79,10 +79,7 @@ export class TTSService implements ITTSService {
 
     // 首次收到音频时触发 TTS
     if (!this.ttsTriggered.get(deviceId)) {
-      this.ttsTriggered.set(deviceId, true);
-      logger.info(`[TTSService] 触发流式 TTS: deviceId=${deviceId}`);
-
-      // 获取设备连接
+      // 获取设备连接（先检查连接，避免提前设置 ttsTriggered 导致无法清理）
       const connection = this.getConnection?.(deviceId);
       if (!connection) {
         logger.warn(`[TTSService] 无法获取设备连接: deviceId=${deviceId}`);
@@ -95,6 +92,10 @@ export class TTSService implements ITTSService {
         logger.error("[TTSService] TTS 配置不完整，请检查配置文件");
         return;
       }
+
+      // 所有前置条件满足后，再设置 ttsTriggered 状态
+      this.ttsTriggered.set(deviceId, true);
+      logger.info(`[TTSService] 触发流式 TTS: deviceId=${deviceId}`);
 
       // 初始化流式处理所需的状态
       this.audioDemuxers.set(deviceId, new prism.opus.OggDemuxer());
@@ -164,8 +165,13 @@ export class TTSService implements ITTSService {
         buffer.push(opusPacket);
       }
 
-      // 触发缓冲区处理（如果尚未在处理中）
-      this.processBuffer(deviceId);
+      // 触发缓冲区处理（如果尚未在处理中），使用 .catch() 捕获异步异常
+      void this.processBuffer(deviceId).catch((error) => {
+        logger.error(
+          `[TTSService] processBuffer 执行失败: deviceId=${deviceId}`,
+          error
+        );
+      });
     });
 
     demuxer.on("end", () => {
@@ -175,7 +181,13 @@ export class TTSService implements ITTSService {
 
     demuxer.on("error", (err: Error) => {
       logger.error(`[TTSService] Demuxer 错误: deviceId=${deviceId}`, err);
-      this.sendStopAndCleanup(deviceId);
+      // 使用 .catch() 捕获异步异常
+      void this.sendStopAndCleanup(deviceId).catch((error) => {
+        logger.error(
+          `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
+          error
+        );
+      });
     });
   }
 
@@ -382,6 +394,7 @@ export class TTSService implements ITTSService {
 
   /**
    * 处理从 WebSocket 接收的完整音频数据
+   * 使用暂停/恢复机制确保串行处理，避免并发执行导致顺序错乱
    * @param audioBuffer - 完整的 OGG Opus 数据
    * @param sendCallback - 发送到硬件的回调函数
    * @returns 包含包数量和总时长的结果
@@ -410,34 +423,67 @@ export class TTSService implements ITTSService {
       // 使用局部变量记录总时长，避免跨设备累积
       let totalDuration = 0;
 
+      // 暂停流，等待当前包处理完成后再恢复
+      stream.pause();
+
+      const processPacket = async (opusPacket: Buffer): Promise<void> => {
+        const duration = this.getPacketDuration(opusPacket);
+
+        try {
+          await sendCallback(opusPacket, {
+            index: packetIndex,
+            size: opusPacket.length,
+            duration: duration,
+            timestamp: cumulativeTimestamp,
+          });
+
+          packetIndex++;
+          cumulativeTimestamp += duration;
+          totalDuration += duration;
+        } catch (error) {
+          logger.error(`发送包 ${packetIndex} 失败:`, error);
+        }
+      };
+
+      // 使用 Promise 队列确保串行处理
+      let isProcessing = false;
+      const packetQueue: Buffer[] = [];
+
+      const processQueue = async (): Promise<void> => {
+        if (isProcessing || packetQueue.length === 0) return;
+
+        isProcessing = true;
+        while (packetQueue.length > 0) {
+          const packet = packetQueue.shift()!;
+          await processPacket(packet);
+        }
+        isProcessing = false;
+      };
+
       stream
         .pipe(demuxer)
-        .on("data", async (opusPacket) => {
-          const duration = this.getPacketDuration(opusPacket);
-
-          try {
-            await sendCallback(opusPacket, {
-              index: packetIndex,
-              size: opusPacket.length,
-              duration: duration,
-              timestamp: cumulativeTimestamp,
-            });
-
-            packetIndex++;
-            cumulativeTimestamp += duration;
-            totalDuration += duration;
-          } catch (error) {
-            logger.error(`发送包 ${packetIndex} 失败:`, error);
-          }
+        .on("data", (opusPacket: Buffer) => {
+          // 将包加入队列
+          packetQueue.push(opusPacket);
+          // 触发队列处理
+          void processQueue();
         })
         .on("end", () => {
-          logger.info(
-            `处理完成，共 ${packetIndex} 个包，总时长 ${(totalDuration / 1000).toFixed(2)}s`
-          );
-          resolve({
-            packetCount: packetIndex,
-            totalDuration: totalDuration,
-          });
+          // 等待所有包处理完成
+          const checkEnd = (): void => {
+            if (packetQueue.length > 0 || isProcessing) {
+              setTimeout(checkEnd, 10);
+            } else {
+              logger.info(
+                `处理完成，共 ${packetIndex} 个包，总时长 ${(totalDuration / 1000).toFixed(2)}s`
+              );
+              resolve({
+                packetCount: packetIndex,
+                totalDuration: totalDuration,
+              });
+            }
+          };
+          checkEnd();
         })
         .on("error", reject);
     });
