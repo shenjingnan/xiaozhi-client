@@ -52,6 +52,10 @@ export const createMockConfigManager = (overrides = {}) => {
       .fn()
       .mockReturnValue(DEFAULT_TEST_CONFIG.mcpServers["test-service"]),
     watchConfig: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+    getLLMConfig: vi.fn().mockReturnValue(null),
+    isLLMConfigValid: vi.fn().mockReturnValue(false),
+    getTTSConfig: vi.fn().mockReturnValue({}),
+    getASRConfig: vi.fn().mockReturnValue({}),
     ...overrides,
   };
 };

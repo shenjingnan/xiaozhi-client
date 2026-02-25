@@ -17,6 +17,7 @@ import { configManager } from "@xiaozhi-client/config";
 import { TTS } from "@xiaozhi-client/tts";
 import * as prism from "prism-media";
 import type { ESP32Service } from "./esp32.service.js";
+import { LLMService } from "./llm.service.js";
 import type { IVoiceSessionService } from "./voice-session.interface.js";
 
 /**
@@ -25,8 +26,15 @@ import type { IVoiceSessionService } from "./voice-session.interface.js";
  * 当硬件端开始发送音频数据时，触发流式 TTS 响应
  */
 export class TestVoiceSessionService implements IVoiceSessionService {
+  /** LLM 服务实例 */
+  private llmService: LLMService;
+
   /** ESP32 服务引用（用于获取连接） */
   private esp32Service?: ESP32Service;
+
+  constructor() {
+    this.llmService = new LLMService();
+  }
 
   /** 每个设备是否已触发 TTS（避免重复触发） */
   private readonly ttsTriggered = new Map<string, boolean>();
@@ -411,16 +419,21 @@ export class TestVoiceSessionService implements IVoiceSessionService {
 
         // 如果是最终结果，触发 TTS
         if (result.isFinal) {
-          const finalText = result.text;
-          if (finalText) {
-            await this.handleTTSData(deviceId, finalText);
+          const recognizedText = result.text;
+          if (recognizedText) {
+            // 调用 LLM 获取回复
+            const llmResponse = await this.llmService.chat(recognizedText);
+
+            // 使用 LLM 回复触发 TTS
+            await this.handleTTSData(deviceId, llmResponse);
+            break;
 
             // 通知设备端用户已说完话
             // const connection = this.getConnection(deviceId);
             // if (connection) {
             //   connection.send({
             //     type: "asr_end",
-            //     text: finalText,
+            //     text: recognizedText,
             //   });
             // }
           }

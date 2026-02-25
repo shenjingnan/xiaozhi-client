@@ -27,6 +27,10 @@ vi.mock("@xiaozhi-client/config", () => ({
     getConfigPath: vi.fn(),
     validateConfig: vi.fn(),
     updateConfig: vi.fn(),
+    getLLMConfig: vi.fn(() => null),
+    isLLMConfigValid: vi.fn(() => false),
+    getTTSConfig: vi.fn(() => ({})),
+    getASRConfig: vi.fn(() => ({})),
   },
 }));
 
