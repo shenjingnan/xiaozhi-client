@@ -58,11 +58,13 @@ Gitee
 healthcheck
 HTTPMCP
 httpx
+IASR
 IMCP
 IMEI
 infile
 iostat
 iotop
+ITTS
 Jingnan
 jsonstring
 kbps

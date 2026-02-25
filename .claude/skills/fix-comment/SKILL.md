@@ -20,11 +20,11 @@ description: GitHub 评论修复技能，用于获取 PR 的 Copilot 评论并�
 
 ## 使用方式
 
-使用格式：`/fix-github-comment [PR编号或URL]`
+使用格式：`/fix-comment [PR编号或URL]`
 
 **示例**：
-- `/fix-github-comment 1358`
-- `/fix-github-comment https://github.com/shenjingnan/xiaozhi-client/pull/1358`
+- `/fix-comment 1358`
+- `/fix-comment https://github.com/shenjingnan/xiaozhi-client/pull/1358`
 
 ## 执行流程
 
