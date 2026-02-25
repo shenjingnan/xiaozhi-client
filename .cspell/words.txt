@@ -58,6 +58,7 @@ Gitee
 healthcheck
 HTTPMCP
 httpx
+IASR
 IMCP
 IMEI
 infile
