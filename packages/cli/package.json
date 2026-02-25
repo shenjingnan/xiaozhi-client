@@ -1,6 +1,7 @@
 {
   "name": "@xiaozhi-client/cli",
   "version": "1.10.9",
+  "description": "小智客户端 CLI 工具，提供命令行界面管理 MCP 服务和配置",
   "private": false,
   "repository": {
     "type": "git",
