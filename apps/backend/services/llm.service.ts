@@ -3,8 +3,8 @@
  * 提供基于 OpenAI SDK 的大语言模型调用封装
  */
 
-import { configManager } from "@xiaozhi-client/config";
 import { logger } from "@/Logger.js";
+import { configManager } from "@xiaozhi-client/config";
 import OpenAI from "openai";
 
 // 默认系统提示词，用于语音助手场景
@@ -13,13 +13,13 @@ const DEFAULT_SYSTEM_PROMPT =
 
 function removeThinkTags(content: string): string {
   // 移除 <think>...</think> 及其内容
-  return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  return content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 }
 
 // LLM 服务类
 export class LLMService {
   private client: OpenAI | null = null;
-  private model: string = "";
+  private model = "";
 
   constructor() {
     this.initClient();
