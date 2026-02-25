@@ -12,7 +12,6 @@ import {
   parseBinaryProtocol2,
   parseBinaryProtocol3,
 } from "@/lib/esp32/audio-protocol.js";
-import type { IVoiceSessionService } from "@/services/voice-session.interface.js";
 import {
   type ESP32ConnectionState,
   ESP32ErrorCode,
@@ -35,8 +34,6 @@ interface ESP32ConnectionConfig {
   onError: (error: Error) => void;
   /** 心跳超时时间（毫秒），默认30秒 */
   heartbeatTimeoutMs?: number;
-  /** 语音会话服务（可选） */
-  voiceSessionService?: IVoiceSessionService;
 }
 
 /**
@@ -71,9 +68,6 @@ export class ESP32Connection {
   /** 是否已完成Hello握手 */
   private helloCompleted = false;
 
-  /** 语音会话服务 */
-  private voiceSessionService?: IVoiceSessionService;
-
   /**
    * 构造函数
    * @param deviceId - 设备ID
@@ -101,9 +95,6 @@ export class ESP32Connection {
       onError: config.onError,
       heartbeatTimeoutMs: this.heartbeatTimeoutMs,
     };
-
-    // 保存语音会话服务
-    this.voiceSessionService = config.voiceSessionService;
 
     this.setupWebSocket();
   }
@@ -270,22 +261,6 @@ export class ESP32Connection {
     logger.info(
       `[HELLO] 特性: mcp=${message.features?.mcp}, transport=${message.transport}`
     );
-
-    // 先初始化 ASR（等待连接完成后再发送 serverHello）
-    // 这样可以确保 ASR 在设备发送音频数据时已经准备好
-    if (this.voiceSessionService?.initASR) {
-      logger.info(`[HELLO] 开始初始化 ASR: deviceId=${this.deviceId}`);
-      try {
-        await this.voiceSessionService.initASR(this.deviceId);
-        logger.info(`[HELLO] ASR 初始化完成: deviceId=${this.deviceId}`);
-      } catch (error) {
-        logger.error(
-          `[HELLO] ASR 初始化失败: deviceId=${this.deviceId}`,
-          error
-        );
-        // ASR 初始化失败不中断流程，继续处理
-      }
-    }
 
     // 发送ServerHello响应
     const serverHello: ESP32ServerHelloMessage = {

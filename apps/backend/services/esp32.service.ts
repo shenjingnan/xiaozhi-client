@@ -13,11 +13,10 @@ import type {
 } from "@/types/esp32.js";
 import { camelToSnakeCase, extractDeviceInfo } from "@/utils/esp32-utils.js";
 import type WebSocket from "ws";
+import { ASRService } from "./asr.service.js";
 import type { DeviceRegistryService } from "./device-registry.service.js";
-import {
-  type IVoiceSessionService,
-  NoOpVoiceSessionService,
-} from "./voice-session.interface.js";
+import { LLMService } from "./llm.service.js";
+import { TTSService } from "./tts.service.js";
 
 /**
  * ESP32设备服务
@@ -33,25 +32,58 @@ export class ESP32Service {
   /** 客户端ID到设备ID的映射 */
   private clientIdToDeviceId: Map<string, string>;
 
-  /** 语音会话服务（可选） */
-  private voiceSessionService: IVoiceSessionService;
+  /** ASR 服务实例 */
+  private asrService: ASRService;
+
+  /** LLM 服务实例 */
+  private llmService: LLMService;
+
+  /** TTS 服务实例 */
+  private ttsService: TTSService;
 
   /**
    * 构造函数
    * @param deviceRegistry - 设备注册服务
-   * @param voiceSessionService - 语音会话服务（可选，默认使用空实现）
    */
-  constructor(
-    deviceRegistry: DeviceRegistryService,
-    voiceSessionService?: IVoiceSessionService
-  ) {
+  constructor(deviceRegistry: DeviceRegistryService) {
     this.deviceRegistry = deviceRegistry;
     this.connections = new Map();
     this.clientIdToDeviceId = new Map();
 
-    // 使用传入的语音会话服务或空实现
-    this.voiceSessionService =
-      voiceSessionService ?? new NoOpVoiceSessionService();
+    // 初始化语音服务
+    this.llmService = new LLMService();
+    this.asrService = new ASRService({
+      events: {
+        onResult: async (deviceId, text, isFinal) => {
+          // 如果是最终结果，触发 LLM 和 TTS
+          if (isFinal && text) {
+            try {
+              const llmResponse = await this.llmService.chat(text);
+              await this.ttsService.speak(deviceId, llmResponse);
+            } catch (error) {
+              logger.error(
+                `[ESP32Service] LLM 或 TTS 调用失败: deviceId=${deviceId}`,
+                error
+              );
+            }
+          }
+        },
+        onError: (deviceId, error) => {
+          logger.error(`[ESP32Service] ASR 错误: deviceId=${deviceId}`, error);
+        },
+      },
+    });
+    this.ttsService = new TTSService();
+  }
+
+  /**
+   * 设置 TTS 服务的获取连接回调
+   * 需要在 ESP32Service 创建后调用
+   */
+  setupTTSGetConnection(): void {
+    this.ttsService.setGetConnection((deviceId: string) => {
+      return this.getConnection(deviceId);
+    });
   }
 
   /**
@@ -196,7 +228,6 @@ export class ESP32Service {
           error
         );
       },
-      voiceSessionService: this.voiceSessionService,
     });
 
     this.connections.set(deviceId, connection);
@@ -269,18 +300,13 @@ export class ESP32Service {
 
     switch (state) {
       case "detect":
-        // 检测到唤醒词，交给VoiceSessionService处理
+        // 检测到唤醒词，初始化 ASR
         if (text) {
-          // 使用默认模式 auto（如果没有提供 mode）
-          const listenMode = mode ?? "auto";
           logger.info(
-            `[ESP32Service] 处理唤醒词检测: deviceId=${deviceId}, word="${text}", mode=${listenMode}`
+            `[ESP32Service] 处理唤醒词检测: deviceId=${deviceId}, word="${text}"`
           );
-          await this.voiceSessionService.handleWakeWord?.(
-            deviceId,
-            text,
-            listenMode
-          );
+          // 初始化 ASR 服务
+          await this.asrService.init(deviceId);
         } else {
           logger.warn(
             `[ESP32Service] 唤醒词消息缺少必要字段: text="${text}", mode=${mode}`
@@ -296,7 +322,11 @@ export class ESP32Service {
           logger.info(
             `[ESP32Service] 开始手动/实时监听会话: deviceId=${deviceId}, mode=${mode}`
           );
-          await this.voiceSessionService.startSession?.(deviceId, mode);
+          // 开始会话
+          const sessionId = `session_${deviceId}_${Date.now()}`;
+          logger.info(
+            `[ESP32Service] 语音会话已开始: deviceId=${deviceId}, sessionId=${sessionId}`
+          );
         } else {
           logger.debug(
             `[ESP32Service] 忽略auto模式的start状态: deviceId=${deviceId}`
@@ -306,7 +336,7 @@ export class ESP32Service {
       case "stop":
         // 停止监听，中断当前会话
         logger.info(`[ESP32Service] 停止监听，中断会话: deviceId=${deviceId}`);
-        await this.voiceSessionService.abortSession?.(deviceId, "用户停止");
+        await this.asrService.end(deviceId);
         break;
       default:
         logger.warn(`[ESP32Service] 未知的监听状态: ${state}`);
@@ -351,8 +381,8 @@ export class ESP32Service {
       );
     }
 
-    // 交给VoiceSessionService处理
-    await this.voiceSessionService.handleAudioData?.(deviceId, audioData);
+    // 交给 ASR 服务处理
+    await this.asrService.handleAudioData(deviceId, audioData);
   }
 
   /**
@@ -394,8 +424,9 @@ export class ESP32Service {
     this.connections.clear();
     this.clientIdToDeviceId.clear();
 
-    // 销毁语音会话服务
-    this.voiceSessionService.destroy();
+    // 销毁语音服务
+    this.asrService.destroy();
+    this.ttsService.destroy();
 
     logger.debug("ESP32服务已销毁");
   }
