@@ -1,5 +1,5 @@
 ---
-name: github-comment-fixer
+name: fix-comment
 description: GitHub 评论修复技能，用于获取 PR 的 Copilot 评论并分析修复问题
 ---
 
