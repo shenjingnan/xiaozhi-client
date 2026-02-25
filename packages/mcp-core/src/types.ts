@@ -3,10 +3,10 @@
  * 统一管理所有 MCP 相关的类型定义
  */
 
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import type { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 // =========================
 // 1. 基础传输类型
@@ -211,8 +211,9 @@ export function isValidToolJSONSchema(obj: unknown): obj is {
 
 /**
  * 确保对象符合 MCP Tool JSON Schema 格式
+ * 接受 unknown 类型输入，进行运行时验证后返回安全的 JSONSchema
  */
-export function ensureToolJSONSchema(schema: JSONSchema): {
+export function ensureToolJSONSchema(schema: unknown): {
   type: "object";
   properties?: Record<string, object>;
   required?: string[];
@@ -227,6 +228,7 @@ export function ensureToolJSONSchema(schema: JSONSchema): {
     };
   }
 
+  // 如果不符合 schema 格式，返回默认的空 schema
   return {
     type: "object",
     properties: {} as Record<string, object>,
