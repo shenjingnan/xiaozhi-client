@@ -4,6 +4,7 @@
  */
 
 import { configManager } from "@xiaozhi-client/config";
+import { logger } from "@/Logger.js";
 import OpenAI from "openai";
 
 // 默认系统提示词，用于语音助手场景
@@ -18,6 +19,7 @@ function removeThinkTags(content: string): string {
 // LLM 服务类
 export class LLMService {
   private client: OpenAI | null = null;
+  private model: string = "";
 
   constructor() {
     this.initClient();
@@ -29,19 +31,20 @@ export class LLMService {
   private initClient(): void {
     const config = configManager.getLLMConfig();
 
-    if (!config) {
-      console.warn(
-        "[LLMService] LLM 配置未找到，请检查配置文件中的 llm 配置项"
+    if (!config || !configManager.isLLMConfigValid()) {
+      logger.warn(
+        "[LLMService] LLM 配置未找到或无效，请检查配置文件中的 llm 配置项"
       );
       return;
     }
 
+    this.model = config.model;
     this.client = new OpenAI({
       apiKey: config.apiKey,
       baseURL: config.baseURL,
     });
 
-    console.log(`[LLMService] OpenAI 客户端已初始化，模型: ${config.model}`);
+    logger.info(`[LLMService] OpenAI 客户端已初始化，模型: ${this.model}`);
   }
 
   /**
@@ -58,15 +61,13 @@ export class LLMService {
    */
   async chat(userMessage: string): Promise<string> {
     if (!this.client) {
-      console.error("[LLMService] LLM 客户端未初始化");
+      logger.error("[LLMService] LLM 客户端未初始化");
       return "抱歉，我暂时无法回答";
     }
 
     try {
-      const config = configManager.getLLMConfig();
-
       const response = await this.client.chat.completions.create({
-        model: config!.model,
+        model: this.model,
         messages: [
           { role: "system", content: DEFAULT_SYSTEM_PROMPT },
           { role: "user", content: userMessage },
@@ -77,17 +78,17 @@ export class LLMService {
       content = removeThinkTags(content);
 
       if (!content) {
-        console.warn("[LLMService] LLM 返回空内容");
+        logger.warn("[LLMService] LLM 返回空内容");
         return "抱歉，我暂时无法回答";
       }
 
-      console.log(
-        `[LLMService] LLM 调用成功，输入: ${userMessage.substring(0, 50)}..., 输出: ${content.substring(0, 50)}...`
+      logger.debug(
+        `[LLMService] LLM 调用成功，输入长度: ${userMessage.length}，输出长度: ${content.length}`
       );
 
       return content;
     } catch (error) {
-      console.error("[LLMService] LLM 调用失败:", error);
+      logger.error("[LLMService] LLM 调用失败:", error);
       return "抱歉，我暂时无法回答";
     }
   }
