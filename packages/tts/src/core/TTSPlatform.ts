@@ -2,12 +2,12 @@
  * TTS 平台抽象接口
  */
 
-import type {
-  PlatformConfig,
-  PlatformRegistry,
-  TTSController,
-  TTSPlatform,
-} from "./types.js";
+import {
+  type PlatformConfig,
+  SimplePlatformRegistry,
+  type PlatformRegistry,
+} from "@xiaozhi-client/platform-registry";
+import type { TTSController, TTSPlatform } from "./types.js";
 
 /**
  * 创建 TTS 平台实例
@@ -15,28 +15,22 @@ import type {
 export type TTSPlatformFactory = (config: PlatformConfig) => TTSPlatform;
 
 /**
- * 简单平台注册表实现
+ * TTS 平台注册表类型
  */
-export class SimplePlatformRegistry implements PlatformRegistry {
-  private platforms: Map<string, TTSPlatform> = new Map();
+export type TTSPlatformRegistry = PlatformRegistry<TTSPlatform>;
 
-  get(platform: string): TTSPlatform | undefined {
-    return this.platforms.get(platform);
-  }
-
-  register(platform: TTSPlatform): void {
-    this.platforms.set(platform.platform, platform);
-  }
-
-  list(): string[] {
-    return Array.from(this.platforms.keys());
-  }
-}
+/**
+ * 简单平台注册表实现（TTS 特化）
+ */
+export class SimplePlatformRegistryImpl
+  extends SimplePlatformRegistry<TTSPlatform>
+  implements TTSPlatformRegistry
+{}
 
 /**
  * 全局平台注册表
  */
-export const platformRegistry = new SimplePlatformRegistry();
+export const platformRegistry = new SimplePlatformRegistryImpl();
 
 /**
  * 注册平台装饰器
@@ -48,4 +42,4 @@ export function registerPlatform(platform: TTSPlatform): ClassDecorator {
   };
 }
 
-export type { TTSController, TTSPlatform, PlatformConfig };
+export type { TTSController, TTSPlatform };

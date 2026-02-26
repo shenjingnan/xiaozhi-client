@@ -1,21 +1,21 @@
 /**
- * SimplePlatformRegistry 测试
+ * SimplePlatformRegistryImpl 测试
  */
 
-import { SimplePlatformRegistry, type TTSPlatform } from "@/core/index.js";
+import { SimplePlatformRegistryImpl, type TTSPlatform } from "@/core/index.js";
 import { describe, expect, it, vi } from "vitest";
 
-describe("SimplePlatformRegistry", () => {
+describe("SimplePlatformRegistryImpl", () => {
   describe("构造函数", () => {
     it("应创建空的平台注册表", () => {
-      const registry = new SimplePlatformRegistry();
+      const registry = new SimplePlatformRegistryImpl();
       expect(registry.list()).toEqual([]);
     });
   });
 
   describe("register 方法", () => {
     it("应注册平台", () => {
-      const registry = new SimplePlatformRegistry();
+      const registry = new SimplePlatformRegistryImpl();
 
       const mockPlatform: TTSPlatform = {
         platform: "test-platform",
@@ -31,7 +31,7 @@ describe("SimplePlatformRegistry", () => {
     });
 
     it("应允许注册多个平台", () => {
-      const registry = new SimplePlatformRegistry();
+      const registry = new SimplePlatformRegistryImpl();
 
       const mockPlatform1: TTSPlatform = {
         platform: "platform-1",
@@ -58,7 +58,7 @@ describe("SimplePlatformRegistry", () => {
     });
 
     it("应覆盖已存在的平台", () => {
-      const registry = new SimplePlatformRegistry();
+      const registry = new SimplePlatformRegistryImpl();
 
       const mockPlatform1: TTSPlatform = {
         platform: "duplicate-platform",
@@ -85,7 +85,7 @@ describe("SimplePlatformRegistry", () => {
 
   describe("get 方法", () => {
     it("应返回已注册的平台", () => {
-      const registry = new SimplePlatformRegistry();
+      const registry = new SimplePlatformRegistryImpl();
 
       const mockPlatform: TTSPlatform = {
         platform: "test-platform",
@@ -104,7 +104,7 @@ describe("SimplePlatformRegistry", () => {
     });
 
     it("应返回 undefined 当平台不存在时", () => {
-      const registry = new SimplePlatformRegistry();
+      const registry = new SimplePlatformRegistryImpl();
 
       const result = registry.get("non-existent");
 
@@ -114,13 +114,13 @@ describe("SimplePlatformRegistry", () => {
 
   describe("list 方法", () => {
     it("应返回空数组当没有注册平台时", () => {
-      const registry = new SimplePlatformRegistry();
+      const registry = new SimplePlatformRegistryImpl();
 
       expect(registry.list()).toEqual([]);
     });
 
     it("应返回所有已注册的平台名称", () => {
-      const registry = new SimplePlatformRegistry();
+      const registry = new SimplePlatformRegistryImpl();
 
       const mockPlatform1: TTSPlatform = {
         platform: "platform-a",

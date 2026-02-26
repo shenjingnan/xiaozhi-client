@@ -3,6 +3,9 @@
  */
 
 import type { Readable } from "node:stream";
+import type { PlatformConfig } from "@xiaozhi-client/platform-registry";
+
+export type { PlatformConfig };
 
 /**
  * 音频输入类型
@@ -54,15 +57,6 @@ export interface ASRController {
 }
 
 /**
- * 平台配置泛型接口
- */
-export interface PlatformConfig {
-  /** 平台类型 */
-  platform: string;
-  [key: string]: unknown;
-}
-
-/**
  * ASR 平台接口
  * 定义平台需要实现的抽象方法
  */
@@ -97,21 +91,6 @@ export interface ASRPlatform {
    * @returns WebSocket URL
    */
   getEndpoint(config: PlatformConfig): string;
-}
-
-/**
- * 平台注册表
- * 存储所有已注册的平台
- */
-export interface PlatformRegistry {
-  /** 获取平台 */
-  get(platform: string): ASRPlatform | undefined;
-
-  /** 注册平台 */
-  register(platform: ASRPlatform): void;
-
-  /** 获取所有已注册的平台 */
-  list(): string[];
 }
 
 /**

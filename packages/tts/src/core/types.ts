@@ -2,6 +2,10 @@
  * TTS 核心类型定义
  */
 
+import type { PlatformConfig } from "@xiaozhi-client/platform-registry";
+
+export type { PlatformConfig };
+
 /**
  * 音频块回调类型
  * @param chunk - 音频数据块
@@ -53,15 +57,6 @@ export interface TTSController {
 }
 
 /**
- * 平台配置泛型接口
- */
-export interface PlatformConfig {
-  /** 平台类型 */
-  platform: string;
-  [key: string]: unknown;
-}
-
-/**
  * TTS 平台接口
  * 定义平台需要实现的抽象方法
  */
@@ -96,21 +91,6 @@ export interface TTSPlatform {
    * @returns WebSocket URL
    */
   getEndpoint(config: PlatformConfig): string;
-}
-
-/**
- * 平台注册表
- * 存储所有已注册的平台
- */
-export interface PlatformRegistry {
-  /** 获取平台 */
-  get(platform: string): TTSPlatform | undefined;
-
-  /** 注册平台 */
-  register(platform: TTSPlatform): void;
-
-  /** 获取所有已注册的平台 */
-  list(): string[];
 }
 
 /**
