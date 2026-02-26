@@ -18,6 +18,16 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
+// Mock configManager - 避免在没有配置文件时抛出错误
+vi.mock("@xiaozhi-client/config", () => ({
+  configManager: {
+    getLLMConfig: vi.fn().mockReturnValue(null),
+    isLLMConfigValid: vi.fn().mockReturnValue(false),
+    getASRConfig: vi.fn().mockReturnValue(null),
+    getTTSConfig: vi.fn().mockReturnValue(null),
+  },
+}));
+
 describe("ESP32Service", () => {
   let esp32Service: ESP32Service;
   let deviceRegistry: DeviceRegistryService;
