@@ -398,10 +398,12 @@ export class Logger {
     }
   }
 
-  success(message: string, ...args: any[]): void;
-  success(obj: object, message?: string): void;
-  success(messageOrObj: string | object, ...args: any[]): void {
-    // success 映射为 info 级别，保持 API 兼容性
+  /**
+   * 私有方法：记录 info 级别日志（success 和 log 方法的共同实现）
+   * @param messageOrObj 日志消息或对象
+   * @param args 额外参数
+   */
+  private logInfo(messageOrObj: string | object, ...args: any[]): void {
     if (typeof messageOrObj === "string") {
       if (args.length === 0) {
         this.pinoInstance.info(messageOrObj);
@@ -411,6 +413,13 @@ export class Logger {
     } else {
       this.pinoInstance.info(messageOrObj, args[0] || "");
     }
+  }
+
+  success(message: string, ...args: any[]): void;
+  success(obj: object, message?: string): void;
+  success(messageOrObj: string | object, ...args: any[]): void {
+    // success 映射为 info 级别，保持 API 兼容性
+    return this.logInfo(messageOrObj, ...args);
   }
 
   warn(message: string, ...args: any[]): void;
@@ -473,16 +482,8 @@ export class Logger {
   log(message: string, ...args: any[]): void;
   log(obj: object, message?: string): void;
   log(messageOrObj: string | object, ...args: any[]): void {
-    // log 方法使用 info 级别
-    if (typeof messageOrObj === "string") {
-      if (args.length === 0) {
-        this.pinoInstance.info(messageOrObj);
-      } else {
-        this.pinoInstance.info({ args }, messageOrObj);
-      }
-    } else {
-      this.pinoInstance.info(messageOrObj, args[0] || "");
-    }
+    // log 方法使用 info 级别，与 success 方法共享实现
+    return this.logInfo(messageOrObj, ...args);
   }
 
   /**
