@@ -35,7 +35,7 @@
     "dotenv": "^17.2.1",
     "eventsource": "^4.0.0",
     "express": "^5.1.0",
-    "hono": "^4.11.10",
+    "hono": "^4.12.2",
     "json5": "^2.2.3",
     "jsonc-parser": "^3.3.1",
     "node-cache": "^5.1.2",
