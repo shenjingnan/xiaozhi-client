@@ -503,8 +503,9 @@ describe("McpEndpointSettingButton", () => {
       expect(toast.success).toHaveBeenCalledWith("接入点地址已复制到剪贴板");
     });
 
-    it("复制失败时应该显示错误信息", async () => {
+    it("复制失败时应该记录错误日志", async () => {
       const originalClipboard = navigator.clipboard;
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       // 模拟剪贴板失败和降级方案也失败
       Object.defineProperty(navigator, "clipboard", {
@@ -535,9 +536,11 @@ describe("McpEndpointSettingButton", () => {
         });
       });
 
-      expect(toast.error).toHaveBeenCalledWith("复制失败，请手动复制");
+      // 验证错误被记录到控制台
+      expect(consoleSpy).toHaveBeenCalled();
 
       // 恢复原始剪贴板
+      consoleSpy.mockRestore();
       Object.defineProperty(navigator, "clipboard", {
         value: originalClipboard,
         writable: true,

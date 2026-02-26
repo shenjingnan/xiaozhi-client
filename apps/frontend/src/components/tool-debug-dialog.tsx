@@ -36,6 +36,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import {
   createDefaultValues,
   createZodSchemaFromJsonSchema,
@@ -56,7 +57,7 @@ import {
   Zap,
 } from "lucide-react";
 import type React from "react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -446,8 +447,12 @@ export function ToolDebugDialog({
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 使用统一的复制到剪贴板 hook，带 Toast 通知和状态重置
+  const { copied, copy } = useCopyToClipboard({
+    showToast: true,
+    successDuration: 2000,
+  });
 
   // 创建动态 schema
   const formSchema = useMemo(() => {
@@ -484,21 +489,12 @@ export function ToolDebugDialog({
     }
   }, [tool?.inputSchema, defaultValues, form]); // 添加 form 依赖以满足 linter 要求
 
-  useEffect(() => {
-    return () => {
-      if (copiedTimerRef.current) {
-        clearTimeout(copiedTimerRef.current);
-      }
-    };
-  }, []);
-
   // 重置状态
   const resetState = useCallback(() => {
     setInputMode("form");
     setJsonInput("{\n  \n}");
     setResult(null);
     setError(null);
-    setCopied(false);
     // 只在有工具且有输入schema时才重置表单
     if (tool?.inputSchema) {
       form.reset(defaultValues);
@@ -610,18 +606,8 @@ export function ToolDebugDialog({
   // 复制结果
   const handleCopy = useCallback(async () => {
     const content = result ? JSON.stringify(result, null, 2) : error || "";
-    try {
-      await navigator.clipboard.writeText(content);
-      setCopied(true);
-      toast.success("已复制到剪贴板");
-      if (copiedTimerRef.current) {
-        clearTimeout(copiedTimerRef.current);
-      }
-      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("复制失败");
-    }
-  }, [result, error]);
+    await copy(content);
+  }, [result, error, copy]);
 
   // 清空输入
   const handleClear = useCallback(() => {

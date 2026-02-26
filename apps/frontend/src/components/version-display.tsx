@@ -6,10 +6,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import type { VersionInfo } from "@/services/api";
 import { apiClient } from "@/services/api";
 import { CopyIcon, InfoIcon, RocketIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { VersionUpgradeDialog } from "./version-upgrade-dialog";
 
 interface VersionDisplayProps {
@@ -30,8 +31,9 @@ export function VersionDisplay({ className }: VersionDisplayProps) {
   const [loading, setLoading] = useState(true);
   const [checkingUpdate, setCheckingUpdate] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 使用统一的复制到剪贴板 hook
+  const { copied, copy } = useCopyToClipboard({ successDuration: 2000 });
 
   useEffect(() => {
     const fetchVersion = async () => {
@@ -49,14 +51,6 @@ export function VersionDisplay({ className }: VersionDisplayProps) {
     };
 
     fetchVersion();
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (copiedTimerRef.current) {
-        clearTimeout(copiedTimerRef.current);
-      }
-    };
   }, []);
 
   useEffect(() => {
@@ -87,16 +81,7 @@ export function VersionDisplay({ className }: VersionDisplayProps) {
 
   const handleCopyVersion = async () => {
     if (versionInfo?.version) {
-      try {
-        await navigator.clipboard.writeText(versionInfo.version);
-        setCopied(true);
-        if (copiedTimerRef.current) {
-          clearTimeout(copiedTimerRef.current);
-        }
-        copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error("复制版本号失败:", err);
-      }
+      await copy(versionInfo.version);
     }
   };
 
