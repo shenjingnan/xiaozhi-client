@@ -1,3 +1,7 @@
+/**
+ * 服务 API HTTP 路由处理器
+ * 提供服务启动、停止、重启等相关的 RESTful API 接口
+ */
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
 import { logger } from "@/Logger.js";
