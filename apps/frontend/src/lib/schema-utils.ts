@@ -1,9 +1,24 @@
+import type { JSONSchema7, JSONSchema7Definition } from "json-schema";
 import { z } from "zod";
 
 /**
  * 根据 JSON Schema 动态生成 Zod schema
  */
-export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
+export function createZodSchemaFromJsonSchema(jsonSchema: JSONSchema7): z.ZodTypeAny {
+  // 处理 boolean 类型的 schema 定义（true = any, false = never）
+  const processSchemaDefinition = (
+    def: JSONSchema7Definition | true | JSONSchema7Definition[],
+  ): z.ZodTypeAny => {
+    if (def === true) return z.any();
+    if (def === false) return z.never();
+    if (Array.isArray(def)) {
+      // 数组表示 anyOf 语义
+      return z.union(
+        def.map((d) => processSchemaDefinition(d)) as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]],
+      );
+    }
+    return createZodSchemaFromJsonSchema(def);
+  };
   if (!jsonSchema || typeof jsonSchema !== "object") {
     return z.any();
   }
@@ -49,7 +64,7 @@ export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
 
     case "array":
       if (jsonSchema.items) {
-        const itemSchema = createZodSchemaFromJsonSchema(jsonSchema.items);
+        const itemSchema = processSchemaDefinition(jsonSchema.items);
         let arraySchema = z.array(itemSchema);
         if (typeof jsonSchema.minItems === "number") {
           arraySchema = arraySchema.min(jsonSchema.minItems);
@@ -70,7 +85,7 @@ export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
         const requiredFields = jsonSchema.required || [];
 
         for (const [key, propSchema] of Object.entries(jsonSchema.properties)) {
-          let fieldSchema = createZodSchemaFromJsonSchema(propSchema);
+          let fieldSchema = processSchemaDefinition(propSchema);
 
           // 如果字段不是必填的，设为可选
           if (!requiredFields.includes(key)) {
@@ -92,12 +107,27 @@ export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
 /**
  * 获取字段的默认值
  */
-export function getDefaultValueForSchema(schema: any): any {
-  if (!schema) return undefined;
+export function getDefaultValueForSchema(
+  schema: JSONSchema7Definition,
+): unknown {
+  // 处理 boolean 类型的 schema 定义
+  if (schema === true || schema === false) {
+    return undefined;
+  }
 
-  switch (schema.type) {
+  // 现在 schema 确定是 JSONSchema7 类型
+  const jsonSchema = schema as JSONSchema7;
+  const processSchema = (def: JSONSchema7Definition): unknown => {
+    // 处理 boolean 类型的 schema 定义
+    if (def === true || def === false) return undefined;
+    return getDefaultValueForSchema(def);
+  };
+
+  if (!jsonSchema) return undefined;
+
+  switch (jsonSchema.type) {
     case "string":
-      if (schema.enum) return schema.enum[0];
+      if (jsonSchema.enum) return jsonSchema.enum[0];
       return "";
 
     case "number":
@@ -111,10 +141,10 @@ export function getDefaultValueForSchema(schema: any): any {
       return [];
 
     case "object":
-      if (schema.properties) {
-        const defaults: Record<string, any> = {};
-        for (const [key, propSchema] of Object.entries(schema.properties)) {
-          defaults[key] = getDefaultValueForSchema(propSchema);
+      if (jsonSchema.properties) {
+        const defaults: Record<string, unknown> = {};
+        for (const [key, propSchema] of Object.entries(jsonSchema.properties)) {
+          defaults[key] = processSchema(propSchema);
         }
         return defaults;
       }
@@ -128,10 +158,12 @@ export function getDefaultValueForSchema(schema: any): any {
 /**
  * 根据 JSON Schema 生成默认值对象
  */
-export function createDefaultValues(jsonSchema: any): Record<string, any> {
+export function createDefaultValues(
+  jsonSchema: JSONSchema7,
+): Record<string, unknown> {
   if (!jsonSchema || !jsonSchema.properties) return {};
 
-  const defaults: Record<string, any> = {};
+  const defaults: Record<string, unknown> = {};
   const requiredFields = jsonSchema.required || [];
 
   for (const [key, propSchema] of Object.entries(jsonSchema.properties)) {
