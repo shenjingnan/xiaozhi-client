@@ -52,7 +52,16 @@ export class ESP32Service {
 
     // 初始化语音服务
     this.llmService = new LLMService();
-    this.asrService = new ASRService({
+    this.asrService = this.createASRService();
+    this.ttsService = new TTSService();
+  }
+
+  /**
+   * 创建 ASR 服务实例
+   * @returns ASR 服务实例
+   */
+  private createASRService(): ASRService {
+    return new ASRService({
       events: {
         onResult: async (deviceId, text, isFinal) => {
           // 如果是最终结果，触发 LLM 和 TTS
@@ -85,13 +94,38 @@ export class ESP32Service {
               );
             }
           }
+
+          // isFinal 后重建 ASR 服务实例
+          if (isFinal) {
+            this.recreateASRService();
+          }
         },
         onError: (deviceId, error) => {
           logger.error(`[ESP32Service] ASR 错误: deviceId=${deviceId}`, error);
         },
       },
     });
-    this.ttsService = new TTSService();
+  }
+
+  /**
+   * 重建 ASR 服务实例
+   * 销毁当前实例并创建新实例，确保每次识别都从干净的状态开始
+   */
+  private recreateASRService(): void {
+    logger.info("[ESP32Service] 重建 ASR 服务实例");
+    if (this.asrService) {
+      this.asrService.destroy();
+    }
+    this.asrService = this.createASRService();
+    logger.info("[ESP32Service] ASR 服务实例已重建");
+  }
+
+  /**
+   * 获取 ASR 服务实例
+   * @returns ASR 服务实例
+   */
+  getASRService(): ASRService {
+    return this.asrService;
   }
 
   /**
@@ -246,7 +280,8 @@ export class ESP32Service {
           error
         );
       },
-      asrService: this.asrService,
+      // 使用 getter 函数获取最新的 ASR 服务实例
+      getASRService: () => this.asrService,
     });
 
     this.connections.set(deviceId, connection);
@@ -336,7 +371,10 @@ export class ESP32Service {
         logger.info(
           `[ESP32Service] 收到start消息: message=${JSON.stringify(message)}`
         );
-        // 开始监听（如果是手动模式，直接开始会话）
+        // 开始监听，建立 ASR 连接
+        // 注意：硬件端会在发送 start 消息后立刻发送音频数据
+        // 所以这里需要尽快建立连接，音频数据会在缓冲区中等待
+        await this.asrService.connect(deviceId);
         if (mode === "manual" || mode === "realtime") {
           logger.info(
             `[ESP32Service] 开始手动/实时监听会话: deviceId=${deviceId}, mode=${mode}`
@@ -379,7 +417,7 @@ export class ESP32Service {
 
     // 提取音频数据
     const audioData = (message as { data?: Uint8Array }).data;
-    logger.info(`handleAudioMessage 收到音频消息: type=${message.type}`);
+    // logger.info(`handleAudioMessage 收到音频消息: type=${message.type}`);
     if (!audioData) {
       logger.warn(`音频消息无数据: deviceId=${deviceId}`);
       return;

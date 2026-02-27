@@ -13,12 +13,27 @@ import type {
 } from "./asr.interface.js";
 
 /**
+ * 设备 ASR 状态
+ */
+interface DeviceASRState {
+  /** 是否已准备（缓冲区已初始化） */
+  prepared: boolean;
+  /** 是否正在连接 */
+  connecting: boolean;
+  /** 连接 Promise（用于等待连接完成） */
+  connectPromise?: Promise<void>;
+}
+
+/**
  * ASR 服务
  * 处理语音识别功能，通过回调通知识别结果
  */
 export class ASRService implements IASRService {
   /** 事件回调 */
   private events: ASRServiceEvents;
+
+  /** 每个设备的 ASR 状态 */
+  private readonly deviceStates = new Map<string, DeviceASRState>();
 
   /** 每个设备的 ASR 客户端（用于语音识别） */
   private readonly asrClients = new Map<string, ASR>();
@@ -41,21 +56,69 @@ export class ASRService implements IASRService {
   }
 
   /**
-   * 初始化 ASR 语音识别服务
-   * 如果已存在 ASR 客户端且已连接，则跳过初始化
+   * 准备 ASR 服务
+   * 只准备配置和缓冲区，不建立连接
+   * 用于在连接建立前缓存音频数据
    * @param deviceId - 设备 ID
    */
-  async init(deviceId: string): Promise<void> {
-    // 检查是否已存在 ASR 客户端且已连接
-    const existingClient = this.asrClients.get(deviceId);
-    if (existingClient?.isConnected()) {
-      logger.debug(
-        `[ASRService] ASR 客户端已存在且已连接，跳过初始化: deviceId=${deviceId}`
-      );
+  async prepare(deviceId: string): Promise<void> {
+    const state = this.getOrCreateDeviceState(deviceId);
+
+    // 如果已经准备好，跳过
+    if (state.prepared) {
+      logger.debug(`[ASRService] ASR 已准备好，跳过: deviceId=${deviceId}`);
       return;
     }
 
+    // 初始化音频队列
+    this.audioQueues.set(deviceId, []);
+    this.audioEnded.set(deviceId, false);
+    state.prepared = true;
+
+    logger.info(`[ASRService] ASR 服务已准备: deviceId=${deviceId}`);
+  }
+
+  /**
+   * 建立 ASR 连接
+   * 建立 WebSocket 连接并开始处理音频流
+   * @param deviceId - 设备 ID
+   */
+  async connect(deviceId: string): Promise<void> {
+    const state = this.getOrCreateDeviceState(deviceId);
+
+    // 如果已经连接或正在连接，等待连接完成
+    const existingClient = this.asrClients.get(deviceId);
+    if (existingClient?.isConnected()) {
+      logger.debug(`[ASRService] ASR 客户端已连接，跳过: deviceId=${deviceId}`);
+      return;
+    }
+
+    // 如果正在连接，等待连接完成
+    if (state.connecting && state.connectPromise) {
+      logger.debug(`[ASRService] ASR 正在连接，等待: deviceId=${deviceId}`);
+      await state.connectPromise;
+      return;
+    }
+
+    // 标记正在连接
+    state.connecting = true;
+    state.connectPromise = this.doConnect(deviceId);
+
+    try {
+      await state.connectPromise;
+    } finally {
+      state.connecting = false;
+      state.connectPromise = undefined;
+    }
+  }
+
+  /**
+   * 执行实际的连接
+   * @param deviceId - 设备 ID
+   */
+  private async doConnect(deviceId: string): Promise<void> {
     // 如果已存在但未连接，先关闭
+    const existingClient = this.asrClients.get(deviceId);
     if (existingClient) {
       logger.warn(
         `[ASRService] ASR 客户端存在但未连接，关闭旧的: deviceId=${deviceId}`
@@ -64,16 +127,20 @@ export class ASRService implements IASRService {
       this.asrClients.delete(deviceId);
     }
 
-    // 执行初始化
-    await this.doInitASR(deviceId);
+    // 确保已准备
+    await this.prepare(deviceId);
+
+    // 创建 ASR 客户端
+    await this.createASRClient(deviceId);
+
+    logger.info(`[ASRService] ASR 连接已建立: deviceId=${deviceId}`);
   }
 
   /**
-   * 执行实际的 ASR 初始化
-   * 使用 V2 API 配置
+   * 创建 ASR 客户端
    * @param deviceId - 设备 ID
    */
-  private async doInitASR(deviceId: string): Promise<void> {
+  private async createASRClient(deviceId: string): Promise<void> {
     const asrConfig = configManager.getASRConfig();
 
     if (!asrConfig.appid || !asrConfig.accessToken) {
@@ -117,15 +184,8 @@ export class ASRService implements IASRService {
     asrClient.on("close", () => {
       logger.info(`[ASRService] ASR 连接关闭: deviceId=${deviceId}`);
       this.asrClients.delete(deviceId);
-      this.audioQueues.delete(deviceId);
-      this.audioEnded.delete(deviceId);
-      this.listenTasks.delete(deviceId);
       this.events.onClose?.(deviceId);
     });
-
-    // 初始化音频队列
-    this.audioQueues.set(deviceId, []);
-    this.audioEnded.set(deviceId, false);
 
     // 保存 ASR 客户端
     this.asrClients.set(deviceId, asrClient);
@@ -138,8 +198,21 @@ export class ASRService implements IASRService {
   }
 
   /**
+   * 初始化 ASR 语音识别服务（已弃用，请使用 prepare + connect）
+   * 如果已存在 ASR 客户端且已连接，则跳过初始化
+   * @param deviceId - 设备 ID
+   * @deprecated 使用 prepare() + connect() 替代
+   */
+  async init(deviceId: string): Promise<void> {
+    // 兼容旧接口：准备 + 连接
+    await this.prepare(deviceId);
+    await this.connect(deviceId);
+  }
+
+  /**
    * 处理音频数据
    * 将音频数据推入队列，由 listen() 异步生成器消费
+   * 如果连接未建立，数据会被缓存直到连接建立
    * @param deviceId - 设备 ID
    * @param audioData - 裸 Opus 音频数据
    */
@@ -152,11 +225,12 @@ export class ASRService implements IASRService {
       `[ASRService] 收到音频数据: deviceId=${deviceId}, size=${audioData.length}`
     );
 
-    // 检查 ASR 客户端是否存在
-    const asrClient = this.asrClients.get(deviceId);
-    if (!asrClient) {
-      logger.warn(`[ASRService] ASR 客户端未初始化: deviceId=${deviceId}`);
-      return;
+    const state = this.getOrCreateDeviceState(deviceId);
+
+    // 检查是否已准备好
+    if (!state.prepared) {
+      logger.warn(`[ASRService] ASR 未准备好，自动准备: deviceId=${deviceId}`);
+      await this.prepare(deviceId);
     }
 
     // 检查是否已经结束
@@ -180,11 +254,23 @@ export class ASRService implements IASRService {
       // 推入队列
       queue.push(pcmData);
       logger.debug(
-        `[ASRService] 已将PCM推入队列: deviceId=${deviceId}, pcmSize=${pcmData.length}, queueLength=${queue.length}`
+        `[ASRService] 已将 PCM 推入队列: deviceId=${deviceId}, pcmSize=${pcmData.length}, queueLength=${queue.length}`
       );
     } catch (error) {
-      logger.error(`[ASRService] PCM解码失败: deviceId=${deviceId}`, error);
+      logger.error(`[ASRService] PCM 解码失败: deviceId=${deviceId}`, error);
     }
+  }
+
+  /**
+   * 获取或创建设备状态
+   */
+  private getOrCreateDeviceState(deviceId: string): DeviceASRState {
+    let state = this.deviceStates.get(deviceId);
+    if (!state) {
+      state = { prepared: false, connecting: false };
+      this.deviceStates.set(deviceId, state);
+    }
+    return state;
   }
 
   /**
@@ -260,6 +346,14 @@ export class ASRService implements IASRService {
       }
 
       logger.info(`[ASRService] listen 任务完成: deviceId=${deviceId}`);
+
+      // 重置音频缓冲区状态，准备下一次识别
+      // 注意：底层 ASR 客户端已关闭连接，下次识别需要重新 connect
+      this.audioQueues.set(deviceId, []);
+      this.audioEnded.set(deviceId, false);
+      logger.info(
+        `[ASRService] 音频缓冲区已重置，准备下一次识别: deviceId=${deviceId}`
+      );
     } catch (error) {
       logger.error(`[ASRService] listen 任务出错: deviceId=${deviceId}`, error);
     }
@@ -308,6 +402,31 @@ export class ASRService implements IASRService {
   }
 
   /**
+   * 重置 ASR 服务状态
+   * 清理资源但保留配置，准备下一次语音交互
+   * @param deviceId - 设备 ID
+   */
+  async reset(deviceId: string): Promise<void> {
+    logger.info(`[ASRService] 重置 ASR 服务状态: deviceId=${deviceId}`);
+
+    // 先结束当前会话
+    await this.end(deviceId);
+
+    // 重置状态
+    const state = this.deviceStates.get(deviceId);
+    if (state) {
+      state.prepared = false;
+      state.connecting = false;
+      state.connectPromise = undefined;
+    }
+
+    // 重新准备
+    await this.prepare(deviceId);
+
+    logger.info(`[ASRService] ASR 服务已重置: deviceId=${deviceId}`);
+  }
+
+  /**
    * 销毁服务
    */
   destroy(): void {
@@ -320,6 +439,7 @@ export class ASRService implements IASRService {
     this.audioQueues.clear();
     this.audioEnded.clear();
     this.listenTasks.clear();
+    this.deviceStates.clear();
     logger.debug("[ASRService] 服务已销毁");
   }
 }
