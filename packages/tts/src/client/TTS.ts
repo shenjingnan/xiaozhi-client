@@ -121,7 +121,6 @@ export class TTS extends EventEmitter {
       } else {
         console.log("[TTS Client] No resolveNext, iterator may not be waiting");
       }
-
     };
 
     // 启动流式合成
