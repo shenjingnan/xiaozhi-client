@@ -1,11 +1,11 @@
-import type { AppContext } from "@/types/hono.context.js";
-import type { Context } from "hono";
-
 /**
  * 抽象 API Handler 基类
  * 提供便捷的辅助方法
  * logger 通过 c.get("logger") 访问（Hono 推荐做法）
  */
+import type { AppContext } from "@/types/hono.context.js";
+import type { Context } from "hono";
+
 export abstract class BaseHandler {
   /**
    * 统一错误处理方法
