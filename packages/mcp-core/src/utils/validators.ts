@@ -9,14 +9,28 @@
  * @module validators
  */
 
-import { MCPTransportType, ToolCallError, ToolCallErrorCode } from "../types.js";
-import { TypeFieldNormalizer } from "./type-normalizer.js";
+import { type MCPLogger, createLogger } from "../logger.js";
+import {
+  MCPTransportType,
+  ToolCallError,
+  ToolCallErrorCode,
+} from "../types.js";
 import type {
   MCPServiceConfig,
   ToolCallParams,
   ToolCallValidationOptions,
   ValidatedToolCallParams,
 } from "../types.js";
+import { TypeFieldNormalizer } from "./type-normalizer.js";
+
+/**
+ * 创建带有服务名称的 Logger 实例
+ * @param serviceName 服务名称
+ * @returns Logger 实例
+ */
+function createServiceLogger(serviceName?: string): MCPLogger {
+  return serviceName ? createLogger(`MCP-${serviceName}`) : createLogger("MCP");
+}
 
 /**
  * 根据 URL 路径推断传输类型
@@ -44,19 +58,16 @@ export function inferTransportTypeFromUrl(
       return MCPTransportType.HTTP;
     }
 
-    // 默认类型 - 使用 console 输出
+    // 默认类型 - 使用 logger 输出
     if (options?.serviceName) {
-      console.info(
-        `[MCP-${options.serviceName}] URL 路径 ${pathname} 不匹配特定规则，默认推断为 http 类型`
-      );
+      const logger = createServiceLogger(options.serviceName);
+      logger.info(`URL 路径 ${pathname} 不匹配特定规则，默认推断为 http 类型`);
     }
     return MCPTransportType.HTTP;
   } catch (error) {
     if (options?.serviceName) {
-      console.warn(
-        `[MCP-${options.serviceName}] URL 解析失败，默认推断为 http 类型`,
-        error
-      );
+      const logger = createServiceLogger(options.serviceName);
+      logger.warn("URL 解析失败，默认推断为 http 类型", error);
     }
     return MCPTransportType.HTTP;
   }

@@ -9,11 +9,21 @@
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { MCPServerTransport, MCPServiceConfig, MCPServiceStatus, ToolCallResult } from "./types.js";
-import { ConnectionState, MCPTransportType } from "./types.js";
+import { type LoggerLike, createLogger } from "./logger.js";
 import { TransportFactory } from "./transport-factory.js";
+import type {
+  MCPServerTransport,
+  MCPServiceConfig,
+  MCPServiceStatus,
+  ToolCallResult,
+} from "./types.js";
+import { ConnectionState, MCPTransportType } from "./types.js";
+import type {
+  HeartbeatConfig,
+  InternalMCPServiceConfig,
+  MCPServiceEventCallbacks,
+} from "./types.js";
 import { inferTransportTypeFromConfig } from "./utils/index.js";
-import type { HeartbeatConfig, MCPServiceEventCallbacks, InternalMCPServiceConfig } from './types.js';
 
 /**
  * MCP 连接类
@@ -32,6 +42,7 @@ export class MCPConnection {
   // 心跳检测相关
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private heartbeatConfig?: HeartbeatConfig;
+  private logger: LoggerLike;
 
   constructor(
     name: string,
@@ -44,9 +55,12 @@ export class MCPConnection {
     this.callbacks = callbacks;
     // 保存心跳配置 - 优先使用用户配置
     this.heartbeatConfig = {
-      enabled: config.heartbeat?.enabled ?? true,  // 默认启用
-      interval: config.heartbeat?.interval ?? 30 * 1000,  // 默认 30 秒
+      enabled: config.heartbeat?.enabled ?? true, // 默认启用
+      interval: config.heartbeat?.interval ?? 30 * 1000, // 默认 30 秒
     };
+
+    // 初始化日志记录器
+    this.logger = createLogger(`MCP-${name}`);
 
     // 验证配置
     this.validateConfig();
@@ -88,9 +102,7 @@ export class MCPConnection {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    console.debug(
-      `[MCP-${this.name}] 正在连接 MCP 服务: ${this.name}`
-    );
+    this.logger.debug(`正在连接 MCP 服务: ${this.name}`);
 
     return new Promise((resolve, reject) => {
       // 设置连接超时（使用固定默认值 30 秒）
@@ -161,9 +173,7 @@ export class MCPConnection {
     this.connectionState = ConnectionState.CONNECTED;
     this.initialized = true;
 
-    console.info(
-      `[MCP-${this.name}] MCP 服务 ${this.name} 连接已建立`
-    );
+    this.logger.info(`MCP 服务 ${this.name} 连接已建立`);
 
     // 启动心跳检测
     this.startHeartbeat();
@@ -176,7 +186,7 @@ export class MCPConnection {
     this.connectionState = ConnectionState.DISCONNECTED;
     this.initialized = false;
 
-    console.debug(`MCP 服务 ${this.name} 连接错误:`, error.message);
+    this.logger.debug(`MCP 服务 ${this.name} 连接错误:`, error.message);
 
     // 清理连接超时定时器
     if (this.connectionTimeout) {
@@ -247,14 +257,12 @@ export class MCPConnection {
         this.tools.set(tool.name, tool);
       }
 
-      console.debug(
-        `${this.name} 服务加载了 ${tools.length} 个工具: ${tools
-          .map((t) => t.name)
-          .join(", ")}`
+      this.logger.debug(
+        `服务加载了 ${tools.length} 个工具: ${tools.map((t) => t.name).join(", ")}`
       );
     } catch (error) {
-      console.error(
-        `${this.name} 获取工具列表失败:`,
+      this.logger.error(
+        "获取工具列表失败:",
         error instanceof Error ? error.message : String(error)
       );
       throw error;
@@ -265,7 +273,7 @@ export class MCPConnection {
    * 断开连接
    */
   async disconnect(): Promise<void> {
-    console.info(`主动断开 MCP 服务 ${this.name} 连接`);
+    this.logger.info("主动断开 MCP 服务连接");
 
     // 清理连接资源
     this.cleanupConnection();
@@ -309,9 +317,7 @@ export class MCPConnection {
    */
   private async reconnect(): Promise<void> {
     this.connectionState = ConnectionState.RECONNECTING;
-    console.debug(
-      `[MCP-${this.name}] 检测到会话过期，正在重新连接...`
-    );
+    this.logger.debug("检测到会话过期，正在重新连接...");
 
     // 清理旧连接
     this.cleanupConnection();
@@ -336,16 +342,14 @@ export class MCPConnection {
 
     this.heartbeatTimer = setInterval(() => {
       this.performHeartbeat().catch((error) => {
-        console.error(
-          `[MCP-${this.name}] 心跳检测执行异常：`,
+        this.logger.error(
+          "心跳检测执行异常：",
           error instanceof Error ? error.message : String(error)
         );
       });
     }, interval);
 
-    console.debug(
-      `[MCP-${this.name}] 心跳检测已启动，间隔: ${interval}ms`
-    );
+    this.logger.debug(`心跳检测已启动，间隔: ${interval}ms`);
   }
 
   /**
@@ -359,10 +363,10 @@ export class MCPConnection {
     try {
       // 调用 MCP SDK 的 ping() 方法
       await this.client.ping();
-      console.debug(`[MCP-${this.name}] 心跳检测成功`);
+      this.logger.debug("心跳检测成功");
     } catch (error) {
-      console.warn(
-        `[MCP-${this.name}] 心跳检测失败，尝试重连...`,
+      this.logger.warn(
+        "心跳检测失败，尝试重连...",
         error instanceof Error ? error.message : String(error)
       );
       // 心跳失败，尝试重连
@@ -377,7 +381,7 @@ export class MCPConnection {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
-      console.debug(`[MCP-${this.name}] 心跳检测已停止`);
+      this.logger.debug("心跳检测已停止");
     }
   }
 
@@ -396,8 +400,8 @@ export class MCPConnection {
       throw new Error(`工具 ${name} 在服务 ${this.name} 中不存在`);
     }
 
-    console.debug(
-      `调用 ${this.name} 服务的工具 ${name}，参数:`,
+    this.logger.debug(
+      `调用服务的工具 ${name}，参数:`,
       JSON.stringify(arguments_)
     );
 
@@ -407,7 +411,7 @@ export class MCPConnection {
         arguments: arguments_ || {},
       });
 
-      console.debug(
+      this.logger.debug(
         `工具 ${name} 调用成功，结果:`,
         `${JSON.stringify(result).substring(0, 500)}...`
       );
@@ -416,9 +420,7 @@ export class MCPConnection {
     } catch (error) {
       // 检测是否为会话过期错误
       if (this.isSessionExpiredError(error)) {
-        console.warn(
-          `[MCP-${this.name}] 检测到会话过期，尝试重新连接并重试...`
-        );
+        this.logger.warn("检测到会话过期，尝试重新连接并重试...");
 
         // 自动重连
         await this.reconnect();
@@ -431,7 +433,7 @@ export class MCPConnection {
       }
 
       // 其他错误正常抛出
-      console.error(
+      this.logger.error(
         `工具 ${name} 调用失败:`,
         error instanceof Error ? error.message : String(error)
       );
