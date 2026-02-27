@@ -57,6 +57,24 @@ export class ESP32Service {
         onResult: async (deviceId, text, isFinal) => {
           // 如果是最终结果，触发 LLM 和 TTS
           if (isFinal && text) {
+            const connection = this.connections.get(deviceId);
+
+            // 异步发送 STT 消息到设备端（不阻塞主流程）
+            if (connection) {
+              connection
+                .send({
+                  session_id: connection.getSessionId(),
+                  type: "stt",
+                  text: text,
+                })
+                .catch((err) => {
+                  logger.error(
+                    `[ESP32Service] 发送 STT 消息失败: deviceId=${deviceId}`,
+                    err
+                  );
+                });
+            }
+
             try {
               const llmResponse = await this.llmService.chat(text);
               await this.ttsService.speak(deviceId, llmResponse);
