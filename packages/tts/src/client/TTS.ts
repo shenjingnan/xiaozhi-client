@@ -104,19 +104,24 @@ export class TTS extends EventEmitter {
       chunk: Uint8Array,
       isLast: boolean
     ): Promise<void> => {
+      console.log(
+        `[TTS Client] onAudioChunk called: isLast=${isLast}, chunk.length=${chunk.length}, queue.length before=${queue.length}`
+      );
       queue.push({ chunk, isFinal: isLast });
+      console.log(
+        `[TTS Client] onAudioChunk after push: queue.length=${queue.length}, streamEnded will be set to ${isLast}`
+      );
 
       // 唤醒等待中的迭代器
       if (resolveNext) {
+        console.log("[TTS Client] Waking iterator, resolveNext exists");
         const resolve = resolveNext;
         resolveNext = null;
         resolve();
+      } else {
+        console.log("[TTS Client] No resolveNext, iterator may not be waiting");
       }
 
-      // 如果是最终块，标记流结束
-      if (isLast) {
-        streamEnded = true;
-      }
     };
 
     // 启动流式合成
@@ -137,6 +142,9 @@ export class TTS extends EventEmitter {
       // 如果队列中有结果，立即 yield
       while (queue.length > 0) {
         const result = queue.shift()!;
+        console.log(
+          `[TTS Iterator] Yielding result: isFinal=${result.isFinal}, queue.length after=${queue.length}`
+        );
         // 如果是最终块，yield 后退出
         if (result.isFinal) {
           streamEnded = true;
