@@ -77,6 +77,23 @@ export class NotificationService {
   private messageQueue: Map<string, NotificationMessage[]> = new Map();
   private maxQueueSize = 100;
 
+  /**
+   * 事件监听器引用
+   * 用于在销毁时移除所有注册的事件监听器，防止内存泄漏
+   */
+  private eventListeners: {
+    configUpdated: (data: any) => void;
+    statusUpdated: (data: any) => void;
+    restartStarted: (data: any) => void;
+    restartCompleted: (data: any) => void;
+    restartFailed: (data: any) => void;
+    npmInstallStarted: (data: any) => void;
+    npmInstallLog: (data: any) => void;
+    npmInstallCompleted: (data: any) => void;
+    npmInstallFailed: (data: any) => void;
+    notificationBroadcast: (data: any) => void;
+  } = {} as typeof this.eventListeners;
+
   constructor() {
     this.logger = logger;
     this.eventBus = getEventBus();
@@ -88,55 +105,86 @@ export class NotificationService {
    */
   private setupEventListeners(): void {
     // 监听配置更新事件
-    this.eventBus.onEvent("config:updated", (data) => {
+    this.eventListeners.configUpdated = (data) => {
       // 获取最新的配置
       const config = configManager.getConfig();
       this.broadcastConfigUpdate(config);
-    });
+    };
+    this.eventBus.onEvent("config:updated", this.eventListeners.configUpdated);
 
     // 监听状态更新事件
-    this.eventBus.onEvent("status:updated", (data) => {
+    this.eventListeners.statusUpdated = (data) => {
       this.broadcastStatusUpdate(data.status);
-    });
+    };
+    this.eventBus.onEvent("status:updated", this.eventListeners.statusUpdated);
 
     // 监听重启状态事件
-    this.eventBus.onEvent("service:restart:started", (data) => {
+    this.eventListeners.restartStarted = (data) => {
       this.broadcastRestartStatus("restarting", undefined, data.timestamp);
-    });
+    };
+    this.eventBus.onEvent(
+      "service:restart:started",
+      this.eventListeners.restartStarted
+    );
 
-    this.eventBus.onEvent("service:restart:completed", (data) => {
+    this.eventListeners.restartCompleted = (data) => {
       this.broadcastRestartStatus("completed", undefined, data.timestamp);
-    });
+    };
+    this.eventBus.onEvent(
+      "service:restart:completed",
+      this.eventListeners.restartCompleted
+    );
 
-    this.eventBus.onEvent("service:restart:failed", (data) => {
+    this.eventListeners.restartFailed = (data) => {
       this.broadcastRestartStatus("failed", data.error.message, data.timestamp);
-    });
+    };
+    this.eventBus.onEvent(
+      "service:restart:failed",
+      this.eventListeners.restartFailed
+    );
 
     // 监听 NPM 安装事件
-    this.eventBus.onEvent("npm:install:started", (data) => {
+    this.eventListeners.npmInstallStarted = (data) => {
       this.broadcast("npm:install:started", data);
-    });
+    };
+    this.eventBus.onEvent(
+      "npm:install:started",
+      this.eventListeners.npmInstallStarted
+    );
 
-    this.eventBus.onEvent("npm:install:log", (data) => {
+    this.eventListeners.npmInstallLog = (data) => {
       this.broadcast("npm:install:log", data);
-    });
+    };
+    this.eventBus.onEvent("npm:install:log", this.eventListeners.npmInstallLog);
 
-    this.eventBus.onEvent("npm:install:completed", (data) => {
+    this.eventListeners.npmInstallCompleted = (data) => {
       this.broadcast("npm:install:completed", data);
-    });
+    };
+    this.eventBus.onEvent(
+      "npm:install:completed",
+      this.eventListeners.npmInstallCompleted
+    );
 
-    this.eventBus.onEvent("npm:install:failed", (data) => {
+    this.eventListeners.npmInstallFailed = (data) => {
       this.broadcast("npm:install:failed", data);
-    });
+    };
+    this.eventBus.onEvent(
+      "npm:install:failed",
+      this.eventListeners.npmInstallFailed
+    );
 
     // 监听通知广播事件
-    this.eventBus.onEvent("notification:broadcast", (data) => {
+    this.eventListeners.notificationBroadcast = (data) => {
       if (data.target) {
         this.sendToClient(data.target, data.type, data.data);
       } else {
         this.broadcast(data.type, data.data);
       }
-    });
+    };
+    this.eventBus.onEvent(
+      "notification:broadcast",
+      this.eventListeners.notificationBroadcast
+    );
   }
 
   /**
@@ -385,9 +433,47 @@ export class NotificationService {
 
   /**
    * 销毁通知服务
+   * 清理所有资源，包括客户端连接、消息队列和事件监听器
    */
   destroy(): void {
     this.logger.debug("销毁通知服务");
+
+    // 移除所有事件监听器，防止内存泄漏
+    this.eventBus.offEvent("config:updated", this.eventListeners.configUpdated);
+    this.eventBus.offEvent("status:updated", this.eventListeners.statusUpdated);
+    this.eventBus.offEvent(
+      "service:restart:started",
+      this.eventListeners.restartStarted
+    );
+    this.eventBus.offEvent(
+      "service:restart:completed",
+      this.eventListeners.restartCompleted
+    );
+    this.eventBus.offEvent(
+      "service:restart:failed",
+      this.eventListeners.restartFailed
+    );
+    this.eventBus.offEvent(
+      "npm:install:started",
+      this.eventListeners.npmInstallStarted
+    );
+    this.eventBus.offEvent(
+      "npm:install:log",
+      this.eventListeners.npmInstallLog
+    );
+    this.eventBus.offEvent(
+      "npm:install:completed",
+      this.eventListeners.npmInstallCompleted
+    );
+    this.eventBus.offEvent(
+      "npm:install:failed",
+      this.eventListeners.npmInstallFailed
+    );
+    this.eventBus.offEvent(
+      "notification:broadcast",
+      this.eventListeners.notificationBroadcast
+    );
+
     this.clients.clear();
     this.messageQueue.clear();
   }
