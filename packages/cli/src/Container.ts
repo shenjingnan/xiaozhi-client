@@ -18,7 +18,6 @@ import { Validation } from "./utils/Validation";
 export class DIContainer implements IDIContainer {
   private instances = new Map<string, any>();
   private factories = new Map<string, () => any>();
-  private asyncFactories = new Map<string, () => Promise<any>>();
   private singletons = new Set<string>();
 
   /**
