@@ -1,3 +1,13 @@
+/**
+ * WebSocket 辅助工具模块
+ *
+ * 提供 WebSocket 相关的工具函数和类型定义：
+ * - WebSocketLike: WebSocket 接口定义
+ * - sendWebSocketError: 向 WebSocket 客户端发送错误消息
+ *
+ * @module websocket-helper
+ */
+
 import type { Logger } from "@/Logger.js";
 
 /**
