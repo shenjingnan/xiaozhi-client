@@ -7,7 +7,6 @@ import type { ESP32DeviceReport } from "@/types/esp32.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DeviceRegistryService } from "../device-registry.service.js";
 import { ESP32Service } from "../esp32.service.js";
-import { NoOpVoiceSessionService } from "../voice-session.interface.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
@@ -16,6 +15,16 @@ vi.mock("../../Logger.js", () => ({
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
+  },
+}));
+
+// Mock configManager - 避免在没有配置文件时抛出错误
+vi.mock("@xiaozhi-client/config", () => ({
+  configManager: {
+    getLLMConfig: vi.fn().mockReturnValue(null),
+    isLLMConfigValid: vi.fn().mockReturnValue(false),
+    getASRConfig: vi.fn().mockReturnValue(null),
+    getTTSConfig: vi.fn().mockReturnValue(null),
   },
 }));
 
@@ -62,15 +71,6 @@ describe("ESP32Service", () => {
   describe("constructor", () => {
     it("应该正确初始化ESP32服务", () => {
       expect(esp32Service).toBeInstanceOf(ESP32Service);
-    });
-
-    it("应该使用传入的语音会话服务", () => {
-      const customVoiceService = new NoOpVoiceSessionService();
-      const serviceWithCustom = new ESP32Service(
-        deviceRegistry,
-        customVoiceService
-      );
-      expect(serviceWithCustom).toBeInstanceOf(ESP32Service);
     });
   });
 

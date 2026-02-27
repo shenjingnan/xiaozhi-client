@@ -58,7 +58,6 @@ import {
   ESP32Service,
   NotificationService,
   StatusService,
-  TestVoiceSessionService,
   destroyEventBus,
   getEventBus,
 } from "@/services/index.js";
@@ -186,14 +185,10 @@ export class WebServer {
     this.statusService = new StatusService();
     this.notificationService = new NotificationService();
     this.deviceRegistryService = new DeviceRegistryService();
-    // 创建测试语音会话服务
-    const voiceSessionService = new TestVoiceSessionService();
-    this.esp32Service = new ESP32Service(
-      this.deviceRegistryService,
-      voiceSessionService
-    );
-    // 设置 ESP32 服务引用（需要在 ESP32Service 创建后）
-    voiceSessionService.setESP32Service(this.esp32Service);
+    // 创建 ESP32 服务
+    this.esp32Service = new ESP32Service(this.deviceRegistryService);
+    // 设置 TTS 服务的获取连接回调
+    this.esp32Service.setupTTSGetConnection();
 
     // 初始化 HTTP API 处理器
     this.configApiHandler = new ConfigApiHandler();

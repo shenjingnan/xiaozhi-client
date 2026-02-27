@@ -110,16 +110,7 @@ vi.mock("@/services/index.js", () => {
     disconnectDevice: vi.fn(),
     destroy: vi.fn(),
     getConnection: vi.fn(),
-  };
-
-  // Mock TestVoiceSessionService
-  const mockTestVoiceSessionServiceInstance = {
-    handleWakeWord: vi.fn(),
-    startSession: vi.fn(),
-    handleAudioData: vi.fn(),
-    abortSession: vi.fn(),
-    destroy: vi.fn(),
-    setESP32Service: vi.fn(),
+    setupTTSGetConnection: vi.fn(),
   };
 
   return {
@@ -135,8 +126,6 @@ vi.mock("@/services/index.js", () => {
     DeviceRegistryService: vi.fn(() => mockDeviceRegistryServiceInstance),
     // ESP32Service 相关
     ESP32Service: vi.fn(() => mockESP32ServiceInstance),
-    // TestVoiceSessionService 相关
-    TestVoiceSessionService: vi.fn(() => mockTestVoiceSessionServiceInstance),
   };
 });
 
