@@ -2,7 +2,7 @@
  * 前端UI状态相关类型定义
  */
 
-import type { CozeWorkflow } from "../coze";
+import type { CozeWorkflow } from "../coze/index.js";
 
 /**
  * 扣子工作流列表响应
