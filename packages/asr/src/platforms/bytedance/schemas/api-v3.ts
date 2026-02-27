@@ -43,7 +43,7 @@ export const ByteDanceV3AudioSchema = z.object({
     .string()
     .optional()
     .describe("音频编码格式：raw / opus，默认为 raw(表示pcm)"),
-  codec_options: z.record(z.unknown()).optional().describe("编码选项"),
+  codec_options: z.record(z.string(), z.unknown()).optional().describe("编码选项"),
 });
 
 export type ByteDanceV3Audio = z.infer<typeof ByteDanceV3AudioSchema>;
@@ -90,7 +90,7 @@ export const ByteDanceV3RequestSchema = z.object({
     .optional()
     .describe("是否启动首字返回加速"),
   accelerate_score: z.number().optional().describe("首字返回加速率"),
-  extra: z.record(z.unknown()).optional().describe("额外参数"),
+  extra: z.record(z.string(), z.unknown()).optional().describe("额外参数"),
 });
 
 export type ByteDanceV3Request = z.infer<typeof ByteDanceV3RequestSchema>;

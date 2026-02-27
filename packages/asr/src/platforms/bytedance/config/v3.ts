@@ -29,7 +29,7 @@ export const ByteDanceV3AudioSchema = z.object({
   /** 编解码器 */
   codec: z.string().optional(),
   /** 编解码器选项 */
-  codec_options: z.record(z.unknown()).optional(),
+  codec_options: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**
@@ -75,7 +75,7 @@ export const ByteDanceV3RequestSchema = z.object({
   /** 首字加速分数 */
   accelerate_score: z.number().optional(),
   /** 额外参数 */
-  extra: z.record(z.unknown()).optional(),
+  extra: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**
