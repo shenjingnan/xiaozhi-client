@@ -27,6 +27,12 @@ export interface TTSServiceOptions {
    * 获取设备连接的回调
    */
   getConnection?: (deviceId: string) => ESP32Connection | undefined;
+
+  /**
+   * TTS 完成回调（stop 消息发送后触发）
+   * 用于通知外部 TTS 流程已完成，可以进行清理或重建
+   */
+  onTTSComplete?: (deviceId: string) => void;
 }
 
 /**

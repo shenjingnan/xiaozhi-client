@@ -19,6 +19,9 @@ export class TTSService implements ITTSService {
   /** 获取设备连接的回调 */
   private getConnection?: TTSServiceOptions["getConnection"];
 
+  /** TTS 完成回调（stop 消息发送后触发） */
+  private onTTSComplete?: TTSServiceOptions["onTTSComplete"];
+
   /** 每个设备是否已触发 TTS（避免重复触发） */
   private readonly ttsTriggered = new Map<string, boolean>();
 
@@ -52,6 +55,7 @@ export class TTSService implements ITTSService {
    */
   constructor(options: TTSServiceOptions = {}) {
     this.getConnection = options.getConnection;
+    this.onTTSComplete = options.onTTSComplete;
   }
 
   /**
@@ -134,9 +138,9 @@ export class TTSService implements ITTSService {
           // 直接将数据写入 demuxer 进行解封装
           demuxer.write(Buffer.from(result.chunk));
 
-          logger.info(
-            `[TTSService] TTS 数据接收: deviceId=${deviceId}, isFinal=${result.isFinal}`
-          );
+          // logger.info(
+          //   `[TTSService] TTS 数据接收: deviceId=${deviceId}, isFinal=${result.isFinal}`
+          // );
           if (result.isFinal) {
             logger.info(`[TTSService] TTS 数据接收完成: deviceId=${deviceId}`);
             demuxer.end();
@@ -340,6 +344,11 @@ export class TTSService implements ITTSService {
 
     // 清理状态
     this.cleanup(deviceId);
+
+    // 通知 TTS 流程已完成，触发重建
+    if (this.onTTSComplete) {
+      this.onTTSComplete(deviceId);
+    }
   }
 
   /**

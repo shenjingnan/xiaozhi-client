@@ -53,7 +53,8 @@ export class ESP32Service {
     // 初始化语音服务
     this.llmService = new LLMService();
     this.asrService = this.createASRService();
-    this.ttsService = new TTSService();
+    this.ttsService = this.createTTSService();
+    this.setupTTSGetConnection();
   }
 
   /**
@@ -86,6 +87,9 @@ export class ESP32Service {
 
             try {
               const llmResponse = await this.llmService.chat(text);
+              logger.info(
+                `[ESP32Service] LLM 响应: deviceId=${deviceId}, response=${llmResponse}`
+              );
               await this.ttsService.speak(deviceId, llmResponse);
             } catch (error) {
               logger.error(
@@ -118,6 +122,33 @@ export class ESP32Service {
     }
     this.asrService = this.createASRService();
     logger.info("[ESP32Service] ASR 服务实例已重建");
+  }
+
+  /**
+   * 创建 TTS 服务实例
+   * @returns TTS 服务实例
+   */
+  private createTTSService(): TTSService {
+    return new TTSService({
+      onTTSComplete: () => {
+        // TTS 完成后重建服务实例
+        this.recreateTTSService();
+      },
+    });
+  }
+
+  /**
+   * 重建 TTS 服务实例
+   * 销毁当前实例并创建新实例，确保每次 TTS 都从干净的状态开始
+   */
+  private recreateTTSService(): void {
+    logger.info("[ESP32Service] 重建 TTS 服务实例");
+    if (this.ttsService) {
+      this.ttsService.destroy();
+    }
+    this.ttsService = this.createTTSService();
+    this.setupTTSGetConnection();
+    logger.info("[ESP32Service] TTS 服务实例已重建");
   }
 
   /**
