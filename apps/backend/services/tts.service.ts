@@ -46,6 +46,16 @@ export class TTSService implements ITTSService {
   /** 每个设备的连接引用（用于缓冲区处理） */
   private readonly deviceConnections = new Map<string, ESP32Connection>();
 
+  /** 每个 demuxer 的事件监听器引用（用于清理） */
+  private readonly demuxerListeners = new Map<
+    string,
+    {
+      data: (opusPacket: Buffer) => void;
+      end: () => void;
+      error: (err: Error) => void;
+    }
+  >();
+
   /**
    * 构造函数
    * @param options - 配置选项
@@ -162,37 +172,44 @@ export class TTSService implements ITTSService {
     demuxer: prism.opus.OggDemuxer,
     connection: ESP32Connection
   ) {
-    demuxer.on("data", (opusPacket: Buffer) => {
-      // 只负责将包推入缓冲区，不做异步操作
-      const buffer = this.opusPacketBuffer.get(deviceId);
-      if (buffer) {
-        buffer.push(opusPacket);
-      }
+    const listeners = {
+      data: (opusPacket: Buffer) => {
+        // 只负责将包推入缓冲区，不做异步操作
+        const buffer = this.opusPacketBuffer.get(deviceId);
+        if (buffer) {
+          buffer.push(opusPacket);
+        }
 
-      // 触发缓冲区处理（如果尚未在处理中），使用 .catch() 捕获异步异常
-      void this.processBuffer(deviceId).catch((error) => {
-        logger.error(
-          `[TTSService] processBuffer 执行失败: deviceId=${deviceId}`,
-          error
-        );
-      });
-    });
+        // 触发缓冲区处理（如果尚未在处理中），使用 .catch() 捕获异步异常
+        void this.processBuffer(deviceId).catch((error) => {
+          logger.error(
+            `[TTSService] processBuffer 执行失败: deviceId=${deviceId}`,
+            error
+          );
+        });
+      },
+      end: () => {
+        // 使用轮询机制等待缓冲区处理完成
+        this.waitForBufferDrain(deviceId);
+      },
+      error: (err: Error) => {
+        logger.error(`[TTSService] Demuxer 错误: deviceId=${deviceId}`, err);
+        // 使用 .catch() 捕获异步异常
+        void this.sendStopAndCleanup(deviceId).catch((error) => {
+          logger.error(
+            `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
+            error
+          );
+        });
+      },
+    };
 
-    demuxer.on("end", () => {
-      // 使用轮询机制等待缓冲区处理完成
-      this.waitForBufferDrain(deviceId);
-    });
+    demuxer.on("data", listeners.data);
+    demuxer.on("end", listeners.end);
+    demuxer.on("error", listeners.error);
 
-    demuxer.on("error", (err: Error) => {
-      logger.error(`[TTSService] Demuxer 错误: deviceId=${deviceId}`, err);
-      // 使用 .catch() 捕获异步异常
-      void this.sendStopAndCleanup(deviceId).catch((error) => {
-        logger.error(
-          `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
-          error
-        );
-      });
-    });
+    // 保存监听器引用以便后续清理
+    this.demuxerListeners.set(deviceId, listeners);
   }
 
   /**
@@ -343,11 +360,32 @@ export class TTSService implements ITTSService {
   }
 
   /**
+   * 清理设备 demuxer 事件监听器
+   * @param deviceId - 设备 ID
+   * @param demuxer - Ogg Demuxer 实例
+   */
+  private cleanupDeviceDemuxer(
+    deviceId: string,
+    demuxer: prism.opus.OggDemuxer | undefined
+  ): void {
+    const listeners = this.demuxerListeners.get(deviceId);
+    if (listeners && demuxer) {
+      demuxer.off("data", listeners.data);
+      demuxer.off("end", listeners.end);
+      demuxer.off("error", listeners.error);
+      this.demuxerListeners.delete(deviceId);
+    }
+  }
+
+  /**
    * 清理设备状态
    * 注意：不清理 ttsCompleted，让它保持标记防止重复触发
    * @param deviceId - 设备 ID
    */
   cleanup(deviceId: string): void {
+    const demuxer = this.audioDemuxers.get(deviceId);
+    // 先移除事件监听器，防止在清理过程中仍然触发
+    this.cleanupDeviceDemuxer(deviceId, demuxer);
     this.audioDemuxers.delete(deviceId);
     this.cumulativeTimestamps.delete(deviceId);
     this.packetIndices.delete(deviceId);
@@ -500,6 +538,10 @@ export class TTSService implements ITTSService {
    * 销毁服务
    */
   destroy(): void {
+    // 先移除所有 demuxer 的事件监听器
+    for (const [deviceId, demuxer] of this.audioDemuxers) {
+      this.cleanupDeviceDemuxer(deviceId, demuxer);
+    }
     this.ttsTriggered.clear();
     this.audioDemuxers.clear();
     this.cumulativeTimestamps.clear();
@@ -509,6 +551,7 @@ export class TTSService implements ITTSService {
     this.opusPacketBuffer.clear();
     this.isProcessingBuffer.clear();
     this.deviceConnections.clear();
+    this.demuxerListeners.clear();
     logger.debug("[TTSService] 服务已销毁");
   }
 }
