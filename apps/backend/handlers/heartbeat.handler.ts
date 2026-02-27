@@ -11,6 +11,15 @@ import type { NotificationService } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
 import { sendWebSocketError } from "@/utils/websocket-helper.js";
 import { configManager } from "@xiaozhi-client/config";
+import type WebSocket from "ws";
+
+/**
+ * WebSocket 兼容类型
+ * 支持 ws 库的 WebSocket 类型和测试 Mock 类型
+ */
+type WebSocketLike =
+  | WebSocket
+  | { send: (data: string) => void; readyState: number };
 
 /**
  * 心跳消息接口
@@ -46,7 +55,7 @@ export class HeartbeatHandler {
    * 处理客户端状态更新（心跳）
    */
   async handleClientStatus(
-    ws: any,
+    ws: WebSocketLike,
     message: HeartbeatMessage,
     clientId: string
   ): Promise<void> {
@@ -82,7 +91,10 @@ export class HeartbeatHandler {
   /**
    * 发送最新配置给客户端
    */
-  private async sendLatestConfig(ws: any, clientId: string): Promise<void> {
+  private async sendLatestConfig(
+    ws: WebSocketLike,
+    clientId: string
+  ): Promise<void> {
     try {
       const latestConfig = configManager.getConfig();
       const message = {
@@ -200,7 +212,7 @@ export class HeartbeatHandler {
   /**
    * 发送心跳响应
    */
-  sendHeartbeatResponse(ws: any, clientId: string): void {
+  sendHeartbeatResponse(ws: WebSocketLike, clientId: string): void {
     try {
       const response = {
         type: "heartbeatResponse",
