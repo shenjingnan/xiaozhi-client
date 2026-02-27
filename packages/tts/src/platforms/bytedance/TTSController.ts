@@ -134,7 +134,11 @@ export class ByteDanceTTSController implements TTSController {
         case MsgType.FrontEndResultServer:
           break;
         case MsgType.AudioOnlyServer: {
+          console.log("tts: ", msg);
           const isLast = msg.sequence !== undefined && msg.sequence < 0;
+          console.log(
+            `[TTSController] Calling onAudioChunk: isLast=${isLast}, sequence=${msg.sequence}`
+          );
           await onAudioChunk(msg.payload, isLast);
 
           if (isLast) {

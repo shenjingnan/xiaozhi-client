@@ -134,9 +134,13 @@ export class TTSService implements ITTSService {
           // 直接将数据写入 demuxer 进行解封装
           demuxer.write(Buffer.from(result.chunk));
 
+          logger.info(
+            `[TTSService] TTS 数据接收: deviceId=${deviceId}, isFinal=${result.isFinal}`
+          );
           if (result.isFinal) {
-            demuxer.end();
             logger.info(`[TTSService] TTS 数据接收完成: deviceId=${deviceId}`);
+            demuxer.end();
+            break;
           }
         }
       } catch (error) {
@@ -197,7 +201,7 @@ export class TTSService implements ITTSService {
    * @param deviceId - 设备 ID
    */
   private waitForBufferDrain(deviceId: string): void {
-    const maxWaitTime = 1000; // 最大等待 1 秒
+    const maxWaitTime = 10000; // 最大等待 10 秒
     const checkInterval = 50; // 每 50ms 检查一次
     const startTime = Date.now();
 
@@ -206,6 +210,9 @@ export class TTSService implements ITTSService {
       const isProcessing = this.isProcessingBuffer.get(deviceId);
 
       // 缓冲区已清空且不在处理中
+      logger.info(
+        `[TTSService] 缓冲区排空检查: deviceId=${deviceId}, buffer=${buffer?.length}, isProcessing=${isProcessing}`
+      );
       if ((!buffer || buffer.length === 0) && !isProcessing) {
         this.sendStopAndCleanup(deviceId);
         return true;
