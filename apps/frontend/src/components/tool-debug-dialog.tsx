@@ -41,6 +41,7 @@ import {
   createZodSchemaFromJsonSchema,
 } from "@/lib/schema-utils";
 import { apiClient } from "@/services/api";
+import type { JSONSchema } from "@xiaozhi-client/shared-types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
@@ -57,7 +58,12 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import {
+  Controller,
+  type UseFormReturn,
+  useFieldArray,
+  useForm,
+} from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -75,11 +81,11 @@ import { z } from "zod";
  */
 interface ArrayFieldProps {
   name: string;
-  schema: any;
-  form: any;
+  schema: JSONSchema;
+  form: UseFormReturn<Record<string, unknown>>;
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
 }
 
@@ -91,16 +97,24 @@ const ArrayField = memo(function ArrayField({
 }: ArrayFieldProps) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: name as any,
+    name: name as never,
   });
 
   const addItem = () => {
     const itemSchema = schema.items;
-    let newItem: any;
+    let newItem: string | number | boolean | unknown[] | Record<string, unknown>;
+
+    if (!itemSchema) {
+      newItem = "";
+      append(newItem);
+      return;
+    }
 
     switch (itemSchema.type) {
       case "string":
-        newItem = itemSchema.enum ? itemSchema.enum[0] : "";
+        newItem = itemSchema.enum && itemSchema.enum.length > 0
+          ? (itemSchema.enum[0] as string)
+          : "";
         break;
       case "number":
       case "integer":
@@ -179,14 +193,14 @@ const ArrayField = memo(function ArrayField({
                             <div className="ml-6 border-l-2 border-muted pl-4">
                               {renderFormField(
                                 `${name}.${index}`,
-                                schema.items
+                                schema.items ?? { type: "string" }
                               )}
                             </div>
                           );
                         }
                         return renderFormField(
                           `${name}.${index}`,
-                          schema.items
+                          schema.items ?? { type: "string" }
                         );
                       })()}
                     </FormItem>
@@ -215,11 +229,11 @@ const ArrayField = memo(function ArrayField({
  */
 interface ObjectFieldProps {
   name: string;
-  schema: any;
-  form: any;
+  schema: JSONSchema;
+  form: UseFormReturn<Record<string, unknown>>;
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
   getTypeBadge: (type: string) => string;
 }
@@ -339,10 +353,10 @@ const NoParamsMessage = memo(function NoParamsMessage() {
  */
 interface FormRendererProps {
   tool: ToolDebugDialogProps["tool"];
-  form: any;
+  form: UseFormReturn<Record<string, unknown>>;
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
 }
 
@@ -365,7 +379,7 @@ const FormRenderer = memo(function FormRenderer({
       <ScrollArea className="h-full">
         <div className="space-y-4 p-2">
           {Object.entries(tool.inputSchema.properties).map(
-            ([fieldName, fieldSchema]: [string, any]) => (
+            ([fieldName, fieldSchema]: [string, JSONSchema]) => (
               <FormField
                 key={`${tool.name}-${fieldName}`} // 添加工具名称作为前缀，确保 key 的唯一性和稳定性
                 control={form.control}
@@ -374,7 +388,7 @@ const FormRenderer = memo(function FormRenderer({
                   <FormItem>
                     <div className="flex items-center gap-2">
                       <FormLabel>
-                        {tool.inputSchema.required?.includes(fieldName) && (
+                        {tool.inputSchema?.required?.includes(fieldName) && (
                           <span className="text-red-500 mr-1">*</span>
                         )}
                         {fieldName}
@@ -432,7 +446,7 @@ interface ToolDebugDialogProps {
     serverName: string;
     toolName: string;
     description?: string;
-    inputSchema?: any;
+    inputSchema?: JSONSchema;
   } | null;
 }
 
