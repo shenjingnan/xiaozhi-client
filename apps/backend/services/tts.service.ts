@@ -46,6 +46,9 @@ export class TTSService implements ITTSService {
   /** 每个设备的连接引用（用于缓冲区处理） */
   private readonly deviceConnections = new Map<string, ESP32Connection>();
 
+  /** 每个设备的缓冲区排空等待定时器 */
+  private readonly bufferDrainTimers = new Map<string, NodeJS.Timeout>();
+
   /**
    * 构造函数
    * @param options - 配置选项
@@ -235,12 +238,15 @@ export class TTSService implements ITTSService {
       if (check()) return;
     }
 
-    // 循环检查
+    // 循环检查，将定时器存储到 Map 中以便清理
     const intervalId = setInterval(() => {
       if (check()) {
         clearInterval(intervalId);
+        this.bufferDrainTimers.delete(deviceId);
       }
     }, checkInterval);
+
+    this.bufferDrainTimers.set(deviceId, intervalId);
   }
 
   /**
@@ -348,6 +354,13 @@ export class TTSService implements ITTSService {
    * @param deviceId - 设备 ID
    */
   cleanup(deviceId: string): void {
+    // 清理该设备的定时器
+    const timer = this.bufferDrainTimers.get(deviceId);
+    if (timer) {
+      clearInterval(timer);
+      this.bufferDrainTimers.delete(deviceId);
+    }
+
     this.audioDemuxers.delete(deviceId);
     this.cumulativeTimestamps.delete(deviceId);
     this.packetIndices.delete(deviceId);
@@ -500,6 +513,12 @@ export class TTSService implements ITTSService {
    * 销毁服务
    */
   destroy(): void {
+    // 清理所有活跃的定时器
+    for (const timer of Array.from(this.bufferDrainTimers.values())) {
+      clearInterval(timer);
+    }
+    this.bufferDrainTimers.clear();
+
     this.ttsTriggered.clear();
     this.audioDemuxers.clear();
     this.cumulativeTimestamps.clear();
