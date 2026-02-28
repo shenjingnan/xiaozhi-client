@@ -15,14 +15,13 @@ import type {
   InternalMCPServiceConfig,
   MCPServiceConfig,
   ManagerStatus,
-  ToolCallResult,
   ToolInfo,
   ToolStatusFilter,
   UnifiedServerConfig,
   UnifiedServerStatus,
 } from "@/lib/mcp/types";
 import { getEventBus } from "@/services/event-bus.service.js";
-import type { MCPMessage } from "@/types/mcp.js";
+import type { MCPMessage, ToolCallResult } from "@/types/mcp.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { isModelScopeURL } from "@xiaozhi-client/config";
 import type { MCPToolConfig } from "@xiaozhi-client/config";

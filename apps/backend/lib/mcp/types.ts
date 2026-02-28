@@ -113,19 +113,8 @@ export interface MCPServiceStatus {
 // 4. 工具调用相关类型
 // =========================
 
-/**
- * 工具调用结果接口
- * 使用简化的类型定义，保持向后兼容性
- * 注意：这与 @xiaozhi-client/mcp-core 中的 ToolCallResult 类型不同
- */
-export interface ToolCallResult {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-  isError?: boolean;
-  [key: string]: unknown; // 支持其他未知字段，与 endpoint 包保持兼容
-}
+// ToolCallResult 重新导出：统一到 @/types/mcp.js 避免重复定义
+export type { ToolCallResult } from "@/types/mcp.js";
 
 /**
  * JSON Schema 类型定义
