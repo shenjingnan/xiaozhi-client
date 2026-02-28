@@ -26,7 +26,23 @@
 // 导出
 // =========================
 
+// 主要导出（manager.ts 已经重新导出所有类型）
 export * from "./manager.js";
+
+// 配置适配与转换工具
 export * from "./adapter.js";
+
+// 配置解析器
 export * from "./resolver.js";
+
+// 配置初始化器
 export * from "./initializer.js";
+
+// 内部模块导出（高级用法）
+export { ConfigIO } from "./ConfigIO.js";
+export { ConfigValidator } from "./ConfigValidator.js";
+export { ConfigEventBus } from "./ConfigEventBus.js";
+export { MCPConfigManager } from "./MCPConfigManager.js";
+export { CustomMCPToolsManager } from "./CustomMCPToolsManager.js";
+export { ToolUsageStats } from "./ToolUsageStats.js";
+export { ConnectionConfigManager } from "./ConnectionConfigManager.js";
