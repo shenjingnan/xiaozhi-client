@@ -205,9 +205,7 @@ export class TTSService implements ITTSService {
    * @param deviceId - 设备 ID
    */
   private waitForBufferDrain(deviceId: string): void {
-    const maxWaitTime = 10000; // 最大等待 10 秒
     const checkInterval = 50; // 每 50ms 检查一次
-    const startTime = Date.now();
 
     const check = (): boolean => {
       const buffer = this.opusPacketBuffer.get(deviceId);
@@ -218,15 +216,6 @@ export class TTSService implements ITTSService {
         `[TTSService] 缓冲区排空检查: deviceId=${deviceId}, buffer=${buffer?.length}, isProcessing=${isProcessing}`
       );
       if ((!buffer || buffer.length === 0) && !isProcessing) {
-        this.sendStopAndCleanup(deviceId);
-        return true;
-      }
-
-      // 超时，强制发送 stop
-      if (Date.now() - startTime >= maxWaitTime) {
-        logger.warn(
-          `[TTSService] 缓冲区排空超时，强制发送 stop: deviceId=${deviceId}`
-        );
         this.sendStopAndCleanup(deviceId);
         return true;
       }
