@@ -4,6 +4,9 @@
 
 import type { MCPServerConfig } from "../config";
 
+// 重新导出统一的错误码枚举
+export { MCPErrorCode } from "../api/errors";
+
 /**
  * MCP 服务添加请求接口（单服务格式）
  */
@@ -82,31 +85,6 @@ export interface ApiErrorResponse {
       timestamp: string;
     };
   };
-}
-
-/**
- * API 错误码枚举
- */
-export enum MCPErrorCode {
-  // 服务相关错误
-  SERVER_NOT_FOUND = "SERVER_NOT_FOUND",
-  SERVER_ALREADY_EXISTS = "SERVER_ALREADY_EXISTS",
-  INVALID_SERVICE_NAME = "INVALID_SERVICE_NAME",
-
-  // 配置相关错误
-  INVALID_CONFIG = "INVALID_CONFIG",
-  CONFIG_UPDATE_FAILED = "CONFIG_UPDATE_FAILED",
-
-  // 连接相关错误
-  CONNECTION_FAILED = "CONNECTION_FAILED",
-
-  // 操作相关错误
-  ADD_FAILED = "ADD_FAILED",
-  REMOVE_FAILED = "REMOVE_FAILED",
-
-  // 系统错误
-  INTERNAL_ERROR = "INTERNAL_ERROR",
-  VALIDATION_ERROR = "VALIDATION_ERROR",
 }
 
 /**
