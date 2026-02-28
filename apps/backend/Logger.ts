@@ -520,7 +520,10 @@ export class Logger {
         this.rotateLogFile();
       }
     } catch (error) {
-      // 忽略文件状态检查错误
+      // 文件状态检查失败时记录警告，但不中断程序
+      console.warn(
+        `[Logger] 文件状态检查失败: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -553,7 +556,10 @@ export class Logger {
       const firstRotatedFile = path.join(logDir, `${logName}.1.log`);
       fs.renameSync(this.logFilePath, firstRotatedFile);
     } catch (error) {
-      // 轮转失败时忽略错误，继续使用当前文件
+      // 轮转失败时记录警告，继续使用当前文件
+      console.warn(
+        `[Logger] 日志文件轮转失败: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -575,7 +581,10 @@ export class Logger {
         }
       }
     } catch (error) {
-      // 忽略清理错误
+      // 清理失败时记录警告
+      console.warn(
+        `[Logger] 清理旧日志文件失败: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
