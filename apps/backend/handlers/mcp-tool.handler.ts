@@ -48,6 +48,60 @@ interface LegacyAddCustomToolRequest {
 }
 
 /**
+ * 中文到英文映射表（模块级常量，避免重复创建）
+ */
+const CHINESE_TO_ENGLISH_MAP: Record<string, string> = {
+  工作流: "workflow",
+  测试: "test",
+  数据: "data",
+  处理: "process",
+  分析: "analysis",
+  生成: "generate",
+  查询: "query",
+  搜索: "search",
+  转换: "convert",
+  计算: "calculate",
+  统计: "statistics",
+  报告: "report",
+  文档: "document",
+  图片: "image",
+  视频: "video",
+  音频: "audio",
+  文本: "text",
+  翻译: "translate",
+  识别: "recognize",
+  检测: "detect",
+  监控: "monitor",
+  管理: "manage",
+  配置: "config",
+  设置: "setting",
+  用户: "user",
+  系统: "system",
+  服务: "service",
+  接口: "api",
+  数据库: "database",
+  网络: "network",
+  安全: "security",
+  备份: "backup",
+  恢复: "restore",
+  同步: "sync",
+  导入: "import",
+  导出: "export",
+  上传: "upload",
+  下载: "download",
+};
+
+/**
+ * 预编译的中文正则表达式映射表（避免每次调用都创建新 RegExp 对象）
+ */
+const CHINESE_REGEX_MAP = new Map(
+  Object.entries(CHINESE_TO_ENGLISH_MAP).map(([chinese, english]) => [
+    chinese,
+    { regex: new RegExp(chinese, "g"), replacement: english },
+  ])
+);
+
+/**
  * MCP 工具调用 API 处理器
  */
 export class MCPToolHandler {
@@ -1208,53 +1262,13 @@ export class MCPToolHandler {
    * 简单的中文到英文转换（可以扩展为更复杂的拼音转换）
    */
   private convertChineseToEnglish(text: string): string {
-    // 常见中文词汇的映射
-    const chineseToEnglishMap: Record<string, string> = {
-      工作流: "workflow",
-      测试: "test",
-      数据: "data",
-      处理: "process",
-      分析: "analysis",
-      生成: "generate",
-      查询: "query",
-      搜索: "search",
-      转换: "convert",
-      计算: "calculate",
-      统计: "statistics",
-      报告: "report",
-      文档: "document",
-      图片: "image",
-      视频: "video",
-      音频: "audio",
-      文本: "text",
-      翻译: "translate",
-      识别: "recognize",
-      检测: "detect",
-      监控: "monitor",
-      管理: "manage",
-      配置: "config",
-      设置: "setting",
-      用户: "user",
-      系统: "system",
-      服务: "service",
-      接口: "api",
-      数据库: "database",
-      网络: "network",
-      安全: "security",
-      备份: "backup",
-      恢复: "restore",
-      同步: "sync",
-      导入: "import",
-      导出: "export",
-      上传: "upload",
-      下载: "download",
-    };
-
     let result = text;
 
-    // 替换常见中文词汇
-    for (const [chinese, english] of Object.entries(chineseToEnglishMap)) {
-      result = result.replace(new RegExp(chinese, "g"), english);
+    // 使用预编译的 RegExp 对象替换常见中文词汇
+    for (const { regex, replacement } of Array.from(
+      CHINESE_REGEX_MAP.values()
+    )) {
+      result = result.replace(regex, replacement);
     }
 
     // 如果还有中文字符，用拼音前缀替代
