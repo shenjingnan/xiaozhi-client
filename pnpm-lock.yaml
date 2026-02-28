@@ -607,6 +607,9 @@ importers:
 
   packages/config:
     dependencies:
+      '@xiaozhi-client/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
       comment-json:
         specifier: ^4.2.5
         version: 4.5.1

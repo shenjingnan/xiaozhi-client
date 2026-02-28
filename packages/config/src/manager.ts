@@ -51,6 +51,9 @@ const DEFAULT_CONNECTION_CONFIG: Required<ConnectionConfig> = {
   heartbeatInterval: 30000, // 30秒心跳间隔
   heartbeatTimeout: 10000, // 10秒心跳超时
   reconnectInterval: 5000, // 5秒重连间隔
+  maxReconnectAttempts: 10, // 最大重连次数
+  connectionTimeout: 30000, // 30秒连接超时
+  autoReconnect: true, // 启用自动重连
 };
 
 // 配置文件接口定义
@@ -96,10 +99,22 @@ export interface MCPServerToolsConfig {
   tools: Record<string, MCPToolConfig>;
 }
 
+/**
+ * 连接配置接口
+ */
 export interface ConnectionConfig {
-  heartbeatInterval?: number; // 心跳检测间隔（毫秒），默认30000
-  heartbeatTimeout?: number; // 心跳超时时间（毫秒），默认10000
-  reconnectInterval?: number; // 重连间隔（毫秒），默认5000
+  /** 心跳间隔（毫秒） */
+  heartbeatInterval?: number;
+  /** 心跳超时时间（毫秒） */
+  heartbeatTimeout?: number;
+  /** 重连间隔（毫秒） */
+  reconnectInterval?: number;
+  /** 最大重连次数 */
+  maxReconnectAttempts?: number;
+  /** 连接超时时间（毫秒） */
+  connectionTimeout?: number;
+  /** 是否启用自动重连 */
+  autoReconnect?: boolean;
 }
 
 export interface ModelScopeConfig {
@@ -1105,6 +1120,15 @@ export class ConfigManager {
       reconnectInterval:
         connectionConfig.reconnectInterval ??
         DEFAULT_CONNECTION_CONFIG.reconnectInterval,
+      maxReconnectAttempts:
+        connectionConfig.maxReconnectAttempts ??
+        DEFAULT_CONNECTION_CONFIG.maxReconnectAttempts,
+      connectionTimeout:
+        connectionConfig.connectionTimeout ??
+        DEFAULT_CONNECTION_CONFIG.connectionTimeout,
+      autoReconnect:
+        connectionConfig.autoReconnect ??
+        DEFAULT_CONNECTION_CONFIG.autoReconnect,
     };
   }
 
