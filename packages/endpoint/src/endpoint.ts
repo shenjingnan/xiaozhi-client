@@ -333,7 +333,7 @@ export class Endpoint {
    * 处理 MCP 消息
    */
   private handleMessage(message: MCPMessage): void {
-    console.debug("收到 MCP 消息:", JSON.stringify(message, null, 2));
+    // console.debug("收到 MCP 消息:", JSON.stringify(message, null, 2));
 
     if (!message.method) {
       console.debug("收到没有 method 字段的消息，忽略");
@@ -374,7 +374,7 @@ export class Endpoint {
 
       case "ping":
         this.sendResponse(message.id, {});
-        console.debug("回应 MCP ping 消息");
+        // console.debug("回应 MCP ping 消息");
         break;
 
       default:
@@ -386,9 +386,9 @@ export class Endpoint {
    * 发送响应消息
    */
   private sendResponse(id: number | string, result: unknown): void {
-    console.debug(
-      `尝试发送响应: id=${id}, isConnected=${this.connectionStatus}, wsReadyState=${this.ws?.readyState}`
-    );
+    // console.debug(
+    //   `尝试发送响应: id=${id}, isConnected=${this.connectionStatus}, wsReadyState=${this.ws?.readyState}`
+    // );
 
     if (this.connectionStatus && this.ws?.readyState === WebSocket.OPEN) {
       const response: ExtendedMCPMessage = {

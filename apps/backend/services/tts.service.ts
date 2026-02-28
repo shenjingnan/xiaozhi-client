@@ -19,6 +19,9 @@ export class TTSService implements ITTSService {
   /** 获取设备连接的回调 */
   private getConnection?: TTSServiceOptions["getConnection"];
 
+  /** TTS 完成回调（stop 消息发送后触发） */
+  private onTTSComplete?: TTSServiceOptions["onTTSComplete"];
+
   /** 每个设备是否已触发 TTS（避免重复触发） */
   private readonly ttsTriggered = new Map<string, boolean>();
 
@@ -52,6 +55,7 @@ export class TTSService implements ITTSService {
    */
   constructor(options: TTSServiceOptions = {}) {
     this.getConnection = options.getConnection;
+    this.onTTSComplete = options.onTTSComplete;
   }
 
   /**
@@ -134,9 +138,9 @@ export class TTSService implements ITTSService {
           // 直接将数据写入 demuxer 进行解封装
           demuxer.write(Buffer.from(result.chunk));
 
-          logger.info(
-            `[TTSService] TTS 数据接收: deviceId=${deviceId}, isFinal=${result.isFinal}`
-          );
+          // logger.info(
+          //   `[TTSService] TTS 数据接收: deviceId=${deviceId}, isFinal=${result.isFinal}`
+          // );
           if (result.isFinal) {
             logger.info(`[TTSService] TTS 数据接收完成: deviceId=${deviceId}`);
             demuxer.end();
@@ -201,9 +205,7 @@ export class TTSService implements ITTSService {
    * @param deviceId - 设备 ID
    */
   private waitForBufferDrain(deviceId: string): void {
-    const maxWaitTime = 10000; // 最大等待 10 秒
     const checkInterval = 50; // 每 50ms 检查一次
-    const startTime = Date.now();
 
     const check = (): boolean => {
       const buffer = this.opusPacketBuffer.get(deviceId);
@@ -214,15 +216,6 @@ export class TTSService implements ITTSService {
         `[TTSService] 缓冲区排空检查: deviceId=${deviceId}, buffer=${buffer?.length}, isProcessing=${isProcessing}`
       );
       if ((!buffer || buffer.length === 0) && !isProcessing) {
-        this.sendStopAndCleanup(deviceId);
-        return true;
-      }
-
-      // 超时，强制发送 stop
-      if (Date.now() - startTime >= maxWaitTime) {
-        logger.warn(
-          `[TTSService] 缓冲区排空超时，强制发送 stop: deviceId=${deviceId}`
-        );
         this.sendStopAndCleanup(deviceId);
         return true;
       }
@@ -283,9 +276,9 @@ export class TTSService implements ITTSService {
         const timestamp = this.cumulativeTimestamps.get(deviceId) || 0;
         const duration = this.getPacketDuration(opusPacket);
 
-        logger.info(
-          `[TTSService] 发送 Opus 包: deviceId=${deviceId}, timestamp=${timestamp}, duration=${duration}, opusPacketLength=${opusPacket.length}`
-        );
+        // logger.info(
+        //   `[TTSService] 发送 Opus 包: deviceId=${deviceId}, timestamp=${timestamp}, duration=${duration}, opusPacketLength=${opusPacket.length}`
+        // );
 
         // 发送 Opus 包到硬件
         await connection.sendBinaryProtocol2(opusPacket, timestamp);
@@ -340,6 +333,11 @@ export class TTSService implements ITTSService {
 
     // 清理状态
     this.cleanup(deviceId);
+
+    // 通知 TTS 流程已完成，触发重建
+    if (this.onTTSComplete) {
+      this.onTTSComplete(deviceId);
+    }
   }
 
   /**
