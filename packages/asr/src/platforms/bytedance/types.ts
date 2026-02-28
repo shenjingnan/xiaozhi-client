@@ -187,3 +187,70 @@ export interface ByteDanceCompatConfig {
   /** V3 配置 */
   v3?: ByteDanceV3Config;
 }
+
+/**
+ * ASR 客户端 ByteDance 配置类型
+ *
+ * 这是 buildByteDanceConfig 方法返回的类型，支持 V2 或 V3 配置。
+ * 该类型与 ByteDanceOption 兼容，但使用 Partial 使得所有嵌套字段都是可选的，
+ * 这与 buildByteDanceConfig 方法返回的实际数据结构一致。
+ *
+ * V2 和 V3 配置的通用结构：
+ * - V2: { v2: { app, user?, audio?, request? } }
+ * - V3: { v3: { appKey, accessKey, resourceId, user?, audio?, request? } }
+ */
+export type ASRClientByteDanceConfig =
+  | {
+      v2: {
+        app: {
+          appid: string;
+          token: string;
+          cluster: string;
+        };
+        user?: {
+          uid?: string;
+        };
+        audio?: {
+          format?: string;
+          sampleRate?: number;
+          rate?: number;
+          bits?: number;
+          channel?: number;
+          codec?: string;
+        };
+        request?: {
+          segDuration?: number;
+          nbest?: number;
+          workflow?: string;
+          showLanguage?: boolean;
+          showUtterances?: boolean;
+          resultType?: string;
+        };
+      };
+    }
+  | {
+      v3: {
+        appKey: string;
+        accessKey: string;
+        resourceId: string;
+        user?: {
+          uid?: string;
+        };
+        audio?: {
+          format?: string;
+          sampleRate?: number;
+          rate?: number;
+          bits?: number;
+          channel?: number;
+          codec?: string;
+        };
+        request?: {
+          segDuration?: number;
+          nbest?: number;
+          workflow?: string;
+          showLanguage?: boolean;
+          showUtterances?: boolean;
+          resultType?: string;
+        };
+      };
+    };
