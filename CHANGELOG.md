@@ -1,3 +1,14 @@
+## 2.0.0-beta.3 (2026-03-01)
+
+### 🩹 Fixes
+
+- **ci:** 确保 nx 缓存目录存在 ([#2100](https://github.com/shenjingnan/xiaozhi-client/pull/2100))
+
+### ❤️ Thank You
+
+- Claude
+- shenjingnan @shenjingnan
+
 ## 2.0.0-beta.2 (2026-03-01)
 
 This was a version bump only, there were no code changes.
