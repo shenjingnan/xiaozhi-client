@@ -1,3 +1,14 @@
+## 2.0.0-beta.7 (2026-03-01)
+
+### 🩹 Fixes
+
+- **asr:** 添加 @discordjs/opus 依赖解决 Opus 编码器缺失问题 ([#2104](https://github.com/shenjingnan/xiaozhi-client/pull/2104))
+
+### ❤️ Thank You
+
+- Claude
+- shenjingnan @shenjingnan
+
 ## 2.0.0-beta.6 (2026-03-01)
 
 This was a version bump only, there were no code changes.
