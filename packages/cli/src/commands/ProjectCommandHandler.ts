@@ -12,6 +12,10 @@ import type {
   CommandOptions,
 } from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
+import type { TemplateManager } from "../interfaces/Service";
+import { FileUtils } from "../utils/FileUtils";
+import { FormatUtils } from "../utils/FormatUtils";
+import type ora from "ora";
 
 /**
  * 项目管理命令处理器
@@ -54,8 +58,8 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     const spinner = ora("初始化项目...").start();
 
     try {
-      const templateManager = this.getService<any>("templateManager");
-      const fileUtils = this.getService<any>("fileUtils");
+      const templateManager = this.getService<TemplateManager>("templateManager");
+      const fileUtils = this.getService<typeof FileUtils>("fileUtils");
 
       // 确定目标目录
       const targetPath = path.join(process.cwd(), projectName);
@@ -102,8 +106,8 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     projectName: string,
     templateName: string,
     targetPath: string,
-    spinner: any,
-    templateManager: any
+    spinner: ReturnType<typeof ora>,
+    templateManager: TemplateManager
   ): Promise<void> {
     spinner.text = "检查模板...";
 
@@ -176,8 +180,8 @@ export class ProjectCommandHandler extends BaseCommandHandler {
   private async createBasicProject(
     projectName: string,
     targetPath: string,
-    spinner: any,
-    templateManager: any
+    spinner: ReturnType<typeof ora>,
+    templateManager: TemplateManager
   ): Promise<void> {
     spinner.text = `创建基本项目 "${projectName}"...`;
 
@@ -219,7 +223,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     input: string,
     templates: string[]
   ): string | null {
-    const formatUtils = this.getService<any>("formatUtils");
+    const formatUtils = this.getService<typeof FormatUtils>("formatUtils");
 
     let bestMatch = null;
     let bestSimilarity = 0;

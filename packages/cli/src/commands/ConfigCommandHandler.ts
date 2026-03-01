@@ -2,6 +2,7 @@
  * 配置管理命令处理器
  */
 
+import type { ConfigManager } from "@xiaozhi-client/config";
 import path from "node:path";
 import chalk from "chalk";
 import ora from "ora";
@@ -79,7 +80,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
         throw new Error("格式必须是 json, json5 或 jsonc");
       }
 
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<ConfigManager>("configManager");
 
       if (configManager.configExists()) {
         spinner.warn("配置文件已存在");
@@ -117,7 +118,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
     const spinner = ora("读取配置...").start();
 
     try {
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<ConfigManager>("configManager");
 
       if (!configManager.configExists()) {
         spinner.fail("配置文件不存在");
@@ -226,7 +227,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
     const spinner = ora("更新配置...").start();
 
     try {
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<ConfigManager>("configManager");
 
       if (!configManager.configExists()) {
         spinner.fail("配置文件不存在");
