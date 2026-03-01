@@ -135,6 +135,7 @@ export interface LLMConfig {
   model: string; // 模型名称
   apiKey: string; // API 密钥
   baseURL: string; // API 基础地址
+  prompt?: string; // 自定义系统提示词（支持纯字符串或文件路径）
 }
 
 export interface ToolCallLogConfig {
