@@ -7,7 +7,7 @@ FROM node:20
 # 定义 xiaozhi-client 版本号
 # 默认使用当前项目版本，可在构建时通过 --build-arg 覆盖
 # 例如: docker build --build-arg XIAOZHI_VERSION=1.6.0 .
-ARG XIAOZHI_VERSION=1.6.1
+ARG XIAOZHI_VERSION=1.9.7
 
 # 配置 npm 和 pnpm 使用国内镜像源
 # 设置 npm 注册表镜像

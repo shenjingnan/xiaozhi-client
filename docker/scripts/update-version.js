@@ -11,7 +11,8 @@ import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const projectRoot = join(__dirname, "..");
+const dockerDir = join(__dirname, "..");
+const projectRoot = join(__dirname, "../..");
 
 function updateDockerfileVersion() {
   try {
@@ -23,7 +24,7 @@ function updateDockerfileVersion() {
     console.log(`📦 当前项目版本: ${currentVersion}`);
 
     // 读取 Dockerfile
-    const dockerfilePath = join(projectRoot, "Dockerfile");
+    const dockerfilePath = join(dockerDir, "Dockerfile");
     const dockerfileContent = readFileSync(dockerfilePath, "utf8");
 
     // 使用正则表达式匹配并替换版本号
