@@ -1,6 +1,7 @@
 import type { MetaRecord } from "nextra";
 
 const meta: MetaRecord = {
+  "local-voice": "使用本地语音互动",
   docker: "使用 Docker 部署",
   modelscope: "使用 魔搭社区 MCP",
   "coze-workflow": "集成扣子工作流",

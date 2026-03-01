@@ -35,6 +35,7 @@ Dexec
 dify
 discordjs
 dotenv
+doubao
 Dtext
 Dvoice
 EACCES
@@ -42,6 +43,7 @@ efgh
 Elipssis
 endpo
 ENOENT
+menuconfig
 EPIPE
 eventsource
 EventSource
@@ -54,6 +56,7 @@ fontobject
 gantt
 gaode
 gaotie
+getifaddr
 Gitee
 healthcheck
 HTTPMCP
@@ -104,6 +107,7 @@ punc
 pydantic
 pyenv
 pypi
+qwen
 rcompare
 reinit
 releaserc
