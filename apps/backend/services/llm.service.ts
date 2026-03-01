@@ -4,12 +4,9 @@
  */
 
 import { logger } from "@/Logger.js";
+import { resolvePrompt } from "@/utils/prompt-utils.js";
 import { configManager } from "@xiaozhi-client/config";
 import OpenAI from "openai";
-
-// 默认系统提示词，用于语音助手场景
-const DEFAULT_SYSTEM_PROMPT =
-  "你是一个友好的语音助手，请用简洁的中文回答用户的问题。";
 
 function removeThinkTags(content: string): string {
   // 移除 <think>...</think> 及其内容
@@ -66,10 +63,14 @@ export class LLMService {
     }
 
     try {
+      // 获取 LLM 配置中的提示词配置并解析
+      const llmConfig = configManager.getLLMConfig();
+      const systemPrompt = resolvePrompt(llmConfig?.prompt);
+
       const response = await this.client.chat.completions.create({
         model: this.model,
         messages: [
-          { role: "system", content: DEFAULT_SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },
         ],
       });
