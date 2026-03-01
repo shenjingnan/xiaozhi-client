@@ -3,7 +3,10 @@
  */
 
 // UI状态相关类型
-export type { CozeWorkflowsResult, CozeUIState, ClientStatus } from "./ui";
+export type { CozeWorkflowsResult, CozeUIState } from "./ui";
+
+// 客户端状态类型（从 config/server 重新导出）
+export type { ClientStatus } from "../config/server";
 
 // API响应相关类型
 export type {
