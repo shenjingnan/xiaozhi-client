@@ -1068,6 +1068,11 @@ export class WebServer {
     // 异步销毁 ESP32 服务（fire and forget）
     this.esp32Service.destroy();
 
+    // 移除 WebSocket 服务器事件监听器，防止内存泄漏
+    if (this.wss) {
+      this.wss.removeAllListeners();
+    }
+
     // 销毁事件总线
     destroyEventBus();
 
