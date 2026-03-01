@@ -11,3 +11,7 @@ export {
   inferTransportTypeFromUrl,
   inferTransportTypeFromConfig,
 } from "./validators.js";
+
+// 日志工具
+export { logger, setLogger, resetLogger, getLogger } from "./logger.js";
+export type { LoggerFunctions } from "./logger.js";
