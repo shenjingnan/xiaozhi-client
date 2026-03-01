@@ -2,6 +2,8 @@
  * 服务接口定义
  */
 
+import type { WebServer } from "@/WebServer";
+
 /**
  * 服务管理器接口
  */
@@ -75,7 +77,7 @@ export interface ProcessManager {
  */
 export interface DaemonManager {
   /** 启动守护进程 */
-  startDaemon(serverFactory: () => Promise<any>): Promise<void>;
+  startDaemon(serverFactory: () => Promise<WebServer>): Promise<void>;
   /** 停止守护进程 */
   stopDaemon(): Promise<void>;
 }
