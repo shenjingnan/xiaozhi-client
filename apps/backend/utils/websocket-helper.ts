@@ -5,7 +5,7 @@ import type { Logger } from "@/Logger.js";
  * 描述具有 send 方法的 WebSocket 对象
  */
 export interface WebSocketLike {
-  send(data: string): void;
+  send(data: string, callback?: (error?: Error) => void): void;
 }
 
 /**
@@ -22,17 +22,17 @@ export function sendWebSocketError(
   message: string,
   logger: Logger
 ): void {
-  try {
-    const errorResponse = {
-      type: "error",
-      error: {
-        code,
-        message,
-        timestamp: Date.now(),
-      },
-    };
-    ws.send(JSON.stringify(errorResponse));
-  } catch (error) {
-    logger.error("发送错误消息失败:", error);
-  }
+  const errorResponse = {
+    type: "error",
+    error: {
+      code,
+      message,
+      timestamp: Date.now(),
+    },
+  };
+  ws.send(JSON.stringify(errorResponse), (error) => {
+    if (error) {
+      logger.error("发送错误消息失败:", error);
+    }
+  });
 }

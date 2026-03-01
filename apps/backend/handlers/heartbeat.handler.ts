@@ -83,20 +83,20 @@ export class HeartbeatHandler {
    * 发送最新配置给客户端
    */
   private async sendLatestConfig(ws: any, clientId: string): Promise<void> {
-    try {
-      const latestConfig = configManager.getConfig();
-      const message = {
-        type: "configUpdate",
-        data: latestConfig,
-        timestamp: Date.now(),
-      };
+    const latestConfig = configManager.getConfig();
+    const message = {
+      type: "configUpdate",
+      data: latestConfig,
+      timestamp: Date.now(),
+    };
 
-      ws.send(JSON.stringify(message));
-      this.logger.debug(`最新配置已发送给客户端: ${clientId}`);
-    } catch (error) {
-      this.logger.error(`发送最新配置失败: ${clientId}`, error);
-      // 不抛出错误，避免影响心跳处理
-    }
+    ws.send(JSON.stringify(message), (error) => {
+      if (error) {
+        this.logger.error(`发送最新配置失败: ${clientId}`, error);
+      } else {
+        this.logger.debug(`最新配置已发送给客户端: ${clientId}`);
+      }
+    });
   }
 
   /**
@@ -201,20 +201,21 @@ export class HeartbeatHandler {
    * 发送心跳响应
    */
   sendHeartbeatResponse(ws: any, clientId: string): void {
-    try {
-      const response = {
-        type: "heartbeatResponse",
-        data: {
-          timestamp: Date.now(),
-          status: "ok",
-        },
-      };
+    const response = {
+      type: "heartbeatResponse",
+      data: {
+        timestamp: Date.now(),
+        status: "ok",
+      },
+    };
 
-      ws.send(JSON.stringify(response));
-      this.logger.debug(`心跳响应已发送: ${clientId}`);
-    } catch (error) {
-      this.logger.error(`发送心跳响应失败: ${clientId}`, error);
-    }
+    ws.send(JSON.stringify(response), (error) => {
+      if (error) {
+        this.logger.error(`发送心跳响应失败: ${clientId}`, error);
+      } else {
+        this.logger.debug(`心跳响应已发送: ${clientId}`);
+      }
+    });
   }
 
   /**

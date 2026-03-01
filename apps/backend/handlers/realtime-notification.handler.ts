@@ -109,7 +109,11 @@ export class RealtimeNotificationHandler {
     try {
       const config = configManager.getConfig();
       this.logger.debug("WebSocket: getConfig 请求处理成功", { clientId });
-      ws.send(JSON.stringify({ type: "config", data: config }));
+      ws.send(JSON.stringify({ type: "config", data: config }), (error) => {
+        if (error) {
+          this.logger.error("WebSocket: 发送配置消息失败", { clientId, error });
+        }
+      });
     } catch (error) {
       this.logger.error("WebSocket: getConfig 请求处理失败", error);
       sendWebSocketError(
@@ -157,7 +161,17 @@ export class RealtimeNotificationHandler {
       }
 
       this.logger.debug("WebSocket: 配置更新成功", { clientId });
-      ws.send(JSON.stringify({ type: "config:updated", success: true }));
+      ws.send(
+        JSON.stringify({ type: "config:updated", success: true }),
+        (error) => {
+          if (error) {
+            this.logger.error("WebSocket: 发送配置更新消息失败", {
+              clientId,
+              error,
+            });
+          }
+        }
+      );
     } catch (error) {
       this.logger.error("WebSocket: 配置更新失败", error);
       sendWebSocketError(
@@ -178,8 +192,21 @@ export class RealtimeNotificationHandler {
 
     try {
       const status = this.statusService.getFullStatus();
-      ws.send(JSON.stringify({ type: "status", data: status.client }));
-      this.logger.debug("WebSocket: getStatus 请求处理成功", { clientId });
+      ws.send(
+        JSON.stringify({ type: "status", data: status.client }),
+        (error) => {
+          if (error) {
+            this.logger.error("WebSocket: 发送状态消息失败", {
+              clientId,
+              error,
+            });
+          } else {
+            this.logger.debug("WebSocket: getStatus 请求处理成功", {
+              clientId,
+            });
+          }
+        }
+      );
     } catch (error) {
       this.logger.error("WebSocket: getStatus 请求处理失败", error);
       sendWebSocketError(
@@ -239,34 +266,49 @@ export class RealtimeNotificationHandler {
    * 发送初始数据给新连接的客户端
    */
   async sendInitialData(ws: any, clientId: string): Promise<void> {
-    try {
-      this.logger.debug("发送初始数据给客户端", { clientId });
+    this.logger.debug("发送初始数据给客户端", { clientId });
 
-      // 发送当前配置
-      const config = configManager.getConfig();
-      ws.send(JSON.stringify({ type: "configUpdate", data: config }));
-
-      // 发送当前状态
-      const status = this.statusService.getFullStatus();
-      ws.send(JSON.stringify({ type: "statusUpdate", data: status.client }));
-
-      // 如果有重启状态，也发送
-      if (status.restart) {
-        ws.send(
-          JSON.stringify({ type: "restartStatus", data: status.restart })
-        );
+    // 发送当前配置
+    const config = configManager.getConfig();
+    ws.send(JSON.stringify({ type: "configUpdate", data: config }), (error) => {
+      if (error) {
+        this.logger.error("WebSocket: 发送配置更新消息失败", {
+          clientId,
+          error,
+        });
       }
+    });
 
-      this.logger.debug("初始数据发送完成", { clientId });
-    } catch (error) {
-      this.logger.error("发送初始数据失败:", error);
-      sendWebSocketError(
-        ws,
-        "INITIAL_DATA_ERROR",
-        error instanceof Error ? error.message : "发送初始数据失败",
-        this.logger
+    // 发送当前状态
+    const status = this.statusService.getFullStatus();
+    ws.send(
+      JSON.stringify({ type: "statusUpdate", data: status.client }),
+      (error) => {
+        if (error) {
+          this.logger.error("WebSocket: 发送状态更新消息失败", {
+            clientId,
+            error,
+          });
+        }
+      }
+    );
+
+    // 如果有重启状态，也发送
+    if (status.restart) {
+      ws.send(
+        JSON.stringify({ type: "restartStatus", data: status.restart }),
+        (error) => {
+          if (error) {
+            this.logger.error("WebSocket: 发送重启状态消息失败", {
+              clientId,
+              error,
+            });
+          }
+        }
       );
     }
+
+    this.logger.debug("初始数据发送完成", { clientId });
   }
 
   /**
