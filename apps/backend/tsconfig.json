@@ -19,5 +19,11 @@
     "scripts/**/*",
     "templates/**/*",
     "**/*.config.ts"
+  ],
+  "references": [
+    { "path": "../../packages/config" },
+    { "path": "../../packages/endpoint" },
+    { "path": "../../packages/mcp-core" },
+    { "path": "../../packages/version" }
   ]
 }
