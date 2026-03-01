@@ -18,6 +18,9 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
   private mcpManager: MCPManager;
   private tools: Map<string, EnhancedToolInfo> = new Map();
   private isInitialized = false;
+  // 保存事件监听器引用，用于清理时移除
+  private connectedListener: ((data: unknown) => void) | null = null;
+  private errorListener: ((data: unknown) => void) | null = null;
 
   constructor(private config: EndpointConfig) {
     this.mcpManager = new MCPManager();
@@ -30,16 +33,23 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
       this.mcpManager.addServer(serviceName, mcpConfig);
     }
 
-    // 设置事件监听
-    this.mcpManager.on("connected", (data) => {
+    // 保存监听器引用
+    this.connectedListener = (data) => {
       console.info(
-        `MCP 服务 ${data.serverName} 已连接，工具数: ${data.tools.length}`
+        `MCP 服务 ${(data as { serverName: string; tools: unknown[] }).serverName} 已连接，工具数: ${(data as { serverName: string; tools: unknown[] }).tools.length}`
       );
-    });
+    };
 
-    this.mcpManager.on("error", (data) => {
-      console.error(`MCP 服务 ${data.serverName} 出错:`, data.error);
-    });
+    this.errorListener = (data) => {
+      console.error(
+        `MCP 服务 ${(data as { serverName: string; error: unknown }).serverName} 出错:`,
+        (data as { serverName: string; error: unknown }).error
+      );
+    };
+
+    // 设置事件监听
+    this.mcpManager.on("connected", this.connectedListener);
+    this.mcpManager.on("error", this.errorListener);
   }
 
   /**
@@ -88,6 +98,16 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
    * 清理资源
    */
   async cleanup(): Promise<void> {
+    // 移除事件监听器以防止内存泄漏
+    if (this.connectedListener) {
+      this.mcpManager.removeListener("connected", this.connectedListener);
+      this.connectedListener = null;
+    }
+    if (this.errorListener) {
+      this.mcpManager.removeListener("error", this.errorListener);
+      this.errorListener = null;
+    }
+
     await this.mcpManager.disconnect();
     this.tools.clear();
     this.isInitialized = false;
