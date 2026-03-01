@@ -99,6 +99,14 @@ export interface HeartbeatConfig {
 }
 
 /**
+ * 连接配置接口
+ */
+export interface ConnectionConfig {
+  /** 连接超时（毫秒，默认 30000 = 30秒） */
+  timeout?: number;
+}
+
+/**
  * MCP 服务配置接口
  * 包含所有 MCP 服务的配置选项（不包含服务名称）
  *
@@ -125,6 +133,8 @@ export interface MCPServiceConfig {
   customSSEOptions?: ModelScopeSSEOptions;
   // 心跳配置
   heartbeat?: HeartbeatConfig;
+  // 连接配置
+  connection?: ConnectionConfig;
 }
 
 /**
