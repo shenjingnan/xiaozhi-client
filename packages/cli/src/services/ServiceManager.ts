@@ -1,5 +1,13 @@
 /**
  * 服务管理服务
+ *
+ * 负责管理 xiaozhi 服务的生命周期，包括：
+ * - 服务启动和停止
+ * - 进程状态查询
+ * - 配置验证和初始化
+ * - 多种运行模式支持（normal、mcp-server）
+ *
+ * @module packages/cli/src/services/ServiceManager
  */
 
 import type { ConfigManager } from "@xiaozhi-client/config";

@@ -1,5 +1,13 @@
 /**
  * 守护进程管理服务
+ *
+ * 负责管理 xiaozhi 服务的守护进程，包括：
+ * - 守护进程启动和停止
+ * - 日志文件管理
+ * - 进程状态监控
+ * - 自动重启机制
+ *
+ * @module packages/cli/src/services/DaemonManager
  */
 
 import type { ChildProcess } from "node:child_process";

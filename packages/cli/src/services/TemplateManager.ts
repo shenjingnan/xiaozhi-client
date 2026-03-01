@@ -1,5 +1,14 @@
 /**
  * 模板管理服务
+ *
+ * 负责管理项目模板，包括：
+ * - 模板列表查询
+ * - 模板信息获取
+ * - 项目创建和复制
+ * - 模板变量替换
+ * - 模板验证
+ *
+ * @module packages/cli/src/services/TemplateManager
  */
 
 import fs from "node:fs";

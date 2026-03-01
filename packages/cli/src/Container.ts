@@ -1,5 +1,13 @@
 /**
  * 依赖注入容器
+ *
+ * 负责管理 CLI 的依赖注入，包括：
+ * - 服务注册（工厂、单例、实例）
+ * - 服务获取
+ * - 单例模式管理
+ * - 默认服务配置
+ *
+ * @module packages/cli/src/Container
  */
 
 import { configManager } from "@xiaozhi-client/config";

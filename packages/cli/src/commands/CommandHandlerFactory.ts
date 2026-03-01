@@ -1,5 +1,14 @@
 /**
  * 命令处理器工厂
+ *
+ * 负责创建和管理命令处理器，包括：
+ * - 服务命令处理器
+ * - 配置命令处理器
+ * - 项目命令处理器
+ * - MCP 命令处理器
+ * - 端点命令处理器
+ *
+ * @module packages/cli/src/commands/CommandHandlerFactory
  */
 
 import type {
