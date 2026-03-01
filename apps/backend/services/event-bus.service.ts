@@ -201,68 +201,6 @@ export interface EventBusEvents {
     duration: number;
     timestamp: number;
   };
-
-  // 测试相关事件（仅用于测试）
-  "high-frequency": {
-    id: number;
-    timestamp: number;
-  };
-  "bulk-test": {
-    id: number;
-    timestamp: number;
-  };
-  "error-test": {
-    error: string;
-    timestamp: number;
-  };
-  "large-data-test": {
-    data: any;
-    timestamp: number;
-  };
-  "destroy-test": {
-    message: string;
-    timestamp: number;
-  };
-  "chain-event-1": {
-    value: number;
-    timestamp: number;
-  };
-  "chain-event-2": {
-    value: number;
-    timestamp: number;
-  };
-  "chain-event-3": {
-    value: number;
-    timestamp: number;
-  };
-  "performance-test": {
-    data: any;
-    timestamp: number;
-  };
-  "test:performance": {
-    id: number;
-    timestamp: number;
-  };
-  "chain:start": {
-    value: number;
-    timestamp: number;
-  };
-  "chain:middle": {
-    value: number;
-    timestamp: number;
-  };
-  "chain:end": {
-    value: number;
-    timestamp: number;
-  };
-  "test:error": {
-    error: boolean;
-    timestamp: number;
-  };
-  "test:remove": {
-    id: number;
-    timestamp: number;
-  };
 }
 
 /**

@@ -9,13 +9,89 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
-import { EventBus } from "../event-bus.service.js";
+import { EventBus, type EventBusEvents } from "../event-bus.service.js";
+
+/**
+ * 测试专用事件类型扩展
+ * 这些事件仅用于测试，不应混入生产代码
+ */
+interface TestEventBusEvents extends EventBusEvents {
+  "high-frequency": {
+    id: number;
+    timestamp: number;
+  };
+  "bulk-test": {
+    id: number;
+    timestamp: number;
+  };
+  "error-test": {
+    error: string;
+    timestamp: number;
+  };
+  "large-data-test": {
+    data: unknown;
+    timestamp: number;
+  };
+  "destroy-test": {
+    message: string;
+    timestamp: number;
+  };
+  "chain-event-1": {
+    value: number;
+    timestamp: number;
+  };
+  "chain-event-2": {
+    value: number;
+    timestamp: number;
+  };
+  "chain-event-3": {
+    value: number;
+    timestamp: number;
+  };
+  "performance-test": {
+    data: unknown;
+    timestamp: number;
+  };
+  "test:performance": {
+    id: number;
+    timestamp: number;
+  };
+  "chain:start": {
+    value: number;
+    timestamp: number;
+  };
+  "chain:middle": {
+    value: number;
+    timestamp: number;
+  };
+  "chain:end": {
+    value: number;
+    timestamp: number;
+  };
+  "test:error": {
+    error: boolean;
+    timestamp: number;
+  };
+  "test:remove": {
+    id: number;
+    timestamp: number;
+  };
+}
 
 describe("事件系统边界情况测试", () => {
-  let eventBus: EventBus;
+  let eventBus: EventBus & {
+    emitEvent<K extends keyof TestEventBusEvents>(
+      eventName: K,
+      data: TestEventBusEvents[K]
+    ): boolean;
+    onEvent<K extends keyof TestEventBusEvents>(
+      eventName: K,
+      listener: (data: TestEventBusEvents[K]) => void
+    ): this;
+  };
 
   beforeEach(() => {
-    eventBus = new EventBus();
+    eventBus = new EventBus() as typeof eventBus;
   });
 
   afterEach(() => {
