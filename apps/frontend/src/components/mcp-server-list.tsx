@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { apiClient } from "@/services/api";
 import {
   useConfigActions,
@@ -475,12 +476,14 @@ export function McpServerList({
           <div className="px-4 lg:px-6">
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <CoffeeIcon className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">还没有 MCP 服务</h3>
-                <p className="text-sm text-muted-foreground text-center mb-4">
-                  添加你的第一个 MCP 服务器来开始使用强大的工具集成功能。
-                </p>
-                <AddMcpServerButton />
+                <EmptyState
+                  icon={
+                    <CoffeeIcon className="h-12 w-12 text-muted-foreground" />
+                  }
+                  title="还没有 MCP 服务"
+                  description="添加你的第一个 MCP 服务器来开始使用强大的工具集成功能。"
+                  action={<AddMcpServerButton />}
+                />
               </CardContent>
             </Card>
           </div>
