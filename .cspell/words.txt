@@ -107,6 +107,7 @@ punc
 pydantic
 pyenv
 pypi
+qwen
 rcompare
 reinit
 releaserc
