@@ -9,7 +9,7 @@ import { getDefaultSystemPrompt, resolvePrompt } from "../prompt-utils";
 // Mock configManager
 vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
-    getConfigDir: vi.fn(() => "/test/config/dir"),
+    getConfigPath: vi.fn(() => "/test/config/xiaozhi.config.json"),
   },
 }));
 
@@ -144,7 +144,7 @@ describe("prompt-utils", () => {
       it("相对路径 `./` 文件存在时应正确解析并读取", () => {
         const relativePath = "./prompts/default.md";
         const expectedAbsolutePath = resolve(
-          "/test/config/dir",
+          "/test/config",
           "prompts/default.md"
         );
         const fileContent = "相对路径文件内容";
@@ -165,7 +165,7 @@ describe("prompt-utils", () => {
       it("相对路径 `../` 文件存在时应正确解析并读取", () => {
         const relativePath = "../prompts/parent.md";
         const expectedAbsolutePath = resolve(
-          "/test/config/dir",
+          "/test/config",
           "../prompts/parent.md"
         );
         const fileContent = "上级目录文件内容";
