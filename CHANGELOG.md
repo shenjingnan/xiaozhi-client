@@ -1,3 +1,14 @@
+## 2.0.0-beta.1 (2026-03-01)
+
+### 🩹 Fixes
+
+- **ci:** 在发布时跳过 nx 缓存 ([#2098](https://github.com/shenjingnan/xiaozhi-client/pull/2098))
+
+### ❤️ Thank You
+
+- Claude
+- shenjingnan @shenjingnan
+
 ## 2.0.0-beta.0 (2026-03-01)
 
 ### 🚀 Features

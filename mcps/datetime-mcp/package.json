@@ -1,6 +1,6 @@
 {
   "name": "@xiaozhi-client/datetime-mcp",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0-beta.1",
   "type": "module",
   "description": "小智日期时间 MCP 服务，提供日期时间处理功能",
   "bin": {
