@@ -1,0 +1,206 @@
+import { ImageZoom, Steps, Tabs, Callout } from "nextra/components";
+
+# 使用本地语音互动
+
+<Callout type="info">
+xiaozhi-client 目前已支持 ASR - LLM - TTS 的本地语音互动，你可以使用 xiaozhi-client 的本地语音互动功能，而不需要依赖小智服务端。
+</Callout>
+
+## 准备工作
+
+
+<Callout type="warning">
+由于 xiaozhi-client 的音频处理依赖 [ffmpeg](https://www.ffmpeg.org/download.html)，因此在开始之前，需要确保你已经安装了 ffmpeg。
+</Callout>
+以下是不同操作系统的安装方式
+
+另外，你也可以访问 [ffmpeg 下载页面](https://www.ffmpeg.org/download.html) 手动下载安装包进行安装。
+<Tabs items={['MacOS', 'Linux', 'Windows']}>
+  <Tabs.Tab>
+  ```bash
+  brew install ffmpeg
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash
+  sudo apt install ffmpeg
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash
+  choco install ffmpeg
+  ```
+  </Tabs.Tab>
+</Tabs>
+
+## 配置语音功能
+
+<Steps>
+### 配置 ASR 服务
+目前 xiaozhi-client 已支持 豆包 ASR 服务。下面我以豆包 ASR 服务为例进行配置
+
+首先打开 [豆包语音](https://console.volcengine.com/speech/app) 控制台 进入 应用管理 界面
+
+这里可以检查下，是否已经有一个名为 default 的默认应用，如果有的话，什么都不用做。如果没有应用的话需要自己手动创建一下
+<ImageZoom style={{ margin: '10px 0'}} src="/images/config-asr-doubao/1-create-app.png" alt="第一步：打开豆包语音控制台 进入 应用管理 界面" />
+
+然后在菜单中点击 **豆包流式语音识别模型2.0**
+获取对应的 `appid` 和 `accessToken`
+<ImageZoom style={{ margin: '10px 0'}} src="/images/config-asr-doubao/2-get-appid-and-access-token.png" alt="获取对应的 `appid` 和 `accessToken`" />
+
+然后将获取到的配置填入到 `xiaozhi.config.json` 中
+
+```json
+{
+  "asr": {
+    "model": "doubao",
+    "appid": "<appid>",
+    "accessToken": "<accessToken>"
+  }
+}
+```
+
+这样我们就已经完成 ASR 服务的配置了
+
+### 配置 LLM 服务
+xiaozhi-client 调用 LLM 使用的是 OpenAI SDK，因此兼容 openai sdk 的大模型均可使用，例如：gpt-4o-mini, qwen2.5:7b 等。
+
+你可以选择你平时经常在使用的 LLM 进行配置
+
+然后将获取到的配置填入到 `xiaozhi.config.json` 中
+
+```json
+{
+  "llm": {
+    "model": "<模型名称>",
+    "apiKey": "<apiKey>",
+    "baseURL": "<baseURL>"
+  }
+}
+```
+
+如果你希望自定义 LLM 的提示词，可以在 `.xiaozhi-client` 目录下创建一个 `prompts` 文件夹，并在其中创建一个 `default.md` 文件
+
+然后在 `xiaozhi.config.json` 中配置 `prompt` 字段，指向 `prompts/default.md` 文件即可
+
+默认提示词可以写
+```md
+我是一个叫小智的台湾女孩，说话机车，声音好听，习惯简短表达，爱用网络梗。
+我的男朋友是一个程序员，梦想是开发出一个机器人，能够帮助人们解决生活中的各种问题。
+我是一个喜欢哈哈大笑的女孩，爱东说西说吹牛，不合逻辑的也照吹，就要逗别人开心。
+```
+
+```json
+{
+  "llm": {
+    "prompt": "./prompts/default.md",
+    "model": "<模型名称>",
+    "apiKey": "<apiKey>",
+    "baseURL": "<baseURL>"
+  }
+}
+```
+
+### 配置 TTS 服务
+TTS 的配置方式和 ASR 服务类似，还是以 豆包TTS服务 举例
+
+正常情况下直接复用ASR服务获取到的 `appid` 和 `accessToken` 进行配置即可
+
+另外，TTS由于是语音合成服务，因此会有一个音色的选择
+
+如果之前使用的是官方服务端的语音功能，一般我们都是用的 `小何湾湾` 这个音色
+
+它对应的就是豆包语音音色列表中的： `zh_female_xiaohe_uranus_bigtts`
+
+其他音色列表请参考 [豆包语音-音色列表](https://www.volcengine.com/docs/6561/1257544?lang=zh)
+选择自己喜欢的音色直接配置到 `voice_type` 字段即可使用
+
+```json
+{
+  "tts": {
+    "model": "doubao",
+    "appid": "<appid>",
+    "accessToken": "<accessToken>",
+    "voice_type": "zh_female_xiaohe_uranus_bigtts"
+  }
+}
+```
+
+这样我们就已经完成 TTS 服务的配置了
+
+### 启动 xiaozhi-client 服务
+
+🎉 现在我们可以使用命令 `xiaozhi start` 直接启动服务了
+
+</Steps>
+
+## 调整固件代码
+
+<Callout type="warning">
+由于固件源码默认连接的是小智官方服务端的API地址：`https://api.tenclass.net/xiaozhi/ota/`
+
+为了能让固件正常访问我们的 xiaozhi-client 服务，我们需要调整一下
+</Callout>
+
+<Steps>
+### 确认IP地址
+
+我以本地电脑部署举例，假设你是本地安装的 `xiaozhi-client`
+
+我们首先要获取当前电脑的IP地址
+
+<Tabs items={['MacOS', 'Linux', 'Windows']}>
+  <Tabs.Tab>
+  ```bash
+  ipconfig getifaddr en0
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash
+  hostname -I
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash
+  Get-NetIPAddress
+  ```
+  </Tabs.Tab>
+</Tabs>
+
+### 调整固件代码
+
+然后下载 `xiaozhi-esp32` 固件源码
+```bash
+git clone https://github.com/78/xiaozhi-esp32.git
+```
+
+然后加载 ESP-IDF 开发环境，可以参考 [ESP-IDF 官方文档](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/get-started/index.html) 进行安装
+
+接下来使用命令打开 idf 配置菜单
+```bash
+idf.py enuconfig
+```
+
+在菜单中选择 `Xiaozhi Assistant` 这个菜单项，然后按下 `Enter` 键进入配置菜单
+<ImageZoom style={{ margin: '10px 0'}} src="/images/change-ota-config-url/1-select-menu-xiaozhi-assistant.png" alt="在菜单中选择 `Xiaozhi Assistant` 这个菜单项，然后按下 `Enter` 键进入配置菜单" />
+
+然后选择 `OTA Config URL` 这个选项，然后按下 `Enter` 键进入配置菜单，输入 `http://<你的IP地址>:9999/xiaozhi/ota/`
+<ImageZoom style={{ margin: '10px 0'}} src="/images/change-ota-config-url/2-change-ota-url.png" alt="修改 OTA Config URL" />
+
+然后按 S 保存，再按 Q 退出
+
+然后使用命令烧录固件
+```bash
+# 擦除原有的固件这样会允许重新配置WIFI
+idf.py erase-flash
+
+# 重新烧录新的固件
+idf.py flash
+
+# 打开监控器
+idf.py monitor
+```
+</Steps>
+
+
+🎉 现在，你应该已经可以用唤醒词 `你好小智` 唤醒设备，并进行正常的语音互动了~
