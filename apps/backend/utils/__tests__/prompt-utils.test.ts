@@ -190,6 +190,59 @@ describe("prompt-utils", () => {
       });
     });
 
+    describe("Windows 路径兼容性", () => {
+      it("Windows 相对路径 `.\\` 应被正确识别", () => {
+        const relativePath = ".\\prompts\\default.md";
+        const expectedAbsolutePath = resolve(
+          "/test/config",
+          "prompts/default.md"
+        );
+        const fileContent = "Windows 相对路径内容";
+
+        vi.mocked(existsSync).mockReturnValue(true);
+        vi.mocked(readFileSync).mockReturnValue(fileContent);
+
+        const result = resolvePrompt(relativePath);
+
+        expect(existsSync).toHaveBeenCalledWith(expectedAbsolutePath);
+        expect(result).toBe(fileContent);
+      });
+
+      it("Windows 相对路径 `..\\` 应被正确识别", () => {
+        const relativePath = "..\\prompts\\parent.md";
+        const expectedAbsolutePath = resolve(
+          "/test/config",
+          "../prompts/parent.md"
+        );
+        const fileContent = "Windows 上级目录内容";
+
+        vi.mocked(existsSync).mockReturnValue(true);
+        vi.mocked(readFileSync).mockReturnValue(fileContent);
+
+        const result = resolvePrompt(relativePath);
+
+        expect(existsSync).toHaveBeenCalledWith(expectedAbsolutePath);
+        expect(result).toBe(fileContent);
+      });
+
+      it("混合路径分隔符应被正确处理", () => {
+        const relativePath = ".\\prompts/subfolder\\prompt.md";
+        const expectedAbsolutePath = resolve(
+          "/test/config",
+          "prompts/subfolder/prompt.md"
+        );
+        const fileContent = "混合分隔符路径内容";
+
+        vi.mocked(existsSync).mockReturnValue(true);
+        vi.mocked(readFileSync).mockReturnValue(fileContent);
+
+        const result = resolvePrompt(relativePath);
+
+        expect(existsSync).toHaveBeenCalledWith(expectedAbsolutePath);
+        expect(result).toBe(fileContent);
+      });
+    });
+
     describe("边界情况", () => {
       it("包含特殊字符的路径应正确处理", () => {
         const filePath = "/path/with spaces/提示词.md";

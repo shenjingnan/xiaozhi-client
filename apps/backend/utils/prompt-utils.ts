@@ -18,7 +18,7 @@ const DEFAULT_SYSTEM_PROMPT =
  * 判断配置值是否为路径格式
  *
  * 路径格式的判断规则：
- * - 相对路径：以 `./` 或 `../` 开头
+ * - 相对路径：以 `./`、`../`、`.\` 或 `..\` 开头（支持 Windows 和 Unix 风格）
  * - 绝对路径：使用 path.isAbsolute() 判断
  * - 其他情况：视为纯字符串内容
  *
@@ -26,8 +26,11 @@ const DEFAULT_SYSTEM_PROMPT =
  * @returns 是否为路径格式
  */
 function isPromptPath(config: string): boolean {
-  // 相对路径：必须以 ./ 或 ../ 开头
-  if (config.startsWith("./") || config.startsWith("../")) {
+  // 将路径分隔符统一为正斜杠，便于跨平台判断
+  const normalizedConfig = config.replace(/\\/g, "/");
+
+  // 相对路径：以 ./ 或 ../ 开头
+  if (normalizedConfig.startsWith("./") || normalizedConfig.startsWith("../")) {
     return true;
   }
   // 绝对路径
@@ -45,16 +48,19 @@ function isPromptPath(config: string): boolean {
  */
 function resolvePromptFromPath(promptPath: string): string | null {
   try {
+    // 将 Windows 风格的反斜杠统一转换为正斜杠，便于跨平台解析
+    const normalizedPath = promptPath.replace(/\\/g, "/");
+
     // 解析路径
     let resolvedPath: string;
-    if (isAbsolute(promptPath)) {
+    if (isAbsolute(normalizedPath)) {
       // 绝对路径直接使用
-      resolvedPath = promptPath;
+      resolvedPath = normalizedPath;
     } else {
       // 相对路径：相对于配置文件所在目录
       const configFilePath = configManager.getConfigPath();
       const configDir = dirname(configFilePath);
-      resolvedPath = resolve(configDir, promptPath);
+      resolvedPath = resolve(configDir, normalizedPath);
     }
 
     // 检查文件是否存在
