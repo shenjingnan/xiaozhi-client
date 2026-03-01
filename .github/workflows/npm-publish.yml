@@ -96,7 +96,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NX_CACHE_DISABLED: true
         run: |
           VERSION="${{ steps.version-info.outputs.version }}"
           VERSION_TYPE="${{ steps.version-info.outputs.version_type }}"
@@ -123,8 +122,6 @@ jobs:
             echo "⚠️ 预演模式：跳过实际发布"
             exit 0
           fi
-
-          mkdir -p .nx/cache/terminalOutputs
 
           # 执行发布
           echo "🚀 执行发布命令..."
