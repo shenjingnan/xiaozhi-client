@@ -1,6 +1,6 @@
 {
   "name": "@xiaozhi-client/mcp-core",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0-beta.2",
   "description": "MCP 协议核心实现，提供服务连接和管理功能",
   "type": "module",
   "main": "./dist/index.js",
