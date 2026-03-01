@@ -63,7 +63,7 @@ export const formatJson = (data: unknown): string | null => {
 };
 
 /**
- * 重新抛出错误的工具函数
+ * 格式化错误对象为字符串
  * @param error 错误对象
  * @returns 错误字符串
  */
