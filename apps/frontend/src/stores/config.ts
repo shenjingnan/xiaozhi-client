@@ -22,6 +22,7 @@ import type {
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
+import { createLoadingActions } from "./utils";
 
 /**
  * 配置加载状态
@@ -139,25 +140,7 @@ export const useConfigStore = create<ConfigStore>()(
         );
       },
 
-      setLoading: (loading: Partial<ConfigLoadingState>) => {
-        set(
-          (state) => ({
-            loading: { ...state.loading, ...loading },
-          }),
-          false,
-          "setLoading"
-        );
-      },
-
-      setError: (error: Error | null) => {
-        set(
-          (state) => ({
-            loading: { ...state.loading, lastError: error },
-          }),
-          false,
-          "setError"
-        );
-      },
+      ...createLoadingActions<ConfigStore>(set),
 
       // ==================== 异步操作 ====================
 
