@@ -43,7 +43,7 @@ efgh
 Elipssis
 endpo
 ENOENT
-enuconfig
+menuconfig
 EPIPE
 eventsource
 EventSource
