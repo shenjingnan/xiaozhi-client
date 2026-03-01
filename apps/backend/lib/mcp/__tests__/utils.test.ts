@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Mock } from "vitest";
-import { MCPTransportType } from "../types.js";
-import type { MCPServiceConfig } from "../types.js";
+import { MCPTransportType } from "@xiaozhi-client/mcp-core";
+import type { MCPServiceConfig } from "@xiaozhi-client/mcp-core";
 import {
   inferTransportTypeFromConfig,
   inferTransportTypeFromUrl,
-} from "../utils.js";
+} from "@xiaozhi-client/mcp-core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Mock } from "vitest";
 
 // Mock console 方法
 let mockConsoleInfo: Mock;
