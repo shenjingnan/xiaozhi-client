@@ -22,16 +22,16 @@ import type {
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
+import { type LoadingState, createLoadingActions } from "./utils";
 
 /**
  * 配置加载状态
+ * 复用 LoadingState 基础类型，确保与其他 store 一致
  */
-interface ConfigLoadingState {
+interface ConfigLoadingState extends LoadingState {
   isLoading: boolean;
   isUpdating: boolean;
   isRefreshing: boolean;
-  lastUpdated: number | null;
-  lastError: Error | null;
 }
 
 /**
@@ -139,25 +139,8 @@ export const useConfigStore = create<ConfigStore>()(
         );
       },
 
-      setLoading: (loading: Partial<ConfigLoadingState>) => {
-        set(
-          (state) => ({
-            loading: { ...state.loading, ...loading },
-          }),
-          false,
-          "setLoading"
-        );
-      },
-
-      setError: (error: Error | null) => {
-        set(
-          (state) => ({
-            loading: { ...state.loading, lastError: error },
-          }),
-          false,
-          "setError"
-        );
-      },
+      // 使用共享的 loading 操作方法
+      ...createLoadingActions<ConfigStore>(set),
 
       // ==================== 异步操作 ====================
 
