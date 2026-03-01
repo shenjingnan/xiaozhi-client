@@ -189,7 +189,22 @@ export class ApiClient {
       },
     };
 
-    const response = await fetch(url, { ...defaultOptions, ...options });
+    let response: Response;
+
+    try {
+      response = await fetch(url, { ...defaultOptions, ...options });
+    } catch (error) {
+      // 处理网络层面的错误
+      let errorMessage = "网络请求失败";
+
+      if (error instanceof TypeError) {
+        errorMessage = "网络连接失败，请检查网络设置";
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      throw new Error(errorMessage);
+    }
 
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
@@ -204,7 +219,12 @@ export class ApiClient {
       throw new Error(errorMessage);
     }
 
-    return response.json();
+    try {
+      return await response.json();
+    } catch (error) {
+      // 处理 JSON 解析错误
+      throw new Error("响应数据格式错误");
+    }
   }
 
   // ==================== 配置管理 API ====================
