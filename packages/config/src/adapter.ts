@@ -4,6 +4,10 @@
  */
 
 import { dirname, isAbsolute, resolve } from "node:path";
+import {
+  inferTransportTypeFromUrl,
+  MCPTransportType,
+} from "@xiaozhi-client/mcp-core";
 import type {
   HTTPMCPServerConfig,
   LocalMCPServerConfig,
@@ -26,12 +30,8 @@ export class ConfigValidationError extends Error {
   }
 }
 
-// 定义简化的 MCP 传输类型
-export enum MCPTransportType {
-  STDIO = "stdio",
-  SSE = "sse",
-  HTTP = "http",
-}
+// 重新导出 MCP 传输类型，以保持向后兼容性
+export { MCPTransportType } from "@xiaozhi-client/mcp-core";
 
 // 定义简化的 MCPServiceConfig 接口
 export interface MCPServiceConfig {
@@ -41,31 +41,6 @@ export interface MCPServiceConfig {
   env?: Record<string, string>;
   url?: string;
   headers?: Record<string, string>;
-}
-
-/**
- * URL 类型推断函数
- * 基于 URL 路径末尾推断传输类型
- */
-function inferTransportTypeFromUrl(url: string): MCPTransportType {
-  try {
-    const parsedUrl = new URL(url);
-    const pathname = parsedUrl.pathname;
-
-    // 检查路径末尾
-    if (pathname.endsWith("/sse")) {
-      return MCPTransportType.SSE;
-    }
-    if (pathname.endsWith("/mcp")) {
-      return MCPTransportType.HTTP;
-    }
-
-    // 默认类型
-    return MCPTransportType.HTTP;
-  } catch (error) {
-    // URL 解析失败时使用默认类型
-    return MCPTransportType.HTTP;
-  }
 }
 
 /**
