@@ -35,6 +35,7 @@ export interface DaemonOptions {
  */
 export class DaemonManagerImpl implements IDaemonManager {
   private currentDaemon: ChildProcess | null = null;
+  private logStream: fs.WriteStream | null = null;
 
   constructor(private processManager: ProcessManager) {}
 
@@ -85,6 +86,11 @@ export class DaemonManagerImpl implements IDaemonManager {
 
       if (!status.running) {
         throw ServiceError.notRunning();
+      }
+
+      // 清理日志流
+      if (this.currentDaemon) {
+        this.cleanupLogStream(this.currentDaemon);
       }
 
       // 优雅停止守护进程
@@ -230,20 +236,37 @@ export class DaemonManagerImpl implements IDaemonManager {
         fs.mkdirSync(logDir, { recursive: true });
       }
 
-      // 创建日志流
-      const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
+      // 创建日志流并保存引用
+      this.logStream = fs.createWriteStream(logFilePath, { flags: "a" });
 
       // 重定向标准输出和错误输出
-      child.stdout?.pipe(logStream);
-      child.stderr?.pipe(logStream);
+      child.stdout?.pipe(this.logStream);
+      child.stderr?.pipe(this.logStream);
 
       // 写入启动日志
       const timestamp = new Date().toISOString();
-      logStream.write(`\n[${timestamp}] 守护进程启动 (PID: ${child.pid})\n`);
+      this.logStream.write(
+        `\n[${timestamp}] 守护进程启动 (PID: ${child.pid})\n`
+      );
     } catch (error) {
       consola.warn(
         `设置日志重定向失败: ${error instanceof Error ? error.message : String(error)}`
       );
+    }
+  }
+
+  /**
+   * 清理日志流
+   */
+  private cleanupLogStream(child: ChildProcess): void {
+    if (this.logStream) {
+      // 解除 pipe 连接
+      child.stdout?.unpipe(this.logStream);
+      child.stderr?.unpipe(this.logStream);
+
+      // 关闭流
+      this.logStream.end();
+      this.logStream = null;
     }
   }
 
@@ -253,6 +276,9 @@ export class DaemonManagerImpl implements IDaemonManager {
   private setupEventHandlers(child: ChildProcess): void {
     // 监听进程退出
     child.on("exit", (code, signal) => {
+      // 清理日志流
+      this.cleanupLogStream(child);
+
       if (code !== 0 && code !== null) {
         consola.error(`守护进程异常退出 (代码: ${code}, 信号: ${signal})`);
       } else {
@@ -266,6 +292,9 @@ export class DaemonManagerImpl implements IDaemonManager {
 
     // 监听进程错误
     child.on("error", (error) => {
+      // 清理日志流
+      this.cleanupLogStream(child);
+
       consola.error(`守护进程错误: ${error.message}`);
       this.processManager.cleanupPidFile();
       this.currentDaemon = null;
@@ -315,6 +344,8 @@ export class DaemonManagerImpl implements IDaemonManager {
           `清理守护进程失败: ${error instanceof Error ? error.message : String(error)}`
         );
       }
+      // 清理日志流
+      this.cleanupLogStream(this.currentDaemon);
       this.currentDaemon = null;
     }
   }

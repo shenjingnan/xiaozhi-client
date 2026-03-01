@@ -26,8 +26,8 @@ const mockProcessManager: ProcessManager = {
 // Mock child_process
 const mockChild = {
   pid: 1234,
-  stdout: { pipe: vi.fn() },
-  stderr: { pipe: vi.fn() },
+  stdout: { pipe: vi.fn(), unpipe: vi.fn() },
+  stderr: { pipe: vi.fn(), unpipe: vi.fn() },
   on: vi.fn(),
   unref: vi.fn(),
   kill: vi.fn(),
@@ -44,6 +44,7 @@ vi.mock("node:fs", () => ({
     mkdirSync: vi.fn(),
     createWriteStream: vi.fn(() => ({
       write: vi.fn(),
+      end: vi.fn(),
     })),
   },
 }));
