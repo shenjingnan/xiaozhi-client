@@ -124,6 +124,8 @@ jobs:
             exit 0
           fi
 
+          mkdir -p .nx/cache/terminalOutputs
+
           # 执行发布
           echo "🚀 执行发布命令..."
           pnpm exec nx release publish --skip-nx-cache
