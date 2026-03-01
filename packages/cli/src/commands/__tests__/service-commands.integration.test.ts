@@ -10,10 +10,6 @@ const mockServiceManager = {
   attach: vi.fn(),
 };
 
-vi.mock("@services/ServiceManager.js", () => ({
-  ServiceManager: vi.fn().mockImplementation(() => mockServiceManager),
-}));
-
 // Mock ProcessManager
 const mockProcessManager = {
   isServiceRunning: vi.fn(),
@@ -23,27 +19,15 @@ const mockProcessManager = {
   stopService: vi.fn(),
 };
 
-vi.mock("@services/ProcessManager.js", () => ({
-  ProcessManager: vi.fn().mockImplementation(() => mockProcessManager),
-}));
-
 // Mock DaemonManager
 const mockDaemonManager = {
   attachToLogs: vi.fn(),
 };
 
-vi.mock("@services/DaemonManager.js", () => ({
-  DaemonManager: vi.fn().mockImplementation(() => mockDaemonManager),
-}));
-
 // Mock ErrorHandler
 const mockErrorHandler = {
   handle: vi.fn(),
 };
-
-vi.mock("@utils/ErrorHandler.js", () => ({
-  ErrorHandler: mockErrorHandler,
-}));
 
 describe("服务命令集成测试", () => {
   let serviceCommandHandler: ServiceCommandHandler;
