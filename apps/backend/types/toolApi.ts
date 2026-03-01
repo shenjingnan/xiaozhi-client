@@ -173,7 +173,7 @@ export interface FunctionToolData {
   /** 函数描述 */
   description: string;
   /** 函数执行上下文 */
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   /** 超时时间 */
   timeout?: number;
   /** 可选的自定义名称 */
