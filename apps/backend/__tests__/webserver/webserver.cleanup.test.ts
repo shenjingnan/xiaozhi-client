@@ -123,6 +123,7 @@ vi.mock("@/lib/endpoint/index", () => ({
     setServiceManager: vi.fn(),
     getConnectionStatus: vi.fn().mockReturnValue([]),
     on: vi.fn(),
+    off: vi.fn(),
   })),
 }));
 
