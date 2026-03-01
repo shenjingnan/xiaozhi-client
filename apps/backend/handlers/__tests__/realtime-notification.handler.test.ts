@@ -43,7 +43,10 @@ describe("RealtimeNotificationHandler", () => {
   let mockConfigService: any;
   let mockEventBus: any;
   let mockLogger: any;
-  let mockWebSocket: any;
+  let mockWebSocket: {
+    send: ReturnType<typeof vi.fn>;
+    readyState: number;
+  };
 
   const mockConfig: AppConfig = {
     mcpEndpoint: "ws://localhost:3000",
