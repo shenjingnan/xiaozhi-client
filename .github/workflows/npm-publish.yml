@@ -125,7 +125,7 @@ jobs:
 
           # 执行发布
           echo "🚀 执行发布命令..."
-          pnpm exec nx release publish
+          pnpm exec nx release publish --skip-nx-cache
 
       - name: 发布结果
         if: always()
