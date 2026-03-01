@@ -1,5 +1,7 @@
 /**
- * Protocol type definitions
+ * 协议类型定义
+ *
+ * 定义字节跳动 ASR 协议相关的枚举和接口类型
  */
 
 // Message Type
