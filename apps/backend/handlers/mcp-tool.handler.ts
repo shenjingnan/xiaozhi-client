@@ -1252,9 +1252,9 @@ export class MCPToolHandler {
 
     let result = text;
 
-    // 替换常见中文词汇
+    // 替换常见中文词汇（使用 split/join 避免创建 RegExp 对象）
     for (const [chinese, english] of Object.entries(chineseToEnglishMap)) {
-      result = result.replace(new RegExp(chinese, "g"), english);
+      result = result.split(chinese).join(english);
     }
 
     // 如果还有中文字符，用拼音前缀替代
