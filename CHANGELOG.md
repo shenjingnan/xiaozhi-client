@@ -1,3 +1,14 @@
+## 2.0.0-beta.5 (2026-03-01)
+
+### 🩹 Fixes
+
+- **release:** 将 asr 和 tts 包纳入发布流程 ([#2102](https://github.com/shenjingnan/xiaozhi-client/pull/2102))
+
+### ❤️ Thank You
+
+- Claude
+- shenjingnan @shenjingnan
+
 ## 2.0.0-beta.4 (2026-03-01)
 
 This was a version bump only, there were no code changes.
