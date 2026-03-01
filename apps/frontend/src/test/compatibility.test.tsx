@@ -2,6 +2,9 @@
  * 兼容性测试 - 验证废弃选择器仍然正常工作
  */
 
+import { render } from "@testing-library/react";
+import type React from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useConfigStore } from "@/stores/config";
 import { useStatusStore } from "@/stores/status";
 import {
@@ -12,9 +15,6 @@ import {
   useWebSocketRestartStatus,
   useWebSocketStatus,
 } from "@/stores/websocket-compat";
-import { render } from "@testing-library/react";
-import type React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // 测试组件 - 使用废弃的选择器
 const LegacyComponent: React.FC = () => {

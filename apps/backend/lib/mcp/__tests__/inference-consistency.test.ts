@@ -1,6 +1,6 @@
-import { MCPService, MCPTransportType } from "@/lib/mcp";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { describe, expect, it } from "vitest";
+import { MCPService, MCPTransportType } from "@/lib/mcp";
 
 describe("MCPService 和 ConfigAdapter 推断逻辑一致性测试", () => {
   const testCases = [

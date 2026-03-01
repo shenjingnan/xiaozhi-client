@@ -3,6 +3,8 @@
  * 提供 WebSocket 实时通知相关的消息处理接口，处理配置更新、状态变化和服务重启等实时通知
  */
 
+import type { AppConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
@@ -10,8 +12,6 @@ import { getEventBus } from "@/services/event-bus.service.js";
 import type { NotificationService } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
 import { sendWebSocketError } from "@/utils/websocket-helper.js";
-import type { AppConfig } from "@xiaozhi-client/config";
-import { configManager } from "@xiaozhi-client/config";
 
 /**
  * WebSocket 消息接口

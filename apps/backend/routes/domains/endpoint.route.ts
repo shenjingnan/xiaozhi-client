@@ -4,9 +4,9 @@
  * 使用中间件动态注入的 endpointHandler
  */
 
+import type { Context } from "hono";
 import type { RouteDefinition } from "@/routes/types.js";
 import type { AppContext } from "@/types/hono.context.js";
-import type { Context } from "hono";
 
 /**
  * 端点处理器方法名类型

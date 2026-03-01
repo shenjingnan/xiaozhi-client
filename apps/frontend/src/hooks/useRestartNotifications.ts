@@ -8,9 +8,9 @@
  * - 提供一致的用户体验
  */
 
-import { useRestartPollingStatus, useRestartStatus } from "@/stores/status";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { useRestartPollingStatus, useRestartStatus } from "@/stores/status";
 
 /**
  * 重启通知管理 Hook

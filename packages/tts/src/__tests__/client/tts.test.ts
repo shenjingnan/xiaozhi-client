@@ -2,8 +2,8 @@
  * TTS 客户端测试
  */
 
-import { TTS } from "@/client/index.js";
 import { describe, expect, it, vi } from "vitest";
+import { TTS } from "@/client/index.js";
 
 describe("TTS 客户端", () => {
   describe("构造函数", () => {

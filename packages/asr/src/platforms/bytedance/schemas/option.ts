@@ -2,6 +2,7 @@
  * 统一配置校验 Schema
  */
 
+import { z } from "zod";
 import {
   type ByteDanceV2Config,
   ByteDanceV2ConfigSchema,
@@ -10,7 +11,6 @@ import {
   type ByteDanceV3Config,
   ByteDanceV3ConfigSchema,
 } from "@/platforms/bytedance/schemas/api-v3.js";
-import { z } from "zod";
 
 /**
  * 字节跳动 V2 配置

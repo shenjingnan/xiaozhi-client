@@ -5,8 +5,8 @@
 import fs from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { FileOperationOptions } from "../Types";
 import { FileError } from "../errors/index";
+import type { FileOperationOptions } from "../Types";
 
 /**
  * 文件工具类

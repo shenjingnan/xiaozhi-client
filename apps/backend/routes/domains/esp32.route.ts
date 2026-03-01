@@ -10,9 +10,9 @@
  * 注意：设备采用自动激活模式，无需管理API
  */
 
-import type { RouteDefinition } from "@/routes/types.js";
-import { type HandlerDependencies, createHandler } from "@/routes/types.js";
 import type { Context } from "hono";
+import type { RouteDefinition } from "@/routes/types.js";
+import { createHandler, type HandlerDependencies } from "@/routes/types.js";
 
 const h = createHandler("esp32Handler");
 

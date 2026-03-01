@@ -20,13 +20,13 @@
  * - 与 EventBus 紧密集成，监听系统事件并广播
  */
 
+import type { AppConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { ClientInfo, RestartStatus } from "@/services/status.service.js";
-import type { AppConfig } from "@xiaozhi-client/config";
-import { configManager } from "@xiaozhi-client/config";
 
 /**
  * WebSocket 类接口

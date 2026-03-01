@@ -3,11 +3,11 @@
  * 处理ESP32设备相关的HTTP请求
  */
 
+import type { Context } from "hono";
 import type { ESP32Service } from "@/services/esp32.service.js";
 import type { ESP32DeviceReport } from "@/types/esp32.js";
 import { ESP32ErrorCode } from "@/types/esp32.js";
 import type { AppContext } from "@/types/hono.context.js";
-import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
 
 /**

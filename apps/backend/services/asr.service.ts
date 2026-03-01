@@ -3,9 +3,9 @@
  * 处理语音识别功能
  */
 
-import { logger } from "@/Logger.js";
 import { ASR, AudioFormat, AuthMethod, OpusDecoder } from "@xiaozhi-client/asr";
 import { configManager } from "@xiaozhi-client/config";
+import { logger } from "@/Logger.js";
 import type {
   ASRServiceEvents,
   ASRServiceOptions,

@@ -3,8 +3,8 @@
  * 测试设备连接、Token简化后的行为等
  */
 
-import type { ESP32DeviceReport } from "@/types/esp32.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ESP32DeviceReport } from "@/types/esp32.js";
 import { DeviceRegistryService } from "../device-registry.service.js";
 import { ESP32Service } from "../esp32.service.js";
 

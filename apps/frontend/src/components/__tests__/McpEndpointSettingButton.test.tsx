@@ -1,7 +1,3 @@
-import { McpEndpointSettingButton } from "@/components/mcp-endpoint-setting-button";
-import * as api from "@/services/api";
-import * as websocket from "@/services/websocket";
-import * as stores from "@/stores/config";
 import {
   act,
   fireEvent,
@@ -12,6 +8,10 @@ import {
 import type { AppConfig } from "@xiaozhi-client/shared-types";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { McpEndpointSettingButton } from "@/components/mcp-endpoint-setting-button";
+import * as api from "@/services/api";
+import * as websocket from "@/services/websocket";
+import * as stores from "@/stores/config";
 
 // Mock modules
 vi.mock("@/stores/config");

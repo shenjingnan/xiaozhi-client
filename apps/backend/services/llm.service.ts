@@ -3,10 +3,10 @@
  * 提供基于 OpenAI SDK 的大语言模型调用封装
  */
 
-import { logger } from "@/Logger.js";
-import { resolvePrompt } from "@/utils/prompt-utils.js";
 import { configManager } from "@xiaozhi-client/config";
 import OpenAI from "openai";
+import { logger } from "@/Logger.js";
+import { resolvePrompt } from "@/utils/prompt-utils.js";
 
 function removeThinkTags(content: string): string {
   // 移除 <think>...</think> 及其内容

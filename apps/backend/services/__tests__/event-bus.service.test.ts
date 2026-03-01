@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  EventBus,
   destroyEventBus,
+  EventBus,
   getEventBus,
 } from "../event-bus.service.js";
 

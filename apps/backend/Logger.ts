@@ -128,8 +128,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import chalk from "chalk";
-import pino from "pino";
 import type { Logger as PinoLogger } from "pino";
+import pino from "pino";
 import { z } from "zod";
 
 const LogLevelSchema = z.enum([

@@ -2,6 +2,7 @@
  * ByteDance TTS 配置校验测试
  */
 
+import { describe, expect, it } from "vitest";
 import {
   ByteDanceTTSAppSchema,
   ByteDanceTTSAudioSchema,
@@ -9,7 +10,6 @@ import {
   DEFAULT_TTS_ENDPOINT,
   validateByteDanceTTSConfig,
 } from "@/platforms/index.js";
-import { describe, expect, it } from "vitest";
 
 describe("ByteDance TTS 配置校验", () => {
   describe("ByteDanceTTSAppSchema", () => {

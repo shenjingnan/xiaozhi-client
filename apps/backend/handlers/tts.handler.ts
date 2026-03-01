@@ -4,10 +4,10 @@
  */
 
 import fs from "node:fs";
-import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
 import { TTS } from "@xiaozhi-client/tts";
 import type { Context } from "hono";
+import type { AppContext } from "@/types/hono.context.js";
 import { BaseHandler } from "./base.handler.js";
 
 /**

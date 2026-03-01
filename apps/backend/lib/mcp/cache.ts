@@ -13,14 +13,16 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, resolve } from "node:path";
-import type { Logger } from "@/Logger.js";
-import { logger } from "@/Logger.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import dayjs from "dayjs";
 import {
   CACHE_FILE_CONFIG,
   CACHE_TIMEOUTS,
   MCP_CACHE_VERSIONS,
   TOOL_NAME_SEPARATORS,
 } from "@/constants/index.js";
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import type { MCPServiceConfig } from "@/lib/mcp/types";
 import type {
   CacheStatistics,
@@ -30,8 +32,6 @@ import type {
   ToolCallResult,
 } from "@/types/index.js";
 import { generateCacheKey, shouldCleanupCache } from "@/types/index.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import dayjs from "dayjs";
 
 // 缓存条目接口
 export interface MCPToolsCacheEntry {
