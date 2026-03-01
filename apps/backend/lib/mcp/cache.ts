@@ -462,6 +462,39 @@ export class MCPCacheManager {
   }
 
   /**
+   * 对缓存条目执行通用操作的模板方法
+   * 提取重复的缓存操作模式，遵循 DRY 原则
+   */
+  private async operateOnCacheEntry<T>(
+    toolName: string,
+    arguments_: Record<string, unknown>,
+    operation: (cache: ExtendedMCPToolsCache, cacheKey: string) => T,
+    operationName: string
+  ): Promise<T | false> {
+    try {
+      const cache = await this.loadExtendedCache();
+      const cacheKey = generateCacheKey(toolName, arguments_);
+
+      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
+        return false;
+      }
+
+      const result = operation(cache, cacheKey);
+      await this.saveExtendedCache(cache);
+
+      this.logger.debug(`[CacheManager] ${operationName}: ${toolName}`);
+      return result;
+    } catch (error) {
+      this.logger.warn(
+        `[CacheManager] ${operationName}失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      return false;
+    }
+  }
+
+  /**
    * 更新 CustomMCP 缓存状态
    */
   async updateCustomMCPStatus(
@@ -471,52 +504,41 @@ export class MCPCacheManager {
     result?: ToolCallResult,
     error?: string
   ): Promise<boolean> {
-    try {
-      const cache = await this.loadExtendedCache();
-      const cacheKey = generateCacheKey(toolName, arguments_);
+    return this.operateOnCacheEntry(
+      toolName,
+      arguments_,
+      (cache, cacheKey) => {
+        const cacheEntry = cache.customMCPResults![cacheKey];
+        const oldStatus = cacheEntry.status;
 
-      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
-        return false;
-      }
+        // 更新状态
+        cacheEntry.status = newStatus;
+        cacheEntry.timestamp = new Date().toISOString();
 
-      const cacheEntry = cache.customMCPResults[cacheKey];
-      const oldStatus = cacheEntry.status;
+        // 更新结果或错误信息
+        if (result) {
+          cacheEntry.result = result;
+        }
 
-      // 更新状态
-      cacheEntry.status = newStatus;
-      cacheEntry.timestamp = new Date().toISOString();
+        if (error && newStatus === "failed") {
+          cacheEntry.result = {
+            content: [{ type: "text", text: `任务失败: ${error}` }],
+          };
+          cacheEntry.consumed = true; // 失败的任务自动标记为已消费
+        }
 
-      // 更新结果或错误信息
-      if (result) {
-        cacheEntry.result = result;
-      }
+        // 特殊状态处理
+        if (newStatus === "completed") {
+          cacheEntry.consumed = false; // 完成的任务初始状态为未消费
+        }
 
-      if (error && newStatus === "failed") {
-        cacheEntry.result = {
-          content: [{ type: "text", text: `任务失败: ${error}` }],
-        };
-        cacheEntry.consumed = true; // 失败的任务自动标记为已消费
-      }
-
-      // 特殊状态处理
-      if (newStatus === "completed") {
-        cacheEntry.consumed = false; // 完成的任务初始状态为未消费
-      }
-
-      await this.saveExtendedCache(cache);
-
-      this.logger.debug(
-        `[CacheManager] 更新缓存状态: ${toolName} ${oldStatus} -> ${newStatus}`
-      );
-      return true;
-    } catch (error) {
-      this.logger.warn(
-        `[CacheManager] 更新CustomMCP缓存状态失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-      return false;
-    }
+        this.logger.debug(
+          `[CacheManager] 更新缓存状态: ${toolName} ${oldStatus} -> ${newStatus}`
+        );
+        return true;
+      },
+      "更新CustomMCP缓存状态"
+    ) as Promise<boolean>;
   }
 
   /**
@@ -526,34 +548,20 @@ export class MCPCacheManager {
     toolName: string,
     arguments_: Record<string, unknown>
   ): Promise<boolean> {
-    try {
-      const cache = await this.loadExtendedCache();
-      const cacheKey = generateCacheKey(toolName, arguments_);
-
-      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
-        return false;
-      }
-
-      const cacheEntry = cache.customMCPResults[cacheKey];
-      if (cacheEntry.consumed) {
+    return this.operateOnCacheEntry(
+      toolName,
+      arguments_,
+      (cache, cacheKey) => {
+        const cacheEntry = cache.customMCPResults![cacheKey];
+        if (cacheEntry.consumed) {
+          return true;
+        }
+        cacheEntry.consumed = true;
+        cacheEntry.timestamp = new Date().toISOString();
         return true;
-      }
-
-      cacheEntry.consumed = true;
-      cacheEntry.timestamp = new Date().toISOString();
-
-      await this.saveExtendedCache(cache);
-
-      this.logger.debug(`[CacheManager] 标记缓存为已消费: ${toolName}`);
-      return true;
-    } catch (error) {
-      this.logger.warn(
-        `[CacheManager] 标记CustomMCP缓存为已消费失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-      return false;
-    }
+      },
+      "标记缓存为已消费"
+    ) as Promise<boolean>;
   }
 
   /**
@@ -563,27 +571,15 @@ export class MCPCacheManager {
     toolName: string,
     arguments_: Record<string, unknown>
   ): Promise<boolean> {
-    try {
-      const cache = await this.loadExtendedCache();
-      const cacheKey = generateCacheKey(toolName, arguments_);
-
-      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
-        return false;
-      }
-
-      delete cache.customMCPResults[cacheKey];
-      await this.saveExtendedCache(cache);
-
-      this.logger.debug(`[CacheManager] 删除缓存条目: ${toolName}`);
-      return true;
-    } catch (error) {
-      this.logger.warn(
-        `[CacheManager] 删除CustomMCP缓存条目失败: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-      return false;
-    }
+    return this.operateOnCacheEntry(
+      toolName,
+      arguments_,
+      (cache, cacheKey) => {
+        delete cache.customMCPResults![cacheKey];
+        return true;
+      },
+      "删除缓存条目"
+    ) as Promise<boolean>;
   }
 
   /**
