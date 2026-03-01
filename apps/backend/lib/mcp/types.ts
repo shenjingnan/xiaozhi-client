@@ -1,122 +1,72 @@
 /**
  * MCP 核心库类型定义
- * 统一管理所有 MCP 相关的类型定义，避免重复定义和导入路径混乱
- */
-
-import type { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import type { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-
-// =========================
-// 1. 基础传输类型
-// =========================
-
-/**
- * MCP 传输层联合类型定义
- * 支持 STDIO、SSE、StreamableHTTP 三种传输协议
- */
-export type MCPServerTransport =
-  | StdioClientTransport
-  | SSEClientTransport
-  | StreamableHTTPClientTransport;
-
-/**
- * 通信方式枚举
- * 定义 MCP 支持的传输类型
- */
-export enum MCPTransportType {
-  STDIO = "stdio",
-  SSE = "sse",
-  HTTP = "http",
-}
-
-// =========================
-// 2. 配置接口类型
-// =========================
-
-/**
- * ModelScope SSE 自定义选项接口
- * 专门用于 ModelScope 相关的 SSE 配置
- */
-export interface ModelScopeSSEOptions {
-  eventSourceInit?: {
-    fetch?: (
-      url: string | URL | Request,
-      init?: RequestInit
-    ) => Promise<Response>;
-  };
-  requestInit?: RequestInit;
-}
-
-/**
- * MCP 服务配置接口
- * 包含所有 MCP 服务的配置选项
+ * 从 @xiaozhi-client/mcp-core 重新导出公共类型，保留 backend 特有的类型定义
  *
- * 注意：符合 @modelcontextprotocol 官方标准，不包含 name 字段
- * name 应该作为服务标识符独立管理，不是配置的一部分
+ * 此文件的作用：
+ * 1. 重新导出 mcp-core 包中的公共类型，方便 backend 代码使用
+ * 2. 保留 backend 特有的类型定义（如 ToolCallResult）
+ * 3. 提供向后兼容的类型别名（如 ServiceStatus）
  */
-export interface MCPServiceConfig {
-  type?: MCPTransportType; // 现在是可选的，支持自动推断
-  // stdio 配置
-  command?: string;
-  args?: string[];
-  env?: Record<string, string>; // 环境变量配置
-  // 网络配置
-  url?: string;
-  // 认证配置
-  apiKey?: string;
-  headers?: Record<string, string>;
-  customSSEOptions?: ModelScopeSSEOptions;
-}
-
-/**
- * 内部使用的 MCP 服务配置接口（包含 name 字段）
- * 用于 MCPService 类等内部函数，保持向后兼容
- */
-export interface InternalMCPServiceConfig extends MCPServiceConfig {
-  name: string;
-}
 
 // =========================
-// 3. 状态枚举类型
+// 从 mcp-core 导入类型（用于内部使用）
 // =========================
 
-/**
- * 连接状态枚举
- * 合并了 connection.ts 和 TransportAdapter.ts 中的定义
- */
-export enum ConnectionState {
-  DISCONNECTED = "disconnected",
-  CONNECTING = "connecting",
-  CONNECTED = "connected",
-  RECONNECTING = "reconnecting",
-  FAILED = "failed",
-  ERROR = "error", // 从 TransportAdapter.ts 合并的额外状态
-}
-
-/**
- * MCP 服务状态接口
- * 描述 MCP 服务的运行时状态信息
- */
-export interface MCPServiceStatus {
-  name: string;
-  connected: boolean;
-  initialized: boolean;
-  transportType: MCPTransportType;
-  toolCount: number;
-  lastError?: string;
-  connectionState: ConnectionState;
-}
+import type { MCPServiceConnectionStatus } from "@xiaozhi-client/mcp-core";
 
 // =========================
-// 4. 工具调用相关类型
+// 从 mcp-core 重新导出公共类型
+// =========================
+
+export type {
+  // 配置相关
+  MCPServiceConfig,
+  ModelScopeSSEOptions,
+  InternalMCPServiceConfig,
+  ToolStatusFilter,
+  UnifiedServerConfig,
+  // 状态相关
+  MCPServiceStatus,
+  MCPServiceConnectionStatus,
+  ManagerStatus,
+  UnifiedServerStatus,
+  // 工具相关
+  ToolInfo,
+  EnhancedToolInfo,
+  ToolCallParams,
+  ValidatedToolCallParams,
+  ToolCallValidationOptions,
+  CustomMCPTool,
+  JSONSchema,
+  // 传输相关
+  MCPServerTransport,
+  // 事件相关
+  MCPServiceEventCallbacks,
+} from "@xiaozhi-client/mcp-core";
+
+export {
+  // 枚举
+  MCPTransportType,
+  ConnectionState,
+  ToolCallErrorCode,
+  // 类
+  ToolCallError,
+  // 类型守卫
+  isValidToolJSONSchema,
+  ensureToolJSONSchema,
+} from "@xiaozhi-client/mcp-core";
+
+// =========================
+// Backend 特有的类型定义
 // =========================
 
 /**
- * 工具调用结果接口
+ * 工具调用结果接口（Backend 特有）
  * 使用简化的类型定义，保持向后兼容性
+ *
  * 注意：这与 @xiaozhi-client/mcp-core 中的 ToolCallResult 类型不同
+ * mcp-core 导出的是 CompatibilityCallToolResult（MCP SDK 官方类型）
+ * 这里保留的是 backend 内部使用的简化版本
  */
 export interface ToolCallResult {
   content: Array<{
@@ -125,264 +75,6 @@ export interface ToolCallResult {
   }>;
   isError?: boolean;
   [key: string]: unknown; // 支持其他未知字段，与 endpoint 包保持兼容
-}
-
-/**
- * JSON Schema 类型定义
- * 兼容 MCP SDK 的 JSON Schema 格式，同时支持更宽松的对象格式以保持向后兼容
- */
-export type JSONSchema =
-  | (Record<string, unknown> & {
-      type: "object";
-      properties?: Record<string, unknown>;
-      required?: string[];
-      additionalProperties?: boolean;
-    })
-  | Record<string, unknown>; // 允许更宽松的格式以保持向后兼容
-
-/**
- * 类型守卫：检查对象是否为有效的 MCP Tool JSON Schema
- */
-export function isValidToolJSONSchema(obj: unknown): obj is {
-  type: "object";
-  properties?: Record<string, unknown>;
-  required?: string[];
-  additionalProperties?: boolean;
-} {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "type" in obj &&
-    (obj as { type?: unknown }).type === "object"
-  );
-}
-
-/**
- * 确保对象符合 MCP Tool JSON Schema 格式
- * 如果不符合，会返回一个默认的空对象 schema
- */
-export function ensureToolJSONSchema(schema: JSONSchema): {
-  type: "object";
-  properties?: Record<string, object>;
-  required?: string[];
-  additionalProperties?: boolean;
-} {
-  if (isValidToolJSONSchema(schema)) {
-    return schema as {
-      type: "object";
-      properties?: Record<string, object>;
-      required?: string[];
-      additionalProperties?: boolean;
-    };
-  }
-
-  // 如果不符合标准格式，返回默认的空对象 schema
-  return {
-    type: "object",
-    properties: {} as Record<string, object>,
-    required: [],
-    additionalProperties: true,
-  };
-}
-
-/**
- * CustomMCP 工具类型定义
- * 统一了 manager.ts 和 configManager.ts 中的定义
- */
-export interface CustomMCPTool {
-  name: string;
-  description?: string;
-  inputSchema: JSONSchema;
-  handler?: {
-    type: string;
-    config?: Record<string, unknown>;
-  };
-}
-
-/**
- * 工具信息接口
- * 用于缓存工具映射关系，保持向后兼容性
- */
-export interface ToolInfo {
-  serviceName: string;
-  originalName: string;
-  tool: Tool;
-}
-
-// =========================
-// 5. 增强工具信息类型
-// =========================
-
-/**
- * 工具状态过滤选项
- * 用于 getAllTools() 方法过滤不同状态的工具
- */
-export type ToolStatusFilter = "enabled" | "disabled" | "all";
-
-/**
- * 增强的工具信息接口
- * 扩展自 ToolInfo 概念，包含工具的启用状态和使用统计信息
- *
- * @remarks
- * 此接口用于 MCPServiceManager.getAllTools() 方法的返回值，
- * 提供比基础 ToolInfo 更丰富的工具元数据信息。
- *
- * @example
- * ```typescript
- * const tools: EnhancedToolInfo[] = manager.getAllTools('enabled');
- * tools.forEach(tool => {
- *   console.log(`工具: ${tool.name}`);
- *   console.log(`状态: ${tool.enabled ? '已启用' : '已禁用'}`);
- *   console.log(`使用次数: ${tool.usageCount}`);
- * });
- * ```
- */
-export interface EnhancedToolInfo {
-  /** 工具唯一标识符，格式为 "{serviceName}__{originalName}" */
-  name: string;
-
-  /** 工具描述信息 */
-  description: string;
-
-  /** 工具输入参数的 JSON Schema 定义 */
-  inputSchema: JSONSchema;
-
-  /** 工具所属的 MCP 服务名称 */
-  serviceName: string;
-
-  /** 工具在 MCP 服务中的原始名称 */
-  originalName: string;
-
-  /** 工具是否启用 (true=已启用，false=已禁用) */
-  enabled: boolean;
-
-  /** 工具使用次数统计 */
-  usageCount: number;
-
-  /** 工具最后使用时间 (ISO 8601 格式字符串) */
-  lastUsedTime: string;
-}
-
-// =========================
-// 6. 服务器配置类型
-// =========================
-
-/**
- * 统一服务器配置接口
- * 从 UnifiedMCPServer 移入，用于统一服务器配置管理
- */
-export interface UnifiedServerConfig {
-  name?: string;
-  enableLogging?: boolean;
-  logLevel?: string;
-  configs?: Record<string, MCPServiceConfig>; // MCPService 配置
-}
-
-/**
- * 统一服务器状态接口
- * 从 UnifiedMCPServer 移入，用于统一服务器状态管理
- */
-export interface UnifiedServerStatus {
-  isRunning: boolean;
-  serviceStatus: ManagerStatus;
-  activeConnections: number;
-  config: UnifiedServerConfig;
-  // 添加对 serviceStatus 的便捷访问属性
-  services?: Record<string, MCPServiceConnectionStatus>;
-  totalTools?: number;
-  availableTools?: string[];
-}
-
-// =========================
-// 6. 管理器相关类型
-// =========================
-
-/**
- * MCP 服务连接状态接口
- * 重命名原 ServiceStatus 为 MCPServiceConnectionStatus 避免与 CLI 的 ServiceStatus 冲突
- */
-export interface MCPServiceConnectionStatus {
-  connected: boolean;
-  clientName: string;
-}
-
-/**
- * 管理器状态接口
- * 描述 MCP 服务管理器的整体状态
- */
-export interface ManagerStatus {
-  services: Record<string, MCPServiceConnectionStatus>;
-  totalTools: number;
-  availableTools: string[];
-}
-
-// =========================
-// 7. 参数校验相关类型
-// =========================
-
-/**
- * 工具调用参数接口
- * 定义标准工具调用参数结构
- */
-export interface ToolCallParams {
-  name: string;
-  arguments?: Record<string, unknown>;
-}
-
-/**
- * 验证后的工具调用参数
- * 参数校验通过后的标准化参数结构
- */
-export interface ValidatedToolCallParams {
-  name: string;
-  arguments?: Record<string, unknown>;
-}
-
-/**
- * 工具调用验证选项
- * 提供灵活的参数校验配置
- */
-export interface ToolCallValidationOptions {
-  /** 是否验证工具名称，默认为 true */
-  validateName?: boolean;
-  /** 是否验证参数格式，默认为 true */
-  validateArguments?: boolean;
-  /** 是否允许空参数，默认为 true */
-  allowEmptyArguments?: boolean;
-  /** 自定义验证函数 */
-  customValidator?: (params: ToolCallParams) => string | null;
-}
-
-/**
- * 工具调用错误码枚举
- * 统一的工具调用错误码定义
- */
-export enum ToolCallErrorCode {
-  /** 无效参数 */
-  INVALID_PARAMS = -32602,
-  /** 工具不存在 */
-  TOOL_NOT_FOUND = -32601,
-  /** 服务不可用 */
-  SERVICE_UNAVAILABLE = -32001,
-  /** 调用超时 */
-  TIMEOUT = -32002,
-  /** 工具执行错误 */
-  TOOL_EXECUTION_ERROR = -32000,
-}
-
-/**
- * 工具调用错误类
- * 统一的工具调用错误处理
- */
-export class ToolCallError extends Error {
-  constructor(
-    public code: ToolCallErrorCode,
-    message: string,
-    public data?: unknown
-  ) {
-    super(message);
-    this.name = "ToolCallError";
-  }
 }
 
 // =========================
