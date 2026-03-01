@@ -1,4 +1,23 @@
-export const QQIcon = ({ size = 24, color = "currentColor", ...props }) => (
+import type { SVGProps } from "react";
+
+/**
+ * QQ 图标组件
+ *
+ * 用于展示 QQ 联系方式的图标
+ */
+
+interface QQIconProps extends SVGProps<SVGSVGElement> {
+  /** 图标大小（像素） */
+  size?: number;
+  /** 图标颜色 */
+  color?: string;
+}
+
+export const QQIcon = ({
+  size = 24,
+  color = "currentColor",
+  ...props
+}: QQIconProps) => (
   <svg
     width={size}
     height={size}
