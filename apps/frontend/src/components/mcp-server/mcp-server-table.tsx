@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { useServerSearch } from "@/hooks/useServerSearch";
 import { useServerSortPersistence } from "@/hooks/useServerSortPersistence";
-import { useToolPagination } from "@/hooks/useToolPagination";
+import { usePagination } from "@/hooks/useToolPagination";
 import { cn } from "@/lib/utils";
 import { useMcpServersWithStatus } from "@/stores/config";
 import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
@@ -144,11 +144,11 @@ export function McpServerTable({ className }: McpServerTableProps) {
   const { searchValue, setSearchValue, filteredServers, clearSearch } =
     useServerSearch(sortedServers);
 
-  // 使用分页 Hook（复用工具分页，泛型兼容）
-  const { currentPage, totalPages, paginatedTools, setPage } =
-    useToolPagination(filteredServers as unknown as any, 10);
+  // 使用分页 Hook
+  const { currentPage, totalPages, paginatedItems, setPage } =
+    usePagination<ServerRowData>(filteredServers, 10);
 
-  const paginatedServers = paginatedTools as unknown as ServerRowData[];
+  const paginatedServers = paginatedItems;
 
   // 手动刷新
   const handleRefresh = useCallback(async () => {
