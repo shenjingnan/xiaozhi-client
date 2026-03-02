@@ -15,14 +15,12 @@ vi.mock("sonner", () => ({
 const mockMcpServerConfig = vi.fn();
 const mockMcpServers = vi.fn();
 const mockRefreshConfig = vi.fn();
-const mockUpdateConfig = vi.fn();
 
 vi.mock("@/stores/config", () => ({
   useMcpServerConfig: () => mockMcpServerConfig(),
   useMcpServers: () => mockMcpServers(),
   useConfigActions: () => ({
     refreshConfig: mockRefreshConfig,
-    updateConfig: mockUpdateConfig,
   }),
 }));
 
@@ -128,7 +126,7 @@ describe("McpServerList 组件", () => {
 
   it("应该正确渲染MCP服务列表", async () => {
     await act(async () => {
-      render(<McpServerList updateConfig={mockUpdateConfig} />);
+      render(<McpServerList />);
     });
 
     // 等待工具加载
@@ -142,7 +140,7 @@ describe("McpServerList 组件", () => {
     mockMcpServerConfig.mockReturnValue({});
 
     await act(async () => {
-      render(<McpServerList updateConfig={mockUpdateConfig} />);
+      render(<McpServerList />);
     });
 
     expect(screen.getByText("还没有 MCP 服务")).toBeInTheDocument();
@@ -168,7 +166,7 @@ describe("McpServerList 组件", () => {
     mockMcpServerConfig.mockReturnValue(multipleServers);
 
     await act(async () => {
-      render(<McpServerList updateConfig={mockUpdateConfig} />);
+      render(<McpServerList />);
     });
 
     // 等待组件渲染
@@ -180,7 +178,7 @@ describe("McpServerList 组件", () => {
 
   it("应该正确显示刷新状态", async () => {
     await act(async () => {
-      render(<McpServerList updateConfig={mockUpdateConfig} />);
+      render(<McpServerList />);
     });
 
     // 组件应该能正常渲染

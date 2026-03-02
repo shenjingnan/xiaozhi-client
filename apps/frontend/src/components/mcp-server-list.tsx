@@ -19,7 +19,6 @@ import {
 } from "@/stores/config";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import type {
-  AppConfig,
   CozeWorkflow,
   CustomMCPToolWithStats,
   JSONSchema,
@@ -58,12 +57,10 @@ type ToolWithServerInfo = {
 };
 
 interface McpServerListProps {
-  updateConfig?: (config: AppConfig) => Promise<void>;
   className?: string;
 }
 
 export function McpServerList({
-  updateConfig: _updateConfig,
   className,
 }: McpServerListProps) {
   const mcpServerConfig = useMcpServerConfig();
