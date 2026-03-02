@@ -7,6 +7,7 @@ FROM node:20
 RUN apt-get update && apt-get install -y \
     dumb-init \
     git \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -g 1001 xiaozhi \
     && useradd -r -u 1001 -g xiaozhi xiaozhi
