@@ -11,7 +11,7 @@
     }
   },
   "asr": {
-    "model": "doubao"
+    "model": "doubao",
     "appid": "your-appid",
     "accessToken": "your-access-token"
   },
@@ -22,7 +22,7 @@
     "baseURL": "your-base-url"
   },
   "tts": {
-    "model": "doubao"
+    "model": "doubao",
     "appid": "your-appid",
     "accessToken": "your-access-token",
     "voice_type": "zh_female_xiaohe_uranus_bigtts"

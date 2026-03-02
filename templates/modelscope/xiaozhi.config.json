@@ -10,7 +10,7 @@
     "apiKey": "<请填写你的 API Key（获取地址在 https://www.modelscope.cn/my/myaccesstoken）>"
   },
   "asr": {
-    "model": "doubao"
+    "model": "doubao",
     "appid": "your-appid",
     "accessToken": "your-access-token"
   },
@@ -21,7 +21,7 @@
     "baseURL": "your-base-url"
   },
   "tts": {
-    "model": "doubao"
+    "model": "doubao",
     "appid": "your-appid",
     "accessToken": "your-access-token",
     "voice_type": "zh_female_xiaohe_uranus_bigtts"
