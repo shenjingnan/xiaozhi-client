@@ -17,7 +17,7 @@ import {
 } from "@/platforms/bytedance/protocol/types.js";
 
 /**
- * Generate protocol header
+ * 生成协议头
  */
 export function generateHeader(options: HeaderOptions = {}): Buffer {
   const {
@@ -55,7 +55,7 @@ export function generateHeader(options: HeaderOptions = {}): Buffer {
 }
 
 /**
- * Generate default full client request header
+ * 生成默认的完整客户端请求头
  */
 export function generateFullDefaultHeader(): Buffer {
   return generateHeader({
@@ -65,7 +65,7 @@ export function generateFullDefaultHeader(): Buffer {
 }
 
 /**
- * Generate audio-only request header
+ * 生成仅音频请求头
  */
 export function generateAudioDefaultHeader(): Buffer {
   return generateHeader({
@@ -75,7 +75,7 @@ export function generateAudioDefaultHeader(): Buffer {
 }
 
 /**
- * Generate last audio request header (with NEG_SEQUENCE flag)
+ * 生成最后一个音频请求头（带有 NEG_SEQUENCE 标志）
  */
 export function generateLastAudioDefaultHeader(): Buffer {
   return generateHeader({
@@ -85,7 +85,7 @@ export function generateLastAudioDefaultHeader(): Buffer {
 }
 
 /**
- * Parse server response
+ * 解析服务器响应
  */
 export function parseResponse(res: Buffer): ParsedResponse {
   // Parse header
@@ -171,7 +171,7 @@ export function parseResponse(res: Buffer): ParsedResponse {
 }
 
 /**
- * Compress data using gzip
+ * 使用 gzip 压缩数据
  */
 export function compressGzip(data: Buffer): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -183,7 +183,7 @@ export function compressGzip(data: Buffer): Promise<Buffer> {
 }
 
 /**
- * Synchronous gzip compress
+ * 同步 gzip 压缩
  */
 export function compressGzipSync(data: Buffer): Buffer {
   return gzipSync(data);
