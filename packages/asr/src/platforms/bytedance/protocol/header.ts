@@ -1,5 +1,7 @@
 /**
- * Binary protocol header generation and parsing
+ * 二进制协议头生成和解析模块
+ *
+ * 提供字节跳动 ASR 协议的二进制协议头生成和解析功能
  */
 
 import { Buffer } from "node:buffer";

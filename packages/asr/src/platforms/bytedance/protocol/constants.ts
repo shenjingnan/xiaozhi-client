@@ -1,5 +1,7 @@
 /**
- * Protocol constants
+ * 协议常量
+ *
+ * 定义字节跳动 ASR 协议使用的常量值
  */
 
 export const PROTOCOL_VERSION = 0b0001;
