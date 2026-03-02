@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-venv \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
     && ln -sf /usr/bin/python3 /usr/bin/python \
     && npm install -g pnpm xiaozhi-client@${XIAOZHI_VERSION} \
@@ -55,7 +56,8 @@ RUN if [ -f /tmp/requirements.txt ] && [ -s /tmp/requirements.txt ]; then \
 RUN npx --version && echo "✓ npx is available" \
     && /opt/venv/bin/uv --version && echo "✓ uv is available" \
     && /opt/venv/bin/uvx --version && echo "✓ uvx is available" \
-    && /opt/venv/bin/python --version && echo "✓ Python virtual environment is available"
+    && /opt/venv/bin/python --version && echo "✓ Python virtual environment is available" \
+    && ffmpeg -version > /dev/null 2>&1 && echo "✓ ffmpeg is available"
 
 # 设置工作目录
 # 推荐挂载点: -v ~/xiaozhi-client:/workspaces
