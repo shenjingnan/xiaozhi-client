@@ -25,7 +25,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "comment-json": "^4.2.5",
+    "comment-json": "^4.6.1",
     "dayjs": "^1.11.13"
   },
   "devDependencies": {
