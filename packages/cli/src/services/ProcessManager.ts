@@ -10,6 +10,7 @@
  * @module packages/cli/src/services/ProcessManager
  */
 
+import consola from "consola";
 import { FileError, ProcessError } from "../errors/index";
 import type {
   ProcessManager as IProcessManager,
@@ -173,7 +174,7 @@ export class ProcessManagerImpl implements IProcessManager {
       }
     } catch (error) {
       // 忽略清理错误，但可以记录日志
-      console.warn("清理 PID 文件失败:", error);
+      consola.warn("清理 PID 文件失败:", error);
     }
   }
 

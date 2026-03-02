@@ -3,7 +3,7 @@
  */
 
 import path from "node:path";
-import chalk from "chalk";
+import consola from "consola";
 import ora from "ora";
 import type { CommandOption } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
@@ -63,9 +63,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
       // 检查目标目录是否已存在
       if (await fileUtils.exists(targetPath)) {
         spinner.fail(`目录 "${projectName}" 已存在`);
-        console.log(
-          chalk.yellow("💡 提示: 请选择不同的项目名称或删除现有目录")
-        );
+        consola.log("💡 提示: 请选择不同的项目名称或删除现有目录");
         return;
       }
 
@@ -112,7 +110,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
 
     if (availableTemplates.length === 0) {
       spinner.fail("找不到可用模板");
-      console.log(chalk.yellow("💡 提示: 请确保 xiaozhi-client 正确安装"));
+      consola.log("💡 提示: 请确保 xiaozhi-client 正确安装");
       return;
     }
 
@@ -132,11 +130,9 @@ export class ProjectCommandHandler extends BaseCommandHandler {
       );
 
       if (similarTemplate) {
-        console.log(
-          chalk.yellow(`💡 你是想使用模板 "${similarTemplate}" 吗？`)
-        );
+        consola.log(`💡 你是想使用模板 "${similarTemplate}" 吗？`);
         const confirmed = await this.askUserConfirmation(
-          chalk.cyan("确认使用此模板？(y/n): ")
+          "确认使用此模板？(y/n): "
         );
 
         if (confirmed) {
@@ -162,12 +158,12 @@ export class ProjectCommandHandler extends BaseCommandHandler {
 
     spinner.succeed(`项目 "${projectName}" 创建成功`);
 
-    console.log(chalk.green("✅ 项目创建完成!"));
-    console.log(chalk.yellow("📝 接下来的步骤:"));
-    console.log(chalk.gray(`   cd ${projectName}`));
-    console.log(chalk.gray("   pnpm install  # 安装依赖"));
-    console.log(chalk.gray("   # 编辑 xiaozhi.config.json 设置你的 MCP 端点"));
-    console.log(chalk.gray("   xiaozhi start  # 启动服务"));
+    consola.log("✅ 项目创建完成!");
+    consola.log("📝 接下来的步骤:");
+    consola.log(`   cd ${projectName}`);
+    consola.log("   pnpm install  # 安装依赖");
+    consola.log("   # 编辑 xiaozhi.config.json 设置你的 MCP 端点");
+    consola.log("   xiaozhi start  # 启动服务");
   }
 
   /**
@@ -190,25 +186,21 @@ export class ProjectCommandHandler extends BaseCommandHandler {
 
     spinner.succeed(`项目 "${projectName}" 创建成功`);
 
-    console.log(chalk.green("✅ 基本项目创建完成!"));
-    console.log(chalk.yellow("📝 接下来的步骤:"));
-    console.log(chalk.gray(`   cd ${projectName}`));
-    console.log(
-      chalk.gray("   # 编辑 xiaozhi.config.json 设置你的 MCP 端点和服务")
-    );
-    console.log(chalk.gray("   xiaozhi start  # 启动服务"));
-    console.log(
-      chalk.yellow("💡 提示: 使用 --template 选项可以从模板创建项目")
-    );
+    consola.log("✅ 基本项目创建完成!");
+    consola.log("📝 接下来的步骤:");
+    consola.log(`   cd ${projectName}`);
+    consola.log("   # 编辑 xiaozhi.config.json 设置你的 MCP 端点和服务");
+    consola.log("   xiaozhi start  # 启动服务");
+    consola.log("💡 提示: 使用 --template 选项可以从模板创建项目");
   }
 
   /**
    * 显示可用模板
    */
   private showAvailableTemplates(templates: string[]): void {
-    console.log(chalk.yellow("可用的模板:"));
+    consola.log("可用的模板:");
     for (const template of templates) {
-      console.log(chalk.gray(`  - ${template}`));
+      consola.log(`  - ${template}`);
     }
   }
 

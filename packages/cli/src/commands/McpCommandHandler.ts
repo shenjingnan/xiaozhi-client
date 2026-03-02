@@ -3,7 +3,6 @@
  */
 
 import { configManager } from "@xiaozhi-client/config";
-import chalk from "chalk";
 import Table from "cli-table3";
 import consola from "consola";
 import ora from "ora";
@@ -170,7 +169,7 @@ export class McpCommandHandler extends BaseCommandHandler {
         const [serverName, toolName, action] = args;
 
         if (action !== "enable" && action !== "disable") {
-          console.error(chalk.red("错误: 操作必须是 'enable' 或 'disable'"));
+          consola.error("错误: 操作必须是 'enable' 或 'disable'");
           process.exit(1);
         }
 
@@ -207,7 +206,7 @@ export class McpCommandHandler extends BaseCommandHandler {
     args: CommandArguments,
     options: CommandOptions
   ): Promise<void> {
-    console.log("MCP 服务和工具管理命令。使用 --help 查看可用的子命令。");
+    consola.info("MCP 服务和工具管理命令。使用 --help 查看可用的子命令。");
   }
 
   /**
@@ -382,25 +381,23 @@ export class McpCommandHandler extends BaseCommandHandler {
       // 调用工具
       const result = await this.callToolInternal(serviceName, toolName, args);
 
-      console.log(McpCommandHandler.formatToolCallResult(result));
+      consola.log(McpCommandHandler.formatToolCallResult(result));
     } catch (error) {
-      console.log(`工具调用失败: ${serviceName}/${toolName}`);
-      console.error(chalk.red("错误:"), (error as Error).message);
+      consola.log(`工具调用失败: ${serviceName}/${toolName}`);
+      consola.error("错误:", (error as Error).message);
 
       // 提供有用的提示
       const errorMessage = (error as Error).message;
       if (errorMessage.includes("服务未启动")) {
-        console.log();
-        console.log(chalk.yellow("💡 请先启动服务:"));
-        console.log(chalk.gray("  xiaozhi start        # 前台启动"));
-        console.log(chalk.gray("  xiaozhi start -d     # 后台启动"));
+        consola.log("");
+        consola.log("💡 请先启动服务:");
+        consola.log("  xiaozhi start        # 前台启动");
+        consola.log("  xiaozhi start -d     # 后台启动");
       } else if (errorMessage.includes("参数格式错误")) {
-        console.log();
-        console.log(chalk.yellow("💡 正确格式示例:"));
-        console.log(
-          chalk.gray(
-            `  xiaozhi mcp call ${serviceName} ${toolName} --args '{"param": "value"}'`
-          )
+        consola.log("");
+        consola.log("💡 正确格式示例:");
+        consola.log(
+          `  xiaozhi mcp call ${serviceName} ${toolName} --args '{"param": "value"}'`
         );
       }
 
@@ -434,10 +431,8 @@ export class McpCommandHandler extends BaseCommandHandler {
 
       if (totalServices === 0) {
         spinner.warn("未配置任何 MCP 服务或 customMCP 工具");
-        console.log(
-          chalk.yellow(
-            "💡 提示: 使用 'xiaozhi config' 命令配置 MCP 服务或在 xiaozhi.config.json 中配置 customMCP 工具"
-          )
+        consola.log(
+          "💡 提示: 使用 'xiaozhi config' 命令配置 MCP 服务或在 xiaozhi.config.json 中配置 customMCP 工具"
         );
         return;
       }
@@ -448,9 +443,9 @@ export class McpCommandHandler extends BaseCommandHandler {
 
       if (options.tools) {
         // 显示所有服务的工具列表
-        console.log();
-        console.log(chalk.bold("MCP 服务工具列表:"));
-        console.log();
+        consola.log("");
+        consola.log("MCP 服务工具列表:");
+        consola.log("");
 
         // 计算所有工具名称的最大长度，用于动态设置列宽
         let maxToolNameWidth = 8; // 默认最小宽度
@@ -550,24 +545,22 @@ export class McpCommandHandler extends BaseCommandHandler {
           }
         }
 
-        console.log(table.toString());
+        consola.log(table.toString());
       } else {
         // 只显示服务列表
-        console.log();
-        console.log(chalk.bold("MCP 服务列表:"));
-        console.log();
+        consola.log("");
+        consola.log("MCP 服务列表:");
+        consola.log("");
 
         // 首先显示 customMCP 服务（如果存在）
         if (hasCustomMCP) {
-          console.log(`${chalk.cyan("•")} ${chalk.bold("customMCP")}`);
-          console.log(`  类型: ${chalk.gray("自定义 MCP 工具")}`);
-          console.log(`  配置: ${chalk.gray("xiaozhi.config.json")}`);
-          console.log(
-            `  工具: ${chalk.green(customMCPTools.length)} 启用 / ${chalk.yellow(
-              customMCPTools.length
-            )} 总计`
+          consola.log("• customMCP");
+          consola.log("  类型: 自定义 MCP 工具");
+          consola.log("  配置: xiaozhi.config.json");
+          consola.log(
+            `  工具: ${customMCPTools.length} 启用 / ${customMCPTools.length} 总计`
           );
-          console.log();
+          consola.log("");
         }
 
         // 然后显示标准 MCP 服务
@@ -579,56 +572,42 @@ export class McpCommandHandler extends BaseCommandHandler {
             (t) => t.enable !== false
           ).length;
 
-          console.log(`${chalk.cyan("•")} ${chalk.bold(serverName)}`);
+          consola.log(`• ${serverName}`);
 
           // 检查服务类型并显示相应信息
           if ("url" in serverConfig) {
             // URL 类型的服务（SSE 或 Streamable HTTP）
             if ("type" in serverConfig && serverConfig.type === "sse") {
-              console.log(`  类型: ${chalk.gray("SSE")}`);
+              consola.log("  类型: SSE");
             } else {
-              console.log(`  类型: ${chalk.gray("Streamable HTTP")}`);
+              consola.log("  类型: Streamable HTTP");
             }
-            console.log(`  URL: ${chalk.gray(serverConfig.url)}`);
+            consola.log(`  URL: ${serverConfig.url}`);
           } else if (isLocalMCPServerConfig(serverConfig)) {
             // 本地服务
-            console.log(
-              `  命令: ${chalk.gray(serverConfig.command)} ${chalk.gray(
-                serverConfig.args.join(" ")
-              )}`
+            consola.log(
+              `  命令: ${serverConfig.command} ${serverConfig.args.join(" ")}`
             );
           }
           if (toolCount > 0) {
-            console.log(
-              `  工具: ${chalk.green(enabledCount)} 启用 / ${chalk.yellow(
-                toolCount
-              )} 总计`
-            );
+            consola.log(`  工具: ${enabledCount} 启用 / ${toolCount} 总计`);
           } else {
-            console.log(`  工具: ${chalk.gray("未扫描 (请先启动服务)")}`);
+            consola.log("  工具: 未扫描 (请先启动服务)");
           }
-          console.log();
+          consola.log("");
         }
       }
 
-      console.log(chalk.gray("💡 提示:"));
-      console.log(
-        chalk.gray("  - 使用 'xiaozhi mcp list --tools' 查看所有工具")
-      );
-      console.log(
-        chalk.gray("  - 使用 'xiaozhi mcp <服务名> list' 查看指定服务的工具")
-      );
-      console.log(
-        chalk.gray(
-          "  - 使用 'xiaozhi mcp <服务名> <工具名> enable/disable' 启用/禁用工具"
-        )
+      consola.log("💡 提示:");
+      consola.log("  - 使用 'xiaozhi mcp list --tools' 查看所有工具");
+      consola.log("  - 使用 'xiaozhi mcp <服务名> list' 查看指定服务的工具");
+      consola.log(
+        "  - 使用 'xiaozhi mcp <服务名> <工具名> enable/disable' 启用/禁用工具"
       );
     } catch (error) {
       spinner.fail("获取 MCP 服务列表失败");
-      console.error(
-        chalk.red(
-          `错误: ${error instanceof Error ? error.message : String(error)}`
-        )
+      consola.error(
+        `错误: ${error instanceof Error ? error.message : String(error)}`
       );
       process.exit(1);
     }
@@ -649,9 +628,7 @@ export class McpCommandHandler extends BaseCommandHandler {
 
     if (!mcpServers[serverName]) {
       spinner.fail(`服务 '${serverName}' 不存在`);
-      console.log(
-        chalk.yellow("💡 提示: 使用 'xiaozhi mcp list' 查看所有可用服务")
-      );
+      consola.log("💡 提示: 使用 'xiaozhi mcp list' 查看所有可用服务");
       return false;
     }
 
@@ -674,15 +651,15 @@ export class McpCommandHandler extends BaseCommandHandler {
 
       if (toolNames.length === 0) {
         spinner.warn(`服务 '${serverName}' 暂无工具信息`);
-        console.log(chalk.yellow("💡 提示: 请先启动服务以扫描工具列表"));
+        consola.log("💡 提示: 请先启动服务以扫描工具列表");
         return;
       }
 
       spinner.succeed(`服务 '${serverName}' 共有 ${toolNames.length} 个工具`);
 
-      console.log();
-      console.log(chalk.bold(`${serverName} 服务工具列表:`));
-      console.log();
+      consola.log("");
+      consola.log(`${serverName} 服务工具列表:`);
+      consola.log("");
 
       // 使用 cli-table3 创建表格
       const table = new Table({
@@ -710,26 +687,20 @@ export class McpCommandHandler extends BaseCommandHandler {
         table.push([toolName, status, description]);
       }
 
-      console.log(table.toString());
+      consola.log(table.toString());
 
-      console.log();
-      console.log(chalk.gray("💡 提示:"));
-      console.log(
-        chalk.gray(
-          `  - 使用 'xiaozhi mcp ${serverName} <工具名> enable' 启用工具`
-        )
+      consola.log("");
+      consola.log("💡 提示:");
+      consola.log(
+        `  - 使用 'xiaozhi mcp ${serverName} <工具名> enable' 启用工具`
       );
-      console.log(
-        chalk.gray(
-          `  - 使用 'xiaozhi mcp ${serverName} <工具名> disable' 禁用工具`
-        )
+      consola.log(
+        `  - 使用 'xiaozhi mcp ${serverName} <工具名> disable' 禁用工具`
       );
     } catch (error) {
       spinner.fail("获取工具列表失败");
-      console.error(
-        chalk.red(
-          `错误: ${error instanceof Error ? error.message : String(error)}`
-        )
+      consola.error(
+        `错误: ${error instanceof Error ? error.message : String(error)}`
       );
       process.exit(1);
     }
@@ -755,10 +726,8 @@ export class McpCommandHandler extends BaseCommandHandler {
 
       if (!toolsConfig[toolName]) {
         spinner.fail(`工具 '${toolName}' 在服务 '${serverName}' 中不存在`);
-        console.log(
-          chalk.yellow(
-            `💡 提示: 使用 'xiaozhi mcp ${serverName} list' 查看该服务的所有工具`
-          )
+        consola.log(
+          `💡 提示: 使用 'xiaozhi mcp ${serverName} list' 查看该服务的所有工具`
         );
         return;
       }
@@ -771,18 +740,14 @@ export class McpCommandHandler extends BaseCommandHandler {
         toolsConfig[toolName].description
       );
 
-      spinner.succeed(
-        `成功${action}工具 ${chalk.cyan(serverName)}/${chalk.cyan(toolName)}`
-      );
+      spinner.succeed(`成功${action}工具 ${serverName}/${toolName}`);
 
-      console.log();
-      console.log(chalk.gray("💡 提示: 工具状态更改将在下次启动服务时生效"));
+      consola.log("");
+      consola.log("💡 提示: 工具状态更改将在下次启动服务时生效");
     } catch (error) {
       spinner.fail(`${action}工具失败`);
-      console.error(
-        chalk.red(
-          `错误: ${error instanceof Error ? error.message : String(error)}`
-        )
+      consola.error(
+        `错误: ${error instanceof Error ? error.message : String(error)}`
       );
       process.exit(1);
     }

@@ -4,6 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import consola from "consola";
 import { FileError, ValidationError } from "../errors/index";
 import type {
   TemplateManager as ITemplateManager,
@@ -48,7 +49,7 @@ export class TemplateManagerImpl implements ITemplateManager {
           }
         } catch (error) {
           // 跳过无效的模板目录
-          console.warn(`跳过无效模板: ${templateName}`);
+          consola.warn(`跳过无效模板: ${templateName}`);
         }
       }
 
@@ -88,7 +89,7 @@ export class TemplateManagerImpl implements ITemplateManager {
           const configContent = FileUtils.readFile(configPath);
           config = JSON.parse(configContent);
         } catch (error) {
-          console.warn(`模板配置文件解析失败: ${templateName}`);
+          consola.warn(`模板配置文件解析失败: ${templateName}`);
         }
       }
 
@@ -158,7 +159,7 @@ export class TemplateManagerImpl implements ITemplateManager {
       // 处理模板变量替换
       await this.processTemplateVariables(targetPath, options);
 
-      console.log(`✅ 项目创建成功: ${targetPath}`);
+      consola.log(`✅ 项目创建成功: ${targetPath}`);
     } catch (error) {
       if (error instanceof FileError || error instanceof ValidationError) {
         throw error;
@@ -187,7 +188,7 @@ export class TemplateManagerImpl implements ITemplateManager {
       for (const requiredFile of requiredFiles) {
         const filePath = path.join(templateInfo.path, requiredFile);
         if (!FileUtils.exists(filePath)) {
-          console.warn(`模板缺少必要文件: ${requiredFile}`);
+          consola.warn(`模板缺少必要文件: ${requiredFile}`);
           return false;
         }
       }
@@ -298,7 +299,7 @@ export class TemplateManagerImpl implements ITemplateManager {
         }
       }
     } catch (error) {
-      console.warn(
+      consola.warn(
         `处理模板变量失败: ${error instanceof Error ? error.message : String(error)}`
       );
     }
@@ -359,7 +360,7 @@ export class TemplateManagerImpl implements ITemplateManager {
         FileUtils.writeFile(filePath, content, { overwrite: true });
       }
     } catch (error) {
-      console.warn(
+      consola.warn(
         `替换文件变量失败 ${filePath}: ${error instanceof Error ? error.message : String(error)}`
       );
     }

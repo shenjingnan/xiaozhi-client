@@ -2,7 +2,7 @@
  * 端点管理命令处理器
  */
 
-import chalk from "chalk";
+import consola from "consola";
 import ora from "ora";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
@@ -64,7 +64,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
     args: CommandArguments,
     options: CommandOptions
   ): Promise<void> {
-    console.log("MCP 端点管理命令。使用 --help 查看可用的子命令。");
+    consola.info("MCP 端点管理命令。使用 --help 查看可用的子命令。");
   }
 
   /**
@@ -79,11 +79,11 @@ export class EndpointCommandHandler extends BaseCommandHandler {
       spinner.succeed("端点列表");
 
       if (endpoints.length === 0) {
-        console.log(chalk.yellow("未配置任何 MCP 端点"));
+        consola.log("未配置任何 MCP 端点");
       } else {
-        console.log(chalk.green(`共 ${endpoints.length} 个端点:`));
+        consola.log(`共 ${endpoints.length} 个端点:`);
         endpoints.forEach((ep: string, index: number) => {
-          console.log(chalk.gray(`  ${index + 1}. ${ep}`));
+          consola.log(`  ${index + 1}. ${ep}`);
         });
       }
     } catch (error) {
@@ -106,7 +106,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
       spinner.succeed(`成功添加端点: ${url}`);
 
       const endpoints = configManager.getMcpEndpoints();
-      console.log(chalk.gray(`当前共 ${endpoints.length} 个端点`));
+      consola.log(`当前共 ${endpoints.length} 个端点`);
     } catch (error) {
       spinner.fail(
         `添加端点失败: ${error instanceof Error ? error.message : String(error)}`
@@ -127,7 +127,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
       spinner.succeed(`成功移除端点: ${url}`);
 
       const endpoints = configManager.getMcpEndpoints();
-      console.log(chalk.gray(`当前剩余 ${endpoints.length} 个端点`));
+      consola.log(`当前剩余 ${endpoints.length} 个端点`);
     } catch (error) {
       spinner.fail(
         `移除端点失败: ${error instanceof Error ? error.message : String(error)}`
@@ -152,7 +152,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
         configManager.updateMcpEndpoint(urls);
         spinner.succeed(`成功设置 ${urls.length} 个端点`);
         for (const [index, url] of urls.entries()) {
-          console.log(chalk.gray(`  ${index + 1}. ${url}`));
+          consola.log(`  ${index + 1}. ${url}`);
         }
       }
     } catch (error) {

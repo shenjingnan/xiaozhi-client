@@ -2,7 +2,7 @@
  * 错误处理器
  */
 
-import chalk from "chalk";
+import consola from "consola";
 import { ERROR_MESSAGES } from "./ErrorMessages";
 import { CLIError } from "./index";
 
@@ -27,25 +27,25 @@ export class ErrorHandler {
    * 处理 CLI 错误
    */
   private static handleCLIError(error: CLIError): void {
-    console.error(chalk.red(`❌ 错误: ${error.message}`));
+    consola.error(`❌ 错误: ${error.message}`);
 
     // 显示错误码（调试模式）
     if (process.env.DEBUG) {
-      console.error(chalk.gray(`错误码: ${error.code}`));
+      consola.log(`错误码: ${error.code}`);
     }
 
     // 显示建议
     if (error.suggestions && error.suggestions.length > 0) {
-      console.log(chalk.yellow("💡 建议:"));
+      consola.log("💡 建议:");
       for (const suggestion of error.suggestions) {
-        console.log(chalk.gray(`   ${suggestion}`));
+        consola.log(`   ${suggestion}`);
       }
     }
 
     // 显示相关帮助信息
     const helpMessage = ERROR_MESSAGES.getHelpMessage(error.code);
     if (helpMessage) {
-      console.log(chalk.blue(`ℹ️  ${helpMessage}`));
+      consola.log(`ℹ️  ${helpMessage}`);
     }
   }
 
@@ -53,16 +53,14 @@ export class ErrorHandler {
    * 处理未知错误
    */
   private static handleUnknownError(error: Error): void {
-    console.error(chalk.red(`❌ 未知错误: ${error.message}`));
+    consola.error(`❌ 未知错误: ${error.message}`);
 
     // 在调试模式下显示完整堆栈
     if (process.env.DEBUG || process.env.NODE_ENV === "development") {
-      console.error(chalk.gray("堆栈信息:"));
-      console.error(chalk.gray(error.stack));
+      consola.log("堆栈信息:");
+      consola.log(error.stack);
     } else {
-      console.log(
-        chalk.yellow("💡 提示: 设置 DEBUG=1 环境变量查看详细错误信息")
-      );
+      consola.log("💡 提示: 设置 DEBUG=1 环境变量查看详细错误信息");
     }
   }
 
@@ -112,12 +110,12 @@ export class ErrorHandler {
    * 警告处理
    */
   static warn(message: string, suggestions?: string[]): void {
-    console.warn(chalk.yellow(`⚠️  警告: ${message}`));
+    consola.warn(`⚠️  警告: ${message}`);
 
     if (suggestions && suggestions.length > 0) {
-      console.log(chalk.yellow("💡 建议:"));
+      consola.log("💡 建议:");
       for (const suggestion of suggestions) {
-        console.log(chalk.gray(`   ${suggestion}`));
+        consola.log(`   ${suggestion}`);
       }
     }
   }
@@ -126,13 +124,13 @@ export class ErrorHandler {
    * 信息提示
    */
   static info(message: string): void {
-    console.log(chalk.blue(`ℹ️  ${message}`));
+    consola.log(`ℹ️  ${message}`);
   }
 
   /**
    * 成功提示
    */
   static success(message: string): void {
-    console.log(chalk.green(`✅ ${message}`));
+    consola.log(`✅ ${message}`);
   }
 }

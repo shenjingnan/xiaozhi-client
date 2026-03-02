@@ -3,7 +3,7 @@
  */
 
 import path from "node:path";
-import chalk from "chalk";
+import consola from "consola";
 import ora from "ora";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
@@ -64,7 +64,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
     args: CommandArguments,
     options: CommandOptions
   ): Promise<void> {
-    console.log("配置管理命令。使用 --help 查看可用的子命令。");
+    consola.info("配置管理命令。使用 --help 查看可用的子命令。");
   }
 
   /**
@@ -83,7 +83,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
 
       if (configManager.configExists()) {
         spinner.warn("配置文件已存在");
-        console.log(chalk.yellow("如需重新初始化，请先删除现有的配置文件"));
+        consola.log("如需重新初始化，请先删除现有的配置文件");
         return;
       }
 
@@ -95,13 +95,11 @@ export class ConfigCommandHandler extends BaseCommandHandler {
       const configFileName = `xiaozhi.config.${format}`;
       const configPath = path.join(configDir, configFileName);
 
-      console.log(chalk.green(`✅ 配置文件已创建: ${configFileName}`));
-      console.log(chalk.yellow("📝 请编辑配置文件设置你的 MCP 端点:"));
-      console.log(chalk.gray(`   配置文件路径: ${configPath}`));
-      console.log(chalk.yellow("💡 或者使用命令设置:"));
-      console.log(
-        chalk.gray("   xiaozhi config set mcpEndpoint <your-endpoint-url>")
-      );
+      consola.log(`✅ 配置文件已创建: ${configFileName}`);
+      consola.log("📝 请编辑配置文件设置你的 MCP 端点:");
+      consola.log(`   配置文件路径: ${configPath}`);
+      consola.log("💡 或者使用命令设置:");
+      consola.log("   xiaozhi config set mcpEndpoint <your-endpoint-url>");
     } catch (error) {
       spinner.fail(
         `初始化配置失败: ${error instanceof Error ? error.message : String(error)}`
@@ -121,9 +119,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
 
       if (!configManager.configExists()) {
         spinner.fail("配置文件不存在");
-        console.log(
-          chalk.yellow('💡 提示: 请先运行 "xiaozhi config init" 初始化配置')
-        );
+        consola.log('💡 提示: 请先运行 "xiaozhi config init" 初始化配置');
         return;
       }
 
@@ -134,32 +130,30 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           spinner.succeed("配置信息");
           const endpoints = configManager.getMcpEndpoints();
           if (endpoints.length === 0) {
-            console.log(chalk.yellow("未配置任何 MCP 端点"));
+            consola.log("未配置任何 MCP 端点");
           } else if (endpoints.length === 1) {
-            console.log(chalk.green(`MCP 端点: ${endpoints[0]}`));
+            consola.log(`MCP 端点: ${endpoints[0]}`);
           } else {
-            console.log(chalk.green(`MCP 端点 (${endpoints.length} 个):`));
+            consola.log(`MCP 端点 (${endpoints.length} 个):`);
             endpoints.forEach((ep: string, index: number) => {
-              console.log(chalk.gray(`  ${index + 1}. ${ep}`));
+              consola.log(`  ${index + 1}. ${ep}`);
             });
           }
           break;
         }
         case "mcpServers":
           spinner.succeed("配置信息");
-          console.log(chalk.green("MCP 服务:"));
+          consola.log("MCP 服务:");
           for (const [name, serverConfig] of Object.entries(
             config.mcpServers
           )) {
             const server = serverConfig as any;
             // 检查是否是 SSE 类型
             if ("type" in server && server.type === "sse") {
-              console.log(chalk.gray(`  ${name}: [SSE] ${server.url}`));
+              consola.log(`  ${name}: [SSE] ${server.url}`);
             } else {
-              console.log(
-                chalk.gray(
-                  `  ${name}: ${server.command} ${server.args.join(" ")}`
-                )
+              consola.log(
+                `  ${name}: ${server.command} ${server.args.join(" ")}`
               );
             }
           }
@@ -167,48 +161,32 @@ export class ConfigCommandHandler extends BaseCommandHandler {
         case "connection": {
           spinner.succeed("配置信息");
           const connectionConfig = configManager.getConnectionConfig();
-          console.log(chalk.green("连接配置:"));
-          console.log(
-            chalk.gray(
-              `  心跳检测间隔: ${connectionConfig.heartbeatInterval}ms`
-            )
+          consola.log("连接配置:");
+          consola.log(
+            `  心跳检测间隔: ${connectionConfig.heartbeatInterval}ms`
           );
-          console.log(
-            chalk.gray(`  心跳超时时间: ${connectionConfig.heartbeatTimeout}ms`)
-          );
-          console.log(
-            chalk.gray(`  重连间隔: ${connectionConfig.reconnectInterval}ms`)
-          );
+          consola.log(`  心跳超时时间: ${connectionConfig.heartbeatTimeout}ms`);
+          consola.log(`  重连间隔: ${connectionConfig.reconnectInterval}ms`);
           break;
         }
         case "heartbeatInterval":
           spinner.succeed("配置信息");
-          console.log(
-            chalk.green(
-              `心跳检测间隔: ${configManager.getHeartbeatInterval()}ms`
-            )
+          consola.log(
+            `心跳检测间隔: ${configManager.getHeartbeatInterval()}ms`
           );
           break;
         case "heartbeatTimeout":
           spinner.succeed("配置信息");
-          console.log(
-            chalk.green(
-              `心跳超时时间: ${configManager.getHeartbeatTimeout()}ms`
-            )
-          );
+          consola.log(`心跳超时时间: ${configManager.getHeartbeatTimeout()}ms`);
           break;
         case "reconnectInterval":
           spinner.succeed("配置信息");
-          console.log(
-            chalk.green(`重连间隔: ${configManager.getReconnectInterval()}ms`)
-          );
+          consola.log(`重连间隔: ${configManager.getReconnectInterval()}ms`);
           break;
         default:
           spinner.fail(`未知的配置项: ${key}`);
-          console.log(
-            chalk.yellow(
-              "支持的配置项: mcpEndpoint, mcpServers, connection, heartbeatInterval, heartbeatTimeout, reconnectInterval"
-            )
+          consola.log(
+            "支持的配置项: mcpEndpoint, mcpServers, connection, heartbeatInterval, heartbeatTimeout, reconnectInterval"
           );
       }
     } catch (error) {
@@ -230,9 +208,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
 
       if (!configManager.configExists()) {
         spinner.fail("配置文件不存在");
-        console.log(
-          chalk.yellow('💡 提示: 请先运行 "xiaozhi config init" 初始化配置')
-        );
+        consola.log('💡 提示: 请先运行 "xiaozhi config init" 初始化配置');
         return;
       }
 
@@ -270,10 +246,8 @@ export class ConfigCommandHandler extends BaseCommandHandler {
         }
         default:
           spinner.fail(`不支持设置的配置项: ${key}`);
-          console.log(
-            chalk.yellow(
-              "支持设置的配置项: mcpEndpoint, heartbeatInterval, heartbeatTimeout, reconnectInterval"
-            )
+          consola.log(
+            "支持设置的配置项: mcpEndpoint, heartbeatInterval, heartbeatTimeout, reconnectInterval"
           );
       }
     } catch (error) {
