@@ -4,8 +4,8 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  deepMerge,
   decodeJWTToken,
+  deepMerge,
   extractTokenFromUrl,
   formatErrorMessage,
   isValidEndpointUrl,
@@ -90,18 +90,26 @@ describe("工具函数测试", () => {
     });
 
     it("应该拒绝 null 参数", () => {
-      expect(() => validateToolCallParams(null)).toThrow("工具调用参数必须是对象");
+      expect(() => validateToolCallParams(null)).toThrow(
+        "工具调用参数必须是对象"
+      );
     });
 
     it("应该拒绝 undefined 参数", () => {
-      expect(() => validateToolCallParams(undefined)).toThrow("工具调用参数必须是对象");
+      expect(() => validateToolCallParams(undefined)).toThrow(
+        "工具调用参数必须是对象"
+      );
     });
 
     it("应该拒绝非对象参数", () => {
       // 字符串不是对象
-      expect(() => validateToolCallParams("string")).toThrow("工具调用参数必须是对象");
+      expect(() => validateToolCallParams("string")).toThrow(
+        "工具调用参数必须是对象"
+      );
       // 数字不是对象
-      expect(() => validateToolCallParams(123)).toThrow("工具调用参数必须是对象");
+      expect(() => validateToolCallParams(123)).toThrow(
+        "工具调用参数必须是对象"
+      );
       // 数组虽然 typeof 是 'object'，但没有 name 属性，会抛出"工具名称必须是字符串"
       expect(() => validateToolCallParams([])).toThrow("工具名称必须是字符串");
     });
@@ -110,16 +118,18 @@ describe("工具函数测试", () => {
       const params = {
         arguments: { foo: "bar" },
       };
-      expect(() => validateToolCallParams(params)).toThrow("工具名称必须是字符串");
+      expect(() => validateToolCallParams(params)).toThrow(
+        "工具名称必须是字符串"
+      );
     });
 
     it("应该拒绝非字符串的 name", () => {
-      expect(() =>
-        validateToolCallParams({ name: 123 })
-      ).toThrow("工具名称必须是字符串");
-      expect(() =>
-        validateToolCallParams({ name: null })
-      ).toThrow("工具名称必须是字符串");
+      expect(() => validateToolCallParams({ name: 123 })).toThrow(
+        "工具名称必须是字符串"
+      );
+      expect(() => validateToolCallParams({ name: null })).toThrow(
+        "工具名称必须是字符串"
+      );
     });
 
     it("应该拒绝非对象的 arguments", () => {
@@ -149,7 +159,9 @@ describe("工具函数测试", () => {
     });
 
     it("应该接受有效的 wss:// URL", () => {
-      expect(isValidEndpointUrl("wss://secure.example.com/endpoint")).toBe(true);
+      expect(isValidEndpointUrl("wss://secure.example.com/endpoint")).toBe(
+        true
+      );
       expect(isValidEndpointUrl("wss://api.example.com:443/path")).toBe(true);
     });
 
@@ -178,10 +190,14 @@ describe("工具函数测试", () => {
     });
 
     it("应该接受带路径和查询参数的 WebSocket URL", () => {
-      expect(isValidEndpointUrl("ws://example.com/path?query=value")).toBe(true);
-      expect(isValidEndpointUrl("wss://example.com/path/to/endpoint?id=123&token=abc")).toBe(
+      expect(isValidEndpointUrl("ws://example.com/path?query=value")).toBe(
         true
       );
+      expect(
+        isValidEndpointUrl(
+          "wss://example.com/path/to/endpoint?id=123&token=abc"
+        )
+      ).toBe(true);
     });
   });
 
@@ -511,13 +527,15 @@ describe("工具函数测试", () => {
 
     describe("extractTokenFromUrl", () => {
       it("应该从 URL 中提取 token 参数", () => {
-        const url = "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.test";
+        const url =
+          "wss://api.xiaozhi.me/mcp/?token=eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.test";
         const result = extractTokenFromUrl(url);
         expect(result).toBe("eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.test");
       });
 
       it("应该处理包含多个查询参数的 URL", () => {
-        const url = "wss://api.example.com/mcp/?id=123&token=my_token&other=value";
+        const url =
+          "wss://api.example.com/mcp/?id=123&token=my_token&other=value";
         const result = extractTokenFromUrl(url);
         expect(result).toBe("my_token");
       });
