@@ -559,10 +559,14 @@ export class ConfigManager {
    * 获取配置（只读）
    */
   public getConfig(): Readonly<AppConfig> {
-    this.config = this.loadConfig();
+    // 如果配置未加载，则加载配置
+    if (!this.config) {
+      this.config = this.loadConfig();
+    }
 
-    // 返回深度只读副本
-    return JSON.parse(JSON.stringify(this.config));
+    // 返回冻结的配置对象，提供运行时只读保护
+    // 避免使用 JSON.parse(JSON.stringify()) 进行深拷贝，提升性能
+    return Object.freeze(this.config) as Readonly<AppConfig>;
   }
 
   /**
