@@ -1,9 +1,29 @@
 import { z } from "zod";
 
 /**
+ * 本地 JSON Schema 类型定义
+ * 扩展自基本 JSON Schema 结构，包含本模块所需的属性
+ */
+interface JsonSchema {
+  type?: "string" | "number" | "integer" | "boolean" | "array" | "object";
+  enum?: string[];
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  minimum?: number;
+  maximum?: number;
+  multipleOf?: number;
+  items?: JsonSchema;
+  minItems?: number;
+  maxItems?: number;
+  properties?: Record<string, JsonSchema>;
+  required?: string[];
+}
+
+/**
  * 根据 JSON Schema 动态生成 Zod schema
  */
-export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
+export function createZodSchemaFromJsonSchema(jsonSchema: JsonSchema): z.ZodTypeAny {
   if (!jsonSchema || typeof jsonSchema !== "object") {
     return z.any();
   }
@@ -92,7 +112,7 @@ export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
 /**
  * 获取字段的默认值
  */
-export function getDefaultValueForSchema(schema: any): any {
+export function getDefaultValueForSchema(schema: JsonSchema): unknown {
   if (!schema) return undefined;
 
   switch (schema.type) {
@@ -112,7 +132,7 @@ export function getDefaultValueForSchema(schema: any): any {
 
     case "object":
       if (schema.properties) {
-        const defaults: Record<string, any> = {};
+        const defaults: Record<string, unknown> = {};
         for (const [key, propSchema] of Object.entries(schema.properties)) {
           defaults[key] = getDefaultValueForSchema(propSchema);
         }
@@ -128,10 +148,10 @@ export function getDefaultValueForSchema(schema: any): any {
 /**
  * 根据 JSON Schema 生成默认值对象
  */
-export function createDefaultValues(jsonSchema: any): Record<string, any> {
+export function createDefaultValues(jsonSchema: JsonSchema): Record<string, unknown> {
   if (!jsonSchema || !jsonSchema.properties) return {};
 
-  const defaults: Record<string, any> = {};
+  const defaults: Record<string, unknown> = {};
   const requiredFields = jsonSchema.required || [];
 
   for (const [key, propSchema] of Object.entries(jsonSchema.properties)) {
