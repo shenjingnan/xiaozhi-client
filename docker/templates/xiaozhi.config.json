@@ -10,6 +10,23 @@
       "args": ["-y", "@xiaozhi-client/datetime-mcp"]
     }
   },
+  "asr": {
+    "model": "doubao",
+    "appid": "your-appid",
+    "accessToken": "your-access-token"
+  },
+  "llm": {
+    "prompt": "./prompts/default.md",
+    "model": "your-model-name",
+    "apiKey": "your-api-key",
+    "baseURL": "your-base-url"
+  },
+  "tts": {
+    "model": "doubao",
+    "appid": "your-appid",
+    "accessToken": "your-access-token",
+    "voice_type": "zh_female_xiaohe_uranus_bigtts"
+  },
   "connection": {
     "heartbeatInterval": 30000,
     "heartbeatTimeout": 10000,
