@@ -21,6 +21,7 @@ overrides:
   lodash-es@>=4.0.0 <=4.17.22: '>=4.17.23'
   '@modelcontextprotocol/sdk@>=1.10.0 <=1.25.3': '>=1.26.0'
   qs@>=6.7.0 <=6.14.1: '>=6.14.2'
+  '@discordjs/opus@<0.10.0': '>=0.10.0'
 
 importers:
 
@@ -30,8 +31,8 @@ importers:
         specifier: ^1.3.9
         version: 1.3.9(axios@1.13.5)
       '@discordjs/opus':
-        specifier: ^0.9.0
-        version: 0.9.0
+        specifier: ^0.10.0
+        version: 0.10.0
       '@hono/node-server':
         specifier: ^1.17.1
         version: 1.19.9(hono@4.12.0)
@@ -106,7 +107,7 @@ importers:
         version: 13.1.3
       prism-media:
         specifier: ^1.3.5
-        version: 1.3.5(@discordjs/opus@0.9.0)
+        version: 1.3.5(@discordjs/opus@0.10.0)
       ws:
         specifier: ^8.14.2
         version: 8.19.0
@@ -193,8 +194,8 @@ importers:
         specifier: ^1.3.9
         version: 1.3.9(axios@1.13.5)
       '@discordjs/opus':
-        specifier: ^0.9.0
-        version: 0.9.0
+        specifier: '>=0.10.0'
+        version: 0.10.0
       '@hono/node-server':
         specifier: ^1.17.1
         version: 1.19.9(hono@4.12.0)
@@ -260,7 +261,7 @@ importers:
         version: 13.1.3
       prism-media:
         specifier: ^1.3.5
-        version: 1.3.5(@discordjs/opus@0.9.0)
+        version: 1.3.5(@discordjs/opus@0.10.0)
       ws:
         specifier: ^8.14.2
         version: 8.19.0
@@ -543,11 +544,11 @@ importers:
   packages/asr:
     dependencies:
       '@discordjs/opus':
-        specifier: ^0.9.0
-        version: 0.9.0
+        specifier: '>=0.10.0'
+        version: 0.10.0
       prism-media:
         specifier: ^1.3.5
-        version: 1.3.5(@discordjs/opus@0.9.0)
+        version: 1.3.5(@discordjs/opus@0.10.0)
       uuid:
         specifier: ^9.0.1
         version: 9.0.1
@@ -1652,8 +1653,8 @@ packages:
     resolution: {integrity: sha512-YJOVVZ545x24mHzANfYoy0BJX5PDyeZlpiJjDkUBM/V/Ao7TFX9lcUvCN4nr0tbr5ubeaXxtEBILUrHtTphVeQ==}
     hasBin: true
 
-  '@discordjs/opus@0.9.0':
-    resolution: {integrity: sha512-NEE76A96FtQ5YuoAVlOlB3ryMPrkXbUCTQICHGKb8ShtjXyubGicjRMouHtP1RpuDdm16cDa+oI3aAMo1zQRUQ==}
+  '@discordjs/opus@0.10.0':
+    resolution: {integrity: sha512-HHEnSNrSPmFEyndRdQBJN2YE6egyXS9JUnJWyP6jficK0Y+qKMEZXyYTgmzpjrxXP1exM/hKaNP7BRBUEWkU5w==}
     engines: {node: '>=12.0.0'}
 
   '@dnd-kit/accessibility@3.1.1':
@@ -5883,11 +5884,12 @@ packages:
   nlcst-to-string@4.0.0:
     resolution: {integrity: sha512-YKLBCcUYKAg0FNlOBT6aI91qFmSiFKiluk655WzPF+DDMA02qIyy8uiRqI8QXtcFpEvll12LpL5MXqEmAZ+dcA==}
 
-  node-addon-api@5.1.0:
-    resolution: {integrity: sha512-eh0GgfEkpnoWDq+VY8OyvYhFEzBk6jIYbRKdIlyTiAXIVJ8PyBaKb0rp7oDtoddbdoHWhq8wwr+XZ81F1rpNdA==}
-
   node-addon-api@7.1.1:
     resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
+
+  node-addon-api@8.6.0:
+    resolution: {integrity: sha512-gBVjCaqDlRUk0EwoPNKzIr9KkS9041G/q31IBShPs1Xz6UTA+EXdZADbzqAJQrpDRq71CIMnOP5VMut3SL0z5Q==}
+    engines: {node: ^18 || ^20 || >= 21}
 
   node-cache@5.1.2:
     resolution: {integrity: sha512-t1QzWwnk4sjLWaQAS8CHgOJ+RAfmHpxFWmc36IWTiWHQfs0w5JDMBS1b1ZxQteo0vVVuWJvIUKHDkkeK7vIGCg==}
@@ -6226,7 +6228,7 @@ packages:
   prism-media@1.3.5:
     resolution: {integrity: sha512-IQdl0Q01m4LrkN1EGIE9lphov5Hy7WWlH6ulf5QdGePLlPas9p2mhgddTEHrlaXYjjFToM1/rWuwF37VF4taaA==}
     peerDependencies:
-      '@discordjs/opus': '>=0.8.0 <1.0.0'
+      '@discordjs/opus': '>=0.10.0'
       ffmpeg-static: ^5.0.2 || ^4.2.7 || ^3.0.0 || ^2.4.0
       node-opus: ^0.3.3
       opusscript: ^0.0.8
@@ -8581,10 +8583,10 @@ snapshots:
       - encoding
       - supports-color
 
-  '@discordjs/opus@0.9.0':
+  '@discordjs/opus@0.10.0':
     dependencies:
       '@discordjs/node-pre-gyp': 0.4.5
-      node-addon-api: 5.1.0
+      node-addon-api: 8.6.0
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -13261,10 +13263,10 @@ snapshots:
     dependencies:
       '@types/nlcst': 2.0.3
 
-  node-addon-api@5.1.0: {}
-
   node-addon-api@7.1.1:
     optional: true
+
+  node-addon-api@8.6.0: {}
 
   node-cache@5.1.2:
     dependencies:
@@ -13654,9 +13656,9 @@ snapshots:
     dependencies:
       parse-ms: 4.0.0
 
-  prism-media@1.3.5(@discordjs/opus@0.9.0):
+  prism-media@1.3.5(@discordjs/opus@0.10.0):
     optionalDependencies:
-      '@discordjs/opus': 0.9.0
+      '@discordjs/opus': 0.10.0
 
   process-warning@5.0.0: {}
 
