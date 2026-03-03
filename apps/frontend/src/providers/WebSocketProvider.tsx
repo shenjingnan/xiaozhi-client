@@ -1,3 +1,34 @@
+/**
+ * 网络服务 Provider 组件
+ *
+ * 为应用提供网络相关的功能，包括：
+ * - HTTP API 调用（getConfig、updateConfig、getStatus 等）
+ * - WebSocket 连接管理
+ * - 配置更新通知（结合 HTTP 和 WebSocket）
+ * - 服务重启通知
+ * - 端口切换
+ *
+ * 该组件在内部初始化所有 stores，确保在应用启动时完成数据初始化。
+ *
+ * @example
+ * ```tsx
+ * import { WebSocketProvider } from '@/providers/WebSocketProvider';
+ *
+ * function App() {
+ *   return (
+ *     <WebSocketProvider>
+ *       <YourAppComponents />
+ *     </WebSocketProvider>
+ *   );
+ * }
+ *
+ * // 在组件中使用
+ * function MyComponent() {
+ *   const { getConfig, updateConfig } = useNetworkServiceActions();
+ *   // ...
+ * }
+ * ```
+ */
 import { useNetworkService } from "@/hooks/useNetworkService";
 import { initializeStores } from "@/stores/index";
 import type { AppConfig } from "@xiaozhi-client/shared-types";
