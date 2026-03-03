@@ -51,6 +51,13 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // 工作区包别名（指向源码目录，用于测试）
+      "@xiaozhi-client/config": resolve(__dirname, "../config/src"),
+      "@xiaozhi-client/config/*": resolve(__dirname, "../config/src/*"),
+      "@xiaozhi-client/mcp-core": resolve(__dirname, "../mcp-core/src"),
+      "@xiaozhi-client/mcp-core/*": resolve(__dirname, "../mcp-core/src/*"),
+      "@xiaozhi-client/shared-types": resolve(__dirname, "../shared-types/src"),
+      "@xiaozhi-client/shared-types/*": resolve(__dirname, "../shared-types/src/*"),
       // Backend 路径别名（从 packages/cli 向上到项目根目录）
       "@handlers": resolve(__dirname, "../../apps/backend/handlers"),
       "@handlers/*": resolve(__dirname, "../../apps/backend/handlers/*"),
