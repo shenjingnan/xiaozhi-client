@@ -197,16 +197,23 @@ export class ESP32Connection {
             //   `解析音频包成功(协议2): type=${parsed.type}, timestamp=${parsed.timestamp}, payloadSize=${parsed.payload.length}`
             // );
             // 处理为解析后的音频消息（附加解析信息）
-            await this.config.onMessage({
-              type: "audio",
-              data: parsed.payload,
-              // 附加解析信息供服务层使用
-              _parsed: {
-                protocolVersion: parsed.protocolVersion,
-                dataType: parsed.type,
-                timestamp: parsed.timestamp,
-              },
-            } as ESP32WSMessage);
+            try {
+              await this.config.onMessage({
+                type: "audio",
+                data: parsed.payload,
+                // 附加解析信息供服务层使用
+                _parsed: {
+                  protocolVersion: parsed.protocolVersion,
+                  dataType: parsed.type,
+                  timestamp: parsed.timestamp,
+                },
+              } as ESP32WSMessage);
+            } catch (onMessageError) {
+              logger.error(
+                `处理音频消息失败(协议2): deviceId=${this.deviceId}`,
+                onMessageError
+              );
+            }
             return;
           }
           logger.info("协议2解析失败，尝试其他协议");
@@ -219,15 +226,22 @@ export class ESP32Connection {
             logger.info(
               `解析音频包成功(协议3): type=${parsed.type}, timestamp=${parsed.timestamp}, payloadSize=${parsed.payload.length}`
             );
-            await this.config.onMessage({
-              type: "audio",
-              data: parsed.payload,
-              _parsed: {
-                protocolVersion: parsed.protocolVersion,
-                dataType: parsed.type,
-                timestamp: parsed.timestamp,
-              },
-            } as ESP32WSMessage);
+            try {
+              await this.config.onMessage({
+                type: "audio",
+                data: parsed.payload,
+                _parsed: {
+                  protocolVersion: parsed.protocolVersion,
+                  dataType: parsed.type,
+                  timestamp: parsed.timestamp,
+                },
+              } as ESP32WSMessage);
+            } catch (onMessageError) {
+              logger.error(
+                `处理音频消息失败(协议3): deviceId=${this.deviceId}`,
+                onMessageError
+              );
+            }
             return;
           }
           logger.info("协议3解析失败，作为原始数据处理");
@@ -236,10 +250,17 @@ export class ESP32Connection {
         const version = data.readUInt16BE(0);
         logger.info(`音频协议解析失败，作为原始数据处理, version=${version}`);
         // 处理为原始音频消息
-        await this.config.onMessage({
-          type: "audio",
-          data: new Uint8Array(data),
-        });
+        try {
+          await this.config.onMessage({
+            type: "audio",
+            data: new Uint8Array(data),
+          });
+        } catch (onMessageError) {
+          logger.error(
+            `处理原始音频消息失败: deviceId=${this.deviceId}`,
+            onMessageError
+          );
+        }
       } else {
         logger.error(`消息解析失败: deviceId=${this.deviceId}`, error);
         await this.sendError(
