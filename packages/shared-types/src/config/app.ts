@@ -77,6 +77,12 @@ export interface AppConfig {
   modelscope?: ModelScopeConfig;
   webUI?: WebUIConfig;
   platforms?: PlatformsConfig;
+  /** ASR（语音识别）配置 */
+  asr?: ASRConfig;
+  /** TTS（语音合成）配置 */
+  tts?: TTSConfig;
+  /** LLM（大语言模型）配置 */
+  llm?: LLMConfig;
 }
 
 /**
@@ -106,4 +112,50 @@ export interface PlatformsConfig {
  */
 export interface PlatformConfig {
   token?: string;
+}
+
+/**
+ * ASR（语音识别）配置接口
+ */
+export interface ASRConfig {
+  /** 应用 ID */
+  appid?: string;
+  /** 访问令牌 */
+  accessToken?: string;
+  /** 集群类型 */
+  cluster?: string;
+  /** WebSocket 端点 */
+  wsUrl?: string;
+}
+
+/**
+ * TTS（语音合成）配置接口
+ */
+export interface TTSConfig {
+  /** 应用 ID */
+  appid?: string;
+  /** 访问令牌 */
+  accessToken?: string;
+  /** 声音类型 */
+  voice_type?: string;
+  /** 编码格式 */
+  encoding?: string;
+  /** 集群类型 */
+  cluster?: string;
+  /** WebSocket 端点 */
+  endpoint?: string;
+}
+
+/**
+ * LLM（大语言模型）配置接口
+ */
+export interface LLMConfig {
+  /** 模型名称 */
+  model: string;
+  /** API 密钥 */
+  apiKey: string;
+  /** API 基础地址 */
+  baseURL: string;
+  /** 自定义系统提示词 */
+  prompt?: string;
 }
