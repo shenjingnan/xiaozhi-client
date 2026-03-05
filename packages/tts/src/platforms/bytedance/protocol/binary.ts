@@ -104,8 +104,8 @@ export async function synthesizeSpeech(
   });
 
   await new Promise((resolve, reject) => {
-    ws.on("open", resolve);
-    ws.on("error", reject);
+    ws.once("open", resolve);
+    ws.once("error", reject);
   });
 
   const request = {
@@ -202,8 +202,8 @@ export async function synthesizeSpeechStream(
   });
 
   await new Promise((resolve, reject) => {
-    ws.on("open", resolve);
-    ws.on("error", reject);
+    ws.once("open", resolve);
+    ws.once("error", reject);
   });
 
   const request = {
