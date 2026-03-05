@@ -772,7 +772,11 @@ export class WebServer {
     });
 
     // 发送初始数据
-    this.realtimeNotificationHandler.sendInitialData(ws, clientId);
+    this.realtimeNotificationHandler
+      .sendInitialData(ws, clientId)
+      .catch((error) => {
+        this.logger.error(`发送初始数据失败: clientId=${clientId}`, error);
+      });
   }
 
   /**
