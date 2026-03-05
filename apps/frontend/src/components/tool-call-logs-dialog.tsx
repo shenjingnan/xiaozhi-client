@@ -28,10 +28,14 @@ import {
   generateStableKey,
 } from "@/utils/formatUtils";
 import type {
-  ApiResponse,
+  ApiErrorResponse,
+  ApiSuccessResponse,
   ToolCallLogsResponse,
   ToolCallRecord,
 } from "@xiaozhi-client/shared-types";
+
+// 本地 API 响应类型，兼容成功和错误响应
+type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 import {
   CheckCircle,
   CheckIcon,
@@ -69,10 +73,10 @@ export function ToolCallLogsDialog() {
         const response = await fetch(`/api/tool-calls/logs?limit=${limit}`);
         const data: ApiResponse<ToolCallLogsResponse> = await response.json();
 
-        if (data.success && data.data) {
+        if (data.success === true && data.data) {
           setLogs(data.data.records);
           setTotal(data.data.total);
-        } else {
+        } else if (data.success === false) {
           setError(data.error?.message || "获取日志失败");
         }
       } catch (err) {
