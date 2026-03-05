@@ -1,3 +1,9 @@
+/**
+ * useIsMobile Hook
+ *
+ * 监听窗口尺寸变化并基于断点返回当前是否为移动端视图。
+ */
+
 import * as React from "react";
 
 const MOBILE_BREAKPOINT = 768;
