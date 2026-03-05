@@ -528,20 +528,17 @@ export const useSystemConfig = () =>
 /**
  * 获取 ASR（语音识别）配置
  */
-export const useASRConfig = () =>
-  useConfigStore((state) => state.config?.asr);
+export const useASRConfig = () => useConfigStore((state) => state.config?.asr);
 
 /**
  * 获取 TTS（语音合成）配置
  */
-export const useTTSConfig = () =>
-  useConfigStore((state) => state.config?.tts);
+export const useTTSConfig = () => useConfigStore((state) => state.config?.tts);
 
 /**
  * 获取 LLM（大语言模型）配置
  */
-export const useLLMConfig = () =>
-  useConfigStore((state) => state.config?.llm);
+export const useLLMConfig = () => useConfigStore((state) => state.config?.llm);
 
 /**
  * 获取语音交互配置（ASR/LLM/TTS）

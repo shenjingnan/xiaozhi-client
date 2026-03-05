@@ -13,27 +13,33 @@ import {
 } from "@/components/ui/card";
 import { useVoiceInteractionConfig } from "@/stores/config";
 import { useMemo } from "react";
-import { MiniCircularProgress } from "./mini-circular-progress";
 import { VoiceInteractionSettingDialog } from "../voice-interaction-setting-dialog";
+import { MiniCircularProgress } from "./mini-circular-progress";
 
 /**
  * 检查 ASR 是否已配置
  */
-function isASRReady(asr: { appid?: string; accessToken?: string } | undefined): boolean {
+function isASRReady(
+  asr: { appid?: string; accessToken?: string } | undefined
+): boolean {
   return Boolean(asr?.appid && asr?.accessToken);
 }
 
 /**
  * 检查 LLM 是否已配置
  */
-function isLLMReady(llm: { model?: string; apiKey?: string; baseURL?: string } | undefined): boolean {
+function isLLMReady(
+  llm: { model?: string; apiKey?: string; baseURL?: string } | undefined
+): boolean {
   return Boolean(llm?.model && llm?.apiKey && llm?.baseURL);
 }
 
 /**
  * 检查 TTS 是否已配置
  */
-function isTTSReady(tts: { appid?: string; accessToken?: string; voice_type?: string } | undefined): boolean {
+function isTTSReady(
+  tts: { appid?: string; accessToken?: string; voice_type?: string } | undefined
+): boolean {
   return Boolean(tts?.appid && tts?.accessToken && tts?.voice_type);
 }
 

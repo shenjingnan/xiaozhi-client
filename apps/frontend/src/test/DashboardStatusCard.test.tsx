@@ -43,8 +43,16 @@ const mockUseWebSocketUrl = vi.hoisted(() =>
 const mockUseVoiceInteractionConfig = vi.hoisted(() =>
   vi.fn(() => ({
     asr: { appid: "test-appid", accessToken: "test-token" },
-    llm: { model: "gpt-4", apiKey: "test-key", baseURL: "https://api.openai.com/v1" },
-    tts: { appid: "test-appid", accessToken: "test-token", voice_type: "test-voice" },
+    llm: {
+      model: "gpt-4",
+      apiKey: "test-key",
+      baseURL: "https://api.openai.com/v1",
+    },
+    tts: {
+      appid: "test-appid",
+      accessToken: "test-token",
+      voice_type: "test-voice",
+    },
   }))
 );
 
@@ -119,8 +127,16 @@ describe("DashboardStatusCard", () => {
     mockUseWebSocketUrl.mockReturnValue("ws://localhost:3000");
     mockUseVoiceInteractionConfig.mockReturnValue({
       asr: { appid: "test-appid", accessToken: "test-token" },
-      llm: { model: "gpt-4", apiKey: "test-key", baseURL: "https://api.openai.com/v1" },
-      tts: { appid: "test-appid", accessToken: "test-token", voice_type: "test-voice" },
+      llm: {
+        model: "gpt-4",
+        apiKey: "test-key",
+        baseURL: "https://api.openai.com/v1",
+      },
+      tts: {
+        appid: "test-appid",
+        accessToken: "test-token",
+        voice_type: "test-voice",
+      },
     });
   });
 
