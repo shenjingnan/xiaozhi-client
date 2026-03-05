@@ -19,7 +19,7 @@ interface MockNotificationService extends Partial<NotificationService> {
 
 interface MockWebSocket {
   send: ReturnType<typeof vi.fn>;
-  readyState?: number;
+  readyState: number;
 }
 
 // 模拟依赖
