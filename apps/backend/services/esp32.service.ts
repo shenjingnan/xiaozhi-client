@@ -300,7 +300,14 @@ export class ESP32Service {
     // 创建新的连接
     const connection = new ESP32Connection(deviceId, clientId, ws, {
       onMessage: async (message) => {
-        await this.handleDeviceMessage(deviceId, message);
+        try {
+          await this.handleDeviceMessage(deviceId, message);
+        } catch (error) {
+          logger.error(
+            `[ESP32Service] 处理设备消息失败: deviceId=${deviceId}`,
+            error
+          );
+        }
       },
       onClose: () => {
         this.handleDeviceDisconnect(deviceId, clientId);
