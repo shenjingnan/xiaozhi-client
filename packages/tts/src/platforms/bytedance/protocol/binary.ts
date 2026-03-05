@@ -85,16 +85,12 @@ export function getAuthHeaders(options: TTSOptions): Record<string, string> {
 }
 
 /**
- * 合成语音
- * 连接 WebSocket 并发送 TTS 请求，收集返回的音频数据
+ * 建立 WebSocket 连接并发送 TTS 请求
  * @param options - TTS 合成选项
- * @returns 音频二进制数据
+ * @returns WebSocket 实例
  */
-export async function synthesizeSpeech(
-  options: TTSOptions
-): Promise<Uint8Array> {
+async function establishConnection(options: TTSOptions): Promise<WebSocket> {
   const endpoint = getEndpoint(options);
-  const encoding = options.encoding || "wav";
 
   const headers = getAuthHeaders(options);
 
@@ -108,34 +104,26 @@ export async function synthesizeSpeech(
     ws.on("error", reject);
   });
 
-  const request = {
-    app: {
-      appid: options.appid,
-      token: options.accessToken,
-      cluster: options.cluster?.trim() || voiceToCluster(options.voice_type),
-    },
-    user: {
-      uid: randomUUID(),
-    },
-    audio: {
-      voice_type: options.voice_type,
-      encoding: encoding,
-    },
-    request: {
-      reqid: randomUUID(),
-      text: options.text,
-      operation: "submit",
-      extra_param: JSON.stringify({
-        disable_markdown_filter: false,
-      }),
-      with_timestamp: "1",
-    },
-  };
+  const request = createTTSRequest(options);
 
   await FullClientRequest(
     ws,
     new TextEncoder().encode(JSON.stringify(request))
   );
+
+  return ws;
+}
+
+/**
+ * 合成语音
+ * 连接 WebSocket 并发送 TTS 请求，收集返回的音频数据
+ * @param options - TTS 合成选项
+ * @returns 音频二进制数据
+ */
+export async function synthesizeSpeech(
+  options: TTSOptions
+): Promise<Uint8Array> {
+  const ws = await establishConnection(options);
 
   const totalAudio: Uint8Array[] = [];
 
@@ -191,49 +179,7 @@ export async function synthesizeSpeechStream(
   options: TTSOptions,
   onAudioChunk: (chunk: Uint8Array, isLast: boolean) => Promise<void>
 ): Promise<void> {
-  const endpoint = getEndpoint(options);
-  const encoding = options.encoding || "wav";
-
-  const headers = getAuthHeaders(options);
-
-  const ws = new WebSocket(endpoint, {
-    headers,
-    skipUTF8Validation: true,
-  });
-
-  await new Promise((resolve, reject) => {
-    ws.on("open", resolve);
-    ws.on("error", reject);
-  });
-
-  const request = {
-    app: {
-      appid: options.appid,
-      token: options.accessToken,
-      cluster: options.cluster?.trim() || voiceToCluster(options.voice_type),
-    },
-    user: {
-      uid: randomUUID(),
-    },
-    audio: {
-      voice_type: options.voice_type,
-      encoding: encoding,
-    },
-    request: {
-      reqid: randomUUID(),
-      text: options.text,
-      operation: "submit",
-      extra_param: JSON.stringify({
-        disable_markdown_filter: false,
-      }),
-      with_timestamp: "1",
-    },
-  };
-
-  await FullClientRequest(
-    ws,
-    new TextEncoder().encode(JSON.stringify(request))
-  );
+  const ws = await establishConnection(options);
 
   while (true) {
     const msg = await ReceiveMessage(ws);
