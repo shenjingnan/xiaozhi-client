@@ -187,8 +187,6 @@ export class WebServer {
     this.deviceRegistryService = new DeviceRegistryService();
     // 创建 ESP32 服务
     this.esp32Service = new ESP32Service(this.deviceRegistryService);
-    // 设置 TTS 服务的获取连接回调
-    this.esp32Service.setupTTSGetConnection();
 
     // 初始化 HTTP API 处理器
     this.configApiHandler = new ConfigApiHandler();

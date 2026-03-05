@@ -11,16 +11,15 @@ import type {
   ESP32OTAResponse,
   ESP32WSMessage,
 } from "@/types/esp32.js";
-import { camelToSnakeCase, extractDeviceInfo } from "@/utils/esp32-utils.js";
 import type WebSocket from "ws";
-import { ASRService } from "./asr.service.js";
 import type { DeviceRegistryService } from "./device-registry.service.js";
-import { LLMService } from "./llm.service.js";
-import { TTSService } from "./tts.service.js";
+import { ESP32OTAHandler } from "./esp32-ota-handler.js";
+import { ESP32VoiceOrchestrator } from "./esp32-voice-orchestrator.js";
 
 /**
  * ESP32设备服务
  * 管理所有ESP32设备的连接和通信
+ * 专注于设备连接管理和消息路由，语音服务和 OTA 处理已分离
  */
 export class ESP32Service {
   /** 设备注册服务 */
@@ -32,14 +31,11 @@ export class ESP32Service {
   /** 客户端ID到设备ID的映射 */
   private clientIdToDeviceId: Map<string, string>;
 
-  /** ASR 服务实例 */
-  private asrService: ASRService;
+  /** 语音服务编排器 */
+  private voiceOrchestrator: ESP32VoiceOrchestrator;
 
-  /** LLM 服务实例 */
-  private llmService: LLMService;
-
-  /** TTS 服务实例 */
-  private ttsService: TTSService;
+  /** OTA 处理器 */
+  private otaHandler: ESP32OTAHandler;
 
   /**
    * 构造函数
@@ -50,128 +46,26 @@ export class ESP32Service {
     this.connections = new Map();
     this.clientIdToDeviceId = new Map();
 
-    // 初始化语音服务
-    this.llmService = new LLMService();
-    this.asrService = this.createASRService();
-    this.ttsService = this.createTTSService();
-    this.setupTTSGetConnection();
-  }
+    // 初始化语音服务编排器
+    this.voiceOrchestrator = new ESP32VoiceOrchestrator((deviceId) =>
+      this.getConnection(deviceId)
+    );
 
-  /**
-   * 创建 ASR 服务实例
-   * @returns ASR 服务实例
-   */
-  private createASRService(): ASRService {
-    return new ASRService({
-      events: {
-        onResult: async (deviceId, text, isFinal) => {
-          // 如果是最终结果，触发 LLM 和 TTS
-          if (isFinal && text) {
-            const connection = this.connections.get(deviceId);
-
-            // 异步发送 STT 消息到设备端（不阻塞主流程）
-            if (connection) {
-              connection
-                .send({
-                  session_id: connection.getSessionId(),
-                  type: "stt",
-                  text: text,
-                })
-                .catch((err) => {
-                  logger.error(
-                    `[ESP32Service] 发送 STT 消息失败: deviceId=${deviceId}`,
-                    err
-                  );
-                });
-            }
-
-            try {
-              const llmResponse = await this.llmService.chat(text);
-              logger.info(
-                `[ESP32Service] LLM 响应: deviceId=${deviceId}, response=${llmResponse}`
-              );
-              await this.ttsService.speak(deviceId, llmResponse);
-            } catch (error) {
-              logger.error(
-                `[ESP32Service] LLM 或 TTS 调用失败: deviceId=${deviceId}`,
-                error
-              );
-            }
-          }
-
-          // isFinal 后重建 ASR 服务实例
-          if (isFinal) {
-            this.recreateASRService();
-          }
-        },
-        onError: (deviceId, error) => {
-          logger.error(`[ESP32Service] ASR 错误: deviceId=${deviceId}`, error);
-        },
-      },
-    });
-  }
-
-  /**
-   * 重建 ASR 服务实例
-   * 销毁当前实例并创建新实例，确保每次识别都从干净的状态开始
-   */
-  private recreateASRService(): void {
-    logger.info("[ESP32Service] 重建 ASR 服务实例");
-    if (this.asrService) {
-      this.asrService.destroy();
-    }
-    this.asrService = this.createASRService();
-    logger.info("[ESP32Service] ASR 服务实例已重建");
-  }
-
-  /**
-   * 创建 TTS 服务实例
-   * @returns TTS 服务实例
-   */
-  private createTTSService(): TTSService {
-    return new TTSService({
-      onTTSComplete: () => {
-        // TTS 完成后重建服务实例
-        this.recreateTTSService();
-      },
-    });
-  }
-
-  /**
-   * 重建 TTS 服务实例
-   * 销毁当前实例并创建新实例，确保每次 TTS 都从干净的状态开始
-   */
-  private recreateTTSService(): void {
-    logger.info("[ESP32Service] 重建 TTS 服务实例");
-    if (this.ttsService) {
-      this.ttsService.destroy();
-    }
-    this.ttsService = this.createTTSService();
-    this.setupTTSGetConnection();
-    logger.info("[ESP32Service] TTS 服务实例已重建");
+    // 初始化 OTA 处理器
+    this.otaHandler = new ESP32OTAHandler(deviceRegistry);
   }
 
   /**
    * 获取 ASR 服务实例
    * @returns ASR 服务实例
    */
-  getASRService(): ASRService {
-    return this.asrService;
-  }
-
-  /**
-   * 设置 TTS 服务的获取连接回调
-   * 需要在 ESP32Service 创建后调用
-   */
-  setupTTSGetConnection(): void {
-    this.ttsService.setGetConnection((deviceId: string) => {
-      return this.getConnection(deviceId);
-    });
+  getASRService() {
+    return this.voiceOrchestrator.getASRService();
   }
 
   /**
    * 处理OTA请求
-   * 设备首次连接时自动激活，直接返回WebSocket配置
+   * 委托给 ESP32OTAHandler 处理
    * @param deviceId - 设备ID（MAC地址）
    * @param clientId - 客户端ID（设备UUID）
    * @param report - 设备上报信息
@@ -186,65 +80,13 @@ export class ESP32Service {
     headerInfo?: { deviceModel?: string; deviceVersion?: string },
     host?: string
   ): Promise<ESP32OTAResponse> {
-    logger.info(`收到OTA请求: deviceId=${deviceId}, clientId=${clientId}`);
-
-    // 使用工具方法提取设备信息（支持多级回退机制）
-    const { boardType, appVersion } = extractDeviceInfo(report, headerInfo);
-
-    // 检查设备是否已存在
-    let device = this.deviceRegistry.getDevice(deviceId);
-
-    if (!device) {
-      // 设备不存在，自动创建并激活
-      device = this.deviceRegistry.createDevice(
-        deviceId,
-        boardType,
-        appVersion
-      );
-      logger.info(`新设备自动激活: deviceId=${deviceId}`);
-    }
-
-    // 更新最后活跃时间
-    this.deviceRegistry.updateLastSeen(deviceId);
-
-    // 获取服务器地址（从请求中获取）
-    if (!host) {
-      throw new Error("无法获取服务器地址：缺少 Host 头", {
-        cause: "MISSING_HOST_HEADER",
-      });
-    }
-
-    // 如果 host 不包含端口，添加默认端口
-    const serverAddress = host.includes(":") ? host : `${host}:9999`;
-
-    // 构建完整的 WebSocket URL
-    const wsUrl = `ws://${serverAddress}/ws`;
-
-    logger.info(
-      `返回WebSocket配置: deviceId=${deviceId}, clientId=${clientId}, wsUrl=${wsUrl}`
+    return this.otaHandler.handleOTARequest(
+      deviceId,
+      clientId,
+      report,
+      headerInfo,
+      host
     );
-
-    const response = {
-      websocket: {
-        url: wsUrl,
-        token: "", // 简化为空字符串（向后兼容）
-        version: 2,
-      },
-      serverTime: {
-        timestamp: Date.now(),
-        // getTimezoneOffset() 返回本地时区与 UTC 的分钟差
-        // 乘以 -60 * 1000 转换为毫秒，并取负值使偏移量为正（东时区为正）
-        timezoneOffset: new Date().getTimezoneOffset() * -60 * 1000,
-      },
-      firmware: {
-        version: "2.2.2",
-        url: "",
-        force: false,
-      },
-    };
-
-    // 转换为下划线命名后返回
-    return camelToSnakeCase(response) as ESP32OTAResponse;
   }
 
   /**
@@ -312,7 +154,7 @@ export class ESP32Service {
         );
       },
       // 使用 getter 函数获取最新的 ASR 服务实例
-      getASRService: () => this.asrService,
+      getASRService: () => this.getASRService(),
     });
 
     this.connections.set(deviceId, connection);
@@ -378,6 +220,7 @@ export class ESP32Service {
     message: ESP32ListenMessage
   ): Promise<void> {
     const { state, mode, text } = message;
+    const asrService = this.getASRService();
 
     logger.info(
       `[ESP32Service] 收到Listen消息: deviceId=${deviceId}, state=${state}, mode=${mode}, text="${text ?? ""}"`
@@ -391,7 +234,7 @@ export class ESP32Service {
             `[ESP32Service] 处理唤醒词检测: deviceId=${deviceId}, word="${text}"`
           );
           // 初始化 ASR 服务
-          await this.asrService.init(deviceId);
+          await asrService.init(deviceId);
         } else {
           logger.warn(
             `[ESP32Service] 唤醒词消息缺少必要字段: text="${text}", mode=${mode}`
@@ -405,7 +248,7 @@ export class ESP32Service {
         // 开始监听，建立 ASR 连接
         // 注意：硬件端会在发送 start 消息后立刻发送音频数据
         // 所以这里需要尽快建立连接，音频数据会在缓冲区中等待
-        await this.asrService.connect(deviceId);
+        await asrService.connect(deviceId);
         if (mode === "manual" || mode === "realtime") {
           logger.info(
             `[ESP32Service] 开始手动/实时监听会话: deviceId=${deviceId}, mode=${mode}`
@@ -424,7 +267,7 @@ export class ESP32Service {
       case "stop":
         // 停止监听，中断当前会话
         logger.info(`[ESP32Service] 停止监听，中断会话: deviceId=${deviceId}`);
-        await this.asrService.end(deviceId);
+        await asrService.end(deviceId);
         break;
       default:
         logger.warn(`[ESP32Service] 未知的监听状态: ${state}`);
@@ -470,7 +313,8 @@ export class ESP32Service {
     }
 
     // 交给 ASR 服务处理
-    await this.asrService.handleAudioData(deviceId, audioData);
+    const asrService = this.getASRService();
+    await asrService.handleAudioData(deviceId, audioData);
   }
 
   /**
@@ -512,9 +356,8 @@ export class ESP32Service {
     this.connections.clear();
     this.clientIdToDeviceId.clear();
 
-    // 销毁语音服务
-    this.asrService.destroy();
-    this.ttsService.destroy();
+    // 销毁语音服务编排器
+    this.voiceOrchestrator.destroy();
 
     logger.debug("ESP32服务已销毁");
   }
