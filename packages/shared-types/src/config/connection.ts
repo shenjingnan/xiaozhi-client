@@ -2,23 +2,8 @@
  * 连接配置相关类型定义
  */
 
-/**
- * 连接配置接口
- */
-export interface ConnectionConfig {
-  /** 心跳间隔（毫秒） */
-  heartbeatInterval?: number;
-  /** 心跳超时时间（毫秒） */
-  heartbeatTimeout?: number;
-  /** 重连间隔（毫秒） */
-  reconnectInterval?: number;
-  /** 最大重连次数 */
-  maxReconnectAttempts?: number;
-  /** 连接超时时间（毫秒） */
-  connectionTimeout?: number;
-  /** 是否启用自动重连 */
-  autoReconnect?: boolean;
-}
+// 从 app.ts 导入 ConnectionConfig，避免重复定义
+import type { ConnectionConfig } from "./app";
 
 /**
  * 端点配置接口
