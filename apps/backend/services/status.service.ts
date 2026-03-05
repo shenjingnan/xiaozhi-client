@@ -1,3 +1,9 @@
+/**
+ * 状态服务模块
+ *
+ * 提供客户端连接状态与重启状态的统一读写能力，
+ * 并通过事件总线广播状态变更事件。
+ */
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
