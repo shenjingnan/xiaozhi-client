@@ -167,6 +167,15 @@ export class WebServer {
   private endpointManager: EndpointManager | null = null;
   private mcpServiceManager: MCPServiceManager | null = null; // WebServer 直接管理的实例
 
+  // 端点管理器事件监听器（用于清理）
+  private endpointAddedHandler = (event: { endpoint: string }): void => {
+    this.logger.debug(`端点已添加: ${event.endpoint}`);
+  };
+
+  private endpointRemovedHandler = (event: { endpoint: string }): void => {
+    this.logger.debug(`端点已移除: ${event.endpoint}`);
+  };
+
   constructor(port?: number) {
     // 端口配置
     try {
@@ -378,20 +387,10 @@ export class WebServer {
         await this.endpointManager.connect();
 
         // 设置端点添加事件监听器
-        this.endpointManager.on(
-          "endpointAdded",
-          (event: { endpoint: string }) => {
-            this.logger.debug(`端点已添加: ${event.endpoint}`);
-          }
-        );
+        this.endpointManager.on("endpointAdded", this.endpointAddedHandler);
 
         // 设置端点移除事件监听器
-        this.endpointManager.on(
-          "endpointRemoved",
-          (event: { endpoint: string }) => {
-            this.logger.debug(`端点已移除: ${event.endpoint}`);
-          }
-        );
+        this.endpointManager.on("endpointRemoved", this.endpointRemovedHandler);
 
         this.logger.debug(
           `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
@@ -1059,6 +1058,18 @@ export class WebServer {
         this.heartbeatMonitorInterval
       );
       this.heartbeatMonitorInterval = undefined;
+    }
+
+    // 移除端点管理器事件监听器
+    if (this.endpointManager) {
+      this.endpointManager.removeListener(
+        "endpointAdded",
+        this.endpointAddedHandler
+      );
+      this.endpointManager.removeListener(
+        "endpointRemoved",
+        this.endpointRemovedHandler
+      );
     }
 
     // 销毁服务层
