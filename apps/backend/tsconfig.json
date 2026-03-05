@@ -13,6 +13,10 @@
     }
   },
   "include": ["./**/*.ts"],
+  "references": [
+    { "path": "../../packages/asr" },
+    { "path": "../../packages/tts" }
+  ],
   "exclude": [
     "node_modules",
     "dist",
