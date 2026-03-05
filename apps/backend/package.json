@@ -31,7 +31,7 @@
     "@xiaozhi-client/version": "workspace:*",
     "ajv": "^8.17.1",
     "chalk": "^5.6.0",
-    "comment-json": "^4.2.5",
+    "comment-json": "^4.6.1",
     "dayjs": "^1.11.13",
     "dotenv": "^17.2.1",
     "eventsource": "^4.0.0",
