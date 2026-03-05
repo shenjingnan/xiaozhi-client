@@ -571,7 +571,7 @@ importers:
         specifier: ^16.4.0
         version: 16.4.7
       tsup:
-        specifier: ^8.3.5
+        specifier: ^8.5.0
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       tsx:
         specifier: ^4.7.0
@@ -658,7 +658,7 @@ importers:
         specifier: ^8.5.0
         version: 8.18.1
       tsup:
-        specifier: ^8.3.5
+        specifier: ^8.5.0
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       tsx:
         specifier: ^4.19.2
@@ -689,7 +689,7 @@ importers:
         specifier: ^8.5.0
         version: 8.18.1
       tsup:
-        specifier: ^8.3.5
+        specifier: ^8.5.0
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       typescript:
         specifier: ^5.9.2
@@ -704,7 +704,7 @@ importers:
         specifier: ^24.3.0
         version: 24.10.9
       tsup:
-        specifier: ^8.3.5
+        specifier: ^8.5.0
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       typescript:
         specifier: ^5.9.2
@@ -729,7 +729,7 @@ importers:
         specifier: ^16.4.0
         version: 16.4.7
       tsup:
-        specifier: ^8.3.5
+        specifier: ^8.5.0
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       tsx:
         specifier: ^4.7.0
@@ -747,7 +747,7 @@ importers:
         specifier: ^24.3.0
         version: 24.10.9
       tsup:
-        specifier: ^8.3.5
+        specifier: ^8.5.0
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       typescript:
         specifier: ^5.9.2
