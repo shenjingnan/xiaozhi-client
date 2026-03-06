@@ -24,6 +24,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useWebSocketActions } from "@/providers/WebSocketProvider";
@@ -236,13 +237,11 @@ export function VoiceInteractionSettingDialog() {
                       <FormItem>
                         <FormLabel>访问令牌</FormLabel>
                         <FormControl>
-                          <Input
+                          <PasswordInput
                             placeholder="请输入访问令牌"
                             className="font-mono text-sm"
-                            type="password"
                             disabled={isLoading}
                             autoComplete="off"
-                            data-1p-ignore
                             {...field}
                           />
                         </FormControl>
@@ -326,13 +325,11 @@ export function VoiceInteractionSettingDialog() {
                           API 密钥 <span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
-                          <Input
+                          <PasswordInput
                             placeholder="请输入 API 密钥"
                             className="font-mono text-sm"
-                            type="password"
                             disabled={isLoading}
                             autoComplete="off"
-                            data-1p-ignore
                             {...field}
                           />
                         </FormControl>
@@ -414,13 +411,11 @@ export function VoiceInteractionSettingDialog() {
                       <FormItem>
                         <FormLabel>访问令牌</FormLabel>
                         <FormControl>
-                          <Input
+                          <PasswordInput
                             placeholder="请输入访问令牌"
                             className="font-mono text-sm"
-                            type="password"
                             disabled={isLoading}
                             autoComplete="off"
-                            data-1p-ignore
                             {...field}
                           />
                         </FormControl>
