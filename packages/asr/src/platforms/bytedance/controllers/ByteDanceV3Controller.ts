@@ -165,7 +165,6 @@ export class ByteDanceV3Controller extends ByteDanceController {
             if (!settled) {
               settled = true;
               this.asr.close();
-              throw error;
             }
           });
 
