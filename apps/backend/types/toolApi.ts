@@ -9,11 +9,20 @@ import type { CozeWorkflow, WorkflowParameterConfig } from "./coze.js";
 /**
  * JSON Schema 类型
  * 重新导出 @/lib/mcp/types.js 中的 JSONSchema
+ *
+ * 注意：此类型与 @xiaozhi-client/shared-types 中的 JSONSchema 相同
+ * TODO：将来应从 shared-types 导入 JSONSchema 以消除重复定义
  */
 export type JSONSchema = LibJSONSchema;
 
 /**
- * 工具处理器配置联合类型
+ * 工具处理器配置相关类型
+ *
+ * 注意：这些类型与 @xiaozhi-client/shared-types/src/mcp/tool-definition.ts 中定义的类型相同
+ * TODO：将 toolApi.ts 的类型迁移为从 shared-types 导入，消除重复定义
+ * 目前保持本地定义以避免 TypeScript 子路径解析问题（影响 tts、asr 等其他包）
+ *
+ * 权威定义位置：packages/shared-types/src/mcp/tool-definition.ts
  */
 export type ToolHandlerConfig =
   | MCPHandlerConfig
@@ -23,6 +32,7 @@ export type ToolHandlerConfig =
 
 /**
  * MCP 处理器配置
+ * 用于标准 MCP 服务中的工具
  */
 export interface MCPHandlerConfig {
   type: "mcp";
@@ -34,6 +44,7 @@ export interface MCPHandlerConfig {
 
 /**
  * 代理处理器配置
+ * 用于第三方平台代理（如 Coze、OpenAI 等）
  */
 export interface ProxyHandlerConfig {
   type: "proxy";
@@ -43,6 +54,7 @@ export interface ProxyHandlerConfig {
 
 /**
  * HTTP 处理器配置
+ * 用于 HTTP API 工具
  */
 export interface HttpHandlerConfig {
   type: "http";
@@ -55,6 +67,7 @@ export interface HttpHandlerConfig {
 
 /**
  * 函数处理器配置
+ * 用于自定义函数工具
  */
 export interface FunctionHandlerConfig {
   type: "function";
@@ -66,6 +79,9 @@ export interface FunctionHandlerConfig {
 
 /**
  * CustomMCP 工具基础接口
+ *
+ * 注意：此类型与 @xiaozhi-client/shared-types 中的 CustomMCPTool 相同
+ * TODO：将来应从 shared-types 导入 CustomMCPTool 以消除重复定义
  */
 export interface CustomMCPToolBase {
   /** 工具唯一标识符 */
@@ -81,6 +97,9 @@ export interface CustomMCPToolBase {
 /**
  * 带统计信息的 CustomMCP 工具
  * 用于 API 响应，使用扁平的统计信息结构
+ *
+ * 注意：此类型与 @xiaozhi-client/shared-types 中的 CustomMCPToolWithStats 类似
+ * 但不包含 `enabled` 字段。如需完整功能，请从 shared-types 导入
  */
 export interface CustomMCPToolWithStats extends CustomMCPToolBase {
   /** 工具使用次数（扁平结构，与 API 响应格式一致） */
