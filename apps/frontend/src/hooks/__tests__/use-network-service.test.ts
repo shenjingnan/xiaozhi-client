@@ -473,12 +473,27 @@ describe("useNetworkService", () => {
   });
 
   describe("资源清理", () => {
-    it("unmount 时应该调用 destroy", () => {
+    it("unmount 时不应该调用 destroy（全局单例不应销毁）", () => {
       const { unmount } = renderHook(() => useNetworkService());
 
       unmount();
 
-      expect(mockNetworkService.destroy).toHaveBeenCalled();
+      // networkService 是全局单例，不应该在组件卸载时销毁
+      // 它应该在应用生命周期内保持运行
+      expect(mockNetworkService.destroy).not.toHaveBeenCalled();
+    });
+
+    it("unmount 时应该清理事件监听器", () => {
+      const { unmount } = renderHook(() => useNetworkService());
+
+      unmount();
+
+      // 验证所有 WebSocket 事件监听器都被取消订阅
+      expect(mockNetworkService.onWebSocketEvent).toHaveBeenCalled();
+      // 每次调用 onWebSocketEvent 都会返回一个取消订阅函数
+      // 这些函数应该在清理时被调用
+      const unsubscribeCallCount = mockNetworkService.onWebSocketEvent.mock.results.length;
+      expect(unsubscribeCallCount).toBeGreaterThan(0);
     });
   });
 });

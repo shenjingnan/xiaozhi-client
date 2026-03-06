@@ -115,7 +115,8 @@ export function useNetworkService() {
           console.error("[NetworkService] 清理事件监听器失败:", error);
         }
       }
-      networkService.destroy();
+      // 注意：不调用 networkService.destroy()，因为 networkService 是全局单例
+      // 应该在应用生命周期内保持运行，而不是在组件卸载时销毁
       initializationRef.current = false;
     };
   }, [webSocketActions]);
