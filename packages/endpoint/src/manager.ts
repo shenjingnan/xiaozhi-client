@@ -490,32 +490,47 @@ export class EndpointManager extends EventEmitter {
   // ==================== 私有方法 ====================
 
   /**
+   * 更新端点连接状态
+   *
+   * @param url - 端点 URL
+   * @param connected - 是否已连接
+   * @param initialized - 是否已初始化
+   */
+  private updateConnectionStatus(
+    url: string,
+    connected: boolean,
+    initialized: boolean
+  ): void {
+    const status = this.connectionStates.get(url);
+    if (!status) {
+      throw new Error(`端点状态不存在: ${sliceEndpoint(url)}`);
+    }
+
+    status.connected = connected;
+    status.initialized = initialized;
+    if (connected) {
+      status.lastConnected = new Date();
+      status.lastError = undefined;
+    }
+  }
+
+  /**
    * 连接单个端点
    */
   private async connectSingleEndpoint(
     url: string,
     endpoint: Endpoint
   ): Promise<void> {
-    const status = this.connectionStates.get(url);
-    if (!status) {
-      throw new Error(`端点状态不存在: ${sliceEndpoint(url)}`);
-    }
-
     console.debug(`[EndpointManager] 连接端点: ${sliceEndpoint(url)}`);
 
     // 更新状态为连接中
-    status.connected = false;
-    status.initialized = false;
+    this.updateConnectionStatus(url, false, false);
 
     // 执行连接
     await endpoint.connect();
 
     // 更新连接成功状态
-    status.connected = true;
-    status.initialized = true;
-    status.lastConnected = new Date();
-    status.lastError = undefined;
-
+    this.updateConnectionStatus(url, true, true);
     console.info(`[EndpointManager] 端点连接成功: ${sliceEndpoint(url)}`);
   }
 
@@ -526,22 +541,13 @@ export class EndpointManager extends EventEmitter {
     url: string,
     endpoint: Endpoint
   ): Promise<void> {
-    const status = this.connectionStates.get(url);
-    if (!status) {
-      throw new Error(`端点状态不存在: ${sliceEndpoint(url)}`);
-    }
-
     console.debug(`[EndpointManager] 重连端点: ${sliceEndpoint(url)}`);
 
     // 执行重连
     await endpoint.reconnect();
 
     // 更新连接成功状态
-    status.connected = true;
-    status.initialized = true;
-    status.lastConnected = new Date();
-    status.lastError = undefined;
-
+    this.updateConnectionStatus(url, true, true);
     console.info(`[EndpointManager] 端点重连成功: ${sliceEndpoint(url)}`);
   }
 }
