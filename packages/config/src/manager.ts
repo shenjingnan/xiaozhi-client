@@ -853,6 +853,21 @@ export class ConfigManager {
       }
     }
 
+    // 更新 ASR 配置
+    if (newConfig.asr !== undefined) {
+      config.asr = newConfig.asr;
+    }
+
+    // 更新 TTS 配置
+    if (newConfig.tts !== undefined) {
+      config.tts = newConfig.tts;
+    }
+
+    // 更新 LLM 配置
+    if (newConfig.llm !== undefined) {
+      config.llm = newConfig.llm;
+    }
+
     this.saveConfig(config);
 
     // 发射配置更新事件

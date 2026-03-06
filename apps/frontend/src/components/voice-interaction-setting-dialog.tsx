@@ -49,7 +49,6 @@ const voiceInteractionSchema = z.object({
   asr: z.object({
     appid: z.string().optional(),
     accessToken: z.string().optional(),
-    cluster: z.string().optional(),
   }),
   llm: z.object({
     model: z.string().min(1, { message: "模型名称不能为空" }),
@@ -61,7 +60,6 @@ const voiceInteractionSchema = z.object({
     appid: z.string().optional(),
     accessToken: z.string().optional(),
     voice_type: z.string().optional(),
-    cluster: z.string().optional(),
   }),
 });
 
@@ -84,7 +82,6 @@ export function VoiceInteractionSettingDialog() {
       asr: {
         appid: config?.asr?.appid || "",
         accessToken: config?.asr?.accessToken || "",
-        cluster: config?.asr?.cluster || "",
       },
       llm: {
         model: config?.llm?.model || "",
@@ -96,7 +93,6 @@ export function VoiceInteractionSettingDialog() {
         appid: config?.tts?.appid || "",
         accessToken: config?.tts?.accessToken || "",
         voice_type: config?.tts?.voice_type || "",
-        cluster: config?.tts?.cluster || "",
       },
     },
   });
@@ -107,7 +103,6 @@ export function VoiceInteractionSettingDialog() {
       asr: {
         appid: config?.asr?.appid || "",
         accessToken: config?.asr?.accessToken || "",
-        cluster: config?.asr?.cluster || "",
       },
       llm: {
         model: config?.llm?.model || "",
@@ -119,7 +114,6 @@ export function VoiceInteractionSettingDialog() {
         appid: config?.tts?.appid || "",
         accessToken: config?.tts?.accessToken || "",
         voice_type: config?.tts?.voice_type || "",
-        cluster: config?.tts?.cluster || "",
       },
     });
   }, [config, form]);
@@ -138,7 +132,6 @@ export function VoiceInteractionSettingDialog() {
           ? {
               appid: values.asr.appid || undefined,
               accessToken: values.asr.accessToken || undefined,
-              cluster: values.asr.cluster || undefined,
             }
           : undefined;
 
@@ -155,7 +148,6 @@ export function VoiceInteractionSettingDialog() {
               appid: values.tts.appid || undefined,
               accessToken: values.tts.accessToken || undefined,
               voice_type: values.tts.voice_type || undefined,
-              cluster: values.tts.cluster || undefined,
             }
           : undefined;
 
@@ -230,24 +222,6 @@ export function VoiceInteractionSettingDialog() {
                             className="font-mono text-sm"
                             disabled={isLoading}
                             autoComplete="off"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="asr.cluster"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>集群类型</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="默认：volcengine_streaming_common"
-                            className="font-mono text-sm"
-                            disabled={isLoading}
                             {...field}
                           />
                         </FormControl>
@@ -402,24 +376,6 @@ export function VoiceInteractionSettingDialog() {
                         <FormControl>
                           <Input
                             placeholder="如：zh_female_shuangkuaisisi_moon_bigtts"
-                            className="font-mono text-sm"
-                            disabled={isLoading}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="tts.cluster"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>集群类型</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="如：volcano_tts"
                             className="font-mono text-sm"
                             disabled={isLoading}
                             {...field}
