@@ -62,7 +62,6 @@ const voiceInteractionSchema = z.object({
     appid: z.string().optional(),
     accessToken: z.string().optional(),
     voice_type: z.string().optional(),
-    encoding: z.string().optional(),
     cluster: z.string().optional(),
     endpoint: z.string().optional(),
   }),
@@ -100,7 +99,6 @@ export function VoiceInteractionSettingDialog() {
         appid: config?.tts?.appid || "",
         accessToken: config?.tts?.accessToken || "",
         voice_type: config?.tts?.voice_type || "",
-        encoding: config?.tts?.encoding || "",
         cluster: config?.tts?.cluster || "",
         endpoint: config?.tts?.endpoint || "",
       },
@@ -126,7 +124,6 @@ export function VoiceInteractionSettingDialog() {
         appid: config?.tts?.appid || "",
         accessToken: config?.tts?.accessToken || "",
         voice_type: config?.tts?.voice_type || "",
-        encoding: config?.tts?.encoding || "",
         cluster: config?.tts?.cluster || "",
         endpoint: config?.tts?.endpoint || "",
       },
@@ -165,7 +162,6 @@ export function VoiceInteractionSettingDialog() {
               appid: values.tts.appid || undefined,
               accessToken: values.tts.accessToken || undefined,
               voice_type: values.tts.voice_type || undefined,
-              encoding: values.tts.encoding || undefined,
               cluster: values.tts.cluster || undefined,
               endpoint: values.tts.endpoint || undefined,
             }
@@ -450,24 +446,6 @@ export function VoiceInteractionSettingDialog() {
                         <FormControl>
                           <Input
                             placeholder="如：volcano_tts"
-                            className="font-mono text-sm"
-                            disabled={isLoading}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="tts.encoding"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>编码格式</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="默认：wav"
                             className="font-mono text-sm"
                             disabled={isLoading}
                             {...field}
