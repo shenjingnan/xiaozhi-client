@@ -50,7 +50,6 @@ const voiceInteractionSchema = z.object({
     appid: z.string().optional(),
     accessToken: z.string().optional(),
     cluster: z.string().optional(),
-    wsUrl: z.string().optional(),
   }),
   llm: z.object({
     model: z.string().min(1, { message: "模型名称不能为空" }),
@@ -63,7 +62,6 @@ const voiceInteractionSchema = z.object({
     accessToken: z.string().optional(),
     voice_type: z.string().optional(),
     cluster: z.string().optional(),
-    endpoint: z.string().optional(),
   }),
 });
 
@@ -87,7 +85,6 @@ export function VoiceInteractionSettingDialog() {
         appid: config?.asr?.appid || "",
         accessToken: config?.asr?.accessToken || "",
         cluster: config?.asr?.cluster || "",
-        wsUrl: config?.asr?.wsUrl || "",
       },
       llm: {
         model: config?.llm?.model || "",
@@ -100,7 +97,6 @@ export function VoiceInteractionSettingDialog() {
         accessToken: config?.tts?.accessToken || "",
         voice_type: config?.tts?.voice_type || "",
         cluster: config?.tts?.cluster || "",
-        endpoint: config?.tts?.endpoint || "",
       },
     },
   });
@@ -112,7 +108,6 @@ export function VoiceInteractionSettingDialog() {
         appid: config?.asr?.appid || "",
         accessToken: config?.asr?.accessToken || "",
         cluster: config?.asr?.cluster || "",
-        wsUrl: config?.asr?.wsUrl || "",
       },
       llm: {
         model: config?.llm?.model || "",
@@ -125,7 +120,6 @@ export function VoiceInteractionSettingDialog() {
         accessToken: config?.tts?.accessToken || "",
         voice_type: config?.tts?.voice_type || "",
         cluster: config?.tts?.cluster || "",
-        endpoint: config?.tts?.endpoint || "",
       },
     });
   }, [config, form]);
@@ -145,7 +139,6 @@ export function VoiceInteractionSettingDialog() {
               appid: values.asr.appid || undefined,
               accessToken: values.asr.accessToken || undefined,
               cluster: values.asr.cluster || undefined,
-              wsUrl: values.asr.wsUrl || undefined,
             }
           : undefined;
 
@@ -163,7 +156,6 @@ export function VoiceInteractionSettingDialog() {
               accessToken: values.tts.accessToken || undefined,
               voice_type: values.tts.voice_type || undefined,
               cluster: values.tts.cluster || undefined,
-              endpoint: values.tts.endpoint || undefined,
             }
           : undefined;
 
@@ -254,24 +246,6 @@ export function VoiceInteractionSettingDialog() {
                         <FormControl>
                           <Input
                             placeholder="默认：volcengine_streaming_common"
-                            className="font-mono text-sm"
-                            disabled={isLoading}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="asr.wsUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>WebSocket 端点</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="自定义 WebSocket 端点（可选）"
                             className="font-mono text-sm"
                             disabled={isLoading}
                             {...field}
@@ -446,24 +420,6 @@ export function VoiceInteractionSettingDialog() {
                         <FormControl>
                           <Input
                             placeholder="如：volcano_tts"
-                            className="font-mono text-sm"
-                            disabled={isLoading}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="tts.endpoint"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>WebSocket 端点</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="自定义 WebSocket 端点（可选）"
                             className="font-mono text-sm"
                             disabled={isLoading}
                             {...field}
