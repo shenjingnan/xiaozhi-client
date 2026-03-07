@@ -44,6 +44,9 @@ export type {
   MCPServerConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
+  ASRConfig,
+  TTSConfig,
+  LLMConfig,
 } from "./config";
 
 // 前端相关类型

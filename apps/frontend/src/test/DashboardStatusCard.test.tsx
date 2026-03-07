@@ -40,12 +40,28 @@ const mockUseWebSocketConnected = vi.hoisted(() => vi.fn(() => true));
 const mockUseWebSocketUrl = vi.hoisted(() =>
   vi.fn(() => "ws://localhost:3000")
 );
+const mockUseVoiceInteractionConfig = vi.hoisted(() =>
+  vi.fn(() => ({
+    asr: { appid: "test-appid", accessToken: "test-token" },
+    llm: {
+      model: "gpt-4",
+      apiKey: "test-key",
+      baseURL: "https://api.openai.com/v1",
+    },
+    tts: {
+      appid: "test-appid",
+      accessToken: "test-token",
+      voice_type: "test-voice",
+    },
+  }))
+);
 
 vi.mock("@/stores/config", () => ({
   useMcpEndpoint: mockUseMcpEndpoint,
   useMcpServers: mockUseMcpServers,
   useMcpServersWithStatus: mockUseMcpServersWithStatus,
   useConfig: mockUseConfig,
+  useVoiceInteractionConfig: mockUseVoiceInteractionConfig,
 }));
 
 vi.mock("@/stores/websocket", () => ({
@@ -70,6 +86,12 @@ vi.mock("@/components/tool-call-logs-dialog", () => ({
 
 vi.mock("@/components/system-setting-dialog", () => ({
   SystemSettingDialog: () => <div data-testid="system-setting-dialog" />,
+}));
+
+vi.mock("@/components/voice-interaction-setting-dialog", () => ({
+  VoiceInteractionSettingDialog: () => (
+    <div data-testid="voice-interaction-setting-dialog" />
+  ),
 }));
 
 describe("DashboardStatusCard", () => {
@@ -103,6 +125,19 @@ describe("DashboardStatusCard", () => {
     });
     mockUseWebSocketConnected.mockReturnValue(true);
     mockUseWebSocketUrl.mockReturnValue("ws://localhost:3000");
+    mockUseVoiceInteractionConfig.mockReturnValue({
+      asr: { appid: "test-appid", accessToken: "test-token" },
+      llm: {
+        model: "gpt-4",
+        apiKey: "test-key",
+        baseURL: "https://api.openai.com/v1",
+      },
+      tts: {
+        appid: "test-appid",
+        accessToken: "test-token",
+        voice_type: "test-voice",
+      },
+    });
   });
 
   it("应该正确渲染所有状态卡片", () => {
@@ -194,14 +229,14 @@ describe("DashboardStatusCard", () => {
     const gridContainer = container.querySelector(".grid");
     expect(gridContainer).toHaveClass("grid-cols-1", "gap-4", "px-4");
     expect(gridContainer).toHaveClass("@xl/main:grid-cols-2");
-    expect(gridContainer).toHaveClass("@5xl/main:grid-cols-4");
+    expect(gridContainer).toHaveClass("@5xl/main:grid-cols-5");
   });
 
   it("应该正确渲染MiniCircularProgress组件", () => {
     const { container } = render(<DashboardStatusCard />);
 
-    // 检查是否有3个进度圆形组件（每个卡片一个）
+    // 检查是否有5个进度圆形组件（每个卡片一个）
     const progressCircles = container.querySelectorAll("svg");
-    expect(progressCircles.length).toBeGreaterThanOrEqual(3);
+    expect(progressCircles.length).toBeGreaterThanOrEqual(5);
   });
 });

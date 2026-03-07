@@ -525,6 +525,33 @@ export const useSystemConfig = () =>
     }))
   );
 
+/**
+ * 获取 ASR（语音识别）配置
+ */
+export const useASRConfig = () => useConfigStore((state) => state.config?.asr);
+
+/**
+ * 获取 TTS（语音合成）配置
+ */
+export const useTTSConfig = () => useConfigStore((state) => state.config?.tts);
+
+/**
+ * 获取 LLM（大语言模型）配置
+ */
+export const useLLMConfig = () => useConfigStore((state) => state.config?.llm);
+
+/**
+ * 获取语音交互配置（ASR/LLM/TTS）
+ */
+export const useVoiceInteractionConfig = () =>
+  useConfigStore(
+    useShallow((state) => ({
+      asr: state.config?.asr,
+      llm: state.config?.llm,
+      tts: state.config?.tts,
+    }))
+  );
+
 // ==================== 操作方法 Hooks ====================
 
 /**
