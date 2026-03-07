@@ -5,7 +5,7 @@
  * - 守护进程启动和停止
  * - 日志文件管理
  * - 进程状态监控
- * - 自动重启机制
+ * - 支持手动重启
  *
  * @module packages/cli/src/services/DaemonManager
  */
