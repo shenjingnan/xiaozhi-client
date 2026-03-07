@@ -57,4 +57,9 @@ export const configRoutes: RouteDefinition[] = [
     path: "/api/config/exists",
     handler: h((handler, c) => handler.checkConfigExists(c)),
   },
+  {
+    method: "GET",
+    path: "/api/config/prompts",
+    handler: h((handler, c) => handler.getPromptFiles(c)),
+  },
 ];
