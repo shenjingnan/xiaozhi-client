@@ -1,4 +1,23 @@
-export const GithubIcon = ({ size = 24, color = "currentColor", ...props }) => (
+import type { SVGProps } from "react";
+
+/**
+ * GitHub 图标组件
+ *
+ * 用于展示 GitHub 链接的图标
+ */
+
+interface GithubIconProps extends SVGProps<SVGSVGElement> {
+  /** 图标大小（像素） */
+  size?: number;
+  /** 图标颜色 */
+  color?: string;
+}
+
+export const GithubIcon = ({
+  size = 24,
+  color = "currentColor",
+  ...props
+}: GithubIconProps) => (
   <svg
     width={size}
     height={size}
