@@ -1,3 +1,16 @@
+/**
+ * MCP 工具调用日志对话框组件
+ *
+ * 功能：
+ * - 显示最近的 MCP 工具调用记录
+ * - 支持查看调用详情（入参、出参、原始数据）
+ * - 支持刷新日志列表
+ * - 支持复制日志内容
+ * - 显示调用状态和耗时
+ *
+ * @module apps/frontend/src/components/tool-call-logs-dialog
+ */
+
 "use client";
 
 import { Badge } from "@/components/ui/badge";
