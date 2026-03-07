@@ -25,9 +25,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import { useWebSocketActions } from "@/providers/WebSocketProvider";
+import { type PromptFileInfo, apiClient } from "@/services/api";
 import { useConfig } from "@/stores/config";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type {
@@ -73,6 +80,8 @@ type VoiceInteractionFormValues = z.infer<typeof voiceInteractionSchema>;
 export function VoiceInteractionSettingDialog() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [promptFiles, setPromptFiles] = useState<PromptFileInfo[]>([]);
+  const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
   const config = useConfig();
   const { updateConfig } = useWebSocketActions();
 
@@ -117,6 +126,27 @@ export function VoiceInteractionSettingDialog() {
       },
     });
   }, [config, form]);
+
+  // 加载提示词文件列表
+  const loadPromptFiles = async () => {
+    setIsLoadingPrompts(true);
+    try {
+      const files = await apiClient.getPromptFiles();
+      setPromptFiles(files);
+    } catch (error) {
+      console.error("加载提示词文件列表失败:", error);
+      setPromptFiles([]);
+    } finally {
+      setIsLoadingPrompts(false);
+    }
+  };
+
+  // 对话框打开时加载提示词文件列表
+  useEffect(() => {
+    if (open) {
+      loadPromptFiles();
+    }
+  }, [open]);
 
   async function onSubmit(values: VoiceInteractionFormValues) {
     if (!config) {
@@ -308,14 +338,33 @@ export function VoiceInteractionSettingDialog() {
                     name="llm.prompt"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>系统提示词</FormLabel>
+                        <FormLabel>系统提示词文件</FormLabel>
                         <FormControl>
-                          <Textarea
-                            placeholder="自定义系统提示词（可选）"
-                            className="font-mono text-sm min-h-[100px]"
-                            disabled={isLoading}
-                            {...field}
-                          />
+                          <Select
+                            disabled={isLoading || isLoadingPrompts}
+                            value={field.value || "__none__"}
+                            onValueChange={(value) => {
+                              // 将特殊值转换为空字符串
+                              field.onChange(value === "__none__" ? "" : value);
+                            }}
+                          >
+                            <SelectTrigger className="font-mono text-sm">
+                              <SelectValue placeholder="选择提示词文件（可选）" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">
+                                不使用提示词文件
+                              </SelectItem>
+                              {promptFiles.map((file) => (
+                                <SelectItem
+                                  key={file.relativePath}
+                                  value={file.relativePath}
+                                >
+                                  {file.fileName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
