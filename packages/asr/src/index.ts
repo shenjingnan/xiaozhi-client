@@ -19,7 +19,17 @@
  * const asr = new ASR({
  *   bytedance: {
  *     v2: {
- *       app: { appid: 'your-app-id', token: 'your-token' },
+ *       app: {
+ *         appid: 'your-app-id',
+ *         token: 'your-token',
+ *         cluster: 'volcengine_streaming_common',
+ *       },
+ *       user: {
+ *         uid: 'user-123',
+ *       },
+ *       audio: {
+ *         format: 'wav',
+ *       },
  *     },
  *   },
  * });
@@ -45,7 +55,17 @@
  * const result = await executeOne('path/to/audio.wav', 'your-cluster', {
  *   bytedance: {
  *     v2: {
- *       app: { appid: 'your-app-id', token: 'your-token' },
+ *       app: {
+ *         appid: 'your-app-id',
+ *         token: 'your-token',
+ *         cluster: 'volcengine_streaming_common',
+ *       },
+ *       user: {
+ *         uid: 'user-123',
+ *       },
+ *       audio: {
+ *         format: 'wav',
+ *       },
  *     },
  *   },
  * });
@@ -81,11 +101,11 @@ export * from "./utils/index.js";
 // 主要导出
 // =========================
 
-export { ASR, executeOne } from "./client";
+export { ASR, executeOne } from "./client/index.js";
 
 export type {
   ASROption,
   ASRResult,
   ASREventType,
   ASREventData,
-} from "./client";
+} from "./client/index.js";
