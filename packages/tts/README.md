@@ -67,6 +67,7 @@ yarn add @xiaozhi-client/tts
 
 ```typescript
 import { synthesizeSpeech } from '@xiaozhi-client/tts';
+import fs from 'node:fs';
 
 // 非流式合成：一次性获取完整音频
 const audio = await synthesizeSpeech({
@@ -81,7 +82,6 @@ const audio = await synthesizeSpeech({
 });
 
 // audio 是 Uint8Array，可直接保存为文件
-import fs from 'node:fs';
 fs.writeFileSync('output.wav', audio);
 ```
 
@@ -123,6 +123,7 @@ TTS 类提供事件驱动的 API，适合需要持续监听和处理的场景。
 
 ```typescript
 import { TTS } from '@xiaozhi-client/tts';
+import fs from 'node:fs';
 
 // 创建 TTS 客户端
 const client = new TTS({
@@ -144,7 +145,7 @@ client.on('open', () => {
   console.log('[事件] 连接已打开');
 });
 
-client.on('audio_chunk', (chunk: Uint8Array, isLast: boolean) => {
+client.on('audio_chunk', async (chunk: Uint8Array, isLast: boolean) => {
   console.log(`[事件] 收到音频块，大小: ${chunk.length} 字节`);
   // 处理音频块
 });
@@ -167,7 +168,6 @@ client.on('close', () => {
 // 非流式合成
 const audio = await client.synthesize('你好，这是测试语音。');
 // 保存音频
-import fs from 'node:fs';
 fs.writeFileSync('output.wav', audio);
 
 // 关闭连接
@@ -428,7 +428,7 @@ interface ByteDanceTTSConfig {
 |----------|------|
 | `S_70000` | 女声·小何 |
 | `zh_female_xiaohe_uranus_bigtts` | 女声·小何（完整标识） |
-| 更多声音类型请参考字节跳动 TTS 文档 | |
+| 更多声音类型请参考 [字节跳动 TTS 文档](https://www.volcengine.com/docs/6561/80818) | |
 
 ## 完整示例
 
