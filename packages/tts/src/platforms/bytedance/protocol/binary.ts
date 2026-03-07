@@ -94,7 +94,6 @@ export async function synthesizeSpeech(
   options: TTSOptions
 ): Promise<Uint8Array> {
   const endpoint = getEndpoint(options);
-  const encoding = options.encoding || "wav";
 
   const headers = getAuthHeaders(options);
 
@@ -108,29 +107,7 @@ export async function synthesizeSpeech(
     ws.on("error", reject);
   });
 
-  const request = {
-    app: {
-      appid: options.appid,
-      token: options.accessToken,
-      cluster: options.cluster?.trim() || voiceToCluster(options.voice_type),
-    },
-    user: {
-      uid: randomUUID(),
-    },
-    audio: {
-      voice_type: options.voice_type,
-      encoding: encoding,
-    },
-    request: {
-      reqid: randomUUID(),
-      text: options.text,
-      operation: "submit",
-      extra_param: JSON.stringify({
-        disable_markdown_filter: false,
-      }),
-      with_timestamp: "1",
-    },
-  };
+  const request = createTTSRequest(options);
 
   await FullClientRequest(
     ws,
@@ -192,7 +169,6 @@ export async function synthesizeSpeechStream(
   onAudioChunk: (chunk: Uint8Array, isLast: boolean) => Promise<void>
 ): Promise<void> {
   const endpoint = getEndpoint(options);
-  const encoding = options.encoding || "wav";
 
   const headers = getAuthHeaders(options);
 
@@ -206,29 +182,7 @@ export async function synthesizeSpeechStream(
     ws.on("error", reject);
   });
 
-  const request = {
-    app: {
-      appid: options.appid,
-      token: options.accessToken,
-      cluster: options.cluster?.trim() || voiceToCluster(options.voice_type),
-    },
-    user: {
-      uid: randomUUID(),
-    },
-    audio: {
-      voice_type: options.voice_type,
-      encoding: encoding,
-    },
-    request: {
-      reqid: randomUUID(),
-      text: options.text,
-      operation: "submit",
-      extra_param: JSON.stringify({
-        disable_markdown_filter: false,
-      }),
-      with_timestamp: "1",
-    },
-  };
+  const request = createTTSRequest(options);
 
   await FullClientRequest(
     ws,
