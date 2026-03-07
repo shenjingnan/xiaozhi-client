@@ -1,3 +1,23 @@
+/**
+ * 状态服务
+ *
+ * 统一的状态管理服务，负责管理客户端连接状态、MCP 服务状态等。
+ *
+ * ## 核心功能
+ * - 客户端状态管理：跟踪客户端连接状态、MCP 端点、活跃服务器等
+ * - 重启状态管理：管理服务重启流程的状态跟踪
+ * - 心跳超时管理：监控客户端心跳，超时自动断开连接
+ * - 事件通知：通过 EventBus 发射状态变更事件
+ *
+ * ## 使用方式
+ * ```typescript
+ * import { StatusService } from '@/services';
+ *
+ * const statusService = new StatusService();
+ * const status = statusService.getFullStatus();
+ * ```
+ */
+
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
