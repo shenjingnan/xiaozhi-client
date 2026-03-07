@@ -577,7 +577,7 @@ importers:
         specifier: ^4.7.0
         version: 4.21.0
       typescript:
-        specifier: ^5.3.0
+        specifier: ^5.9.2
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
@@ -738,7 +738,7 @@ importers:
         specifier: ^4.7.0
         version: 4.21.0
       typescript:
-        specifier: ^5.3.0
+        specifier: ^5.9.2
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
