@@ -28,7 +28,6 @@ export class ConfigValidationError extends Error {
 }
 
 // 定义简化的 MCPServiceConfig 接口
-// 重新导出 MCPTransportType 以保持向后兼容
 export interface MCPServiceConfig {
   type: MCPTransportType;
   command?: string;
