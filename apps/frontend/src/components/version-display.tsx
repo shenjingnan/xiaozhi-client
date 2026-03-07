@@ -1,3 +1,14 @@
+/**
+ * VersionDisplay 组件 - 版本信息显示和更新检查
+ *
+ * 功能：
+ * - 显示当前应用版本信息
+ * - 检查是否有新版本可用
+ * - 提供版本信息复制功能
+ * - 显示更新提示和升级对话框
+ * - 支持版本切换
+ */
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
