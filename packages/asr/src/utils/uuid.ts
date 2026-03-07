@@ -12,7 +12,7 @@ export function generateReqId(): string {
 }
 
 /**
- * 生成短 ID
+ * 生成短唯一 ID（8 字符）
  */
 export function generateShortId(): string {
   return uuidv4().split("-")[0];
