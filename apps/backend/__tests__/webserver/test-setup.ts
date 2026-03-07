@@ -106,26 +106,6 @@ export const createServicesIndexMock = () => {
 };
 
 /**
- * 创建 ConfigService 的 mock
- */
-export const createConfigServiceMock = () => {
-  const mockConfigServiceInstance = {
-    getConfig: vi.fn(() => ({
-      mcpEndpoint: "wss://test.endpoint",
-      mcpServers: {
-        test: { command: "node", args: ["test.js"] },
-      },
-    })),
-    updateConfig: vi.fn().mockResolvedValue(undefined),
-    getMcpEndpoint: vi.fn(() => "wss://test.endpoint"),
-    updateMcpEndpoint: vi.fn().mockResolvedValue(undefined),
-  };
-  return {
-    ConfigService: vi.fn(() => mockConfigServiceInstance),
-  };
-};
-
-/**
  * 创建 handler mocks 的基础配置
  */
 export const createHandlerMocks = () => ({
@@ -440,32 +420,6 @@ export const createHandlerMocks = () => ({
 });
 
 /**
- * 创建 CLI Container 的 mock
- */
-export const createContainerMock = () => ({
-  createContainer: vi.fn(() => ({
-    get: vi.fn((serviceName: string) => {
-      if (serviceName === "serviceManager") {
-        return {
-          getStatus: vi.fn(),
-        };
-      }
-      return {};
-    }),
-  })),
-});
-
-/**
- * 创建 child_process 的 mock
- */
-export const createChildProcessMock = () => ({
-  exec: vi.fn(),
-  spawn: vi.fn(() => ({
-    unref: vi.fn(),
-  })),
-});
-
-/**
  * 创建 EndpointManager 的 mock
  */
 export const createEndpointManagerMock = () => ({
@@ -485,11 +439,13 @@ export const createEndpointManagerMock = () => ({
 });
 
 /**
- * 创建 adapter.js 的 mock
+ * 创建 child_process 的 mock
  */
-export const createAdapterMock = () => ({
-  normalizeServiceConfig: vi.fn((_name: string, config: unknown) => config),
-  isModelScopeURL: vi.fn((url: string) => url.includes("modelscope")),
+export const createChildProcessMock = () => ({
+  exec: vi.fn(),
+  spawn: vi.fn(() => ({
+    unref: vi.fn(),
+  })),
 });
 
 /**

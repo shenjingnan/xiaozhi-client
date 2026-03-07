@@ -64,32 +64,10 @@ describe("WebServer WebSocket 功能测试", () => {
         const timeout = setTimeout(() => {
           ws.close();
           reject(new Error("WebSocket test timeout"));
-        }, 4000);
-
-        ws.on("open", () => {
-          // 连接成功，立即关闭并完成测试
-          clearTimeout(timeout);
-          ws.close();
-          resolve();
-        });
-
-        ws.on("error", (err) => {
-          clearTimeout(timeout);
-          reject(err);
-        });
-      });
-    });
-
-    it("应该处理 WebSocket 客户端连接和断开", async () => {
-      const ws = new WebSocket(`ws://localhost:${currentPort}`);
-
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          ws.close();
-          reject(new Error("WebSocket connection timeout"));
         }, 3000);
 
         ws.on("open", () => {
+          // 连接成功，立即关闭并完成测试
           clearTimeout(timeout);
           ws.close();
           resolve();
