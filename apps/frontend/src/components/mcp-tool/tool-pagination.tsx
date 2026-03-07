@@ -10,6 +10,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 
 export interface ToolPaginationProps {
   currentPage: number;
@@ -72,14 +73,18 @@ export function ToolPagination({
   totalPages,
   setPage,
 }: ToolPaginationProps) {
+  // 使用 useMemo 缓存页码数组，避免每次渲染都重新计算
+  const pageNumbers = useMemo(
+    () => getPageNumbers(currentPage, totalPages),
+    [currentPage, totalPages]
+  );
+
   // 当数据量不超过一页时，不显示分页控件
   const shouldShowPagination = totalPages > 1;
 
   if (!shouldShowPagination) {
     return null;
   }
-
-  const pageNumbers = getPageNumbers(currentPage, totalPages);
 
   return (
     <div className="flex items-end justify-start py-4">
