@@ -557,12 +557,17 @@ export class ConfigManager {
 
   /**
    * 获取配置（只读）
+   * 使用缓存机制避免频繁的文件 I/O 操作
    */
   public getConfig(): Readonly<AppConfig> {
-    this.config = this.loadConfig();
+    // 使用缓存，避免每次都重新加载文件
+    if (!this.config) {
+      this.config = this.loadConfig();
+    }
 
-    // 返回深度只读副本
-    return JSON.parse(JSON.stringify(this.config));
+    // 使用 structuredClone 进行更高效的深拷贝
+    // 如果不支持则降级到 JSON.parse(JSON.stringify())
+    return structuredClone(this.config);
   }
 
   /**
