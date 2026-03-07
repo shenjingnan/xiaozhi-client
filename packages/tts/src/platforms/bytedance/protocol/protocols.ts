@@ -581,7 +581,7 @@ function setupMessageHandler(ws: WebSocket) {
     messageQueues.set(ws, []);
     messageCallbacks.set(ws, []);
 
-    ws.on("message", (data: WebSocket.RawData) => {
+    const messageHandler = (data: WebSocket.RawData) => {
       try {
         let uint8Data: Uint8Array;
         if (Buffer.isBuffer(data)) {
@@ -609,12 +609,19 @@ function setupMessageHandler(ws: WebSocket) {
       } catch (error) {
         throw new Error(`Error processing message: ${error}`);
       }
-    });
+    };
 
-    ws.on("close", () => {
+    const closeHandler = () => {
+      // 移除事件监听器，防止内存泄漏
+      ws.removeListener("message", messageHandler);
+      ws.removeListener("close", closeHandler);
+      // 清理数据
       messageQueues.delete(ws);
       messageCallbacks.delete(ws);
-    });
+    };
+
+    ws.on("message", messageHandler);
+    ws.on("close", closeHandler);
   }
 }
 
