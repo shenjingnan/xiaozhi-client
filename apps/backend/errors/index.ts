@@ -5,6 +5,7 @@
  *
  * - **直接导出**：从 `mcp-errors.ts` 导出错误类型定义
  * - **命名空间导出**：从 `error-helper.ts` 导出错误辅助工具
+ * - **工具错误处理器**：从 `ToolErrorHandler.ts` 导出工具错误处理类
  *
  * @packageDocumentation
  *
@@ -18,10 +19,15 @@
  *
  * // 使用错误辅助工具
  * const categorizedError = ErrorHelper.categorizeError(error, 'service-name');
+ *
+ * // 使用工具错误处理器
+ * import { ToolErrorHandler } from '@/errors/index.js';
+ * const errorHandler = new ToolErrorHandler(validator);
  * ```
  */
 
 export * from "./mcp-errors.js";
+export { ToolErrorHandler } from "./ToolErrorHandler.js";
 
 // ErrorHelper 使用命名空间导出以避免与 mcp-errors 中的类型冲突
 export * as ErrorHelper from "./error-helper.js";
