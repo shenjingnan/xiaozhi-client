@@ -49,6 +49,9 @@ export class TTSService implements ITTSService {
   /** 每个设备的连接引用（用于缓冲区处理） */
   private readonly deviceConnections = new Map<string, ESP32Connection>();
 
+  /** 每个设备的缓冲区排空定时器 */
+  private readonly drainTimers = new Map<string, NodeJS.Timeout>();
+
   /**
    * 构造函数
    * @param options - 配置选项
@@ -206,17 +209,30 @@ export class TTSService implements ITTSService {
    */
   private waitForBufferDrain(deviceId: string): void {
     const checkInterval = 50; // 每 50ms 检查一次
+    const maxWaitTime = 30000; // 最多等待 30 秒
+    let elapsed = 0;
 
     const check = (): boolean => {
       const buffer = this.opusPacketBuffer.get(deviceId);
       const isProcessing = this.isProcessingBuffer.get(deviceId);
 
       // 缓冲区已清空且不在处理中
-      logger.info(
-        `[TTSService] 缓冲区排空检查: deviceId=${deviceId}, buffer=${buffer?.length}, isProcessing=${isProcessing}`
-      );
       if ((!buffer || buffer.length === 0) && !isProcessing) {
+        logger.info(
+          `[TTSService] 缓冲区已排空: deviceId=${deviceId}, elapsed=${elapsed}ms`
+        );
         this.sendStopAndCleanup(deviceId);
+        return true;
+      }
+
+      // 检查是否超时
+      elapsed += checkInterval;
+      if (elapsed >= maxWaitTime) {
+        logger.warn(
+          `[TTSService] 缓冲区排空超时: deviceId=${deviceId}, elapsed=${elapsed}ms`
+        );
+        // 超时后直接清理，不再发送 stop 消息
+        this.cleanup(deviceId);
         return true;
       }
 
@@ -232,8 +248,12 @@ export class TTSService implements ITTSService {
     const intervalId = setInterval(() => {
       if (check()) {
         clearInterval(intervalId);
+        this.drainTimers.delete(deviceId);
       }
     }, checkInterval);
+
+    // 存储定时器 ID 以便在清理时取消
+    this.drainTimers.set(deviceId, intervalId);
   }
 
   /**
@@ -346,6 +366,13 @@ export class TTSService implements ITTSService {
    * @param deviceId - 设备 ID
    */
   cleanup(deviceId: string): void {
+    // 清理定时器
+    const timer = this.drainTimers.get(deviceId);
+    if (timer) {
+      clearInterval(timer);
+      this.drainTimers.delete(deviceId);
+    }
+
     this.audioDemuxers.delete(deviceId);
     this.cumulativeTimestamps.delete(deviceId);
     this.packetIndices.delete(deviceId);
@@ -498,6 +525,12 @@ export class TTSService implements ITTSService {
    * 销毁服务
    */
   destroy(): void {
+    // 清理所有定时器
+    for (const timer of this.drainTimers.values()) {
+      clearInterval(timer);
+    }
+    this.drainTimers.clear();
+
     this.ttsTriggered.clear();
     this.audioDemuxers.clear();
     this.cumulativeTimestamps.clear();
