@@ -11,9 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { VoiceInteractionSettingDialog } from "@/components/voice-interaction-setting-dialog";
 import { useVoiceInteractionConfig } from "@/stores/config";
 import { useMemo } from "react";
-import { VoiceInteractionSettingDialog } from "../voice-interaction-setting-dialog";
 import { MiniCircularProgress } from "./mini-circular-progress";
 
 /**

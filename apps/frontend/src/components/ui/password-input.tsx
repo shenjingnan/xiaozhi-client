@@ -24,6 +24,17 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
     const isControlled = showPassword !== undefined;
     const isShow = isControlled ? showPassword : internalShow;
 
+    // 开发环境下警告：受控模式但缺少回调
+    if (
+      process.env.NODE_ENV === "development" &&
+      isControlled &&
+      !onShowPasswordChange
+    ) {
+      console.warn(
+        "PasswordInput: showPassword 已作为受控属性传入，但未提供 onShowPasswordChange 回调，切换按钮将无法正常工作"
+      );
+    }
+
     const handleToggle = () => {
       if (isControlled && onShowPasswordChange) {
         onShowPasswordChange(!showPassword);
@@ -46,7 +57,8 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
           size="icon"
           className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
           onClick={handleToggle}
-          tabIndex={-1}
+          aria-label={isShow ? "隐藏密码" : "显示密码"}
+          aria-pressed={isShow}
         >
           {isShow ? (
             <EyeOff className="h-4 w-4 text-muted-foreground hover:text-foreground" />

@@ -126,14 +126,16 @@ export function VoiceInteractionSettingDialog() {
 
     setIsLoading(true);
     try {
-      // 构建新的配置对象，过滤掉空值
+      // 构建新的配置对象
+      // 当表单字段全为空时，使用空对象 {} 显式告知服务端要清空配置
+      // 而不是使用 undefined（因为 undefined 在 JSON 序列化时会被丢弃）
       const newASR: ASRConfig | undefined =
         values.asr.appid || values.asr.accessToken
           ? {
               appid: values.asr.appid || undefined,
               accessToken: values.asr.accessToken || undefined,
             }
-          : undefined;
+          : {};
 
       const newLLM: LLMConfig = {
         model: values.llm.model,
@@ -143,13 +145,13 @@ export function VoiceInteractionSettingDialog() {
       };
 
       const newTTS: TTSConfig | undefined =
-        values.tts.appid || values.tts.accessToken
+        values.tts.appid || values.tts.accessToken || values.tts.voice_type
           ? {
               appid: values.tts.appid || undefined,
               accessToken: values.tts.accessToken || undefined,
               voice_type: values.tts.voice_type || undefined,
             }
-          : undefined;
+          : {};
 
       const newConfig: AppConfig = {
         ...config,

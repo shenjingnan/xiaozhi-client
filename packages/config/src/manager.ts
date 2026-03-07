@@ -853,18 +853,18 @@ export class ConfigManager {
       }
     }
 
-    // 更新 ASR 配置
-    if (newConfig.asr !== undefined) {
+    // 更新 ASR 配置（使用 "asr" in newConfig 检测字段是否存在，支持清空配置）
+    if ("asr" in newConfig) {
       config.asr = newConfig.asr;
     }
 
     // 更新 TTS 配置
-    if (newConfig.tts !== undefined) {
+    if ("tts" in newConfig) {
       config.tts = newConfig.tts;
     }
 
     // 更新 LLM 配置
-    if (newConfig.llm !== undefined) {
+    if ("llm" in newConfig) {
       config.llm = newConfig.llm;
     }
 
