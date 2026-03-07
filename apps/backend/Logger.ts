@@ -247,16 +247,7 @@ export class Logger {
    */
   info(obj: object, message?: string): void;
   info(messageOrObj: string | object, ...args: any[]): void {
-    if (typeof messageOrObj === "string") {
-      if (args.length === 0) {
-        this.pinoInstance.info(messageOrObj);
-      } else {
-        this.pinoInstance.info({ args }, messageOrObj);
-      }
-    } else {
-      // 结构化日志支持
-      this.pinoInstance.info(messageOrObj, args[0] || "");
-    }
+    this.logInfo(messageOrObj, ...args);
   }
 
   /**
