@@ -22,10 +22,13 @@ import { ToolType } from "@/types/toolApi.js";
 import type { CustomMCPToolWithStats, JSONSchema } from "@/types/toolApi.js";
 import { type ToolSortField, sortTools } from "@/utils/toolSorters";
 import { configManager } from "@xiaozhi-client/config";
-import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
-import Ajv from "ajv";
+import type { CustomMCPTool } from "@xiaozhi-client/config";
 import dayjs from "dayjs";
 import type { Context } from "hono";
+import { ToolService } from "@/services/ToolService.js";
+import { ToolValidator } from "@/validators/ToolValidator.js";
+import { ToolConverter } from "@/converters/ToolConverter.js";
+import { ToolErrorHandler } from "@/errors/ToolErrorHandler.js";
 
 /**
  * 工具调用请求接口
@@ -51,21 +54,20 @@ interface LegacyAddCustomToolRequest {
  * MCP 工具调用 API 处理器
  */
 export class MCPToolHandler {
-  // 预编译的正则表达式常量，避免在频繁调用时重复创建
-  private static readonly UNDERSCORE_TRIM_REGEX = /^_+|_+$/g;
-  private static readonly LETTER_START_REGEX = /^[a-zA-Z]/;
-  private static readonly CHINESE_CHAR_REGEX = /[\u4e00-\u9fa5]/;
-  private static readonly DIGITS_ONLY_REGEX = /^\d+$/;
-  private static readonly ALPHANUMERIC_UNDERSCORE_REGEX = /^[a-zA-Z0-9_-]+$/;
-  private static readonly IDENTIFIER_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+  private static readonly TOOL_TYPE_VALUES = Object.values(ToolType);
 
   private logger: Logger;
-  private ajv: Ajv;
-  private static readonly TOOL_TYPE_VALUES = Object.values(ToolType);
+  private toolService: ToolService;
+  private validator: ToolValidator;
+  private converter: ToolConverter;
+  private errorHandler: ToolErrorHandler;
 
   constructor() {
     this.logger = logger;
-    this.ajv = new Ajv({ allErrors: true, verbose: true });
+    this.toolService = new ToolService();
+    this.validator = this.toolService.getValidator();
+    this.converter = this.toolService.getConverter();
+    this.errorHandler = new ToolErrorHandler(this.validator);
   }
 
   /**
@@ -108,11 +110,15 @@ export class MCPToolHandler {
       }
 
       // 验证服务和工具是否存在
-      await this.validateServiceAndTool(serviceManager, serviceName, toolName);
+      await this.validator.validateServiceAndTool(
+        serviceManager,
+        serviceName,
+        toolName
+      );
 
       // 对于 customMCP 工具，进行参数验证
       if (serviceName === "customMCP") {
-        await this.validateCustomMCPArguments(
+        await this.validator.validateCustomMCPArguments(
           serviceManager,
           toolName,
           args || {}
@@ -131,8 +137,6 @@ export class MCPToolHandler {
         const toolKey = `${serviceName}__${toolName}`;
         result = await serviceManager.callTool(toolKey, args || {});
       }
-
-      // c.get("logger").debug(`工具调用成功: ${serviceName}/${toolName}`);
 
       return c.success(result, "工具调用成功");
     } catch (error) {
@@ -346,147 +350,6 @@ export class MCPToolHandler {
   }
 
   /**
-   * 验证服务和工具是否存在
-   * @private
-   */
-  private async validateServiceAndTool(
-    serviceManager: MCPServiceManager,
-    serviceName: string,
-    toolName: string
-  ): Promise<void> {
-    // 特殊处理 customMCP 服务
-    if (serviceName === "customMCP") {
-      // 验证 customMCP 工具是否存在
-      if (!serviceManager.hasCustomMCPTool(toolName)) {
-        const availableTools = serviceManager
-          .getCustomMCPTools()
-          .map((tool) => tool.name);
-
-        if (availableTools.length === 0) {
-          throw MCPError.validationError(
-            MCPErrorCode.TOOL_NOT_FOUND,
-            `customMCP 工具 '${toolName}' 不存在。当前没有配置任何 customMCP 工具。请检查 xiaozhi.config.json 中的 customMCP 配置。`
-          );
-        }
-
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_NOT_FOUND,
-          `customMCP 工具 '${toolName}' 不存在。可用的 customMCP 工具: ${availableTools.join(", ")}。请使用 'xiaozhi mcp list' 查看所有可用工具。`
-        );
-      }
-
-      // 验证 customMCP 工具配置是否有效
-      try {
-        const customTools = serviceManager.getCustomMCPTools();
-        const targetTool = customTools.find((tool) => tool.name === toolName);
-
-        if (targetTool && !targetTool.description) {
-          this.logger.warn(`customMCP 工具 '${toolName}' 缺少描述信息`);
-        }
-
-        if (targetTool && !targetTool.inputSchema) {
-          this.logger.warn(`customMCP 工具 '${toolName}' 缺少输入参数定义`);
-        }
-      } catch (error) {
-        this.logger.error(
-          `验证 customMCP 工具 '${toolName}' 配置时出错:`,
-          error
-        );
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          `customMCP 工具 '${toolName}' 配置验证失败。请检查配置文件中的工具定义。`
-        );
-      }
-
-      return;
-    }
-  }
-
-  /**
-   * 验证 customMCP 工具的参数
-   * @private
-   */
-  private async validateCustomMCPArguments(
-    serviceManager: MCPServiceManager,
-    toolName: string,
-    args: Record<string, unknown>
-  ): Promise<void> {
-    try {
-      // 获取工具的 inputSchema
-      const customTools = serviceManager.getCustomMCPTools();
-      const targetTool = customTools.find((tool) => tool.name === toolName);
-
-      if (!targetTool) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_NOT_FOUND,
-          `customMCP 工具 '${toolName}' 不存在`
-        );
-      }
-
-      // 如果工具没有定义 inputSchema，跳过验证
-      if (!targetTool.inputSchema) {
-        this.logger.warn(
-          `customMCP 工具 '${toolName}' 没有定义 inputSchema，跳过参数验证`
-        );
-        return;
-      }
-
-      // 使用 AJV 验证参数
-      const validate = this.ajv.compile(targetTool.inputSchema);
-      const valid = validate(args);
-
-      if (!valid) {
-        // 构建详细的错误信息
-        const errors = validate.errors || [];
-        const errorMessages = errors.map((error) => {
-          const path = error.instancePath || error.schemaPath || "";
-          const message = error.message || "未知错误";
-
-          if (error.keyword === "required") {
-            const missingProperty = error.params?.missingProperty || "未知字段";
-            return `缺少必需参数: ${missingProperty}`;
-          }
-
-          if (error.keyword === "type") {
-            const expectedType = error.params?.type || "未知类型";
-            return `参数 ${path} 类型错误，期望: ${expectedType}`;
-          }
-
-          if (error.keyword === "enum") {
-            const allowedValues = error.params?.allowedValues || [];
-            return `参数 ${path} 值无效，允许的值: ${allowedValues.join(", ")}`;
-          }
-
-          return `参数 ${path} ${message}`;
-        });
-
-        const errorMessage = `参数验证失败: ${errorMessages.join("; ")}`;
-        this.logger.error(
-          `customMCP 工具 '${toolName}' 参数验证失败:`,
-          errorMessage
-        );
-
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          errorMessage
-        );
-      }
-
-      this.logger.debug(`customMCP 工具 '${toolName}' 参数验证通过`);
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("参数验证失败")) {
-        throw error;
-      }
-
-      this.logger.error(`验证 customMCP 工具 '${toolName}' 参数时出错:`, error);
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        `参数验证过程中发生错误: ${error instanceof Error ? error.message : "未知错误"}`
-      );
-    }
-  }
-
-  /**
    * 添加自定义 MCP 工具
    * POST /api/tools/custom
    * 支持多种工具类型：MCP 工具、Coze 工作流等
@@ -514,7 +377,7 @@ export class MCPToolHandler {
       c.get("logger").error("添加自定义工具失败:", error);
 
       // 根据错误类型返回不同的HTTP状态码和错误信息
-      const { code, message, status } = this.handleAddToolError(error);
+      const { code, message, status } = this.errorHandler.handleAddToolError(error);
       return c.fail(code, message, undefined, status);
     }
   }
@@ -595,7 +458,7 @@ export class MCPToolHandler {
       request;
 
     // 边界条件预检查
-    const preCheckResult = this.performPreChecks(
+    const preCheckResult = this.toolService.performPreChecks(
       workflow,
       customName,
       customDescription
@@ -609,8 +472,8 @@ export class MCPToolHandler {
       );
     }
 
-    // 转换工作流为工具配置
-    const tool = this.convertWorkflowToTool(
+    // 使用 ToolService 创建工具
+    const tool = await this.toolService.createToolFromWorkflow(
       workflow,
       customName,
       customDescription,
@@ -618,7 +481,7 @@ export class MCPToolHandler {
     );
 
     // 添加工具到配置
-    configManager.addCustomMCPTool(tool);
+    await this.toolService.addCustomTool(tool);
 
     c.get("logger").info(`成功添加自定义工具: ${tool.name}`);
 
@@ -659,7 +522,11 @@ export class MCPToolHandler {
 
     // 验证服务和工具是否存在
     try {
-      await this.validateServiceAndTool(serviceManager, serviceName, toolName);
+      await this.validator.validateServiceAndTool(
+        serviceManager,
+        serviceName,
+        toolName
+      );
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -706,7 +573,7 @@ export class MCPToolHandler {
         customDescription ||
         cachedTool.description ||
         `MCP 工具: ${serviceName}/${toolName}`,
-      inputSchema: cachedTool.inputSchema || {},
+      inputSchema: cachedTool.inputSchema || ({} as JSONSchema),
       handler: {
         type: "mcp",
         config: {
@@ -721,7 +588,7 @@ export class MCPToolHandler {
     };
 
     // 添加工具到配置
-    configManager.addCustomMCPTool(tool);
+    await this.toolService.addCustomTool(tool);
 
     // 对于 MCP 工具，需要在 mcpServerConfig 中同步启用
     c.get("logger").info(
@@ -767,7 +634,7 @@ export class MCPToolHandler {
     c.get("logger").info(`处理添加 Coze 工具: ${workflow.workflow_name}`);
 
     // 边界条件预检查
-    const preCheckResult = this.performPreChecks(
+    const preCheckResult = this.toolService.performPreChecks(
       workflow,
       customName,
       customDescription
@@ -781,8 +648,8 @@ export class MCPToolHandler {
       );
     }
 
-    // 转换工作流为工具配置
-    const tool = this.convertWorkflowToTool(
+    // 使用 ToolService 创建工具
+    const tool = await this.toolService.createToolFromWorkflow(
       workflow,
       customName,
       customDescription,
@@ -790,7 +657,7 @@ export class MCPToolHandler {
     );
 
     // 添加工具到配置
-    configManager.addCustomMCPTool(tool);
+    await this.toolService.addCustomTool(tool);
 
     c.get("logger").info(`成功添加 Coze 工具: ${tool.name}`);
 
@@ -851,7 +718,7 @@ export class MCPToolHandler {
       c.get("logger").error("更新自定义工具配置失败:", error);
 
       // 根据错误类型返回不同的HTTP状态码和错误信息
-      const { code, message, status } = this.handleUpdateToolError(error);
+      const { code, message, status } = this.errorHandler.handleUpdateToolError(error);
       return c.fail(code, message, undefined, status);
     }
   }
@@ -949,7 +816,7 @@ export class MCPToolHandler {
 
     // 如果前端提供的 workflow 中没有 workflow_id，尝试从现有工具中获取
     if (!workflow.workflow_id && existingTool.handler?.config?.workflow_id) {
-      workflow.workflow_id = existingTool.handler.config.workflow_id;
+      workflow.workflow_id = existingTool.handler.config.workflow_id as string;
     }
 
     // 如果还没有 workflow_id，尝试从其他字段获取
@@ -962,10 +829,13 @@ export class MCPToolHandler {
     }
 
     // 验证工作流数据完整性
-    this.validateWorkflowUpdateData(workflow);
+    this.validator.validateWorkflowUpdateData(workflow);
+
+    // 更新转换器的现有工具列表
+    this.converter.updateExistingTools(existingTools);
 
     // 更新工具的 inputSchema
-    const updatedInputSchema = this.generateInputSchema(
+    const updatedInputSchema = this.converter.generateInputSchema(
       workflow,
       parameterConfig
     );
@@ -978,7 +848,7 @@ export class MCPToolHandler {
     };
 
     // 更新工具配置
-    configManager.updateCustomMCPTool(toolName, updatedTool);
+    await this.toolService.updateCustomTool(toolName, updatedTool);
 
     c.get("logger").info(`成功更新 Coze 工具: ${toolName}`);
 
@@ -990,76 +860,6 @@ export class MCPToolHandler {
     };
 
     return c.success(responseData, `Coze 工具 "${toolName}" 配置更新成功`);
-  }
-
-  /**
-   * 处理更新工具时的错误
-   */
-  private handleUpdateToolError(error: unknown): {
-    code: string;
-    message: string;
-    status: number;
-  } {
-    const errorMessage =
-      error instanceof Error ? error.message : "更新自定义工具配置失败";
-
-    // 工具不存在错误 (404)
-    if (errorMessage.includes("不存在") || errorMessage.includes("未找到")) {
-      return {
-        code: "TOOL_NOT_FOUND",
-        message: `${errorMessage}。请检查工具名称是否正确`,
-        status: 404,
-      };
-    }
-
-    // 工具类型错误 (400)
-    if (
-      errorMessage.includes("工具类型") ||
-      errorMessage.includes("INVALID_TOOL_TYPE")
-    ) {
-      return {
-        code: "INVALID_TOOL_TYPE",
-        message: errorMessage,
-        status: 400,
-      };
-    }
-
-    // 参数错误 (400)
-    if (errorMessage.includes("不能为空") || errorMessage.includes("无效")) {
-      return {
-        code: "INVALID_REQUEST",
-        message: `${errorMessage}。请提供有效的工具配置数据`,
-        status: 400,
-      };
-    }
-
-    // 配置错误 (422)
-    if (errorMessage.includes("配置") || errorMessage.includes("权限")) {
-      return {
-        code: "CONFIGURATION_ERROR",
-        message: `${errorMessage}。请检查配置文件权限和格式是否正确`,
-        status: 422,
-      };
-    }
-
-    // 未实现功能错误 (501)
-    if (
-      errorMessage.includes("未实现") ||
-      errorMessage.includes("NOT_IMPLEMENTED")
-    ) {
-      return {
-        code: "TOOL_TYPE_NOT_IMPLEMENTED",
-        message: errorMessage,
-        status: 501,
-      };
-    }
-
-    // 系统错误 (500)
-    return {
-      code: "UPDATE_CUSTOM_TOOL_ERROR",
-      message: `更新工具配置失败：${errorMessage}。请稍后重试，如问题持续存在请联系管理员`,
-      status: 500,
-    };
   }
 
   /**
@@ -1111,7 +911,7 @@ export class MCPToolHandler {
       }
 
       // 从配置中删除工具
-      configManager.removeCustomMCPTool(toolName);
+      await this.toolService.removeCustomTool(toolName);
 
       c.get("logger").info(`成功删除自定义工具: ${toolName}`);
 
@@ -1120,1220 +920,9 @@ export class MCPToolHandler {
       c.get("logger").error("删除自定义工具失败:", error);
 
       // 根据错误类型返回不同的HTTP状态码和错误信息
-      const { code, message, status } = this.handleRemoveToolError(error);
+      const { code, message, status } = this.errorHandler.handleRemoveToolError(error);
       return c.fail(code, message, undefined, status);
     }
-  }
-
-  /**
-   * 将扣子工作流转换为自定义 MCP 工具
-   */
-  private convertWorkflowToTool(
-    workflow: CozeWorkflow,
-    customName?: string,
-    customDescription?: string,
-    parameterConfig?: WorkflowParameterConfig
-  ): CustomMCPTool {
-    // 验证工作流数据完整性
-    this.validateWorkflowData(workflow);
-
-    // 生成工具名称（处理冲突）
-    const baseName =
-      customName || this.sanitizeToolName(workflow.workflow_name);
-    const toolName = this.resolveToolNameConflict(baseName);
-
-    // 生成工具描述
-    const description = this.generateToolDescription(
-      workflow,
-      customDescription
-    );
-
-    // 生成输入参数结构
-    const inputSchema = this.generateInputSchema(workflow, parameterConfig);
-
-    // 配置 HTTP 处理器
-    const handler = this.createHttpHandler(workflow);
-
-    // 创建工具配置
-    const tool: CustomMCPTool = {
-      name: toolName,
-      description,
-      inputSchema,
-      handler,
-    };
-
-    // 验证生成的工具配置
-    this.validateGeneratedTool(tool);
-
-    return tool;
-  }
-
-  /**
-   * 规范化工具名称
-   */
-  private sanitizeToolName(name: string): string {
-    if (!name || typeof name !== "string") {
-      return "coze_workflow_unnamed";
-    }
-
-    // 去除首尾空格
-    let sanitized = name.trim();
-
-    if (!sanitized) {
-      return "coze_workflow_empty";
-    }
-
-    // 将中文转换为拼音或英文描述（简化处理）
-    sanitized = this.convertChineseToEnglish(sanitized);
-
-    // 移除特殊字符，只保留字母、数字和下划线
-    sanitized = sanitized.replace(/[^a-zA-Z0-9_]/g, "_");
-
-    // 移除连续的下划线
-    sanitized = sanitized.replace(/_+/g, "_");
-
-    // 移除开头和结尾的下划线
-    sanitized = sanitized.replace(MCPToolHandler.UNDERSCORE_TRIM_REGEX, "");
-
-    // 确保以字母开头
-    if (!MCPToolHandler.LETTER_START_REGEX.test(sanitized)) {
-      sanitized = `coze_workflow_${sanitized}`;
-    }
-
-    // 限制长度（保留足够空间给数字后缀）
-    if (sanitized.length > 45) {
-      sanitized = sanitized.substring(0, 45);
-    }
-
-    // 确保不为空
-    if (!sanitized) {
-      sanitized = "coze_workflow_tool";
-    }
-
-    return sanitized;
-  }
-
-  /**
-   * 简单的中文到英文转换（可以扩展为更复杂的拼音转换）
-   */
-  private convertChineseToEnglish(text: string): string {
-    // 常见中文词汇的映射
-    const chineseToEnglishMap: Record<string, string> = {
-      工作流: "workflow",
-      测试: "test",
-      数据: "data",
-      处理: "process",
-      分析: "analysis",
-      生成: "generate",
-      查询: "query",
-      搜索: "search",
-      转换: "convert",
-      计算: "calculate",
-      统计: "statistics",
-      报告: "report",
-      文档: "document",
-      图片: "image",
-      视频: "video",
-      音频: "audio",
-      文本: "text",
-      翻译: "translate",
-      识别: "recognize",
-      检测: "detect",
-      监控: "monitor",
-      管理: "manage",
-      配置: "config",
-      设置: "setting",
-      用户: "user",
-      系统: "system",
-      服务: "service",
-      接口: "api",
-      数据库: "database",
-      网络: "network",
-      安全: "security",
-      备份: "backup",
-      恢复: "restore",
-      同步: "sync",
-      导入: "import",
-      导出: "export",
-      上传: "upload",
-      下载: "download",
-    };
-
-    let result = text;
-
-    // 替换常见中文词汇
-    for (const [chinese, english] of Object.entries(chineseToEnglishMap)) {
-      result = result.replace(new RegExp(chinese, "g"), english);
-    }
-
-    // 如果还有中文字符，用拼音前缀替代
-    if (MCPToolHandler.CHINESE_CHAR_REGEX.test(result)) {
-      result = `chinese_${result}`;
-    }
-
-    return result;
-  }
-
-  /**
-   * 验证工作流数据完整性
-   */
-  private validateWorkflowData(workflow: CozeWorkflow): void {
-    if (!workflow) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "工作流数据不能为空"
-      );
-    }
-
-    // 验证必需字段
-    this.validateRequiredFields(workflow);
-
-    // 验证字段格式
-    this.validateFieldFormats(workflow);
-
-    // 验证字段长度
-    this.validateFieldLengths(workflow);
-
-    // 验证业务逻辑
-    this.validateBusinessLogic(workflow);
-  }
-
-  /**
-   * 验证工作流更新数据完整性
-   * 用于更新场景，只验证关键字段
-   */
-  private validateWorkflowUpdateData(workflow: Partial<CozeWorkflow>): void {
-    if (!workflow) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "工作流数据不能为空"
-      );
-    }
-
-    // 对于更新操作，我们采用更灵活的验证策略
-    // 因为这可能是参数配置更新，而不是工作流本身更新
-
-    // 如果提供了 workflow_id，验证其格式
-    if (workflow.workflow_id) {
-      if (
-        typeof workflow.workflow_id !== "string" ||
-        workflow.workflow_id.trim() === ""
-      ) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "工作流ID必须是非空字符串"
-        );
-      }
-
-      // 验证工作流ID格式（数字字符串）
-      if (!MCPToolHandler.DIGITS_ONLY_REGEX.test(workflow.workflow_id)) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "工作流ID格式无效，应为数字字符串"
-        );
-      }
-    }
-
-    // 如果存在 workflow_name，验证其格式
-    if (workflow.workflow_name) {
-      if (
-        typeof workflow.workflow_name !== "string" ||
-        workflow.workflow_name.trim() === ""
-      ) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "工作流名称必须是非空字符串"
-        );
-      }
-
-      // 验证工作流名称长度
-      if (workflow.workflow_name.length > 100) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "工作流名称过长，不能超过100个字符"
-        );
-      }
-    }
-
-    // 如果存在 app_id，验证其格式
-    if (workflow.app_id) {
-      if (
-        typeof workflow.app_id !== "string" ||
-        workflow.app_id.trim() === ""
-      ) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "应用ID必须是非空字符串"
-        );
-      }
-
-      // 验证应用ID格式
-      if (!MCPToolHandler.ALPHANUMERIC_UNDERSCORE_REGEX.test(workflow.app_id)) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "应用ID格式无效，只能包含字母、数字、下划线和连字符"
-        );
-      }
-
-      // 验证应用ID长度
-      if (workflow.app_id.length > 50) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "应用ID过长，不能超过50个字符"
-        );
-      }
-    }
-
-    // 对于参数配置更新，workflow_id 可能不是必需的
-    // 因为实际的工作流ID已经存储在工具配置中
-    // 我们主要验证存在字段的格式，而不是强制要求所有字段都存在
-  }
-
-  /**
-   * 验证必需字段
-   */
-  private validateRequiredFields(workflow: CozeWorkflow): void {
-    const requiredFields = [
-      { field: "workflow_id", name: "工作流ID" },
-      { field: "workflow_name", name: "工作流名称" },
-      { field: "app_id", name: "应用ID" },
-    ];
-
-    for (const { field, name } of requiredFields) {
-      const value = workflow[field as keyof CozeWorkflow];
-      if (!value || typeof value !== "string" || value.trim() === "") {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          `${name}不能为空且必须是非空字符串`
-        );
-      }
-    }
-  }
-
-  /**
-   * 验证字段格式
-   */
-  private validateFieldFormats(workflow: CozeWorkflow): void {
-    // 验证工作流ID格式（数字字符串）
-    if (!MCPToolHandler.DIGITS_ONLY_REGEX.test(workflow.workflow_id)) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "工作流ID格式无效，应为数字字符串"
-      );
-    }
-
-    // 验证应用ID格式
-    if (!MCPToolHandler.ALPHANUMERIC_UNDERSCORE_REGEX.test(workflow.app_id)) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "应用ID格式无效，只能包含字母、数字、下划线和连字符"
-      );
-    }
-
-    // 验证图标URL格式（如果存在）
-    if (workflow.icon_url?.trim()) {
-      try {
-        new URL(workflow.icon_url);
-      } catch {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "图标URL格式无效"
-        );
-      }
-    }
-
-    // 验证时间戳格式
-    if (
-      workflow.created_at &&
-      (!Number.isInteger(workflow.created_at) || workflow.created_at <= 0)
-    ) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "创建时间格式无效，应为正整数时间戳"
-      );
-    }
-
-    if (
-      workflow.updated_at &&
-      (!Number.isInteger(workflow.updated_at) || workflow.updated_at <= 0)
-    ) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "更新时间格式无效，应为正整数时间戳"
-      );
-    }
-  }
-
-  /**
-   * 验证字段长度
-   */
-  private validateFieldLengths(workflow: CozeWorkflow): void {
-    const lengthLimits = [
-      { field: "workflow_name", name: "工作流名称", max: 100 },
-      { field: "description", name: "工作流描述", max: 500 },
-      { field: "app_id", name: "应用ID", max: 50 },
-    ];
-
-    for (const { field, name, max } of lengthLimits) {
-      const value = workflow[field as keyof CozeWorkflow] as string;
-      if (value && value.length > max) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          `${name}过长，不能超过${max}个字符`
-        );
-      }
-    }
-  }
-
-  /**
-   * 验证业务逻辑
-   */
-  private validateBusinessLogic(workflow: CozeWorkflow): void {
-    // 验证创建者信息
-    if (workflow.creator) {
-      if (!workflow.creator.id || typeof workflow.creator.id !== "string") {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "创建者ID不能为空且必须是字符串"
-        );
-      }
-      if (!workflow.creator.name || typeof workflow.creator.name !== "string") {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "创建者名称不能为空且必须是字符串"
-        );
-      }
-    }
-
-    // 验证时间逻辑
-    if (
-      workflow.created_at &&
-      workflow.updated_at &&
-      workflow.updated_at < workflow.created_at
-    ) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "更新时间不能早于创建时间"
-      );
-    }
-
-    // 验证工作流名称不能包含敏感词
-    const sensitiveWords = [
-      "admin",
-      "root",
-      "system",
-      "config",
-      "password",
-      "token",
-    ];
-    const lowerName = workflow.workflow_name.toLowerCase();
-    for (const word of sensitiveWords) {
-      if (lowerName.includes(word)) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          `工作流名称不能包含敏感词: ${word}`
-        );
-      }
-    }
-  }
-
-  /**
-   * 解决工具名称冲突
-   */
-  private resolveToolNameConflict(baseName: string): string {
-    const existingTools = configManager.getCustomMCPTools();
-    const existingNames = new Set(existingTools.map((tool) => tool.name));
-
-    let finalName = baseName;
-    let counter = 1;
-
-    // 如果名称已存在，添加数字后缀
-    while (existingNames.has(finalName)) {
-      finalName = `${baseName}_${counter}`;
-      counter++;
-
-      // 防止无限循环
-      if (counter > 999) {
-        throw MCPError.operationError(
-          MCPErrorCode.OPERATION_FAILED,
-          `无法为工具生成唯一名称，基础名称: ${baseName}`
-        );
-      }
-    }
-
-    return finalName;
-  }
-
-  /**
-   * 生成工具描述
-   */
-  private generateToolDescription(
-    workflow: CozeWorkflow,
-    customDescription?: string
-  ): string {
-    if (customDescription) {
-      return customDescription;
-    }
-
-    if (workflow.description?.trim()) {
-      return workflow.description.trim();
-    }
-
-    // 生成默认描述
-    return `扣子工作流工具: ${workflow.workflow_name}`;
-  }
-
-  /**
-   * 创建HTTP处理器配置
-   */
-  private createHttpHandler(workflow: CozeWorkflow): ProxyHandlerConfig {
-    // 验证扣子API配置
-    this.validateCozeApiConfig();
-
-    return {
-      type: "proxy",
-      platform: "coze",
-      config: {
-        workflow_id: workflow.workflow_id,
-      },
-    };
-  }
-
-  /**
-   * 验证扣子API配置
-   */
-  private validateCozeApiConfig(): void {
-    // 检查是否配置了扣子token
-    const cozeConfig = configManager.getCozePlatformConfig();
-    if (!cozeConfig || !cozeConfig.token) {
-      throw MCPError.configError(
-        MCPErrorCode.INVALID_CONFIG,
-        "未配置扣子API Token，请先在配置中设置 platforms.coze.token"
-      );
-    }
-  }
-
-  /**
-   * 验证生成的工具配置
-   */
-  private validateGeneratedTool(tool: CustomMCPTool): void {
-    // 基础结构验证
-    this.validateToolStructure(tool);
-
-    // 使用configManager的验证方法
-    if (!configManager.validateCustomMCPTools([tool])) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "生成的工具配置验证失败，请检查工具定义"
-      );
-    }
-
-    // JSON Schema验证
-    this.validateJsonSchema(tool.inputSchema);
-
-    // HTTP处理器验证
-    if (tool.handler) {
-      this.validateProxyHandler(tool.handler as ProxyHandlerConfig);
-    }
-  }
-
-  /**
-   * 验证工具基础结构
-   */
-  private validateToolStructure(tool: CustomMCPTool): void {
-    if (!tool || typeof tool !== "object") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "工具配置必须是有效对象"
-      );
-    }
-
-    // 验证必需字段
-    const requiredFields = ["name", "description", "inputSchema", "handler"];
-    for (const field of requiredFields) {
-      if (!(field in tool) || tool[field as keyof CustomMCPTool] == null) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          `工具配置缺少必需字段: ${field}`
-        );
-      }
-    }
-
-    // 验证字段类型
-    if (typeof tool.name !== "string" || tool.name.trim() === "") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "工具名称必须是非空字符串"
-      );
-    }
-
-    if (
-      typeof tool.description !== "string" ||
-      tool.description.trim() === ""
-    ) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "工具描述必须是非空字符串"
-      );
-    }
-
-    if (typeof tool.inputSchema !== "object") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "输入参数结构必须是对象"
-      );
-    }
-
-    if (typeof tool.handler !== "object") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "处理器配置必须是对象"
-      );
-    }
-  }
-
-  /**
-   * 验证HTTP处理器配置
-   */
-  private validateProxyHandler(handler: ProxyHandlerConfig): void {
-    if (!handler || typeof handler !== "object") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "HTTP处理器配置不能为空"
-      );
-    }
-
-    // 验证处理器类型
-    if (handler.type !== "proxy") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "处理器类型必须是'proxy'"
-      );
-    }
-
-    if (handler.platform === "coze") {
-      if (!handler.config.workflow_id) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "Coze处理器必须包含有效的workflow_id"
-        );
-      }
-    } else {
-      throw MCPError.configError(
-        MCPErrorCode.INVALID_CONFIG,
-        "不支持的工作流平台"
-      );
-    }
-  }
-
-  /**
-   * 验证认证配置
-   */
-  private validateAuthConfig(auth: { type: string; token?: string }): void {
-    if (!auth || typeof auth !== "object") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "认证配置必须是对象"
-      );
-    }
-
-    if (!auth.type || typeof auth.type !== "string") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "认证类型不能为空"
-      );
-    }
-
-    const validAuthTypes = ["bearer", "basic", "api_key"];
-    if (!validAuthTypes.includes(auth.type)) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        `认证类型必须是以下之一: ${validAuthTypes.join(", ")}`
-      );
-    }
-
-    // 验证token格式
-    if (auth.type === "bearer") {
-      if (!auth.token || typeof auth.token !== "string") {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "Bearer认证必须包含有效的token"
-        );
-      }
-
-      // 验证token格式（应该是环境变量引用或实际token）
-      if (
-        !auth.token.startsWith("${") &&
-        !MCPToolHandler.ALPHANUMERIC_UNDERSCORE_REGEX.test(auth.token)
-      ) {
-        throw MCPError.validationError(
-          MCPErrorCode.TOOL_VALIDATION_FAILED,
-          "Bearer token格式无效"
-        );
-      }
-    }
-  }
-
-  /**
-   * 验证请求体模板
-   */
-  private validateBodyTemplate(bodyTemplate: string): void {
-    if (typeof bodyTemplate !== "string") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "请求体模板必须是字符串"
-      );
-    }
-
-    try {
-      JSON.parse(bodyTemplate);
-    } catch {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "请求体模板必须是有效的JSON格式"
-      );
-    }
-
-    // 验证模板变量格式
-    const templateVars = bodyTemplate.match(/\{\{[^}]+\}\}/g);
-    if (templateVars) {
-      for (const templateVar of templateVars) {
-        const varName = templateVar.slice(2, -2).trim();
-        if (!varName || !MCPToolHandler.IDENTIFIER_REGEX.test(varName)) {
-          throw MCPError.validationError(
-            MCPErrorCode.TOOL_VALIDATION_FAILED,
-            `模板变量格式无效: ${templateVar}`
-          );
-        }
-      }
-    }
-  }
-
-  /**
-   * 验证JSON Schema格式
-   */
-  private validateJsonSchema(schema: JSONSchema): void {
-    if (!schema || typeof schema !== "object") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "输入参数结构必须是有效的对象"
-      );
-    }
-
-    if (!schema.type || schema.type !== "object") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "输入参数结构的type必须是'object'"
-      );
-    }
-
-    if (!schema.properties || typeof schema.properties !== "object") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "输入参数结构必须包含properties字段"
-      );
-    }
-
-    // 验证required字段
-    if (schema.required && !Array.isArray(schema.required)) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "输入参数结构的required字段必须是数组"
-      );
-    }
-  }
-
-  /**
-   * 生成输入参数结构
-   */
-  private generateInputSchema(
-    workflow: CozeWorkflow,
-    parameterConfig?: WorkflowParameterConfig
-  ): JSONSchema {
-    // 如果提供了参数配置，使用参数配置生成schema
-    if (parameterConfig && parameterConfig.parameters.length > 0) {
-      return this.generateInputSchemaFromConfig(parameterConfig);
-    }
-
-    // 否则使用默认的基础参数结构
-    const baseSchema = {
-      type: "object",
-      properties: {
-        input: {
-          type: "string",
-          description: "输入内容",
-        },
-      },
-      required: ["input"],
-      additionalProperties: false,
-    };
-
-    return baseSchema;
-  }
-
-  /**
-   * 根据参数配置生成输入参数结构
-   */
-  private generateInputSchemaFromConfig(
-    parameterConfig: WorkflowParameterConfig
-  ): JSONSchema {
-    const properties: Record<string, unknown> = {};
-    const required: string[] = [];
-
-    for (const param of parameterConfig.parameters) {
-      properties[param.fieldName] = {
-        type: param.type,
-        description: param.description,
-      };
-
-      if (param.required) {
-        required.push(param.fieldName);
-      }
-    }
-
-    return {
-      type: "object",
-      properties,
-      required: required.length > 0 ? required : undefined,
-      additionalProperties: false,
-    };
-  }
-
-  /**
-   * 处理添加工具时的错误
-   */
-  private handleAddToolError(error: unknown): {
-    code: string;
-    message: string;
-    status: number;
-  } {
-    const errorMessage =
-      error instanceof Error ? error.message : "添加自定义工具失败";
-
-    // 工具类型错误 (400)
-    if (
-      errorMessage.includes("工具类型") ||
-      errorMessage.includes("TOOL_TYPE")
-    ) {
-      return {
-        code: "INVALID_TOOL_TYPE",
-        message: errorMessage,
-        status: 400,
-      };
-    }
-
-    // 缺少必需字段错误 (400)
-    if (
-      errorMessage.includes("必需字段") ||
-      errorMessage.includes("MISSING_REQUIRED_FIELD")
-    ) {
-      return {
-        code: "MISSING_REQUIRED_FIELD",
-        message: errorMessage,
-        status: 400,
-      };
-    }
-
-    // 工具或服务不存在错误 (404)
-    if (
-      errorMessage.includes("不存在") ||
-      errorMessage.includes("NOT_FOUND") ||
-      errorMessage.includes("未找到")
-    ) {
-      return {
-        code: "SERVICE_OR_TOOL_NOT_FOUND",
-        message: errorMessage,
-        status: 404,
-      };
-    }
-
-    // 服务未初始化错误 (503)
-    if (
-      errorMessage.includes("未初始化") ||
-      errorMessage.includes("SERVICE_NOT_INITIALIZED")
-    ) {
-      return {
-        code: "SERVICE_NOT_INITIALIZED",
-        message: errorMessage,
-        status: 503,
-      };
-    }
-
-    // 工具名称冲突错误 (409)
-    if (
-      errorMessage.includes("已存在") ||
-      errorMessage.includes("冲突") ||
-      errorMessage.includes("TOOL_NAME_CONFLICT")
-    ) {
-      return {
-        code: "TOOL_NAME_CONFLICT",
-        message: `${errorMessage}。建议：1) 使用自定义名称；2) 删除现有同名工具后重试`,
-        status: 409,
-      };
-    }
-
-    // 数据验证错误 (400)
-    if (this.isValidationError(errorMessage)) {
-      return {
-        code: "VALIDATION_ERROR",
-        message: this.formatValidationError(errorMessage),
-        status: 400,
-      };
-    }
-
-    // 配置错误 (422)
-    if (
-      errorMessage.includes("配置") ||
-      errorMessage.includes("token") ||
-      errorMessage.includes("API") ||
-      errorMessage.includes("CONFIGURATION_ERROR")
-    ) {
-      return {
-        code: "CONFIGURATION_ERROR",
-        message: `${errorMessage}。请检查：1) 相关配置是否正确；2) 网络连接是否正常；3) 配置文件权限是否正确`,
-        status: 422,
-      };
-    }
-
-    // 资源限制错误 (429)
-    if (
-      errorMessage.includes("资源限制") ||
-      errorMessage.includes("RESOURCE_LIMIT_EXCEEDED")
-    ) {
-      return {
-        code: "RESOURCE_LIMIT_EXCEEDED",
-        message: errorMessage,
-        status: 429,
-      };
-    }
-
-    // 未实现功能错误 (501)
-    if (
-      errorMessage.includes("未实现") ||
-      errorMessage.includes("NOT_IMPLEMENTED")
-    ) {
-      return {
-        code: "TOOL_TYPE_NOT_IMPLEMENTED",
-        message: errorMessage,
-        status: 501,
-      };
-    }
-
-    // 系统错误 (500)
-    return {
-      code: "ADD_CUSTOM_TOOL_ERROR",
-      message: `添加工具失败：${errorMessage}。请稍后重试，如问题持续存在请联系管理员`,
-      status: 500,
-    };
-  }
-
-  /**
-   * 处理删除工具时的错误
-   */
-  private handleRemoveToolError(error: unknown): {
-    code: string;
-    message: string;
-    status: number;
-  } {
-    const errorMessage =
-      error instanceof Error ? error.message : "删除自定义工具失败";
-
-    // 工具不存在错误 (404)
-    if (errorMessage.includes("不存在") || errorMessage.includes("未找到")) {
-      return {
-        code: "TOOL_NOT_FOUND",
-        message: `${errorMessage}。请检查工具名称是否正确，或刷新页面查看最新的工具列表`,
-        status: 404,
-      };
-    }
-
-    // 参数错误 (400)
-    if (errorMessage.includes("不能为空") || errorMessage.includes("无效")) {
-      return {
-        code: "INVALID_REQUEST",
-        message: `${errorMessage}。请提供有效的工具名称`,
-        status: 400,
-      };
-    }
-
-    // 配置错误 (422)
-    if (errorMessage.includes("配置") || errorMessage.includes("权限")) {
-      return {
-        code: "CONFIGURATION_ERROR",
-        message: `${errorMessage}。请检查配置文件权限和格式是否正确`,
-        status: 422,
-      };
-    }
-
-    // 系统错误 (500)
-    return {
-      code: "REMOVE_CUSTOM_TOOL_ERROR",
-      message: `删除工具失败：${errorMessage}。请稍后重试，如问题持续存在请联系管理员`,
-      status: 500,
-    };
-  }
-
-  /**
-   * 判断是否为数据验证错误
-   */
-  private isValidationError(errorMessage: string): boolean {
-    const validationKeywords = [
-      "不能为空",
-      "必须是",
-      "格式无效",
-      "过长",
-      "过短",
-      "验证失败",
-      "无效",
-      "不符合",
-      "超过",
-      "少于",
-      "敏感词",
-      "时间",
-      "URL",
-    ];
-
-    return validationKeywords.some((keyword) => errorMessage.includes(keyword));
-  }
-
-  /**
-   * 格式化验证错误信息
-   */
-  private formatValidationError(errorMessage: string): string {
-    // 为常见的验证错误提供更友好的提示
-    const errorMappings: Record<string, string> = {
-      工作流ID不能为空: "请提供有效的工作流ID",
-      工作流名称不能为空: "请提供有效的工作流名称",
-      应用ID不能为空: "请提供有效的应用ID",
-      工作流ID格式无效: "工作流ID应为数字格式，请检查工作流配置",
-      应用ID格式无效: "应用ID只能包含字母、数字、下划线和连字符",
-      工作流名称过长: "工作流名称不能超过100个字符，请缩短名称",
-      工作流描述过长: "工作流描述不能超过500个字符，请缩短描述",
-      图标URL格式无效: "请提供有效的图标URL地址",
-      更新时间不能早于创建时间: "工作流的时间信息有误，请检查工作流数据",
-      敏感词: "工作流名称包含敏感词汇，请修改后重试",
-    };
-
-    // 查找匹配的错误映射
-    for (const [key, value] of Object.entries(errorMappings)) {
-      if (errorMessage.includes(key)) {
-        return value;
-      }
-    }
-
-    return errorMessage;
-  }
-
-  /**
-   * 执行边界条件预检查
-   */
-  private performPreChecks(
-    workflow: unknown,
-    customName?: string,
-    customDescription?: string
-  ): { code: string; message: string; status: number } | null {
-    // 检查基础参数
-    const basicCheckResult = this.checkBasicParameters(
-      workflow,
-      customName,
-      customDescription
-    );
-    if (basicCheckResult) return basicCheckResult;
-
-    // 检查系统状态
-    const systemCheckResult = this.checkSystemStatus();
-    if (systemCheckResult) return systemCheckResult;
-
-    // 检查资源限制
-    const resourceCheckResult = this.checkResourceLimits();
-    if (resourceCheckResult) return resourceCheckResult;
-
-    return null; // 所有检查通过
-  }
-
-  /**
-   * 检查基础参数
-   */
-  private checkBasicParameters(
-    workflow: unknown,
-    customName?: string,
-    customDescription?: string
-  ): { code: string; message: string; status: number } | null {
-    // 检查workflow参数
-    if (!workflow) {
-      return {
-        code: "INVALID_REQUEST",
-        message: "请求体中缺少 workflow 参数",
-        status: 400,
-      };
-    }
-
-    if (typeof workflow !== "object") {
-      return {
-        code: "INVALID_REQUEST",
-        message: "workflow 参数必须是对象类型",
-        status: 400,
-      };
-    }
-
-    // 类型守卫：确保 workflow 不是数组
-    if (!Array.isArray(workflow)) {
-      const workflowObj = workflow as Record<string, unknown>;
-
-      // 检查必需字段
-      if (
-        !workflowObj.workflow_id ||
-        typeof workflowObj.workflow_id !== "string" ||
-        !workflowObj.workflow_id.trim()
-      ) {
-        return {
-          code: "INVALID_REQUEST",
-          message: "workflow_id 不能为空且必须是非空字符串",
-          status: 400,
-        };
-      }
-
-      if (
-        !workflowObj.workflow_name ||
-        typeof workflowObj.workflow_name !== "string" ||
-        !workflowObj.workflow_name.trim()
-      ) {
-        return {
-          code: "INVALID_REQUEST",
-          message: "workflow_name 不能为空且必须是非空字符串",
-          status: 400,
-        };
-      }
-    }
-
-    // 检查自定义参数
-    if (customName !== undefined) {
-      if (typeof customName !== "string") {
-        return {
-          code: "INVALID_REQUEST",
-          message: "customName 必须是字符串类型",
-          status: 400,
-        };
-      }
-
-      if (customName.trim() === "") {
-        return {
-          code: "INVALID_REQUEST",
-          message: "customName 不能为空字符串",
-          status: 400,
-        };
-      }
-
-      if (customName.length > 50) {
-        return {
-          code: "INVALID_REQUEST",
-          message: "customName 长度不能超过50个字符",
-          status: 400,
-        };
-      }
-    }
-
-    if (customDescription !== undefined) {
-      if (typeof customDescription !== "string") {
-        return {
-          code: "INVALID_REQUEST",
-          message: "customDescription 必须是字符串类型",
-          status: 400,
-        };
-      }
-
-      if (customDescription.length > 200) {
-        return {
-          code: "INVALID_REQUEST",
-          message: "customDescription 长度不能超过200个字符",
-          status: 400,
-        };
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * 检查系统状态
-   */
-  private checkSystemStatus(): {
-    code: string;
-    message: string;
-    status: number;
-  } | null {
-    // 检查扣子API配置
-    try {
-      const cozeConfig = configManager.getCozePlatformConfig();
-      if (!cozeConfig || !cozeConfig.token) {
-        return {
-          code: "CONFIGURATION_ERROR",
-          message:
-            "未配置扣子API Token。请在系统设置中配置 platforms.coze.token",
-          status: 422,
-        };
-      }
-
-      // 检查token格式
-      if (
-        typeof cozeConfig.token !== "string" ||
-        cozeConfig.token.trim() === ""
-      ) {
-        return {
-          code: "CONFIGURATION_ERROR",
-          message: "扣子API Token格式无效。请检查配置中的 platforms.coze.token",
-          status: 422,
-        };
-      }
-    } catch (error) {
-      return {
-        code: "SYSTEM_ERROR",
-        message: "系统配置检查失败，请稍后重试",
-        status: 500,
-      };
-    }
-
-    return null;
-  }
-
-  /**
-   * 检查资源限制
-   */
-  private checkResourceLimits(): {
-    code: string;
-    message: string;
-    status: number;
-  } | null {
-    try {
-      // 检查现有工具数量限制
-      const existingTools = configManager.getCustomMCPTools();
-      const maxTools = 100; // 设置最大工具数量限制
-
-      if (existingTools.length >= maxTools) {
-        return {
-          code: "RESOURCE_LIMIT_EXCEEDED",
-          message: `已达到最大工具数量限制 (${maxTools})。请删除一些不需要的工具后重试`,
-          status: 429,
-        };
-      }
-
-      // 检查配置文件大小（简单估算）
-      const configSizeEstimate = JSON.stringify(existingTools).length;
-      const maxConfigSize = 1024 * 1024; // 1MB限制
-
-      if (configSizeEstimate > maxConfigSize) {
-        return {
-          code: "PAYLOAD_TOO_LARGE",
-          message: "配置文件过大。请删除一些不需要的工具以释放空间",
-          status: 413,
-        };
-      }
-    } catch (error) {
-      // 资源检查失败不应阻止操作，只记录警告
-      this.logger.warn("资源限制检查失败:", error);
-    }
-
-    return null;
   }
 
   /**
@@ -2367,7 +956,7 @@ export class MCPToolHandler {
       }
 
       // 验证服务名和工具名
-      this.validateToolIdentifier(serverName, toolName);
+      this.validator.validateToolIdentifier(serverName, toolName);
 
       // 根据不同的 action 执行相应操作
       switch (action) {
@@ -2433,7 +1022,13 @@ export class MCPToolHandler {
     description?: string
   ): Promise<Response> {
     // 验证服务存在性
-    await this.validateServiceAndToolExistence(serverName, toolName);
+    const mcpServers = configManager.getMcpServers();
+    await this.validator.validateServiceAndToolExistence(
+      mcpServers,
+      configManager.getServerToolsConfig.bind(configManager),
+      serverName,
+      toolName
+    );
 
     // 设置工具为启用状态
     configManager.setToolEnabled(serverName, toolName, true, description);
@@ -2464,7 +1059,13 @@ export class MCPToolHandler {
     toolName: string
   ): Promise<Response> {
     // 验证服务存在性
-    await this.validateServiceAndToolExistence(serverName, toolName);
+    const mcpServers = configManager.getMcpServers();
+    await this.validator.validateServiceAndToolExistence(
+      mcpServers,
+      configManager.getServerToolsConfig.bind(configManager),
+      serverName,
+      toolName
+    );
 
     // 设置工具为禁用状态
     configManager.setToolEnabled(serverName, toolName, false);
@@ -2524,7 +1125,13 @@ export class MCPToolHandler {
     toolName: string
   ): Promise<Response> {
     // 验证服务存在性
-    await this.validateServiceAndToolExistence(serverName, toolName);
+    const mcpServers = configManager.getMcpServers();
+    await this.validator.validateServiceAndToolExistence(
+      mcpServers,
+      configManager.getServerToolsConfig.bind(configManager),
+      serverName,
+      toolName
+    );
 
     // 获取当前状态
     const currentEnabled = configManager.isToolEnabled(serverName, toolName);
@@ -2572,12 +1179,12 @@ export class MCPToolHandler {
       const result: Record<string, unknown> = {
         toolName,
         enabled: toolConfig.enable !== false,
-        description: toolConfig.description || "",
+        description: (toolConfig as { description?: string }).description || "",
       };
 
       if (includeUsageStats) {
-        result.usageCount = toolConfig.usageCount;
-        result.lastUsedTime = toolConfig.lastUsedTime;
+        result.usageCount = (toolConfig as { usageCount?: number }).usageCount;
+        result.lastUsedTime = (toolConfig as { lastUsedTime?: string }).lastUsedTime;
       }
 
       return result;
@@ -2674,70 +1281,5 @@ export class MCPToolHandler {
     }
 
     return c.success(result, "获取所有工具列表成功");
-  }
-
-  /**
-   * 验证工具标识符
-   */
-  private validateToolIdentifier(serverName: string, toolName: string): void {
-    if (
-      !serverName ||
-      typeof serverName !== "string" ||
-      serverName.trim() === ""
-    ) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "服务名称不能为空"
-      );
-    }
-
-    if (!toolName || typeof toolName !== "string" || toolName.trim() === "") {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "工具名称不能为空"
-      );
-    }
-
-    // 验证服务名称格式
-    if (!MCPToolHandler.ALPHANUMERIC_UNDERSCORE_REGEX.test(serverName)) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "服务名称格式无效，只能包含字母、数字、下划线和连字符"
-      );
-    }
-
-    // 验证工具名称格式
-    if (!MCPToolHandler.ALPHANUMERIC_UNDERSCORE_REGEX.test(toolName)) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_VALIDATION_FAILED,
-        "工具名称格式无效，只能包含字母、数字、下划线和连字符"
-      );
-    }
-  }
-
-  /**
-   * 验证服务和工具是否存在
-   */
-  private async validateServiceAndToolExistence(
-    serverName: string,
-    toolName: string
-  ): Promise<void> {
-    // 检查服务是否存在
-    const mcpServers = configManager.getMcpServers();
-    if (!mcpServers[serverName]) {
-      throw MCPError.validationError(
-        MCPErrorCode.SERVER_NOT_FOUND,
-        `MCP 服务 "${serverName}" 不存在`
-      );
-    }
-
-    // 检查工具是否在服务中存在
-    const toolsConfig = configManager.getServerToolsConfig(serverName);
-    if (!toolsConfig[toolName]) {
-      throw MCPError.validationError(
-        MCPErrorCode.TOOL_NOT_FOUND,
-        `工具 "${toolName}" 在服务 "${serverName}" 中不存在或未配置`
-      );
-    }
   }
 }
