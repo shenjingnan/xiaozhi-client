@@ -60,6 +60,66 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import type { UseFormReturn } from "react-hook-form";
+import type { JSONSchema } from "@xiaozhi-client/shared-types";
+
+/**
+ * 表单值类型 - 使用简化的类型定义以避免循环引用和过度深度的类型实例化
+ */
+type FormValues = Record<string, unknown>;
+
+/**
+ * 类型守卫：检查 JSON Schema 是否为对象类型
+ */
+function isObjectSchema(schema: JSONSchema): schema is JSONSchema & {
+  type: string;
+  properties?: Record<string, JSONSchema>;
+  required?: string[];
+} {
+  return schema.type === "object";
+}
+
+/**
+ * 类型守卫：检查 JSON Schema 是否为数组类型
+ */
+function isArraySchema(schema: JSONSchema): schema is JSONSchema & {
+  type: string;
+  items?: JSONSchema;
+} {
+  return schema.type === "array";
+}
+
+/**
+ * 类型守卫：检查 JSON Schema 是否为字符串类型
+ */
+function isStringSchema(schema: JSONSchema): schema is JSONSchema & {
+  type: string;
+  enum?: unknown[];
+  format?: string;
+} {
+  return schema.type === "string";
+}
+
+/**
+ * 类型守卫：检查 JSON Schema 是否为数字或整数类型
+ */
+function isNumberSchema(schema: JSONSchema): schema is JSONSchema & {
+  type: string;
+  minimum?: number;
+  maximum?: number;
+  multipleOf?: number;
+} {
+  return schema.type === "number" || schema.type === "integer";
+}
+
+/**
+ * 类型守卫：检查 JSON Schema 是否为布尔类型
+ */
+function isBooleanSchema(schema: JSONSchema): schema is JSONSchema & {
+  type: string;
+} {
+  return schema.type === "boolean";
+}
 
 /**
  * 数组字段渲染器组件
@@ -75,11 +135,11 @@ import { z } from "zod";
  */
 interface ArrayFieldProps {
   name: string;
-  schema: any;
-  form: any;
+  schema: JSONSchema;
+  form: UseFormReturn<FormValues>;
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
 }
 
@@ -91,42 +151,43 @@ const ArrayField = memo(function ArrayField({
 }: ArrayFieldProps) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: name as any,
+    name: name as never,
   });
 
   const addItem = () => {
+    if (!isArraySchema(schema)) return;
     const itemSchema = schema.items;
-    let newItem: any;
+    if (!itemSchema) return;
 
-    switch (itemSchema.type) {
-      case "string":
-        newItem = itemSchema.enum ? itemSchema.enum[0] : "";
-        break;
-      case "number":
-      case "integer":
-        newItem = 0;
-        break;
-      case "boolean":
-        newItem = false;
-        break;
-      case "array":
-        newItem = [];
-        break;
-      case "object":
-        newItem = {};
-        break;
-      default:
-        newItem = "";
+    let newItem: unknown;
+
+    const itemType = itemSchema.type;
+    if (typeof itemType !== "string") {
+      newItem = "";
+    } else if (isStringSchema(itemSchema) && itemSchema.enum) {
+      newItem = itemSchema.enum[0];
+    } else if (itemType === "string") {
+      newItem = "";
+    } else if (isNumberSchema(itemSchema)) {
+      newItem = 0;
+    } else if (isBooleanSchema(itemSchema)) {
+      newItem = false;
+    } else if (itemType === "array") {
+      newItem = [];
+    } else if (itemType === "object") {
+      newItem = {};
+    } else {
+      newItem = "";
     }
 
-    append(newItem);
+    append(newItem as never);
   };
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">
-          数组项目 ({schema.items?.type || "unknown"})
+          数组项目 ({schema.items?.type ?? "unknown"})
         </span>
         <Button
           type="button"
@@ -171,9 +232,11 @@ const ArrayField = memo(function ArrayField({
                   render={() => (
                     <FormItem>
                       {(() => {
+                        if (!schema.items) return null;
+                        const itemType = schema.items.type;
                         if (
-                          schema.items?.type === "object" ||
-                          schema.items?.type === "array"
+                          itemType === "object" ||
+                          itemType === "array"
                         ) {
                           return (
                             <div className="ml-6 border-l-2 border-muted pl-4">
@@ -184,10 +247,7 @@ const ArrayField = memo(function ArrayField({
                             </div>
                           );
                         }
-                        return renderFormField(
-                          `${name}.${index}`,
-                          schema.items
-                        );
+                        return renderFormField(`${name}.${index}`, schema.items);
                       })()}
                     </FormItem>
                   )}
@@ -215,11 +275,11 @@ const ArrayField = memo(function ArrayField({
  */
 interface ObjectFieldProps {
   name: string;
-  schema: any;
-  form: any;
+  schema: JSONSchema;
+  form: UseFormReturn<FormValues>;
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
   getTypeBadge: (type: string) => string;
 }
@@ -231,7 +291,7 @@ const ObjectField = memo(function ObjectField({
   renderFormField,
   getTypeBadge,
 }: ObjectFieldProps) {
-  if (!schema.properties || Object.keys(schema.properties).length === 0) {
+  if (!isObjectSchema(schema) || !schema.properties || Object.keys(schema.properties).length === 0) {
     return (
       <div className="text-center py-4 border border-dashed rounded-md">
         <span className="text-sm text-muted-foreground">对象无定义字段</span>
@@ -243,14 +303,14 @@ const ObjectField = memo(function ObjectField({
     <div className="space-y-4">
       <span className="text-sm font-medium">对象字段</span>
       {Object.entries(schema.properties).map(
-        ([fieldName, fieldSchema]: [string, any]) => (
+        ([fieldName, fieldSchema]) => (
           <div
             key={`${name}-${fieldName}`}
             className="ml-6 border-l-2 border-muted pl-4"
           >
             <FormField
               control={form.control}
-              name={`${name}.${fieldName}` as any}
+              name={`${name}.${fieldName}` as never}
               render={() => (
                 <FormItem>
                   <div className="flex items-center gap-2">
@@ -262,9 +322,9 @@ const ObjectField = memo(function ObjectField({
                     </FormLabel>
                     <Badge
                       variant="secondary"
-                      className={`text-xs ${getTypeBadge(fieldSchema.type)}`}
+                      className={`text-xs ${getTypeBadge(typeof fieldSchema.type === "string" ? fieldSchema.type : "unknown")}`}
                     >
-                      {fieldSchema.type}
+                      {typeof fieldSchema.type === "string" ? fieldSchema.type : "unknown"}
                     </Badge>
                     {fieldSchema.description && (
                       <Tooltip>
@@ -339,10 +399,10 @@ const NoParamsMessage = memo(function NoParamsMessage() {
  */
 interface FormRendererProps {
   tool: ToolDebugDialogProps["tool"];
-  form: any;
+  form: UseFormReturn<FormValues>;
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
 }
 
@@ -364,60 +424,65 @@ const FormRenderer = memo(function FormRenderer({
     <Form {...form}>
       <ScrollArea className="h-full">
         <div className="space-y-4 p-2">
-          {Object.entries(tool.inputSchema.properties).map(
-            ([fieldName, fieldSchema]: [string, any]) => (
-              <FormField
-                key={`${tool.name}-${fieldName}`} // 添加工具名称作为前缀，确保 key 的唯一性和稳定性
-                control={form.control}
-                name={fieldName as any}
-                render={() => (
-                  <FormItem>
-                    <div className="flex items-center gap-2">
-                      <FormLabel>
-                        {tool.inputSchema.required?.includes(fieldName) && (
-                          <span className="text-red-500 mr-1">*</span>
-                        )}
-                        {fieldName}
-                      </FormLabel>
-                      <Badge
-                        variant="secondary"
-                        className={`text-xs ${
-                          fieldSchema.type === "string"
-                            ? "bg-blue-100 text-blue-800"
-                            : fieldSchema.type === "number" ||
-                                fieldSchema.type === "integer"
-                              ? "bg-green-100 text-green-800"
-                              : fieldSchema.type === "boolean"
-                                ? "bg-purple-100 text-purple-800"
-                                : fieldSchema.type === "array"
-                                  ? "bg-orange-100 text-orange-800"
-                                  : fieldSchema.type === "object"
-                                    ? "bg-gray-100 text-gray-800"
-                                    : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {fieldSchema.type}
-                      </Badge>
-                      {fieldSchema.description && (
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <InfoIcon className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs whitespace-pre-wrap">
-                              {fieldSchema.description}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </div>
-                    {renderFormField(fieldName, fieldSchema)}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          {isToolInputSchemaObject(tool.inputSchema) && tool.inputSchema.properties
+            ? Object.entries(tool.inputSchema.properties).map(
+              ([fieldName, fieldSchema]) => {
+                const fieldType = typeof fieldSchema.type === "string" ? fieldSchema.type : "unknown";
+                return (
+                  <FormField
+                    key={`${tool.name}-${fieldName}`} // 添加工具名称作为前缀，确保 key 的唯一性和稳定性
+                    control={form.control}
+                    name={fieldName as never}
+                    render={() => (
+                      <FormItem>
+                        <div className="flex items-center gap-2">
+                          <FormLabel>
+                            {tool.inputSchema?.required?.includes(fieldName) && (
+                              <span className="text-red-500 mr-1">*</span>
+                            )}
+                            {fieldName}
+                          </FormLabel>
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs ${
+                              fieldType === "string"
+                                ? "bg-blue-100 text-blue-800"
+                                : fieldType === "number" ||
+                                    fieldType === "integer"
+                                  ? "bg-green-100 text-green-800"
+                                  : fieldType === "boolean"
+                                    ? "bg-purple-100 text-purple-800"
+                                    : fieldType === "array"
+                                      ? "bg-orange-100 text-orange-800"
+                                      : fieldType === "object"
+                                        ? "bg-gray-100 text-gray-800"
+                                        : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {fieldType}
+                          </Badge>
+                          {fieldSchema.description && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs whitespace-pre-wrap">
+                                  {fieldSchema.description}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                        {renderFormField(fieldName, fieldSchema)}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                );
+              }
             )
-          )}
+            : null}
         </div>
       </ScrollArea>
     </Form>
@@ -432,8 +497,19 @@ interface ToolDebugDialogProps {
     serverName: string;
     toolName: string;
     description?: string;
-    inputSchema?: any;
+    inputSchema?: JSONSchema;
   } | null;
+}
+
+/**
+ * 类型守卫：检查工具 inputSchema 是否为对象类型
+ */
+function isToolInputSchemaObject(schema: JSONSchema | undefined): schema is JSONSchema & {
+  type: string;
+  properties?: Record<string, JSONSchema>;
+  required?: string[];
+} {
+  return schema?.type === "object";
 }
 
 export function ToolDebugDialog({
@@ -443,7 +519,7 @@ export function ToolDebugDialog({
 }: ToolDebugDialogProps) {
   const [inputMode, setInputMode] = useState<"form" | "json">("form");
   const [jsonInput, setJsonInput] = useState<string>("{\n  \n}");
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -462,7 +538,7 @@ export function ToolDebugDialog({
   }, [tool?.inputSchema]);
 
   // 初始化表单
-  const form = useForm({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema as any),
     defaultValues,
     mode: "onChange",
@@ -519,10 +595,10 @@ export function ToolDebugDialog({
       } else if (newMode === "form" && inputMode === "json") {
         // 从JSON模式切换到表单模式时，同步数据
         try {
-          const parsedData = JSON.parse(jsonInput);
+          const parsedData = JSON.parse(jsonInput) as Record<string, unknown>;
           // 使用 setValue 而不是 reset 来避免表单重新初始化导致的失焦
           for (const key of Object.keys(parsedData)) {
-            form.setValue(key as any, parsedData[key]);
+            form.setValue(key as never, parsedData[key] as never);
           }
         } catch {
           // JSON 解析失败，保持表单数据不变
@@ -558,7 +634,7 @@ export function ToolDebugDialog({
   const handleCallTool = useCallback(async () => {
     if (!tool) return;
 
-    let args: any;
+    let args: Record<string, unknown>;
 
     // 检查是否无参数工具
     const hasNoParams =
@@ -663,13 +739,14 @@ export function ToolDebugDialog({
       return colors[type] || "bg-gray-100 text-gray-800";
     };
 
-    return (fieldName: string, fieldSchema: any): React.ReactElement | null => {
-      switch (fieldSchema.type) {
-        case "string":
-          if (fieldSchema.enum) {
+    return (fieldName: string, fieldSchema: JSONSchema): React.ReactElement | null => {
+      const fieldType = typeof fieldSchema.type === "string" ? fieldSchema.type : undefined;
+
+      if (fieldType === "string") {
+        if (isStringSchema(fieldSchema) && fieldSchema.enum) {
             return (
               <Controller
-                name={fieldName as any}
+                name={fieldName as never}
                 control={form.control}
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
@@ -679,11 +756,11 @@ export function ToolDebugDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {fieldSchema.enum.map((option: string) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
+                      {("enum" in fieldSchema && fieldSchema.enum ? (fieldSchema.enum as unknown[]).map((option) => (
+                        <SelectItem key={String(option)} value={String(option)}>
+                          {String(option)}
                         </SelectItem>
-                      ))}
+                      )) : null)}
                     </SelectContent>
                   </Select>
                 )}
@@ -692,7 +769,7 @@ export function ToolDebugDialog({
           }
           return (
             <Controller
-              name={fieldName as any}
+              name={fieldName as never}
               control={form.control}
               render={({ field }) => (
                 <FormControl>
@@ -700,19 +777,21 @@ export function ToolDebugDialog({
                     {...field}
                     placeholder={`输入${fieldName}`}
                     type={
-                      fieldSchema.format === "password" ? "password" : "text"
+                      "format" in fieldSchema && typeof fieldSchema.format === "string" && fieldSchema.format === "password"
+                        ? "password"
+                        : "text"
                     }
                   />
                 </FormControl>
               )}
             />
           );
+        }
 
-        case "number":
-        case "integer":
+      if (fieldType === "number" || fieldType === "integer") {
           return (
             <Controller
-              name={fieldName as any}
+              name={fieldName as never}
               control={form.control}
               render={({ field }) => (
                 <FormControl>
@@ -720,7 +799,7 @@ export function ToolDebugDialog({
                     {...field}
                     type="number"
                     placeholder={`输入${fieldName}`}
-                    step={fieldSchema.type === "integer" ? "1" : "0.1"}
+                    step={fieldType === "integer" ? "1" : "0.1"}
                     onChange={(e) => {
                       const value = e.target.value;
                       field.onChange(value === "" ? "" : Number(value));
@@ -730,15 +809,16 @@ export function ToolDebugDialog({
               )}
             />
           );
+        }
 
-        case "boolean":
+      if (fieldType === "boolean") {
           return (
             <Controller
-              name={fieldName as any}
+              name={fieldName as never}
               control={form.control}
               render={({ field }) => (
                 <Select
-                  value={field.value?.toString()}
+                  value={typeof field.value === "boolean" ? String(field.value) : undefined}
                   onValueChange={(value) => field.onChange(value === "true")}
                 >
                   <FormControl>
@@ -754,8 +834,9 @@ export function ToolDebugDialog({
               )}
             />
           );
+        }
 
-        case "array":
+      if (fieldType === "array") {
           return (
             <ArrayField
               name={fieldName}
@@ -764,8 +845,9 @@ export function ToolDebugDialog({
               renderFormField={renderFormField}
             />
           );
+        }
 
-        case "object":
+      if (fieldType === "object") {
           return (
             <ObjectField
               name={fieldName}
@@ -775,25 +857,24 @@ export function ToolDebugDialog({
               getTypeBadge={getTypeBadge}
             />
           );
+        }
 
-        default:
-          return (
-            <Controller
-              name={fieldName as any}
-              control={form.control}
-              render={({ field }) => (
-                <FormControl>
-                  <Input {...field} placeholder={`输入${fieldName}`} />
-                </FormControl>
-              )}
-            />
-          );
-      }
-    };
+      return (
+          <Controller
+            name={fieldName as never}
+            control={form.control}
+            render={({ field }) => (
+              <FormControl>
+                <Input {...field} placeholder={`输入${fieldName}`} />
+              </FormControl>
+            )}
+          />
+        );
+      };
   }, [form]);
 
   // 格式化结果显示
-  const formatResult = useCallback((data: any) => {
+  const formatResult = useCallback((data: unknown) => {
     try {
       return JSON.stringify(data, null, 2);
     } catch {
