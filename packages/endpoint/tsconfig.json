@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/endpoint",
+    "outDir": "./dist",
     "rootDir": "src",
     "composite": true,
     "downlevelIteration": true,
