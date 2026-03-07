@@ -53,6 +53,7 @@ interface LegacyAddCustomToolRequest {
 export class MCPToolHandler {
   private logger: Logger;
   private ajv: Ajv;
+  private static readonly TOOL_TYPE_VALUES = Object.values(ToolType);
 
   constructor() {
     this.logger = logger;
@@ -535,10 +536,10 @@ export class MCPToolHandler {
     c.get("logger").info(`处理新格式工具添加请求，类型: ${type}`);
 
     // 验证工具类型
-    if (!Object.values(ToolType).includes(type)) {
+    if (!MCPToolHandler.TOOL_TYPE_VALUES.includes(type)) {
       return c.fail(
         "INVALID_TOOL_TYPE",
-        `不支持的工具类型: ${type}。支持的类型: ${Object.values(ToolType).join(", ")}`,
+        `不支持的工具类型: ${type}。支持的类型: ${MCPToolHandler.TOOL_TYPE_VALUES.join(", ")}`,
         undefined,
         400
       );
@@ -860,10 +861,10 @@ export class MCPToolHandler {
     c.get("logger").info(`处理新格式工具更新请求，类型: ${type}`);
 
     // 验证工具类型
-    if (!Object.values(ToolType).includes(type)) {
+    if (!MCPToolHandler.TOOL_TYPE_VALUES.includes(type)) {
       return c.fail(
         "INVALID_TOOL_TYPE",
-        `不支持的工具类型: ${type}。支持的类型: ${Object.values(ToolType).join(", ")}`,
+        `不支持的工具类型: ${type}。支持的类型: ${MCPToolHandler.TOOL_TYPE_VALUES.join(", ")}`,
         undefined,
         400
       );
