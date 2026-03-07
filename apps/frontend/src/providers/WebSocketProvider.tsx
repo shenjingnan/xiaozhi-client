@@ -8,11 +8,11 @@
  * - 服务重启通知
  * - 端口切换
  *
- * 该组件在内部初始化所有 stores，确保在应用启动时完成数据初始化。
+ * 该组件在内部初始化所有 stores，尝试在应用启动时完成数据初始化；若初始化失败会记录错误并允许应用继续运行。
  *
  * @example
  * ```tsx
- * import { WebSocketProvider } from '@/providers/WebSocketProvider';
+ * import { WebSocketProvider, useNetworkServiceActions } from '@/providers/WebSocketProvider';
  *
  * function App() {
  *   return (
