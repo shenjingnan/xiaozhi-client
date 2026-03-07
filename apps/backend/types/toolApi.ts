@@ -9,11 +9,24 @@ import type { CozeWorkflow, WorkflowParameterConfig } from "./coze.js";
 /**
  * JSON Schema 类型
  * 重新导出 @/lib/mcp/types.js 中的 JSONSchema
+ *
+ * 注意：此处的 JSONSchema 与 @xiaozhi-client/shared-types 中的 JSONSchema 在结构上大体兼容，
+ * 但两者并非完全相同：shared-types 中的 JSONSchema 带有递归字段约束，
+ * 而此处实际重导出的是 apps/backend/lib/mcp/types.ts 中更宽松的 Record 形式的 JSONSchema，
+ * 不能简单视为等价替换。
+ * TODO：将来应从 shared-types 导入 JSONSchema 以消除重复定义，并使用更加权威的一致类型定义。
  */
 export type JSONSchema = LibJSONSchema;
 
 /**
  * 工具处理器配置联合类型
+ *
+ * 注意：这些类型与 shared-types 包中的 MCP 工具定义类型相同
+ * 推荐使用的导入路径：`@xiaozhi-client/shared-types/mcp`
+ * TODO：将 toolApi.ts 的类型迁移为从 shared-types 导入，消除重复定义
+ * 目前保持本地定义以避免 TypeScript 子路径解析问题（影响 tts、asr 等其他包）
+ *
+ * 权威定义位置（仓库内路径）：packages/shared-types/src/mcp/tool-definition.ts
  */
 export type ToolHandlerConfig =
   | MCPHandlerConfig
@@ -66,6 +79,12 @@ export interface FunctionHandlerConfig {
 
 /**
  * CustomMCP 工具基础接口
+ *
+ * 注意：此类型在字段结构上与 shared-types 中的 CustomMCPTool 大体一致，
+ * 但 inputSchema 字段使用的 JSONSchema 类型来源于本地的 @/lib/mcp/types.js，
+ * 而 shared-types 中的 CustomMCPTool 使用的是其自有的 JSONSchema 定义，
+ * 两者在类型来源上存在差异。
+ * TODO：将来应从 shared-types 导入 CustomMCPTool 及其 JSONSchema，以消除重复定义
  */
 export interface CustomMCPToolBase {
   /** 工具唯一标识符 */
