@@ -1,3 +1,16 @@
+/**
+ * McpServerList 组件 - MCP 服务器列表管理
+ *
+ * 功能：
+ * - 显示所有已配置的 MCP 服务器
+ * - 支持启用/禁用单个服务器的工具
+ * - 支持删除 MCP 服务器
+ * - 支持编辑服务器配置
+ * - 支持添加新的 MCP 服务器
+ * - 集成 Coze 工作流配置
+ * - 支持工具参数配置和调试
+ */
+
 import { WorkflowParameterConfigDialog } from "@/components/common/workflow-parameter-config-dialog";
 import {
   AlertDialog,
