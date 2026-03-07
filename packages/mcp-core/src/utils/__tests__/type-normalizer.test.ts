@@ -145,7 +145,8 @@ describe("TypeFieldNormalizer.normalizeTypeField", () => {
       const config = { type: "http", url: "https://example.com" };
       const result = TypeFieldNormalizer.normalizeTypeField(config);
       expect(result).toEqual(config);
-      expect(result).not.toBe(config); // 应该是深拷贝
+      // 性能优化：当 type 已经是标准格式时，直接返回原对象（不创建拷贝）
+      expect(result).toBe(config);
     });
 
     it("应该转换 streamable-http 为 http", () => {
@@ -188,7 +189,8 @@ describe("TypeFieldNormalizer.normalizeTypeField", () => {
       const config = { url: "https://example.com", name: "test" };
       const result = TypeFieldNormalizer.normalizeTypeField(config);
       expect(result).toEqual(config);
-      expect(result).not.toBe(config); // 应该是深拷贝
+      // 性能优化：当没有 type 字段时，直接返回原对象（不创建拷贝）
+      expect(result).toBe(config);
     });
   });
 
@@ -206,20 +208,20 @@ describe("TypeFieldNormalizer.normalizeTypeField", () => {
     });
   });
 
-  describe("深拷贝验证", () => {
-    it("应该创建对象的深拷贝，不修改原对象", () => {
+  describe("浅拷贝验证", () => {
+    it("应该创建对象的浅拷贝，不修改原对象", () => {
       const originalConfig = {
         type: "streamable-http",
         url: "https://example.com",
         nested: { value: 42 },
       };
-      const originalCopy = JSON.parse(JSON.stringify(originalConfig));
+      const originalCopy = { ...originalConfig };
 
       const result = TypeFieldNormalizer.normalizeTypeField(originalConfig);
 
       expect(originalConfig).toEqual(originalCopy); // 原对象未被修改
       expect(result.type).toBe("http");
-      expect(result).not.toBe(originalConfig);
+      expect(result).not.toBe(originalConfig); // 返回新对象
     });
   });
 
