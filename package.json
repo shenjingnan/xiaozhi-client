@@ -34,6 +34,7 @@
     "xiaozhi-client": "dist/cli/index.js"
   },
   "scripts": {
+    "postinstall": "node scripts/postinstall.js",
     "build": "pnpm run clean:dist && nx run-many -t build --exclude=docs,xiaozhi-client --parallel=false",
     "dev": "nx run-many -t build --exclude=docs,xiaozhi-client --parallel=false && concurrently \"nx run backend:dev\" \"nx run cli:dev\" \"nx run frontend:dev\" --prefix \"[{name}]\" --names \"BACKEND,CLI,FRONTEND\"",
     "dev:cli": "nx run cli:dev",
