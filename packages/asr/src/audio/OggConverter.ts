@@ -1,5 +1,5 @@
 /**
- * OGG to WAV/PCM converter using ffmpeg
+ * OGG 到 WAV/PCM 转换器（使用 ffmpeg）
  */
 
 import { execFileSync } from "node:child_process";

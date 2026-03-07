@@ -1,5 +1,5 @@
 /**
- * Audio processor - unified entry for audio processing
+ * 音频处理器 - 音频处理的统一入口点
  */
 
 import { Buffer } from "node:buffer";

@@ -1,5 +1,5 @@
 /**
- * WAV file parser
+ * WAV 文件解析器
  */
 
 import { Buffer } from "node:buffer";
