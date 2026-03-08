@@ -3,6 +3,7 @@
  * 提供配置读取、配置更新等配置相关的 RESTful API 接口
  */
 import type { AppContext } from "@/types/hono.context.js";
+import { listPromptFiles } from "@/utils/prompt-utils.js";
 import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
@@ -223,6 +224,29 @@ export class ConfigApiHandler extends BaseHandler {
       return c.fail(
         "CONFIG_EXISTS_CHECK_ERROR",
         error instanceof Error ? error.message : "检查配置是否存在失败",
+        undefined,
+        500
+      );
+    }
+  }
+
+  /**
+   * 获取提示词文件列表
+   * GET /api/config/prompts
+   */
+  async getPromptFiles(c: Context<AppContext>): Promise<Response> {
+    try {
+      c.get("logger").debug("处理获取提示词文件列表请求");
+      const prompts = listPromptFiles();
+      c.get("logger").debug(
+        `获取提示词文件列表成功，共 ${prompts.length} 个文件`
+      );
+      return c.success({ prompts });
+    } catch (error) {
+      c.get("logger").error("获取提示词文件列表失败:", error);
+      return c.fail(
+        "PROMPT_FILES_READ_ERROR",
+        error instanceof Error ? error.message : "获取提示词文件列表失败",
         undefined,
         500
       );

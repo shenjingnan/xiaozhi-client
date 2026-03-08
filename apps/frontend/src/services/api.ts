@@ -73,6 +73,16 @@ interface VersionInfo {
 }
 
 /**
+ * 提示词文件信息接口
+ */
+export interface PromptFileInfo {
+  /** 文件名 */
+  fileName: string;
+  /** 相对路径（相对于配置文件所在目录） */
+  relativePath: string;
+}
+
+/**
  * 重启状态接口
  */
 interface RestartStatus {
@@ -321,6 +331,18 @@ export class ApiClient {
       throw new Error("检查配置是否存在失败");
     }
     return response.data.exists;
+  }
+
+  /**
+   * 获取提示词文件列表
+   */
+  async getPromptFiles(): Promise<PromptFileInfo[]> {
+    const response: ApiResponse<{ prompts: PromptFileInfo[] }> =
+      await this.request("/api/config/prompts");
+    if (!response.success || !response.data) {
+      throw new Error("获取提示词文件列表失败");
+    }
+    return response.data.prompts;
   }
 
   // ==================== 状态管理 API ====================

@@ -6,7 +6,7 @@
  * 2. 相对路径：如 `./prompts/default.md`（相对于配置文件所在目录）
  * 3. 纯字符串：直接作为提示词内容
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { configManager } from "@xiaozhi-client/config";
 
@@ -129,4 +129,51 @@ export function resolvePrompt(promptConfig?: string): string {
  */
 export function getDefaultSystemPrompt(): string {
   return DEFAULT_SYSTEM_PROMPT;
+}
+
+/**
+ * 提示词文件信息
+ */
+export interface PromptFileInfo {
+  /** 文件名 */
+  fileName: string;
+  /** 相对路径（相对于配置文件所在目录） */
+  relativePath: string;
+}
+
+/**
+ * 获取 prompts 目录下的所有 .md 文件列表
+ *
+ * @returns 提示词文件信息数组
+ */
+export function listPromptFiles(): PromptFileInfo[] {
+  try {
+    const configFilePath = configManager.getConfigPath();
+    const configDir = dirname(configFilePath);
+    const promptsDir = resolve(configDir, "prompts");
+
+    // 检查 prompts 目录是否存在
+    if (!existsSync(promptsDir)) {
+      return [];
+    }
+
+    // 读取目录下的所有文件
+    const files = readdirSync(promptsDir);
+
+    // 过滤出 .md 文件并构建返回结果
+    const promptFiles: PromptFileInfo[] = files
+      .filter((file: string) => file.endsWith(".md"))
+      .map((file: string) => ({
+        fileName: file,
+        relativePath: `./prompts/${file}`,
+      }));
+
+    return promptFiles;
+  } catch (error) {
+    console.error(
+      "[prompt-utils] 获取提示词文件列表失败:",
+      error instanceof Error ? error.message : String(error)
+    );
+    return [];
+  }
 }
