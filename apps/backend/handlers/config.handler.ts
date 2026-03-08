@@ -294,12 +294,29 @@ export class ConfigApiHandler extends BaseHandler {
     try {
       c.get("logger").debug("处理更新提示词文件内容请求");
       const body = await c.req.json();
+
+      // 验证请求体格式
+      if (!body || typeof body !== "object") {
+        return c.fail("INVALID_REQUEST", "请求体格式错误", undefined, 400);
+      }
+
       const { path, content } = body;
 
-      if (!path || content === undefined) {
+      // 验证 path 参数
+      if (!path || typeof path !== "string") {
         return c.fail(
           "INVALID_REQUEST",
-          "缺少 path 或 content 参数",
+          "path 参数必须是字符串",
+          undefined,
+          400
+        );
+      }
+
+      // 验证 content 参数
+      if (content === undefined || typeof content !== "string") {
+        return c.fail(
+          "INVALID_REQUEST",
+          "content 参数必须是字符串",
           undefined,
           400
         );
@@ -327,12 +344,29 @@ export class ConfigApiHandler extends BaseHandler {
     try {
       c.get("logger").debug("处理创建提示词文件请求");
       const body = await c.req.json();
+
+      // 验证请求体格式
+      if (!body || typeof body !== "object") {
+        return c.fail("INVALID_REQUEST", "请求体格式错误", undefined, 400);
+      }
+
       const { fileName, content } = body;
 
-      if (!fileName || content === undefined) {
+      // 验证 fileName 参数
+      if (!fileName || typeof fileName !== "string") {
         return c.fail(
           "INVALID_REQUEST",
-          "缺少 fileName 或 content 参数",
+          "fileName 参数必须是字符串",
+          undefined,
+          400
+        );
+      }
+
+      // 验证 content 参数
+      if (content === undefined || typeof content !== "string") {
+        return c.fail(
+          "INVALID_REQUEST",
+          "content 参数必须是字符串",
           undefined,
           400
         );

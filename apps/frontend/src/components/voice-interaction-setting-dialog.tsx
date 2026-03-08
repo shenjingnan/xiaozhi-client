@@ -419,7 +419,12 @@ export function VoiceInteractionSettingDialog() {
                               variant="outline"
                               size="icon"
                               onClick={handleEditPrompt}
-                              disabled={isLoading || isLoadingPrompts}
+                              disabled={
+                                isLoading ||
+                                isLoadingPrompts ||
+                                !form.watch("llm.prompt") ||
+                                form.watch("llm.prompt") === "__none__"
+                              }
                               title="编辑选中的提示词文件"
                             >
                               <Edit className="size-4" />

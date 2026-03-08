@@ -359,7 +359,7 @@ export class ApiClient {
       `/api/config/prompts/content?path=${encodeURIComponent(path)}`
     );
     if (!response.success || !response.data) {
-      throw new Error("获取提示词文件内容失败");
+      throw new Error(response.error?.message || "获取提示词文件内容失败");
     }
     return response.data;
   }

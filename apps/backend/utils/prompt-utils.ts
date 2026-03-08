@@ -209,24 +209,27 @@ export function validatePromptPath(relativePath: string): {
   valid: boolean;
   error?: string;
 } {
-  // 检查路径格式
-  if (!relativePath.startsWith("./prompts/")) {
+  // 将 Windows 风格的反斜杠统一转换为正斜杠，便于跨平台验证
+  const normalizedPath = relativePath.replace(/\\/g, "/");
+
+  // 检查路径格式（使用规范化后的路径）
+  if (!normalizedPath.startsWith("./prompts/")) {
     return {
       valid: false,
       error: "路径格式错误，必须以 ./prompts/ 开头",
     };
   }
 
-  // 检查路径遍历攻击
-  if (relativePath.includes("..")) {
+  // 检查路径遍历攻击（使用规范化后的路径）
+  if (normalizedPath.includes("..")) {
     return {
       valid: false,
       error: "路径不能包含 ..",
     };
   }
 
-  // 提取文件名并验证
-  const fileName = relativePath.replace("./prompts/", "");
+  // 提取文件名并验证（使用规范化后的路径）
+  const fileName = normalizedPath.replace("./prompts/", "");
   if (!FILE_NAME_REGEX.test(fileName)) {
     return {
       valid: false,
@@ -348,8 +351,8 @@ export function updatePromptFile(
     throw new Error(validation.error);
   }
 
-  // 验证内容大小
-  if (content.length > MAX_FILE_SIZE) {
+  // 验证内容大小（按 UTF-8 字节数，与文件大小限制保持一致）
+  if (Buffer.byteLength(content, "utf8") > MAX_FILE_SIZE) {
     throw new Error("内容大小超过限制（最大 100KB）");
   }
 
@@ -389,8 +392,9 @@ export function createPromptFile(
     throw new Error(validation.error);
   }
 
-  // 验证内容大小
-  if (content.length > MAX_FILE_SIZE) {
+  // 验证内容大小（按 UTF-8 字节数计算，避免多字节字符导致限制失真）
+  const contentSize = Buffer.byteLength(content, "utf8");
+  if (contentSize > MAX_FILE_SIZE) {
     throw new Error("内容大小超过限制（最大 100KB）");
   }
 
