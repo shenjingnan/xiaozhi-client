@@ -380,54 +380,90 @@ function writeEvent(msg: Message): Uint8Array | null {
   return new Uint8Array(buffer);
 }
 
-function writeSessionId(msg: Message): Uint8Array | null {
+/**
+ * 通用的字符串字段序列化函数（白名单模式）
+ * @param msg - 消息对象
+ * @param fieldName - 要序列化的字段名
+ * @param allowedEvents - 允许写入该字段的事件类型列表
+ * @returns 序列化后的字节数组，如果不应写入则返回 null
+ */
+function writeStringFieldAllowList(
+  msg: Message,
+  fieldName: keyof Pick<Message, "sessionId" | "connectId">,
+  allowedEvents: EventType[]
+): Uint8Array | null {
   if (msg.event === undefined) return null;
 
-  switch (msg.event) {
-    case EventType.StartConnection:
-    case EventType.FinishConnection:
-    case EventType.ConnectionStarted:
-    case EventType.ConnectionFailed:
-    case EventType.ConnectionFinished:
-      return null;
+  // 检查事件类型是否在允许列表中
+  if (!allowedEvents.includes(msg.event)) {
+    return null;
   }
 
-  const sessionId = msg.sessionId || "";
-  const sessionIdBytes = Buffer.from(sessionId, "utf8");
+  const value = (msg[fieldName] as string) || "";
+  const valueBytes = Buffer.from(value, "utf8");
   const sizeBuffer = new ArrayBuffer(4);
   const sizeView = new DataView(sizeBuffer);
-  sizeView.setUint32(0, sessionIdBytes.length, false);
+  sizeView.setUint32(0, valueBytes.length, false);
 
-  const result = new Uint8Array(4 + sessionIdBytes.length);
+  const result = new Uint8Array(4 + valueBytes.length);
   result.set(new Uint8Array(sizeBuffer), 0);
-  result.set(sessionIdBytes, 4);
+  result.set(valueBytes, 4);
 
   return result;
 }
 
-function writeConnectId(msg: Message): Uint8Array | null {
+/**
+ * 通用的字符串字段序列化函数（黑名单模式）
+ * @param msg - 消息对象
+ * @param fieldName - 要序列化的字段名
+ * @param excludedEvents - 不允许写入该字段的事件类型列表
+ * @returns 序列化后的字节数组，如果不应写入则返回 null
+ */
+function writeStringFieldBlockList(
+  msg: Message,
+  fieldName: keyof Pick<Message, "sessionId" | "connectId">,
+  excludedEvents: EventType[]
+): Uint8Array | null {
   if (msg.event === undefined) return null;
 
-  switch (msg.event) {
-    case EventType.ConnectionStarted:
-    case EventType.ConnectionFailed:
-    case EventType.ConnectionFinished:
-      break;
-    default:
-      return null;
+  // 检查事件类型是否在排除列表中
+  if (excludedEvents.includes(msg.event)) {
+    return null;
   }
 
-  const connectId = msg.connectId || "";
-  const connectIdBytes = Buffer.from(connectId, "utf8");
+  const value = (msg[fieldName] as string) || "";
+  const valueBytes = Buffer.from(value, "utf8");
   const sizeBuffer = new ArrayBuffer(4);
   const sizeView = new DataView(sizeBuffer);
-  sizeView.setUint32(0, connectIdBytes.length, false);
+  sizeView.setUint32(0, valueBytes.length, false);
 
-  const result = new Uint8Array(4 + connectIdBytes.length);
+  const result = new Uint8Array(4 + valueBytes.length);
   result.set(new Uint8Array(sizeBuffer), 0);
-  result.set(connectIdBytes, 4);
+  result.set(valueBytes, 4);
 
   return result;
+}
+
+function writeSessionId(msg: Message): Uint8Array | null {
+  // sessionId 适用于除连接相关事件外的所有事件（黑名单模式）
+  const excludedEvents = [
+    EventType.StartConnection,
+    EventType.FinishConnection,
+    EventType.ConnectionStarted,
+    EventType.ConnectionFailed,
+    EventType.ConnectionFinished,
+  ];
+  return writeStringFieldBlockList(msg, "sessionId", excludedEvents);
+}
+
+function writeConnectId(msg: Message): Uint8Array | null {
+  // connectId 仅适用于连接相关事件（白名单模式）
+  const allowedEvents = [
+    EventType.ConnectionStarted,
+    EventType.ConnectionFailed,
+    EventType.ConnectionFinished,
+  ];
+  return writeStringFieldAllowList(msg, "connectId", allowedEvents);
 }
 
 function writeSequence(msg: Message): Uint8Array | null {
@@ -469,20 +505,31 @@ function readEvent(msg: Message, data: Uint8Array, offset: number): number {
   return offset + 4;
 }
 
-function readSessionId(msg: Message, data: Uint8Array, offset: number): number {
+/**
+ * 通用的字符串字段反序列化函数（白名单模式）
+ * @param msg - 消息对象
+ * @param data - 原始字节数据
+ * @param offset - 当前读取偏移量
+ * @param fieldName - 要反序列化的字段名
+ * @param allowedEvents - 允许读取该字段的事件类型列表
+ * @returns 读取完成后的新偏移量
+ */
+function readStringFieldAllowList(
+  msg: Message,
+  data: Uint8Array,
+  offset: number,
+  fieldName: keyof Pick<Message, "sessionId" | "connectId">,
+  allowedEvents: EventType[]
+): number {
   if (msg.event === undefined) return offset;
 
-  switch (msg.event) {
-    case EventType.StartConnection:
-    case EventType.FinishConnection:
-    case EventType.ConnectionStarted:
-    case EventType.ConnectionFailed:
-    case EventType.ConnectionFinished:
-      return offset;
+  // 检查事件类型是否在允许列表中
+  if (!allowedEvents.includes(msg.event)) {
+    return offset;
   }
 
   if (offset + 4 > data.length) {
-    throw new Error("insufficient data for session ID size");
+    throw new Error(`insufficient data for ${fieldName} size`);
   }
 
   const view = new DataView(data.buffer, data.byteOffset + offset, 4);
@@ -491,9 +538,9 @@ function readSessionId(msg: Message, data: Uint8Array, offset: number): number {
 
   if (size > 0) {
     if (currentOffset + size > data.length) {
-      throw new Error("insufficient data for session ID");
+      throw new Error(`insufficient data for ${fieldName}`);
     }
-    msg.sessionId = new TextDecoder().decode(
+    (msg[fieldName] as string) = new TextDecoder().decode(
       data.slice(currentOffset, currentOffset + size)
     );
     currentOffset += size;
@@ -502,20 +549,31 @@ function readSessionId(msg: Message, data: Uint8Array, offset: number): number {
   return currentOffset;
 }
 
-function readConnectId(msg: Message, data: Uint8Array, offset: number): number {
+/**
+ * 通用的字符串字段反序列化函数（黑名单模式）
+ * @param msg - 消息对象
+ * @param data - 原始字节数据
+ * @param offset - 当前读取偏移量
+ * @param fieldName - 要反序列化的字段名
+ * @param excludedEvents - 不允许读取该字段的事件类型列表
+ * @returns 读取完成后的新偏移量
+ */
+function readStringFieldBlockList(
+  msg: Message,
+  data: Uint8Array,
+  offset: number,
+  fieldName: keyof Pick<Message, "sessionId" | "connectId">,
+  excludedEvents: EventType[]
+): number {
   if (msg.event === undefined) return offset;
 
-  switch (msg.event) {
-    case EventType.ConnectionStarted:
-    case EventType.ConnectionFailed:
-    case EventType.ConnectionFinished:
-      break;
-    default:
-      return offset;
+  // 检查事件类型是否在排除列表中
+  if (excludedEvents.includes(msg.event)) {
+    return offset;
   }
 
   if (offset + 4 > data.length) {
-    throw new Error("insufficient data for connect ID size");
+    throw new Error(`insufficient data for ${fieldName} size`);
   }
 
   const view = new DataView(data.buffer, data.byteOffset + offset, 4);
@@ -524,15 +582,49 @@ function readConnectId(msg: Message, data: Uint8Array, offset: number): number {
 
   if (size > 0) {
     if (currentOffset + size > data.length) {
-      throw new Error("insufficient data for connect ID");
+      throw new Error(`insufficient data for ${fieldName}`);
     }
-    msg.connectId = new TextDecoder().decode(
+    (msg[fieldName] as string) = new TextDecoder().decode(
       data.slice(currentOffset, currentOffset + size)
     );
     currentOffset += size;
   }
 
   return currentOffset;
+}
+
+function readSessionId(msg: Message, data: Uint8Array, offset: number): number {
+  // sessionId 适用于除连接相关事件外的所有事件（黑名单模式）
+  const excludedEvents = [
+    EventType.StartConnection,
+    EventType.FinishConnection,
+    EventType.ConnectionStarted,
+    EventType.ConnectionFailed,
+    EventType.ConnectionFinished,
+  ];
+  return readStringFieldBlockList(
+    msg,
+    data,
+    offset,
+    "sessionId",
+    excludedEvents
+  );
+}
+
+function readConnectId(msg: Message, data: Uint8Array, offset: number): number {
+  // connectId 仅适用于连接相关事件（白名单模式）
+  const allowedEvents = [
+    EventType.ConnectionStarted,
+    EventType.ConnectionFailed,
+    EventType.ConnectionFinished,
+  ];
+  return readStringFieldAllowList(
+    msg,
+    data,
+    offset,
+    "connectId",
+    allowedEvents
+  );
 }
 
 function readSequence(msg: Message, data: Uint8Array, offset: number): number {
