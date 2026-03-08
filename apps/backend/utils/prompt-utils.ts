@@ -6,7 +6,7 @@
  * 2. 相对路径：如 `./prompts/default.md`（相对于配置文件所在目录）
  * 3. 纯字符串：直接作为提示词内容
  */
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { configManager } from "@xiaozhi-client/config";
 

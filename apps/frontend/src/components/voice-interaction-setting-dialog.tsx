@@ -44,7 +44,7 @@ import type {
   TTSConfig,
 } from "@xiaozhi-client/shared-types";
 import { SettingsIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
@@ -128,7 +128,7 @@ export function VoiceInteractionSettingDialog() {
   }, [config, form]);
 
   // 加载提示词文件列表
-  const loadPromptFiles = async () => {
+  const loadPromptFiles = useCallback(async () => {
     setIsLoadingPrompts(true);
     try {
       const files = await apiClient.getPromptFiles();
@@ -139,14 +139,14 @@ export function VoiceInteractionSettingDialog() {
     } finally {
       setIsLoadingPrompts(false);
     }
-  };
+  }, []);
 
   // 对话框打开时加载提示词文件列表
   useEffect(() => {
     if (open) {
       loadPromptFiles();
     }
-  }, [open]);
+  }, [open, loadPromptFiles]);
 
   async function onSubmit(values: VoiceInteractionFormValues) {
     if (!config) {
