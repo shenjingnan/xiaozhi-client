@@ -62,6 +62,16 @@ export const mcpFormSchema = z.discriminatedUnion("type", [
 ]);
 
 /**
+ * 高级模式的 JSON 表单验证 Schema
+ */
+export const jsonFormSchema = z.object({
+  config: z.string().min(2, {
+    message: "配置不能为空",
+  }),
+});
+
+/**
  * 类型推断
  */
 export type McpFormSchema = z.infer<typeof mcpFormSchema>;
+export type JsonFormSchema = z.infer<typeof jsonFormSchema>;

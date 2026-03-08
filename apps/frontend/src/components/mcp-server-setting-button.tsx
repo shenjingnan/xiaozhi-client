@@ -20,7 +20,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useNetworkServiceActions } from "@/providers/WebSocketProvider";
-import { mcpFormSchema } from "@/schemas/mcp-form";
+import { jsonFormSchema, mcpFormSchema } from "@/schemas/mcp-form";
 import { useConfig } from "@/stores/config";
 import {
   apiConfigToForm,
@@ -35,14 +35,6 @@ import { SettingsIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import z from "zod";
-
-// 高级模式的 JSON 表单 schema
-const jsonFormSchema = z.object({
-  config: z.string().min(2, {
-    message: "配置不能为空",
-  }),
-});
 
 export function McpServerSettingButton({
   mcpServer,
