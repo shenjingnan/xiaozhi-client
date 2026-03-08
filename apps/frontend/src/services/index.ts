@@ -302,20 +302,32 @@ export class NetworkService {
         "data:configUpdate",
         () => {
           clearTimeout(timeoutId);
-          unsubscribe();
+          try {
+            unsubscribe();
+          } catch (cleanupError) {
+            console.error("[NetworkService] 清理事件监听器失败:", cleanupError);
+          }
           resolve();
         }
       );
 
       const timeoutId = setTimeout(() => {
-        unsubscribe();
+        try {
+          unsubscribe();
+        } catch (cleanupError) {
+          console.error("[NetworkService] 清理事件监听器失败:", cleanupError);
+        }
         reject(new Error("等待配置更新通知超时"));
       }, timeout);
 
       // 通过 HTTP API 更新配置
       this.updateConfig(config).catch((error) => {
         clearTimeout(timeoutId);
-        unsubscribe?.();
+        try {
+          unsubscribe?.();
+        } catch (cleanupError) {
+          console.error("[NetworkService] 清理事件监听器失败:", cleanupError);
+        }
         reject(error);
       });
     });
@@ -331,25 +343,47 @@ export class NetworkService {
         (status) => {
           if (status.status === "completed") {
             clearTimeout(timeoutId);
-            unsubscribe();
+            try {
+              unsubscribe();
+            } catch (cleanupError) {
+              console.error(
+                "[NetworkService] 清理事件监听器失败:",
+                cleanupError
+              );
+            }
             resolve();
           } else if (status.status === "failed") {
             clearTimeout(timeoutId);
-            unsubscribe();
+            try {
+              unsubscribe();
+            } catch (cleanupError) {
+              console.error(
+                "[NetworkService] 清理事件监听器失败:",
+                cleanupError
+              );
+            }
             reject(new Error(status.error || "服务重启失败"));
           }
         }
       );
 
       const timeoutId = setTimeout(() => {
-        unsubscribe();
+        try {
+          unsubscribe();
+        } catch (cleanupError) {
+          console.error("[NetworkService] 清理事件监听器失败:", cleanupError);
+        }
         reject(new Error("等待重启状态通知超时"));
       }, timeout);
 
       // 通过 HTTP API 重启服务
       this.restartService().catch((error) => {
         clearTimeout(timeoutId);
-        unsubscribe?.();
+        try {
+          unsubscribe?.();
+        } catch (cleanupError) {
+          console.error("[NetworkService] 清理事件监听器失败:", cleanupError);
+        }
         reject(error);
       });
     });
