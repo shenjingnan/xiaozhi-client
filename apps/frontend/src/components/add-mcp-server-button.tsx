@@ -1,3 +1,14 @@
+/**
+ * AddMcpServerButton 组件 - 添加 MCP 服务器
+ *
+ * 功能：
+ * - 提供表单模式和高级模式（JSON）两种输入方式
+ * - 支持 stdio、SSE、HTTP 三种通信方式配置
+ * - 支持表单与 JSON 格式之间的双向转换
+ * - 验证配置格式和检查重名
+ * - 提交后需要重启服务才会生效
+ */
+
 import { McpServerForm } from "@/components/mcp-server-form";
 import { Button } from "@/components/ui/button";
 import {
