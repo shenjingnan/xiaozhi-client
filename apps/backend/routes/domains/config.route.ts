@@ -62,4 +62,24 @@ export const configRoutes: RouteDefinition[] = [
     path: "/api/config/prompts",
     handler: h((handler, c) => handler.getPromptFiles(c)),
   },
+  {
+    method: "GET",
+    path: "/api/config/prompts/content",
+    handler: h((handler, c) => handler.getPromptFileContent(c)),
+  },
+  {
+    method: "PUT",
+    path: "/api/config/prompts/content",
+    handler: h((handler, c) => handler.updatePromptFileContent(c)),
+  },
+  {
+    method: "POST",
+    path: "/api/config/prompts/content",
+    handler: h((handler, c) => handler.createPromptFileContent(c)),
+  },
+  {
+    method: "DELETE",
+    path: "/api/config/prompts/content",
+    handler: h((handler, c) => handler.deletePromptFileContent(c)),
+  },
 ];

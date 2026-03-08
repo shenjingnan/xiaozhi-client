@@ -6,7 +6,15 @@
  * 2. 相对路径：如 `./prompts/default.md`（相对于配置文件所在目录）
  * 3. 纯字符串：直接作为提示词内容
  */
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { configManager } from "@xiaozhi-client/config";
 
@@ -176,4 +184,264 @@ export function listPromptFiles(): PromptFileInfo[] {
     );
     return [];
   }
+}
+
+// ==================== 提示词文件操作相关函数 ====================
+
+/** 最大文件大小限制（100KB） */
+const MAX_FILE_SIZE = 100 * 1024;
+
+/** 文件名验证正则：允许字母、数字、下划线、中划线、中文 */
+const FILE_NAME_REGEX = /^[\u4e00-\u9fa5a-zA-Z0-9_-]+\.md$/;
+
+/**
+ * 验证提示词文件路径是否安全
+ *
+ * 安全规则：
+ * 1. 必须是相对路径格式（以 ./prompts/ 开头）
+ * 2. 路径不能包含 ..（防止路径遍历攻击）
+ * 3. 文件名必须符合规范
+ *
+ * @param relativePath - 相对路径
+ * @returns 验证结果，包含是否有效和错误信息
+ */
+export function validatePromptPath(relativePath: string): {
+  valid: boolean;
+  error?: string;
+} {
+  // 检查路径格式
+  if (!relativePath.startsWith("./prompts/")) {
+    return {
+      valid: false,
+      error: "路径格式错误，必须以 ./prompts/ 开头",
+    };
+  }
+
+  // 检查路径遍历攻击
+  if (relativePath.includes("..")) {
+    return {
+      valid: false,
+      error: "路径不能包含 ..",
+    };
+  }
+
+  // 提取文件名并验证
+  const fileName = relativePath.replace("./prompts/", "");
+  if (!FILE_NAME_REGEX.test(fileName)) {
+    return {
+      valid: false,
+      error:
+        "文件名只能包含字母、数字、下划线、中划线、中文，且必须以 .md 结尾",
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * 验证提示词文件名是否合法
+ *
+ * @param fileName - 文件名
+ * @returns 验证结果
+ */
+export function validatePromptFileName(fileName: string): {
+  valid: boolean;
+  error?: string;
+} {
+  if (!FILE_NAME_REGEX.test(fileName)) {
+    return {
+      valid: false,
+      error:
+        "文件名只能包含字母、数字、下划线、中划线、中文，且必须以 .md 结尾",
+    };
+  }
+  return { valid: true };
+}
+
+/**
+ * 获取 prompts 目录的绝对路径
+ *
+ * @returns prompts 目录的绝对路径
+ */
+export function getPromptsDir(): string {
+  const configFilePath = configManager.getConfigPath();
+  const configDir = dirname(configFilePath);
+  return resolve(configDir, "prompts");
+}
+
+/**
+ * 将相对路径解析为绝对路径
+ *
+ * @param relativePath - 相对路径（如 ./prompts/default.md）
+ * @returns 绝对路径
+ */
+export function resolvePromptPath(relativePath: string): string {
+  const promptsDir = getPromptsDir();
+  const fileName = relativePath.replace("./prompts/", "");
+  return resolve(promptsDir, fileName);
+}
+
+/**
+ * 提示词文件内容信息
+ */
+export interface PromptFileContent {
+  /** 文件名 */
+  fileName: string;
+  /** 相对路径（相对于配置文件所在目录） */
+  relativePath: string;
+  /** 文件内容 */
+  content: string;
+}
+
+/**
+ * 读取提示词文件内容
+ *
+ * @param relativePath - 相对路径（如 ./prompts/default.md）
+ * @returns 文件内容信息
+ * @throws 如果路径无效或文件不存在
+ */
+export function readPromptFile(relativePath: string): PromptFileContent {
+  // 验证路径
+  const validation = validatePromptPath(relativePath);
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
+  // 解析绝对路径
+  const absolutePath = resolvePromptPath(relativePath);
+
+  // 检查文件是否存在
+  if (!existsSync(absolutePath)) {
+    throw new Error(`文件不存在: ${relativePath}`);
+  }
+
+  // 检查文件大小
+  const stats = statSync(absolutePath);
+  if (stats.size > MAX_FILE_SIZE) {
+    throw new Error("文件大小超过限制（最大 100KB）");
+  }
+
+  // 读取文件内容
+  const content = readFileSync(absolutePath, "utf-8");
+
+  return {
+    fileName: relativePath.replace("./prompts/", ""),
+    relativePath,
+    content,
+  };
+}
+
+/**
+ * 更新提示词文件内容
+ *
+ * @param relativePath - 相对路径（如 ./prompts/default.md）
+ * @param content - 新的文件内容
+ * @throws 如果路径无效或文件不存在
+ */
+export function updatePromptFile(
+  relativePath: string,
+  content: string
+): PromptFileContent {
+  // 验证路径
+  const validation = validatePromptPath(relativePath);
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
+  // 验证内容大小
+  if (content.length > MAX_FILE_SIZE) {
+    throw new Error("内容大小超过限制（最大 100KB）");
+  }
+
+  // 解析绝对路径
+  const absolutePath = resolvePromptPath(relativePath);
+
+  // 检查文件是否存在
+  if (!existsSync(absolutePath)) {
+    throw new Error(`文件不存在: ${relativePath}`);
+  }
+
+  // 写入文件
+  writeFileSync(absolutePath, content, "utf-8");
+
+  return {
+    fileName: relativePath.replace("./prompts/", ""),
+    relativePath,
+    content,
+  };
+}
+
+/**
+ * 创建新的提示词文件
+ *
+ * @param fileName - 文件名（如 custom-prompt.md）
+ * @param content - 文件内容
+ * @returns 新创建的文件信息
+ * @throws 如果文件名无效或文件已存在
+ */
+export function createPromptFile(
+  fileName: string,
+  content: string
+): PromptFileContent {
+  // 验证文件名
+  const validation = validatePromptFileName(fileName);
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
+  // 验证内容大小
+  if (content.length > MAX_FILE_SIZE) {
+    throw new Error("内容大小超过限制（最大 100KB）");
+  }
+
+  // 获取 prompts 目录
+  const promptsDir = getPromptsDir();
+
+  // 确保 prompts 目录存在
+  if (!existsSync(promptsDir)) {
+    mkdirSync(promptsDir, { recursive: true });
+  }
+
+  // 构建文件路径
+  const absolutePath = resolve(promptsDir, fileName);
+  const relativePath = `./prompts/${fileName}`;
+
+  // 检查文件是否已存在
+  if (existsSync(absolutePath)) {
+    throw new Error(`文件已存在: ${fileName}`);
+  }
+
+  // 写入文件
+  writeFileSync(absolutePath, content, "utf-8");
+
+  return {
+    fileName,
+    relativePath,
+    content,
+  };
+}
+
+/**
+ * 删除提示词文件
+ *
+ * @param relativePath - 相对路径（如 ./prompts/old-prompt.md）
+ * @throws 如果路径无效或文件不存在
+ */
+export function deletePromptFile(relativePath: string): void {
+  // 验证路径
+  const validation = validatePromptPath(relativePath);
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
+  // 解析绝对路径
+  const absolutePath = resolvePromptPath(relativePath);
+
+  // 检查文件是否存在
+  if (!existsSync(absolutePath)) {
+    throw new Error(`文件不存在: ${relativePath}`);
+  }
+
+  // 删除文件
+  rmSync(absolutePath);
 }

@@ -3,7 +3,13 @@
  * 提供配置读取、配置更新等配置相关的 RESTful API 接口
  */
 import type { AppContext } from "@/types/hono.context.js";
-import { listPromptFiles } from "@/utils/prompt-utils.js";
+import {
+  createPromptFile,
+  deletePromptFile,
+  listPromptFiles,
+  readPromptFile,
+  updatePromptFile,
+} from "@/utils/prompt-utils.js";
 import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
@@ -249,6 +255,126 @@ export class ConfigApiHandler extends BaseHandler {
         error instanceof Error ? error.message : "获取提示词文件列表失败",
         undefined,
         500
+      );
+    }
+  }
+
+  /**
+   * 获取提示词文件内容
+   * GET /api/config/prompts/content?path=./prompts/default.md
+   */
+  async getPromptFileContent(c: Context<AppContext>): Promise<Response> {
+    try {
+      c.get("logger").debug("处理获取提示词文件内容请求");
+      const path = c.req.query("path");
+
+      if (!path) {
+        return c.fail("INVALID_REQUEST", "缺少 path 参数", undefined, 400);
+      }
+
+      const fileContent = readPromptFile(path);
+      c.get("logger").debug(`获取提示词文件内容成功: ${path}`);
+      return c.success(fileContent);
+    } catch (error) {
+      c.get("logger").error("获取提示词文件内容失败:", error);
+      return c.fail(
+        "PROMPT_FILE_READ_ERROR",
+        error instanceof Error ? error.message : "获取提示词文件内容失败",
+        undefined,
+        400
+      );
+    }
+  }
+
+  /**
+   * 更新提示词文件内容
+   * PUT /api/config/prompts/content
+   */
+  async updatePromptFileContent(c: Context<AppContext>): Promise<Response> {
+    try {
+      c.get("logger").debug("处理更新提示词文件内容请求");
+      const body = await c.req.json();
+      const { path, content } = body;
+
+      if (!path || content === undefined) {
+        return c.fail(
+          "INVALID_REQUEST",
+          "缺少 path 或 content 参数",
+          undefined,
+          400
+        );
+      }
+
+      const fileContent = updatePromptFile(path, content);
+      c.get("logger").info(`更新提示词文件成功: ${path}`);
+      return c.success(fileContent, "提示词文件更新成功");
+    } catch (error) {
+      c.get("logger").error("更新提示词文件内容失败:", error);
+      return c.fail(
+        "PROMPT_FILE_UPDATE_ERROR",
+        error instanceof Error ? error.message : "更新提示词文件内容失败",
+        undefined,
+        400
+      );
+    }
+  }
+
+  /**
+   * 创建新的提示词文件
+   * POST /api/config/prompts/content
+   */
+  async createPromptFileContent(c: Context<AppContext>): Promise<Response> {
+    try {
+      c.get("logger").debug("处理创建提示词文件请求");
+      const body = await c.req.json();
+      const { fileName, content } = body;
+
+      if (!fileName || content === undefined) {
+        return c.fail(
+          "INVALID_REQUEST",
+          "缺少 fileName 或 content 参数",
+          undefined,
+          400
+        );
+      }
+
+      const fileContent = createPromptFile(fileName, content);
+      c.get("logger").info(`创建提示词文件成功: ${fileName}`);
+      return c.success(fileContent, "提示词文件创建成功");
+    } catch (error) {
+      c.get("logger").error("创建提示词文件失败:", error);
+      return c.fail(
+        "PROMPT_FILE_CREATE_ERROR",
+        error instanceof Error ? error.message : "创建提示词文件失败",
+        undefined,
+        400
+      );
+    }
+  }
+
+  /**
+   * 删除提示词文件
+   * DELETE /api/config/prompts/content?path=./prompts/old-prompt.md
+   */
+  async deletePromptFileContent(c: Context<AppContext>): Promise<Response> {
+    try {
+      c.get("logger").debug("处理删除提示词文件请求");
+      const path = c.req.query("path");
+
+      if (!path) {
+        return c.fail("INVALID_REQUEST", "缺少 path 参数", undefined, 400);
+      }
+
+      deletePromptFile(path);
+      c.get("logger").info(`删除提示词文件成功: ${path}`);
+      return c.success(undefined, "提示词文件删除成功");
+    } catch (error) {
+      c.get("logger").error("删除提示词文件失败:", error);
+      return c.fail(
+        "PROMPT_FILE_DELETE_ERROR",
+        error instanceof Error ? error.message : "删除提示词文件失败",
+        undefined,
+        400
       );
     }
   }

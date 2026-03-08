@@ -345,6 +345,82 @@ export class ApiClient {
     return response.data.prompts;
   }
 
+  /**
+   * 获取提示词文件内容
+   */
+  async getPromptFileContent(
+    path: string
+  ): Promise<{ fileName: string; relativePath: string; content: string }> {
+    const response: ApiResponse<{
+      fileName: string;
+      relativePath: string;
+      content: string;
+    }> = await this.request(
+      `/api/config/prompts/content?path=${encodeURIComponent(path)}`
+    );
+    if (!response.success || !response.data) {
+      throw new Error("获取提示词文件内容失败");
+    }
+    return response.data;
+  }
+
+  /**
+   * 更新提示词文件内容
+   */
+  async updatePromptFileContent(
+    path: string,
+    content: string
+  ): Promise<{ fileName: string; relativePath: string; content: string }> {
+    const response: ApiResponse<{
+      fileName: string;
+      relativePath: string;
+      content: string;
+    }> = await this.request("/api/config/prompts/content", {
+      method: "PUT",
+      body: JSON.stringify({ path, content }),
+    });
+    if (!response.success || !response.data) {
+      throw new Error(response.error?.message || "更新提示词文件内容失败");
+    }
+    return response.data;
+  }
+
+  /**
+   * 创建新的提示词文件
+   */
+  async createPromptFile(
+    fileName: string,
+    content: string
+  ): Promise<{ fileName: string; relativePath: string; content: string }> {
+    const response: ApiResponse<{
+      fileName: string;
+      relativePath: string;
+      content: string;
+    }> = await this.request("/api/config/prompts/content", {
+      method: "POST",
+      body: JSON.stringify({ fileName, content }),
+    });
+    if (!response.success || !response.data) {
+      throw new Error(response.error?.message || "创建提示词文件失败");
+    }
+    return response.data;
+  }
+
+  /**
+   * 删除提示词文件
+   */
+  async deletePromptFile(path: string): Promise<void> {
+    const response: ApiResponse = await this.request(
+      `/api/config/prompts/content?path=${encodeURIComponent(path)}`,
+      {
+        method: "DELETE",
+      }
+    );
+    if (!response.success) {
+      throw new Error(response.error?.message || "删除提示词文件失败");
+    }
+  }
+
   // ==================== 状态管理 API ====================
 
   /**
