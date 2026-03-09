@@ -1,0 +1,429 @@
+---
+title: "ESP32 集成 API - Xiaozhi Client"
+description: "ESP32 设备集成模块的 API 参考文档"
+---
+
+# ESP32 集成 API
+
+## 概述
+
+ESP32 集成模块负责管理 ESP32 设备的 WebSocket 连接，支持音频数据传输、设备状态管理和二进制协议通信。
+
+**文件位置**:
+- `apps/backend/lib/esp32/connection.ts` - 设备连接管理
+- `apps/backend/lib/esp32/audio-protocol.ts` - 音频协议实现
+
+## 核心组件
+
+### ESP32Connection
+
+ESP32 设备连接类，管理单个设备的 WebSocket 连接生命周期。
+
+#### 构造函数
+
+```typescript
+constructor(
+  deviceId: string,
+  clientId: string,
+  ws: WebSocket,
+  config: ESP32ConnectionConfig
+)
+```
+
+**配置接口**:
+```typescript
+interface ESP32ConnectionConfig {
+  onMessage: (message: ESP32WSMessage) => Promise<void>;
+  onClose: () => void;
+  onError: (error: Error) => void;
+  heartbeatTimeoutMs?: number;
+  getASRService: () => ASRService;
+}
+```
+
+#### 主要方法
+
+##### `send(message: ESP32WSMessage): Promise<void>`
+
+发送消息到设备。
+
+**参数**:
+```typescript
+interface ESP32WSMessage {
+  type: string;
+  [key: string]: any;
+}
+```
+
+**示例**:
+```typescript
+await connection.send({
+  type: "tts",
+  text: "你好，世界"
+});
+```
+
+##### `sendBinary(data: Uint8Array): Promise<void>`
+
+发送二进制数据到设备。
+
+##### `sendBinaryProtocol2(data: Uint8Array, timestamp?: number): Promise<void>`
+
+发送 BinaryProtocol2 格式的音频数据到设备。
+
+**参数**:
+- `data`: 音频载荷数据
+- `timestamp`: 时间戳（毫秒级累加值，用于音频播放顺序）
+
+##### `sendError(code: ESP32ErrorCode, message: string): Promise<void>`
+
+发送错误消息。
+
+##### `checkTimeout(): boolean`
+
+检查连接是否超时。
+
+##### `close(): Promise<void>`
+
+关闭连接。
+
+##### `getDeviceId(): string`
+
+获取设备ID。
+
+##### `getClientId(): string`
+
+获取客户端ID。
+
+##### `getState(): ESP32ConnectionState`
+
+获取连接状态。
+
+##### `getSessionId(): string`
+
+获取会话ID。
+
+##### `isHelloCompleted(): boolean`
+
+是否已完成Hello握手。
+
+## 音频协议
+
+### BinaryProtocol2
+
+16 字节头部的音频协议格式。
+
+**协议格式**（大端序/网络字节序）:
+```
++--------+--------+--------+--------+--------+--------+--------+--------+
+| Version (16)  |   Type (16)   |           Reserved (32)          |
++--------+--------+--------+--------+--------+--------+--------+--------+
+|                           Timestamp (32)                          |
++--------+--------+--------+--------+--------+--------+--------+--------+
+|                          Payload Size (32)                        |
++--------+--------+--------+--------+--------+--------+--------+--------+
+|                            Payload Data...                         |
++--------+--------+--------+--------+--------+--------+--------+--------+
+```
+
+**字段说明**:
+- Version: 协议版本（固定为 2）
+- Type: 0 = Opus 音频, 1 = JSON
+- Reserved: 保留字段（0）
+- Timestamp: 毫秒级累加值（每帧递增）
+- Payload Size: 负载字节数
+- Payload: 实际音频数据
+
+#### encodeBinaryProtocol2()
+
+编码为 BinaryProtocol2 格式。
+
+```typescript
+function encodeBinaryProtocol2(
+  payload: Uint8Array,
+  timestamp: number,
+  type: "opus" | "json" = "opus"
+): Buffer
+```
+
+#### parseBinaryProtocol2()
+
+解析 BinaryProtocol2 数据。
+
+```typescript
+function parseBinaryProtocol2(
+  data: Buffer
+): BinaryProtocol2Parsed | null
+```
+
+#### isBinaryProtocol2()
+
+检查是否为 BinaryProtocol2 格式。
+
+```typescript
+function isBinaryProtocol2(data: Buffer): boolean
+```
+
+### BinaryProtocol3
+
+4 字节头部的精简音频协议格式。
+
+**协议格式**（大端序/网络字节序）:
+```
++--------+--------+--------+--------+
+|  Type  | Reserved|   Payload Size   |
++--------+--------+--------+--------+
+|          Payload Data...             |
++--------+--------+--------+--------+
+```
+
+**字段说明**:
+- Type: 0 = Opus 音频, 1 = JSON
+- Reserved: 保留字段（0）
+- Payload Size: 负载字节数（16位，无符号）
+- Payload: 实际音频数据
+
+#### parseBinaryProtocol3()
+
+解析 BinaryProtocol3 数据。
+
+```typescript
+function parseBinaryProtocol3(
+  data: Buffer
+): BinaryProtocol3Parsed | null
+```
+
+#### isBinaryProtocol3()
+
+检查是否为 BinaryProtocol3 格式。
+
+```typescript
+function isBinaryProtocol3(data: Buffer): boolean
+```
+
+### 协议检测
+
+#### detectAudioProtocol()
+
+自动检测协议版本。
+
+```typescript
+function detectAudioProtocol(data: Buffer): AudioProtocolType
+```
+
+**返回**: `"protocol1"` | `"protocol2"` | `"protocol3"` | `"unknown"`
+
+## 类型定义
+
+### ESP32ConnectionState
+
+连接状态枚举。
+
+```typescript
+type ESP32ConnectionState = "connecting" | "connected" | "disconnected";
+```
+
+### ESP32ErrorCode
+
+错误代码枚举。
+
+```typescript
+enum ESP32ErrorCode {
+  INVALID_MESSAGE_FORMAT = "INVALID_MESSAGE_FORMAT",
+  UNSUPPORTED_MESSAGE_TYPE = "UNSUPPORTED_MESSAGE_TYPE",
+  ASR_SERVICE_ERROR = "ASR_SERVICE_ERROR",
+  TTS_SERVICE_ERROR = "TTS_SERVICE_ERROR",
+}
+```
+
+### ESP32HelloMessage
+
+Hello 消息接口。
+
+```typescript
+interface ESP32HelloMessage {
+  type: "hello";
+  version: number;
+  transport: string;
+  audioParams?: {
+    format: string;
+    sampleRate: number;
+    channels: number;
+    frameDuration: number;
+  };
+  features?: {
+    mcp: boolean;
+  };
+}
+```
+
+### ESP32ServerHelloMessage
+
+服务端 Hello 响应接口。
+
+```typescript
+interface ESP32ServerHelloMessage {
+  type: "hello";
+  version: number;
+  transport: string;
+  sessionId: string;
+  audioParams: {
+    format: string;
+    sampleRate: number;
+    channels: number;
+    frameDuration: number;
+  };
+}
+```
+
+## 消息类型
+
+### 支持的消息类型
+
+| 类型 | 描述 | 方向 |
+|------|------|------|
+| `hello` | 握手消息 | 双向 |
+| `audio` | 音频数据 | 设备 → 服务端 |
+| `tts` | 语音合成请求 | 服务端 → 设备 |
+| `start` | 开始交互 | 设备 → 服务端 |
+| `stop` | 停止交互 | 设备 → 服务端 |
+| `error` | 错误消息 | 双向 |
+
+### Hello 握手流程
+
+1. 设备发送 Hello 消息
+2. 服务端响应 ServerHello 消息
+3. 握手完成后，设备可以发送其他消息
+
+**设备 Hello 消息示例**:
+```json
+{
+  "type": "hello",
+  "version": 1,
+  "transport": "websocket",
+  "audio_params": {
+    "format": "opus",
+    "sample_rate": 24000,
+    "channels": 1,
+    "frame_duration": 60
+  },
+  "features": {
+    "mcp": true
+  }
+}
+```
+
+**服务端 Hello 响应示例**:
+```json
+{
+  "type": "hello",
+  "version": 1,
+  "transport": "websocket",
+  "session_id": "device-123-456-abc",
+  "audio_params": {
+    "format": "opus",
+    "sample_rate": 24000,
+    "channels": 1,
+    "frame_duration": 60
+  }
+}
+```
+
+## 使用示例
+
+### 创建连接
+
+```typescript
+import { ESP32Connection } from "@/lib/esp32/connection.js";
+
+const connection = new ESP32Connection(
+  "device-123",           // 设备ID
+  "client-456",           // 客户端ID
+  ws,                     // WebSocket 实例
+  {
+    onMessage: async (message) => {
+      console.log("收到消息:", message);
+      // 处理消息...
+    },
+    onClose: () => {
+      console.log("连接关闭");
+    },
+    onError: (error) => {
+      console.error("连接错误:", error);
+    },
+    heartbeatTimeoutMs: 30000,
+    getASRService: () => asrService
+  }
+);
+```
+
+### 发送 TTS 消息
+
+```typescript
+await connection.send({
+  type: "tts",
+  text: "你好，我是小智助手",
+  format: "opus",
+  sampleRate: 24000
+});
+```
+
+### 发送 BinaryProtocol2 音频数据
+
+```typescript
+// Opus 编码的音频数据
+const opusData = new Uint8Array([...]);
+
+// 累加时间戳（每帧递增）
+const timestamp = frameIndex * 60; // 60ms 每帧
+
+await connection.sendBinaryProtocol2(opusData, timestamp);
+```
+
+### 检查连接状态
+
+```typescript
+// 获取连接状态
+const state = connection.getState();
+console.log("连接状态:", state); // "connecting" | "connected" | "disconnected"
+
+// 检查是否完成 Hello 握手
+const helloCompleted = connection.isHelloCompleted();
+
+// 检查是否超时
+const isTimeout = connection.checkTimeout();
+```
+
+### 解析音频数据
+
+```typescript
+import { parseBinaryProtocol2, isBinaryProtocol2, detectAudioProtocol } from "@/lib/esp32/audio-protocol.js";
+
+// 检测协议类型
+const protocolType = detectAudioProtocol(data);
+console.log("协议类型:", protocolType);
+
+// 解析 BinaryProtocol2 数据
+if (isBinaryProtocol2(data)) {
+  const parsed = parseBinaryProtocol2(data);
+  if (parsed) {
+    console.log("协议版本:", parsed.protocolVersion);
+    console.log("数据类型:", parsed.type);
+    console.log("时间戳:", parsed.timestamp);
+    console.log("载荷大小:", parsed.payload.length);
+  }
+}
+```
+
+## 注意事项
+
+1. **Hello 握手**: 设备必须先完成 Hello 握手才能发送其他消息
+2. **时间戳累加**: BinaryProtocol2 的时间戳是累加值，每帧递增，用于音频播放顺序
+3. **超时检测**: 默认心跳超时为 30 秒，可在配置中自定义
+4. **协议兼容**: 模块支持协议1（纯Opus）、协议2（16字节头）和协议3（4字节头）
+5. **命名约定**: 发送到设备的消息使用 camelCase，内部会自动转换为 snake_case
+
+## 相关模块
+
+- [WebSocket 通信](./websocket) - ESP32 使用 WebSocket 连接
+- [事件总线](./event-bus) - 设备状态变更通过事件总线通知

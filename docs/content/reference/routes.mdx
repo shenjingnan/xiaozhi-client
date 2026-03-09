@@ -1,0 +1,352 @@
+---
+title: "路由系统 API - Xiaozhi Client"
+description: "路由系统模块的 API 参考文档"
+---
+
+# 路由系统 API
+
+## 概述
+
+路由系统提供直接、高效的路由注册和管理功能，基于 Hono 框架实现，支持依赖注入和中间件。
+
+**文件位置**:
+- `apps/backend/routes/RouteManager.ts` - 路由管理器
+- `apps/backend/routes/types.ts` - 类型定义
+
+## 核心组件
+
+### RouteManager
+
+路由管理器，直接管理路由配置，提供路由注册和应用功能。
+
+#### 构造函数
+
+```typescript
+constructor(private logger: Logger)
+```
+
+通过依赖注入接收 Logger 实例，保持与项目日志系统的一致性。
+
+#### 主要方法
+
+##### `registerRoute(name: string, routeRegistry: RouteRegistry): void`
+
+注册单个路由模块。
+
+**参数**:
+- `name`: 路由组名称
+- `routeRegistry`: 路由注册配置
+
+**示例**:
+```typescript
+routeManager.registerRoute("version", {
+  method: "GET",
+  path: "/api/version",
+  handler: (c) => c.json({ version: "1.0.0" })
+});
+```
+
+##### `registerRoutes(routeRegistries: Record<string, RouteRegistry>): void`
+
+批量注册路由模块。
+
+**参数**:
+- `routeRegistries`: 路由注册配置对象
+
+**示例**:
+```typescript
+routeManager.registerRoutes({
+  version: versionRoutes,
+  config: configRoutes,
+  status: statusRoutes
+});
+```
+
+##### `getAllRoutes(): Map<string, RouteDefinition[]>`
+
+获取所有注册的路由配置。
+
+##### `getRoute(name: string): RouteDefinition[] | undefined`
+
+获取指定名称的路由配置。
+
+**参数**:
+- `name`: 路由组名称
+
+##### `applyToApp(app: Hono<AppContext>): void`
+
+将路由应用到 Hono 应用实例。
+
+**注意**: static 路由会自动排在最后应用，避免拦截其他路由。
+
+##### `clear(): void`
+
+清除所有路由配置（主要用于测试）。
+
+##### `hasRoute(name: string): boolean`
+
+检查路由是否已注册。
+
+##### `getRouteNames(): string[]`
+
+列出所有已注册的路由域名称。
+
+## 类型定义
+
+### RouteDefinition
+
+路由定义接口。
+
+```typescript
+interface RouteDefinition {
+  method: HTTPMethod;           // HTTP 方法
+  path: string;                 // 完整路由路径
+  handler: (c: Context) => Promise<Response | undefined>;  // 处理函数
+  middleware?: MiddlewareHandler[];  // 路由级别的中间件
+}
+```
+
+### HTTPMethod
+
+HTTP 方法类型。
+
+```typescript
+type HTTPMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+```
+
+### RouteRegistry
+
+路由注册联合类型。
+
+```typescript
+type RouteRegistry = RouteDefinition[] | RouteGroup;
+```
+
+### RouteGroup
+
+路由组接口。
+
+```typescript
+interface RouteGroup {
+  routes: RouteDefinition[];     // 路由定义数组
+  name?: string;                 // 可选的组名称
+  description?: string;          // 可选的组描述
+  middleware?: MiddlewareHandler[];  // 组级别的中间件
+}
+```
+
+### HandlerDependencies
+
+处理器依赖接口，定义路由系统需要的所有处理器依赖。
+
+```typescript
+interface HandlerDependencies {
+  configApiHandler: ConfigApiHandler;
+  statusApiHandler: StatusApiHandler;
+  serviceApiHandler: ServiceApiHandler;
+  mcpToolHandler: MCPToolHandler;
+  mcpToolLogHandler: MCPToolLogHandler;
+  versionApiHandler: VersionApiHandler;
+  staticFileHandler: StaticFileHandler;
+  mcpRouteHandler: MCPRouteHandler;
+  mcpHandler?: MCPHandler;
+  updateApiHandler: UpdateApiHandler;
+  cozeHandler: CozeHandler;
+  ttsApiHandler: TTSApiHandler;
+  endpointHandler?: EndpointHandler;
+  esp32Handler?: ESP32Handler;
+}
+```
+
+## 辅助函数
+
+### createHandler()
+
+创建路由处理器辅助函数，自动处理依赖注入。
+
+```typescript
+function createHandler<K extends keyof HandlerDependencies>(
+  dependencyKey: K
+): (
+  method: (handler: HandlerDependencies[K], c: Context) => Promise<Response>
+) => RouteDefinition["handler"]
+```
+
+**使用示例**:
+```typescript
+import { createHandler } from "@/routes/types.js";
+
+const h = createHandler("versionApiHandler");
+
+export const routes = [
+  {
+    method: "GET",
+    path: "/api/version",
+    handler: h((handler, c) => handler.getVersion(c)),
+  }
+];
+```
+
+### isRouteGroup()
+
+判断是否为路由组。
+
+```typescript
+function isRouteGroup(route: RouteRegistry): route is RouteGroup
+```
+
+### normalizeRoutes()
+
+将路由注册转换为路由数组。
+
+```typescript
+function normalizeRoutes(route: RouteRegistry): RouteDefinition[]
+```
+
+## 使用示例
+
+### 定义路由
+
+```typescript
+import type { RouteDefinition } from "@/routes/types.js";
+
+export const versionRoutes: RouteDefinition[] = [
+  {
+    method: "GET",
+    path: "/api/version",
+    handler: (c) => {
+      return c.json({ version: "1.0.0" });
+    }
+  },
+  {
+    method: "GET",
+    path: "/api/health",
+    handler: (c) => {
+      return c.json({ status: "ok" });
+    }
+  }
+];
+```
+
+### 使用路由组
+
+```typescript
+import type { RouteGroup } from "@/routes/types.js";
+
+export const configRoutes: RouteGroup = {
+  name: "config",
+  description: "配置管理路由",
+  middleware: [authMiddleware],  // 组级别中间件
+  routes: [
+    {
+      method: "GET",
+      path: "/api/config",
+      handler: (c) => c.json(getConfig())
+    },
+    {
+      method: "POST",
+      path: "/api/config",
+      handler: (c) => updateConfig(c)
+    }
+  ]
+};
+```
+
+### 注册路由
+
+```typescript
+import { RouteManager } from "@/routes/RouteManager.js";
+import { logger } from "@/Logger.js";
+
+// 创建路由管理器
+const routeManager = new RouteManager(logger);
+
+// 注册单个路由
+routeManager.registerRoute("version", versionRoutes);
+
+// 批量注册路由
+routeManager.registerRoutes({
+  config: configRoutes,
+  status: statusRoutes,
+  mcp: mcpRoutes
+});
+
+// 应用到 Hono 应用
+const app = new Hono();
+routeManager.applyToApp(app);
+```
+
+### 使用依赖注入
+
+```typescript
+import { createHandler } from "@/routes/types.js";
+
+const h = createHandler("configApiHandler");
+
+export const configRoutes = [
+  {
+    method: "GET",
+    path: "/api/config",
+    handler: h((handler, c) => handler.getConfig(c)),
+  },
+  {
+    method: "POST",
+    path: "/api/config",
+    handler: h((handler, c) => handler.updateConfig(c)),
+  }
+];
+```
+
+### 使用中间件
+
+```typescript
+import { authMiddleware } from "@/middlewares/auth.js";
+
+export const protectedRoutes: RouteDefinition[] = [
+  {
+    method: "POST",
+    path: "/api/admin/config",
+    middleware: [authMiddleware, rateLimitMiddleware],
+    handler: (c) => {
+      // 只有通过认证和速率限制的请求才能到达这里
+      return c.json({ success: true });
+    }
+  }
+];
+```
+
+## 错误处理
+
+路由管理器自动为每个路由添加错误处理：
+
+```typescript
+// 如果路由处理器抛出错误，会自动捕获并返回统一格式的错误响应
+{
+  "code": "HANDLER_ERROR",
+  "message": "处理器执行失败",
+  "details": "具体错误信息",
+  "status": 500
+}
+```
+
+## 路由应用顺序
+
+路由应用时遵循以下规则：
+
+1. **static 路由最后应用**: static 路由组永远排在最后，避免拦截其他路由
+2. **组内中间件优先**: 组级别的中间件会应用到组内所有路由
+3. **路由中间件其次**: 路由级别的中间件在组中间件之后应用
+
+## 注意事项
+
+1. **依赖注入**: 使用 `createHandler` 辅助函数可以简化依赖注入
+2. **中间件顺序**: 组中间件 → 路由中间件 → 处理器
+3. **错误处理**: 路由处理器抛出的错误会被自动捕获和处理
+4. **Static 路由**: static 路由会自动排在最后，无需手动排序
+5. **类型安全**: 使用 TypeScript 可以获得完整的类型提示
+
+## 相关模块
+
+- [配置管理](./config) - 配置相关路由
+- [MCP 模块](./mcp) - MCP 工具相关路由
+- [端点管理](./endpoint) - 端点管理相关路由

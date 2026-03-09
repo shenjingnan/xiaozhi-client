@@ -1,0 +1,380 @@
+---
+title: "端点管理 API - Xiaozhi Client"
+description: "小智接入点管理模块的 API 参考文档"
+---
+
+# 端点管理 API
+
+## 概述
+
+端点管理模块负责管理多个小智接入点的 WebSocket 连接，每个端点完全独立管理，无负载均衡，支持固定间隔重连策略。
+
+**文件位置**:
+- `packages/endpoint/src/endpoint.ts` - 单个端点实现
+- `packages/endpoint/src/manager.ts` - 端点管理器
+
+## 核心组件
+
+### Endpoint
+
+管理单个小智接入点的 WebSocket 连接，实现 MCP 协议通信。
+
+#### 工厂方法（推荐）
+
+##### `Endpoint.create(config: EndpointCreateConfig): Promise<Endpoint>`
+
+使用声明式配置创建 Endpoint 实例（推荐方式）。
+
+**参数**:
+```typescript
+interface EndpointCreateConfig {
+  endpointUrl: string;              // 小智接入点 URL
+  mcpServers: Record<string, MCPServerConfig>;  // MCP 服务器配置
+  reconnectDelay?: number;          // 重连延迟（毫秒），默认 2000
+}
+```
+
+**返回**: 已配置并连接的 Endpoint 实例
+
+**示例**:
+```typescript
+const endpoint = await Endpoint.create({
+  endpointUrl: "wss://api.xiaozhi.me/mcp/?token=...",
+  mcpServers: {
+    calculator: {
+      command: "npx",
+      args: ["-y", "@xiaozhi-client/calculator-mcp"]
+    }
+  },
+  reconnectDelay: 2000
+});
+```
+
+#### 构造函数
+
+```typescript
+constructor(
+  endpointUrl: string,
+  mcpManager: IMCPServiceManager,
+  reconnectDelay?: number
+)
+```
+
+#### 主要方法
+
+##### `connect(): Promise<void>`
+
+连接小智接入点。
+
+##### `disconnect(): Promise<void>`
+
+主动断开小智连接。
+
+##### `reconnect(): Promise<void>`
+
+重连小智接入点。
+
+##### `getTools(): Tool[]`
+
+获取当前所有工具列表。
+
+##### `getStatus(): EndpointConnectionStatus`
+
+获取服务器状态。
+
+**返回**:
+```typescript
+interface EndpointConnectionStatus {
+  connected: boolean;
+  initialized: boolean;
+  url: string;
+  availableTools: number;
+  connectionState: ConnectionState;
+  lastError?: string;
+}
+```
+
+##### `isConnected(): boolean`
+
+检查连接状态。
+
+##### `getUrl(): string`
+
+获取 Endpoint URL。
+
+### EndpointManager
+
+管理多个小智接入点的连接，共享外部传入的 MCPManager。
+
+#### 构造函数
+
+```typescript
+constructor(config?: EndpointManagerConfig)
+```
+
+**配置**:
+```typescript
+interface EndpointManagerConfig {
+  defaultReconnectDelay?: number;  // 默认重连延迟（毫秒）
+}
+```
+
+#### 主要方法
+
+##### `setMcpManager(mcpManager: IMCPServiceManager): void`
+
+设置 MCPManager 实例（必需）。
+
+**注意**: MCPManager 的生命周期由外部管理，EndpointManager 不负责连接和断开。
+
+**示例**:
+```typescript
+const mcpManager = new MCPManager();
+mcpManager.addServer("calculator", {
+  command: "npx",
+  args: ["-y", "calculator-mcp"]
+});
+await mcpManager.connect();
+
+const endpointManager = new EndpointManager();
+endpointManager.setMcpManager(mcpManager);
+```
+
+##### `addEndpoint(endpoint: string | Endpoint): void`
+
+添加 Endpoint（支持 URL 字符串或 Endpoint 实例）。
+
+**参数**:
+- `endpoint`: Endpoint URL 字符串或 Endpoint 实例
+
+##### `removeEndpoint(endpoint: Endpoint): Promise<void>`
+
+移除 Endpoint 实例。
+
+##### `connect(endpoint?: string): Promise<void>`
+
+连接 Endpoint。
+
+**参数**:
+- `endpoint` (可选): 指定要连接的端点 URL。如果不传入，则连接所有端点
+
+##### `disconnect(endpoint?: string): Promise<void>`
+
+断开连接。
+
+**参数**:
+- `endpoint` (可选): 指定要断开的端点 URL。如果不传入，则断开所有端点
+
+##### `reconnect(endpoint?: string, delay?: number): Promise<void>`
+
+重连。
+
+**参数**:
+- `endpoint` (可选): 指定要重连的端点 URL
+- `delay` (可选): disconnect 和 connect 之间的等待时间（毫秒），默认 1000ms
+
+##### `getEndpoints(): string[]`
+
+获取所有 Endpoint URL。
+
+##### `getEndpoint(url: string): Endpoint | undefined`
+
+获取指定 Endpoint 实例。
+
+##### `getConnectionStatus(): SimpleConnectionStatus[]`
+
+获取所有连接状态。
+
+##### `isAnyConnected(): boolean`
+
+检查是否有任何连接处于连接状态。
+
+##### `isEndpointConnected(url: string): boolean`
+
+检查指定端点是否已连接。
+
+##### `getEndpointStatus(url: string): SimpleConnectionStatus | undefined`
+
+获取指定端点的状态。
+
+##### `clearEndpoints(): Promise<void>`
+
+清除所有端点。
+
+##### `cleanup(): Promise<void>`
+
+清理资源。
+
+## 类型定义
+
+### ConnectionState
+
+连接状态枚举。
+
+```typescript
+enum ConnectionState {
+  DISCONNECTED = "disconnected",
+  CONNECTING = "connecting",
+  CONNECTED = "connected",
+  RECONNECTING = "reconnecting",
+  FAILED = "failed",
+  ERROR = "error",
+}
+```
+
+### SimpleConnectionStatus
+
+简单连接状态接口。
+
+```typescript
+interface SimpleConnectionStatus {
+  endpoint: string;
+  connected: boolean;
+  initialized: boolean;
+  lastConnected?: Date;
+  lastError?: string;
+}
+```
+
+### MCPServerConfig
+
+MCP 服务器配置接口。
+
+```typescript
+interface MCPServerConfig {
+  type?: MCPTransportType;
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  url?: string;
+  apiKey?: string;
+  headers?: Record<string, string>;
+}
+```
+
+### 工具调用错误码
+
+```typescript
+enum ToolCallErrorCode {
+  INVALID_PARAMS = -32602,      // 无效参数
+  TOOL_NOT_FOUND = -32601,      // 工具不存在
+  SERVICE_UNAVAILABLE = -32001, // 服务不可用
+  TIMEOUT = -32002,             // 调用超时
+  TOOL_EXECUTION_ERROR = -32000,// 工具执行错误
+}
+```
+
+## 使用示例
+
+### 方式一：使用工厂方法（推荐）
+
+```typescript
+import { Endpoint } from "@xiaozhi-client/endpoint";
+
+// 使用声明式配置创建 Endpoint
+const endpoint = await Endpoint.create({
+  endpointUrl: "wss://api.xiaozhi.me/mcp/?token=xxx",
+  mcpServers: {
+    calculator: {
+      command: "npx",
+      args: ["-y", "@xiaozhi-client/calculator-mcp"]
+    },
+    weather: {
+      command: "node",
+      args: ["./weather-server.js"]
+    }
+  },
+  reconnectDelay: 2000
+});
+
+// 检查连接状态
+console.log("已连接:", endpoint.isConnected());
+
+// 获取工具列表
+const tools = endpoint.getTools();
+console.log("可用工具:", tools);
+
+// 获取状态
+const status = endpoint.getStatus();
+console.log("状态:", status);
+```
+
+### 方式二：使用 EndpointManager 管理多个端点
+
+```typescript
+import { EndpointManager } from "@xiaozhi-client/endpoint";
+import { MCPManager } from "@xiaozhi-client/mcp-core";
+
+// 1. 先创建并配置 MCPManager
+const mcpManager = new MCPManager();
+mcpManager.addServer("calculator", {
+  command: "npx",
+  args: ["-y", "calculator-mcp"]
+});
+await mcpManager.connect();
+
+// 2. 创建 EndpointManager 并设置 MCPManager
+const manager = new EndpointManager({ defaultReconnectDelay: 2000 });
+manager.setMcpManager(mcpManager);
+
+// 3. 添加接入点
+manager.addEndpoint("wss://api1.xiaozhi.me/mcp");
+manager.addEndpoint("wss://api2.xiaozhi.me/mcp");
+
+// 4. 连接所有接入点
+await manager.connect();
+
+// 5. 检查状态
+const statuses = manager.getConnectionStatus();
+console.log("连接状态:", statuses);
+
+// 6. 重连指定端点
+await manager.reconnect("wss://api1.xiaozhi.me/mcp");
+```
+
+### 监听端点事件
+
+```typescript
+import { getEventBus } from "@/services/event-bus.service.js";
+
+const eventBus = getEventBus();
+
+// 监听端点状态变更
+eventBus.onEvent("endpoint:status:changed", (data) => {
+  console.log("端点状态变更:", data.endpoint, data.connected);
+});
+
+// 监听重连完成
+eventBus.onEvent("endpoint:reconnect:completed", (data) => {
+  console.log("重连完成:", data.endpointCount);
+});
+```
+
+## 架构特点
+
+### 独立多端点架构
+
+- **完全独立**: 每个端点拥有独立的连接和状态管理
+- **无负载均衡**: 移除所有负载均衡逻辑和算法
+- **无故障转移**: 端点失败时不自动切换到其他端点
+- **简单重连**: 固定间隔重连，避免指数退避复杂性
+- **直接访问**: 应用程序可以直接指定和访问特定端点
+
+### MCPManager 共享
+
+- EndpointManager 通过 `setMcpManager()` 方法接收外部传入的 MCPManager
+- 所有 Endpoint 实例共享同一个 MCPManager
+- MCPManager 的生命周期由外部管理，EndpointManager 不负责连接和断开
+
+## 注意事项
+
+1. **MCPManager 生命周期**: 使用 EndpointManager 时，必须先设置 MCPManager 并确保其已连接
+2. **重连延迟**: `reconnectDelay` 参数控制 Endpoint 实例的重连延迟，EndpointManager 的 `delay` 参数只控制 disconnect 和 connect 之间的等待时间
+3. **资源清理**: 使用完毕后应调用 `cleanup()` 方法清理资源
+4. **连接超时**: 默认连接超时为 10 秒
+
+## 相关模块
+
+- [MCP 模块](./mcp) - Endpoint 内部使用 MCP 模块管理工具
+- [WebSocket 通信](./websocket) - Endpoint 使用 WebSocket 进行通信
+- [事件总线](./event-bus) - 端点状态变更通过事件总线通知
