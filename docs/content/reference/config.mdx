@@ -1,0 +1,387 @@
+---
+title: "配置管理 API - Xiaozhi Client"
+description: "配置管理模块的 API 参考文档"
+---
+
+# 配置管理 API
+
+## 概述
+
+配置管理模块是 xiaozhi-client 的核心配置管理组件，负责配置文件的读取和解析（支持 JSON、JSON5、JSONC 格式）、配置验证和类型检查、配置更新和持久化、配置变更事件通知等。
+
+**文件位置**: `packages/config/src/manager.ts`
+
+## 核心组件
+
+### configManager
+
+配置管理器单例，提供全局的配置访问和修改接口。
+
+#### 主要方法
+
+##### `getConfig(): AppConfig`
+
+获取当前配置对象。
+
+**返回**: 应用配置对象
+
+**示例**:
+```typescript
+import { configManager } from '@xiaozhi-client/config';
+
+const config = configManager.getConfig();
+console.log('MCP 端点:', config.mcpEndpoint);
+```
+
+##### `updateConfig(updates: Partial<AppConfig>): Promise<void>`
+
+更新配置并持久化到文件。
+
+**参数**:
+- `updates`: 部分配置更新对象
+
+**示例**:
+```typescript
+await configManager.updateConfig({
+  mcpEndpoint: 'wss://api.xiaozhi.me/mcp'
+});
+```
+
+##### `reloadConfig(): Promise<void>`
+
+重新加载配置文件。
+
+##### `getConfigPath(): string`
+
+获取配置文件路径。
+
+##### `getMcpServers(): Record<string, MCPToolConfig>`
+
+获取 MCP 服务器配置。
+
+##### `addMcpServer(name: string, config: MCPToolConfig): Promise<void>`
+
+添加 MCP 服务器配置。
+
+**参数**:
+- `name`: 服务器名称
+- `config`: 服务器配置
+
+**示例**:
+```typescript
+await configManager.addMcpServer('calculator', {
+  command: 'npx',
+  args: ['-y', '@xiaozhi-client/calculator-mcp']
+});
+```
+
+##### `removeMcpServer(name: string): Promise<void>`
+
+移除 MCP 服务器配置。
+
+**参数**:
+- `name`: 要移除的服务器名称
+
+##### `updateMcpServer(name: string, config: Partial<MCPToolConfig>): Promise<void>`
+
+更新 MCP 服务器配置。
+
+**参数**:
+- `name`: 服务器名称
+- `config`: 部分配置更新
+
+##### `getCustomMcpTools(): CustomMCPTool[]`
+
+获取自定义 MCP 工具配置。
+
+##### `addCustomMcpTool(tool: CustomMCPTool): Promise<void>`
+
+添加自定义 MCP 工具。
+
+##### `removeCustomMcpTool(toolName: string): Promise<void>`
+
+移除自定义 MCP 工具。
+
+##### `getConnectionConfig(): ConnectionConfig`
+
+获取连接配置。
+
+##### `updateConnectionConfig(config: Partial<ConnectionConfig>): Promise<void>`
+
+更新连接配置。
+
+##### `getWebUIConfig(): WebUIConfig | undefined`
+
+获取 Web UI 配置。
+
+##### `updateWebUIConfig(config: Partial<WebUIConfig>): Promise<void>`
+
+更新 Web UI 配置。
+
+#### 事件监听
+
+配置管理器继承自 EventEmitter，支持监听配置更新事件。
+
+```typescript
+// 监听配置更新事件
+configManager.on('config:updated', (payload) => {
+  console.log('配置已更新:', payload.type);
+
+  // 获取最新配置
+  const latestConfig = configManager.getConfig();
+});
+```
+
+**事件负载类型**:
+```typescript
+interface ConfigUpdatePayload {
+  type: 'endpoint' | 'customMCP' | 'config' | 'serverTools' | 'connection' | 'modelscope' | 'webui' | 'platform';
+  timestamp: Date;
+  serviceName?: string;
+  platformName?: string;
+}
+```
+
+## 配置文件格式
+
+配置文件 `xiaozhi.config.json` 支持以下格式：
+
+### JSON 格式
+
+```json
+{
+  "mcpEndpoint": "wss://api.xiaozhi.me/mcp",
+  "mcpServers": {
+    "calculator": {
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/calculator-mcp"]
+    }
+  },
+  "connection": {
+    "heartbeatInterval": 30000,
+    "heartbeatTimeout": 10000,
+    "reconnectInterval": 5000
+  }
+}
+```
+
+### JSON5/JSONC 格式（支持注释）
+
+```json5
+{
+  // 小智接入点地址
+  "mcpEndpoint": "wss://api.xiaozhi.me/mcp",
+
+  // MCP 服务器配置
+  "mcpServers": {
+    /* 计算器服务 */
+    "calculator": {
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/calculator-mcp"]
+    }
+  }
+}
+```
+
+## 类型定义
+
+### AppConfig
+
+应用配置接口。
+
+```typescript
+interface AppConfig {
+  // 小智接入点配置
+  mcpEndpoint?: string | string[];
+
+  // MCP 服务器配置
+  mcpServers?: Record<string, MCPToolConfig>;
+
+  // 自定义 MCP 工具
+  customMcpTools?: CustomMCPTool[];
+
+  // 连接配置
+  connection?: ConnectionConfig;
+
+  // ModelScope 配置
+  modelscope?: ModelScopeConfig;
+
+  // Web UI 配置
+  webUI?: WebUIConfig;
+
+  // 平台配置
+  platforms?: Record<string, PlatformConfig>;
+}
+```
+
+### MCPToolConfig
+
+MCP 服务器配置接口。
+
+```typescript
+interface MCPToolConfig {
+  type?: MCPTransportType;
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  url?: string;
+  apiKey?: string;
+  headers?: Record<string, string>;
+  customSSEOptions?: ModelScopeSSEOptions;
+}
+```
+
+### ConnectionConfig
+
+连接配置接口。
+
+```typescript
+interface ConnectionConfig {
+  heartbeatInterval?: number;  // 心跳间隔（毫秒）
+  heartbeatTimeout?: number;   // 心跳超时（毫秒）
+  reconnectInterval?: number;  // 重连间隔（毫秒）
+}
+```
+
+### ModelScopeConfig
+
+ModelScope 配置接口。
+
+```typescript
+interface ModelScopeConfig {
+  apiKey?: string;
+  baseUrl?: string;
+}
+```
+
+### WebUIConfig
+
+Web UI 配置接口。
+
+```typescript
+interface WebUIConfig {
+  enabled?: boolean;
+  port?: number;
+}
+```
+
+### PlatformConfig
+
+平台配置接口。
+
+```typescript
+interface PlatformConfig {
+  apiKey?: string;
+  baseUrl?: string;
+}
+```
+
+### CustomMCPTool
+
+自定义 MCP 工具接口。
+
+```typescript
+interface CustomMCPTool {
+  name: string;
+  description?: string;
+  inputSchema: JSONSchema;
+  handler?: {
+    type: string;
+    config?: Record<string, unknown>;
+  };
+}
+```
+
+## 使用示例
+
+### 基本使用
+
+```typescript
+import { configManager } from '@xiaozhi-client/config';
+
+// 获取配置
+const config = configManager.getConfig();
+console.log('配置:', config);
+
+// 更新端点
+await configManager.updateConfig({
+  mcpEndpoint: 'wss://api.xiaozhi.me/mcp'
+});
+```
+
+### 管理 MCP 服务器
+
+```typescript
+// 添加服务器
+await configManager.addMcpServer('calculator', {
+  command: 'npx',
+  args: ['-y', '@xiaozhi-client/calculator-mcp']
+});
+
+// 获取所有服务器
+const servers = configManager.getMcpServers();
+
+// 更新服务器
+await configManager.updateMcpServer('calculator', {
+  args: ['-y', '@xiaozhi-client/calculator-mcp', '--verbose']
+});
+
+// 移除服务器
+await configManager.removeMcpServer('calculator');
+```
+
+### 管理连接配置
+
+```typescript
+// 获取连接配置
+const connectionConfig = configManager.getConnectionConfig();
+
+// 更新连接配置
+await configManager.updateConnectionConfig({
+  heartbeatInterval: 30000,
+  reconnectInterval: 5000
+});
+```
+
+### 监听配置变更
+
+```typescript
+// 监听配置更新事件
+configManager.on('config:updated', (payload) => {
+  switch (payload.type) {
+    case 'endpoint':
+      console.log('端点配置已更新');
+      break;
+    case 'customMCP':
+      console.log('自定义 MCP 工具已更新');
+      break;
+    case 'connection':
+      console.log('连接配置已更新');
+      break;
+    default:
+      console.log('配置已更新:', payload.type);
+  }
+});
+```
+
+## 配置文件路径解析
+
+配置管理器会按以下顺序查找配置文件：
+
+1. 当前工作目录的 `xiaozhi.config.json`
+2. 用户主目录的 `.xiaozhi/config.json`
+3. 默认配置
+
+可以使用 `getConfigPath()` 获取当前使用的配置文件路径。
+
+## 注意事项
+
+1. **格式兼容**: 配置文件支持 JSON、JSON5 和 JSONC 格式，推荐使用 JSON5 以支持注释
+2. **事件监听**: 配置更新会触发 `config:updated` 事件，可用于响应配置变更
+3. **持久化**: 使用 `updateConfig` 等方法会自动持久化到文件
+4. **重载配置**: 修改配置文件后，可以调用 `reloadConfig()` 重新加载
+
+## 相关模块
+
+- [MCP 模块](./mcp) - MCP 服务器配置由配置管理模块提供
+- [事件总线](./event-bus) - 配置更新通过事件总线通知其他模块
