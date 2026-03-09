@@ -1,5 +1,5 @@
 /**
- * HMAC256 Signature authentication
+ * HMAC256 签名认证
  */
 
 import { createHmac } from "node:crypto";
@@ -7,7 +7,7 @@ import { URL } from "node:url";
 import type { AuthHeaders } from "@/auth/types.js";
 
 /**
- * Generate HMAC256 Signature authentication headers
+ * 生成 HMAC256 签名认证请求头
  */
 export class SignatureAuth {
   private token: string;
@@ -21,30 +21,30 @@ export class SignatureAuth {
   }
 
   /**
-   * Get authentication headers
+   * 获取认证请求头
    */
   getHeaders(requestData?: Buffer): AuthHeaders {
     const url = new URL(this.wsUrl);
     const path = url.pathname || "/";
 
-    // Build input string for signature
+    // 构建签名字符串
     let inputStr = `GET ${path} HTTP/1.1\n`;
 
-    // Custom header (using "Custom" as in Python code)
+    // 自定义请求头（与 Python 代码保持一致，使用 "Custom"）
     const headerValue = "auth_custom";
     inputStr += `${headerValue}\n`;
 
-    // Append request data if provided
+    // 如果提供了请求数据，则追加
     if (requestData) {
       inputStr += requestData.toString("latin1");
     }
 
-    // Calculate HMAC256 signature
+    // 计算 HMAC256 签名
     const hmac = createHmac("sha256", this.secret);
     hmac.update(inputStr, "latin1");
     const mac = hmac.digest("base64").replace(/\+/g, "-").replace(/\//g, "_");
 
-    // Build authorization header
+    // 构建认证请求头
     const authHeader = `HMAC256; access_token="${this.token}"; mac="${mac}"; h="${headerValue}"`;
 
     return {
@@ -54,7 +54,7 @@ export class SignatureAuth {
   }
 
   /**
-   * Static method for quick header generation
+   * 快速生成认证请求头的静态方法
    */
   static createHeaders(
     token: string,
