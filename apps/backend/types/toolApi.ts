@@ -5,6 +5,7 @@
 
 import type { JSONSchema as LibJSONSchema } from "@/lib/mcp/types.js";
 import type { CozeWorkflow, WorkflowParameterConfig } from "./coze.js";
+import type { CustomMCPTool } from "@xiaozhi-client/config";
 
 /**
  * JSON Schema 类型
@@ -252,7 +253,7 @@ export interface ToolValidationErrorDetail {
  */
 export interface AddToolResponse {
   /** 成功添加的工具 */
-  tool: any;
+  tool: CustomMCPTool;
   /** 工具名称 */
   toolName: string;
   /** 工具类型 */
