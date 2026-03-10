@@ -49,6 +49,9 @@ export class TTSService implements ITTSService {
   /** 每个设备的连接引用（用于缓冲区处理） */
   private readonly deviceConnections = new Map<string, ESP32Connection>();
 
+  /** 缓冲区排空定时器（用于清理和超时保护） */
+  private readonly bufferDrainTimers = new Map<string, NodeJS.Timeout>();
+
   /**
    * 构造函数
    * @param options - 配置选项
@@ -205,7 +208,16 @@ export class TTSService implements ITTSService {
    * @param deviceId - 设备 ID
    */
   private waitForBufferDrain(deviceId: string): void {
+    // 清理旧的定时器（如果存在）
+    const existingTimer = this.bufferDrainTimers.get(deviceId);
+    if (existingTimer) {
+      clearInterval(existingTimer);
+      this.bufferDrainTimers.delete(deviceId);
+    }
+
     const checkInterval = 50; // 每 50ms 检查一次
+    const timeout = 10000; // 10秒超时
+    let elapsed = 0;
 
     const check = (): boolean => {
       const buffer = this.opusPacketBuffer.get(deviceId);
@@ -216,7 +228,6 @@ export class TTSService implements ITTSService {
         `[TTSService] 缓冲区排空检查: deviceId=${deviceId}, buffer=${buffer?.length}, isProcessing=${isProcessing}`
       );
       if ((!buffer || buffer.length === 0) && !isProcessing) {
-        this.sendStopAndCleanup(deviceId);
         return true;
       }
 
@@ -225,15 +236,36 @@ export class TTSService implements ITTSService {
 
     // 如果当前不在处理中，立即检查
     if (!this.isProcessingBuffer.get(deviceId)) {
-      if (check()) return;
+      if (check()) {
+        void this.sendStopAndCleanup(deviceId);
+        return;
+      }
     }
 
-    // 循环检查
+    // 循环检查，带超时保护
     const intervalId = setInterval(() => {
+      elapsed += checkInterval;
+
       if (check()) {
         clearInterval(intervalId);
+        this.bufferDrainTimers.delete(deviceId);
+        void this.sendStopAndCleanup(deviceId);
+        return;
+      }
+
+      // 超时保护：如果超过 10 秒仍未排空，强制清理
+      if (elapsed >= timeout) {
+        clearInterval(intervalId);
+        this.bufferDrainTimers.delete(deviceId);
+        logger.warn(
+          `[TTSService] 缓冲区排空超时: deviceId=${deviceId}, 强制清理`
+        );
+        void this.sendStopAndCleanup(deviceId);
       }
     }, checkInterval);
+
+    // 存储定时器引用，以便在 cleanup 时清理
+    this.bufferDrainTimers.set(deviceId, intervalId);
   }
 
   /**
@@ -346,6 +378,13 @@ export class TTSService implements ITTSService {
    * @param deviceId - 设备 ID
    */
   cleanup(deviceId: string): void {
+    // 清理定时器
+    const timer = this.bufferDrainTimers.get(deviceId);
+    if (timer) {
+      clearInterval(timer);
+      this.bufferDrainTimers.delete(deviceId);
+    }
+
     this.audioDemuxers.delete(deviceId);
     this.cumulativeTimestamps.delete(deviceId);
     this.packetIndices.delete(deviceId);
@@ -498,6 +537,12 @@ export class TTSService implements ITTSService {
    * 销毁服务
    */
   destroy(): void {
+    // 清理所有定时器
+    for (const timer of this.bufferDrainTimers.values()) {
+      clearInterval(timer);
+    }
+    this.bufferDrainTimers.clear();
+
     this.ttsTriggered.clear();
     this.audioDemuxers.clear();
     this.cumulativeTimestamps.clear();
