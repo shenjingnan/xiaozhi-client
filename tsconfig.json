@@ -32,6 +32,7 @@
   "references": [
     { "path": "./apps/backend" },
     { "path": "./packages/asr" },
+    { "path": "./packages/tts" },
     { "path": "./packages/config" },
     { "path": "./packages/mcp-core" },
     { "path": "./packages/shared-types" },
