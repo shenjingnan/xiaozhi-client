@@ -75,8 +75,8 @@ export class ByteDanceTTSController implements TTSController {
         reject(new Error("WebSocket 未创建"));
         return;
       }
-      this.ws.on("open", () => resolve());
-      this.ws.on("error", (err) => reject(err));
+      this.ws.once("open", () => resolve());
+      this.ws.once("error", (err) => reject(err));
     });
 
     const request = {
@@ -139,7 +139,13 @@ export class ByteDanceTTSController implements TTSController {
           console.log(
             `[TTSController] Calling onAudioChunk: isLast=${isLast}, sequence=${msg.sequence}`
           );
-          await onAudioChunk(msg.payload, isLast);
+          try {
+            await onAudioChunk(msg.payload, isLast);
+          } catch (error) {
+            console.error("[TTSController] onAudioChunk 回调错误:", error);
+            this.close();
+            throw error;
+          }
 
           if (isLast) {
             this.close();
@@ -177,8 +183,8 @@ export class ByteDanceTTSController implements TTSController {
         reject(new Error("WebSocket 未创建"));
         return;
       }
-      this.ws.on("open", () => resolve());
-      this.ws.on("error", (err) => reject(err));
+      this.ws.once("open", () => resolve());
+      this.ws.once("error", (err) => reject(err));
     });
 
     const request = {
