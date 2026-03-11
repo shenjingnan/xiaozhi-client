@@ -14,6 +14,7 @@
 import { EventEmitter } from "node:events";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
+import type { ClientInfo } from "@/services/status.service.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 /**
@@ -30,7 +31,7 @@ export interface EventBusEvents {
   "config:error": { error: Error; operation: string };
 
   // 状态相关事件
-  "status:updated": { status: any; source: string };
+  "status:updated": { status: ClientInfo; source: string };
   "status:error": { error: Error; operation: string };
 
   // 接入点状态变更事件

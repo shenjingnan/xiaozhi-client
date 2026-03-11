@@ -4,6 +4,7 @@ import {
   destroyEventBus,
   getEventBus,
 } from "../event-bus.service.js";
+import type { ClientInfo } from "../status.service.js";
 
 // 模拟依赖
 vi.mock("../../Logger.js", () => ({
@@ -87,7 +88,12 @@ describe("EventBus", () => {
     });
 
     it("should emit status:updated event successfully", () => {
-      const eventData = { status: { connected: true }, source: "test" };
+      const mockStatus: ClientInfo = {
+        status: "connected",
+        mcpEndpoint: "test-endpoint",
+        activeMCPServers: [],
+      };
+      const eventData = { status: mockStatus, source: "test" };
       const listener = vi.fn();
 
       eventBus.onEvent("status:updated", listener);
@@ -483,10 +489,18 @@ describe("EventBus", () => {
 
     it("should return correct event statistics", () => {
       const eventData = { type: "customMCP", timestamp: new Date() };
+      const mockStatus: ClientInfo = {
+        status: "connected",
+        mcpEndpoint: "test-endpoint",
+        activeMCPServers: [],
+      };
 
       eventBus.emitEvent("config:updated", eventData);
       eventBus.emitEvent("config:updated", eventData);
-      eventBus.emitEvent("status:updated", { status: {}, source: "test" });
+      eventBus.emitEvent("status:updated", {
+        status: mockStatus,
+        source: "test",
+      });
 
       const stats = eventBus.getEventStats();
 
@@ -536,8 +550,16 @@ describe("EventBus", () => {
   describe("clearEventStats", () => {
     it("should clear all event statistics", () => {
       const eventData = { type: "customMCP", timestamp: new Date() };
+      const mockStatus: ClientInfo = {
+        status: "connected",
+        mcpEndpoint: "test-endpoint",
+        activeMCPServers: [],
+      };
       eventBus.emitEvent("config:updated", eventData);
-      eventBus.emitEvent("status:updated", { status: {}, source: "test" });
+      eventBus.emitEvent("status:updated", {
+        status: mockStatus,
+        source: "test",
+      });
 
       let stats = eventBus.getEventStats();
       expect(Object.keys(stats)).toHaveLength(2);
@@ -554,6 +576,11 @@ describe("EventBus", () => {
     it("should return correct status information", () => {
       const listener1 = vi.fn();
       const listener2 = vi.fn();
+      const mockStatus: ClientInfo = {
+        status: "connected",
+        mcpEndpoint: "test-endpoint",
+        activeMCPServers: [],
+      };
 
       eventBus.onEvent("config:updated", listener1);
       eventBus.onEvent("status:updated", listener2);
@@ -562,7 +589,10 @@ describe("EventBus", () => {
         type: "customMCP",
         timestamp: new Date(),
       });
-      eventBus.emitEvent("status:updated", { status: {}, source: "test" });
+      eventBus.emitEvent("status:updated", {
+        status: mockStatus,
+        source: "test",
+      });
 
       const status = eventBus.getStatus();
 
