@@ -125,7 +125,7 @@
  * ```
  */
 
-import * as fs from "node:fs";
+import * as fsPromises from "node:fs/promises";
 import * as path from "node:path";
 import chalk from "chalk";
 import pino from "pino";
@@ -330,16 +330,19 @@ export class Logger {
    * 初始化日志文件
    * @param projectDir 项目目录
    */
-  initLogFile(projectDir: string): void {
+  async initLogFile(projectDir: string): Promise<void> {
     this.logFilePath = path.join(projectDir, "xiaozhi.log");
 
-    // 检查并轮转日志文件
-    this.rotateLogFileIfNeeded();
+    // 异步检查并轮转日志文件
+    await this.rotateLogFileIfNeeded();
 
-    // 确保日志文件存在
+    // 确保日志文件存在（异步操作）
     try {
-      if (!fs.existsSync(this.logFilePath)) {
-        fs.writeFileSync(this.logFilePath, "");
+      try {
+        await fsPromises.access(this.logFilePath);
+      } catch {
+        // 文件不存在，创建空文件
+        await fsPromises.writeFile(this.logFilePath, "");
       }
     } catch (error) {
       // 如果创建日志文件失败，记录警告但继续执行
@@ -502,58 +505,72 @@ export class Logger {
   /**
    * 检查并轮转日志文件（如果需要）
    */
-  private rotateLogFileIfNeeded(): void {
-    if (!this.logFilePath || !fs.existsSync(this.logFilePath)) {
-      return;
-    }
+  private async rotateLogFileIfNeeded(): Promise<void> {
+    if (!this.logFilePath) return;
 
     try {
-      const stats = fs.statSync(this.logFilePath);
+      await fsPromises.access(this.logFilePath);
+      const stats = await fsPromises.stat(this.logFilePath);
       if (stats.size > this.maxLogFileSize) {
-        this.rotateLogFile();
+        // 异步执行日志轮转，避免阻塞事件循环
+        this.rotateLogFile().catch((error) => {
+          console.warn(`[Logger] 日志轮转失败: ${error}`);
+        });
       }
-    } catch (error) {
-      // 忽略文件状态检查错误
+    } catch {
+      // 文件不存在或无法访问，忽略错误
     }
   }
 
   /**
-   * 轮转日志文件
+   * 轮转日志文件（异步执行）
    */
-  private rotateLogFile(): void {
+  private async rotateLogFile(): Promise<void> {
     if (!this.logFilePath) return;
 
     try {
       const logDir = path.dirname(this.logFilePath);
       const logName = path.basename(this.logFilePath, ".log");
 
-      // 移动现有的编号日志文件
+      // 移动现有的编号日志文件（从后往前，避免覆盖）
       for (let i = this.maxLogFiles - 1; i >= 1; i--) {
         const oldFile = path.join(logDir, `${logName}.${i}.log`);
         const newFile = path.join(logDir, `${logName}.${i + 1}.log`);
 
-        if (fs.existsSync(oldFile)) {
-          if (i === this.maxLogFiles - 1) {
-            // 删除最老的文件
-            fs.unlinkSync(oldFile);
-          } else {
-            fs.renameSync(oldFile, newFile);
+        if (i === this.maxLogFiles - 1) {
+          // 尝试删除最老的文件，如果不存在则忽略
+          try {
+            await fsPromises.unlink(oldFile);
+          } catch {
+            // 文件不存在，继续
           }
+        }
+
+        // 尝试重命名文件，如果不存在则忽略
+        try {
+          await fsPromises.rename(oldFile, newFile);
+        } catch {
+          // 文件不存在或已被移动，继续
         }
       }
 
       // 将当前日志文件重命名为 .1.log
       const firstRotatedFile = path.join(logDir, `${logName}.1.log`);
-      fs.renameSync(this.logFilePath, firstRotatedFile);
+      await fsPromises.rename(this.logFilePath, firstRotatedFile);
     } catch (error) {
-      // 轮转失败时忽略错误，继续使用当前文件
+      // 轮转失败时记录错误，继续使用当前文件
+      console.warn(
+        `[Logger] 日志轮转失败: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 
   /**
-   * 清理旧的日志文件
+   * 清理旧的日志文件（异步执行）
    */
-  cleanupOldLogs(): void {
+  async cleanupOldLogs(): Promise<void> {
     if (!this.logFilePath) return;
 
     try {
@@ -561,12 +578,21 @@ export class Logger {
       const logName = path.basename(this.logFilePath, ".log");
 
       // 删除超过最大数量的日志文件
+      const unlinkPromises: Promise<void>[] = [];
       for (let i = this.maxLogFiles + 1; i <= this.maxLogFiles + 10; i++) {
         const oldFile = path.join(logDir, `${logName}.${i}.log`);
-        if (fs.existsSync(oldFile)) {
-          fs.unlinkSync(oldFile);
-        }
+        // 使用 promise 来尝试删除，忽略不存在的文件
+        unlinkPromises.push(
+          (async () => {
+            try {
+              await fsPromises.unlink(oldFile);
+            } catch {
+              // 文件不存在或无法删除，忽略
+            }
+          })()
+        );
       }
+      await Promise.all(unlinkPromises);
     } catch (error) {
       // 忽略清理错误
     }
