@@ -47,6 +47,14 @@ export type {
   ConnectionStats,
 } from "./transport";
 
+export {
+  MCPTransportType,
+  type MCPTransportTypeString,
+  type MCPTransportTypeInput,
+  inferTransportTypeFromUrl,
+  type InferTransportTypeOptions,
+} from "./transport";
+
 // 工具定义类型
 export type {
   CustomMCPTool,

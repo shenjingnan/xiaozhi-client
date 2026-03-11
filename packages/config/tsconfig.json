@@ -7,7 +7,5 @@
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"],
-  "references": [
-    { "path": "../mcp-core" }
-  ]
+  "references": []
 }
