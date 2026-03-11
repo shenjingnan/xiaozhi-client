@@ -1,3 +1,12 @@
+/**
+ * RemoveMcpServerButton 组件 - MCP 服务器删除按钮
+ *
+ * 功能：
+ * - 删除指定的 MCP 服务器配置
+ * - 删除前显示确认对话框
+ * - 支持自定义删除成功回调
+ * - 显示加载状态和错误提示
+ */
 import {
   AlertDialog,
   AlertDialogAction,
