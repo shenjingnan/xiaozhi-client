@@ -5,6 +5,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { promises as fs } from "node:fs";
 import {
   existsSync,
   mkdirSync,
@@ -317,13 +318,14 @@ export class MCPCacheManager {
   async getStats(): Promise<CacheStats | null> {
     try {
       const cache = await this.loadExistingCache();
+      const cacheFileSize = existsSync(this.cachePath)
+        ? (await fs.stat(this.cachePath)).size
+        : 0;
       const stats: CacheStats = {
         totalWrites: cache.metadata.totalWrites,
         lastUpdate: cache.metadata.lastGlobalUpdate,
         serverCount: Object.keys(cache.mcpServers).length,
-        cacheFileSize: existsSync(this.cachePath)
-          ? readFileSync(this.cachePath, "utf8").length
-          : 0,
+        cacheFileSize,
       };
       return stats;
     } catch (error) {
