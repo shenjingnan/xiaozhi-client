@@ -23,19 +23,19 @@
 
   "asr": {
     "model": "doubao",
-    "appid": "your-appid",
-    "accessToken": "your-access-token"
+    "appid": "",
+    "accessToken": ""
   },
   "llm": {
     "prompt": "./prompts/default.md",
-    "model": "your-model-name",
-    "apiKey": "your-api-key",
-    "baseURL": "your-base-url"
+    "model": "",
+    "apiKey": "",
+    "baseURL": ""
   },
   "tts": {
     "model": "doubao",
-    "appid": "your-appid",
-    "accessToken": "your-access-token",
+    "appid": "",
+    "accessToken": "",
     "voice_type": "zh_female_xiaohe_uranus_bigtts"
   },
 
