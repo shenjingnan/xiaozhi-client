@@ -86,6 +86,8 @@ export class ESP32Service {
             }
 
             try {
+              // 在调用 LLM 前重建服务，确保获取最新配置（支持配置热更新）
+              this.recreateLLMService();
               const llmResponse = await this.llmService.chat(text);
               logger.info(
                 `[ESP32Service] LLM 响应: deviceId=${deviceId}, response=${llmResponse}`
@@ -149,6 +151,16 @@ export class ESP32Service {
     this.ttsService = this.createTTSService();
     this.setupTTSGetConnection();
     logger.info("[ESP32Service] TTS 服务实例已重建");
+  }
+
+  /**
+   * 重建 LLM 服务实例
+   * 确保 LLM 配置更新后能获取最新配置
+   */
+  private recreateLLMService(): void {
+    logger.info("[ESP32Service] 重建 LLM 服务实例");
+    this.llmService = new LLMService();
+    logger.info("[ESP32Service] LLM 服务实例已重建");
   }
 
   /**

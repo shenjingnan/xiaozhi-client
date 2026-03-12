@@ -45,6 +45,23 @@ export class LLMService {
   }
 
   /**
+   * 重新初始化客户端（如果当前客户端不可用但配置有效）
+   * 用于支持配置热更新
+   */
+  private reinitClient(): void {
+    // 如果客户端已存在，不需要重新初始化
+    if (this.client !== null) {
+      return;
+    }
+
+    // 如果客户端不存在但配置有效，尝试初始化
+    if (configManager.isLLMConfigValid()) {
+      logger.info("[LLMService] 检测到配置更新，重新初始化客户端");
+      this.initClient();
+    }
+  }
+
+  /**
    * 检查 LLM 服务是否可用
    */
   isAvailable(): boolean {
@@ -57,6 +74,9 @@ export class LLMService {
    * @returns LLM 回复文本
    */
   async chat(userMessage: string): Promise<string> {
+    // 在调用前检查并尝试重新初始化（支持配置热更新）
+    this.reinitClient();
+
     if (!this.client) {
       logger.error("[LLMService] LLM 客户端未初始化");
       return "抱歉，我暂时无法回答";
