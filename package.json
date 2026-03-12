@@ -75,7 +75,7 @@
     "dotenv": "^17.2.1",
     "eventsource": "^4.0.0",
     "express": "^5.1.0",
-    "hono": "^4.12.4",
+    "hono": "^4.12.7",
     "node-cache": "^5.1.2",
     "openai": "^6.24.0",
     "ora": "^8.2.0",
@@ -130,11 +130,11 @@
       "@modelcontextprotocol/sdk@>=1.10.0 <=1.25.3": ">=1.26.0",
       "qs@>=6.7.0 <=6.14.1": ">=6.14.2",
       "tar@<7.0.0": ">=7.0.0",
-      "minimatch": ">=10.2.3",
-      "rollup": ">=4.59.0",
-      "express-rate-limit": ">=8.2.2",
-      "dompurify": ">=3.3.2",
-      "immutable": ">=5.1.5"
+      "minimatch@<11.0.0": ">=10.2.3",
+      "rollup@<5.0.0": ">=4.59.0",
+      "express-rate-limit@<9.0.0": ">=8.2.2",
+      "dompurify@<4.0.0": ">=3.3.2",
+      "immutable@<6.0.0": ">=5.1.5"
     }
   },
   "packageManager": "pnpm@10.13.1"
