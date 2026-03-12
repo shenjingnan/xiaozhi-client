@@ -553,6 +553,16 @@ export class MCPHandler {
       // 1. 从路径参数获取服务名称
       const serverName = c.req.param("serverName");
 
+      // 验证参数存在性
+      if (!serverName) {
+        return c.fail(
+          MCPErrorCode.INVALID_SERVICE_NAME,
+          "服务名称不能为空",
+          {},
+          400
+        );
+      }
+
       // 2. 验证服务名称
       const nameValidation =
         MCPServerConfigValidator.validateServiceName(serverName);
@@ -655,6 +665,16 @@ export class MCPHandler {
     try {
       // 1. 从路径参数获取服务名称
       const serverName = c.req.param("serverName");
+
+      // 验证参数存在性
+      if (!serverName) {
+        return c.fail(
+          MCPErrorCode.INVALID_SERVICE_NAME,
+          "服务名称不能为空",
+          {},
+          400
+        );
+      }
 
       // 2. 验证服务名称
       const nameValidation =
