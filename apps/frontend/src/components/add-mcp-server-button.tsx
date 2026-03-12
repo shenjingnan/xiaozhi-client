@@ -1,3 +1,24 @@
+/**
+ * MCP 服务添加按钮组件
+ *
+ * 提供通过对话框添加 MCP 服务的功能，支持两种输入模式：
+ * - 表单模式：通过表单字段逐步配置 MCP 服务
+ * - 高级模式：通过 JSON 配置批量添加 MCP 服务
+ *
+ * ## 核心功能
+ * - 表单模式：单服务添加，支持 STDIO/SSE/HTTP 三种通信方式
+ * - 高级模式：批量添加，使用 JSON 格式配置多个服务
+ * - 模式切换：支持在两种模式间切换并自动转换数据格式
+ * - 重名检查：添加前检查服务名称是否已存在
+ *
+ * ## 使用方式
+ * ```tsx
+ * import { AddMcpServerButton } from '@/components/add-mcp-server-button';
+ *
+ * <AddMcpServerButton />
+ * ```
+ */
+
 import { McpServerForm } from "@/components/mcp-server-form";
 import { Button } from "@/components/ui/button";
 import {
