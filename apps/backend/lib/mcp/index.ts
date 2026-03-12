@@ -37,3 +37,6 @@ export * from "./message.js";
 export * from "@/lib/mcp/cache.js";
 export * from "./custom.js";
 export * from "./log.js";
+
+// 重新导出 @xiaozhi-client/mcp-core 中的类型规范化工具
+export { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
