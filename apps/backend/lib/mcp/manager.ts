@@ -1386,6 +1386,7 @@ export class MCPServiceManager extends EventEmitter {
 
   /**
    * 检查工具配置是否有变化
+   * 使用 Set 数据结构优化查找性能（O(n) 而非 O(n²)）
    */
   private hasToolsConfigChanged(
     currentConfig: Record<string, MCPToolConfig>,
@@ -1399,11 +1400,15 @@ export class MCPServiceManager extends EventEmitter {
       return true;
     }
 
-    // 检查是否有新增或删除的工具
-    const addedTools = newKeys.filter((key) => !currentKeys.includes(key));
-    const removedTools = currentKeys.filter((key) => !newKeys.includes(key));
+    // 使用 Set 优化查找性能 (O(n) 而非 O(n²))
+    const currentKeysSet = new Set(currentKeys);
+    const newKeysSet = new Set(newKeys);
 
-    if (addedTools.length > 0 || removedTools.length > 0) {
+    // 检查是否有新增或删除的工具
+    const hasAddedTools = newKeys.some((key) => !currentKeysSet.has(key));
+    const hasRemovedTools = currentKeys.some((key) => !newKeysSet.has(key));
+
+    if (hasAddedTools || hasRemovedTools) {
       return true;
     }
 
