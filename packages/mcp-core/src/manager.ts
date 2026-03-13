@@ -105,7 +105,9 @@ export class MCPManager extends EventEmitter {
 
   /**
    * 连接所有已添加的 MCP 服务
-   * 所有服务并行连接，单个服务失败不会影响其他服务
+   * 所有服务并行连接，任何一个服务连接失败都会抛出异常
+   *
+   * @throws 当任何一个服务连接失败时抛出异常
    *
    * @example
    * ```typescript
@@ -148,7 +150,7 @@ export class MCPManager extends EventEmitter {
       }
     );
 
-    await Promise.allSettled(promises);
+    await Promise.all(promises);
   }
 
   /**
