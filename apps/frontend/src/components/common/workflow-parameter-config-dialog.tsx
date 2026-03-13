@@ -1,3 +1,15 @@
+/**
+ * 工作流参数配置对话框组件
+ *
+ * 用于配置 Coze 工作流的参数映射，包括：
+ * - 参数名称（字段名）
+ * - 参数描述
+ * - 参数类型（string/number/boolean）
+ * - 是否必填
+ *
+ * @module apps/frontend/src/components/common/workflow-parameter-config-dialog
+ */
+
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
