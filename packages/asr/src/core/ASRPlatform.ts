@@ -15,21 +15,46 @@ import type {
 export type ASRPlatformFactory = (config: PlatformConfig) => ASRPlatform;
 
 /**
- * 简单平台注册表实现
+ * 泛型平台注册表基础类
+ * 提供通用的平台注册逻辑
  */
-export class SimplePlatformRegistry implements PlatformRegistry {
-  private platforms: Map<string, ASRPlatform> = new Map();
+class GenericPlatformRegistry<T extends { platform: string }> {
+  private platforms: Map<string, T> = new Map();
 
-  get(platform: string): ASRPlatform | undefined {
+  get(platform: string): T | undefined {
     return this.platforms.get(platform);
   }
 
-  register(platform: ASRPlatform): void {
+  register(platform: T): void {
     this.platforms.set(platform.platform, platform);
   }
 
   list(): string[] {
     return Array.from(this.platforms.keys());
+  }
+}
+
+/**
+ * 简单平台注册表实现
+ * 基于 GenericPlatformRegistry 的类型化封装
+ */
+export class SimplePlatformRegistry implements PlatformRegistry {
+  private registry: GenericPlatformRegistry<ASRPlatform>;
+
+  constructor() {
+    this.registry = new GenericPlatformRegistry<ASRPlatform>();
+  }
+
+  get(platform: string): ASRPlatform | undefined {
+    return this.registry.get(platform);
+  }
+
+  register(platform: ASRPlatform): void {
+    this.registry.register(platform);
+  }
+
+  list(): string[] {
+    return this.registry.list();
   }
 }
 
