@@ -1,3 +1,38 @@
+## 2.1.0 (2026-03-14)
+
+### 🚀 Features
+
+- **config:** 添加提示词文件选择功能 ([#2262](https://github.com/shenjingnan/xiaozhi-client/pull/2262))
+- **config:** 添加系统提示词编辑功能 ([#2292](https://github.com/shenjingnan/xiaozhi-client/pull/2292))
+- **docker:** 添加 ffmpeg 支持以支持语音互动功能 ([#2140](https://github.com/shenjingnan/xiaozhi-client/pull/2140))
+- **frontend:** 添加实时语音卡片功能 ([#2190](https://github.com/shenjingnan/xiaozhi-client/pull/2190))
+- **llm:** 支持 LLM 服务配置热更新 ([#2388](https://github.com/shenjingnan/xiaozhi-client/pull/2388))
+- **templates:** 为模板添加语音交互配置和默认提示词 ([#2141](https://github.com/shenjingnan/xiaozhi-client/pull/2141))
+- **tts:** 添加 TTS 音色配置支持 ([#2432](https://github.com/shenjingnan/xiaozhi-client/pull/2432))
+
+### 🩹 Fixes
+
+- 修复 packages/endpoint tsconfig.json 的 outDir 配置 ([#1964](https://github.com/shenjingnan/xiaozhi-client/pull/1964), [#1958](https://github.com/shenjingnan/xiaozhi-client/issues/1958))
+- 修复 WebServer 中 eventBus 事件监听器内存泄漏 ([#1773](https://github.com/shenjingnan/xiaozhi-client/pull/1773), [#1772](https://github.com/shenjingnan/xiaozhi-client/issues/1772))
+- 将 workflow-parameter-config-dialog 中的 any 类型替换为 JSONSchema ([#2340](https://github.com/shenjingnan/xiaozhi-client/pull/2340), [#2337](https://github.com/shenjingnan/xiaozhi-client/issues/2337))
+- **event-bus:** 将 status:updated 事件的 status 字段类型从 any 改为 ClientInfo ([#2359](https://github.com/shenjingnan/xiaozhi-client/pull/2359), [#2358](https://github.com/shenjingnan/xiaozhi-client/issues/2358))
+- **frontend:** 修复语音交互设置弹窗表单初始化问题 ([#2433](https://github.com/shenjingnan/xiaozhi-client/pull/2433))
+- **security:** 修复 @discordjs/opus 传递依赖中 tar 包的 CVE 漏洞 ([#2353](https://github.com/shenjingnan/xiaozhi-client/pull/2353), [#2352](https://github.com/shenjingnan/xiaozhi-client/issues/2352))
+- **tsconfig:** 添加 packages/tts 到 TypeScript 项目引用 ([#2333](https://github.com/shenjingnan/xiaozhi-client/pull/2333), [#2332](https://github.com/shenjingnan/xiaozhi-client/issues/2332))
+- **types:** 移除 realtime-notification.handler.ts 中的 any 类型 ([#1905](https://github.com/shenjingnan/xiaozhi-client/pull/1905), [#1903](https://github.com/shenjingnan/xiaozhi-client/issues/1903))
+
+### 🔥 Performance
+
+- **backend:** 缓存 Object.values(ToolType) 避免重复数组创建 ([#1973](https://github.com/shenjingnan/xiaozhi-client/pull/1973), [#1970](https://github.com/shenjingnan/xiaozhi-client/issues/1970))
+- **config:** 优化 ConfigManager.getConfig() 性能 ([#819](https://github.com/shenjingnan/xiaozhi-client/pull/819), [#816](https://github.com/shenjingnan/xiaozhi-client/issues/816))
+- **frontend:** 使用 useMemo 优化 ToolPagination 页码计算 ([#1986](https://github.com/shenjingnan/xiaozhi-client/pull/1986), [#1983](https://github.com/shenjingnan/xiaozhi-client/issues/1983))
+- **handlers:** 缓存正则表达式以减少验证场景下的性能开销 ([#1816](https://github.com/shenjingnan/xiaozhi-client/pull/1816), [#1815](https://github.com/shenjingnan/xiaozhi-client/issues/1815))
+
+### ❤️ Thank You
+
+- Claude Opus 4.6
+- shenjingnan @shenjingnan
+
 ## 2.1.0-beta.0 (2026-03-14)
 
 ### 🚀 Features
