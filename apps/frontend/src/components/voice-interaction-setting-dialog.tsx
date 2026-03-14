@@ -29,7 +29,9 @@ import { PasswordInput } from "@/components/ui/password-input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -43,6 +45,7 @@ import type {
   AppConfig,
   LLMConfig,
   TTSConfig,
+  VoiceInfo,
 } from "@xiaozhi-client/shared-types";
 import { Edit, Plus, SettingsIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -87,6 +90,8 @@ export function VoiceInteractionSettingDialog() {
   const [selectedPromptPath, setSelectedPromptPath] = useState<
     string | undefined
   >(undefined);
+  const [voices, setVoices] = useState<VoiceInfo[]>([]);
+  const [isLoadingVoices, setIsLoadingVoices] = useState(false);
   const config = useConfig();
   const { updateConfig } = useWebSocketActions();
 
@@ -146,12 +151,27 @@ export function VoiceInteractionSettingDialog() {
     }
   }, []);
 
+  // 加载音色列表
+  const loadVoices = useCallback(async () => {
+    setIsLoadingVoices(true);
+    try {
+      const response = await apiClient.getTTSVoices();
+      setVoices(response.voices);
+    } catch (error) {
+      console.error("加载音色列表失败:", error);
+      setVoices([]);
+    } finally {
+      setIsLoadingVoices(false);
+    }
+  }, []);
+
   // 对话框打开时加载提示词文件列表
   useEffect(() => {
     if (open) {
       loadPromptFiles();
+      loadVoices();
     }
-  }, [open, loadPromptFiles]);
+  }, [open, loadPromptFiles, loadVoices]);
 
   // 打开提示词编辑器（编辑模式）
   const handleEditPrompt = useCallback(() => {
@@ -499,12 +519,48 @@ export function VoiceInteractionSettingDialog() {
                         <FormItem>
                           <FormLabel>声音类型</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="如：zh_female_shuangkuaisisi_moon_bigtts"
-                              className="font-mono text-sm"
-                              disabled={isLoading}
-                              {...field}
-                            />
+                            <Select
+                              disabled={isLoading || isLoadingVoices}
+                              value={field.value || "__none__"}
+                              onValueChange={(value) => {
+                                field.onChange(
+                                  value === "__none__" ? "" : value
+                                );
+                              }}
+                            >
+                              <SelectTrigger className="font-mono text-sm">
+                                <SelectValue placeholder="选择音色（可选）" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__">
+                                  不指定音色
+                                </SelectItem>
+                                {Object.entries(
+                                  voices.reduce(
+                                    (acc, voice) => {
+                                      if (!acc[voice.scene]) {
+                                        acc[voice.scene] = [];
+                                      }
+                                      acc[voice.scene].push(voice);
+                                      return acc;
+                                    },
+                                    {} as Record<string, VoiceInfo[]>
+                                  )
+                                ).map(([scene, sceneVoices]) => (
+                                  <SelectGroup key={scene}>
+                                    <SelectLabel>{scene}</SelectLabel>
+                                    {sceneVoices.map((voice) => (
+                                      <SelectItem
+                                        key={voice.voiceType}
+                                        value={voice.voiceType}
+                                      >
+                                        {voice.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectGroup>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
