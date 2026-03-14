@@ -767,9 +767,8 @@ export class ApiClient {
    * 获取 TTS 音色列表
    */
   async getTTSVoices(): Promise<VoicesResponse> {
-    const response: ApiResponse<VoicesResponse> = await this.request(
-      "/api/tts/voices"
-    );
+    const response: ApiResponse<VoicesResponse> =
+      await this.request("/api/tts/voices");
     if (!response.success || !response.data) {
       throw new Error("获取音色列表失败");
     }
