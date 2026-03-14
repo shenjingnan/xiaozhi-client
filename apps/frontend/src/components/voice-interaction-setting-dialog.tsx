@@ -535,6 +535,15 @@ export function VoiceInteractionSettingDialog() {
                                 <SelectItem value="__none__">
                                   不指定音色
                                 </SelectItem>
+                                {field.value &&
+                                  field.value !== "__none__" &&
+                                  !voices.some(
+                                    (v) => v.voiceType === field.value
+                                  ) && (
+                                    <SelectItem value={field.value}>
+                                      {field.value} (自定义音色)
+                                    </SelectItem>
+                                  )}
                                 {Object.entries(
                                   voices.reduce(
                                     (acc, voice) => {
