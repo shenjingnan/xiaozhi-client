@@ -6,6 +6,7 @@
 
 import { EventEmitter } from "node:events";
 import { logger } from "@/Logger.js";
+import { MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
 import { MCPService } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import { ConnectionState } from "@/lib/mcp/types";
@@ -314,7 +315,11 @@ export class MCPServiceManager extends EventEmitter {
   async startService(serviceName: string): Promise<void> {
     const config = this.configs[serviceName];
     if (!config) {
-      throw new Error(`未找到服务配置: ${serviceName}`);
+      throw MCPError.configError(
+        MCPErrorCode.SERVER_NOT_FOUND,
+        `未找到服务配置: ${serviceName}`,
+        { serverName: serviceName }
+      );
     }
 
     try {
@@ -663,7 +668,11 @@ export class MCPServiceManager extends EventEmitter {
         // 如果不是 customMCP 工具，则查找标准 MCP 工具
         const toolInfo = this.tools.get(toolName);
         if (!toolInfo) {
-          throw new Error(`未找到工具: ${toolName}`);
+          throw MCPError.validationError(
+            MCPErrorCode.TOOL_NOT_FOUND,
+            `未找到工具: ${toolName}`,
+            { context: { toolName } }
+          );
         }
 
         // 设置日志信息
@@ -672,11 +681,19 @@ export class MCPServiceManager extends EventEmitter {
 
         const service = this.services.get(toolInfo.serviceName);
         if (!service) {
-          throw new Error(`服务 ${toolInfo.serviceName} 不可用`);
+          throw MCPError.connectionError(
+            MCPErrorCode.SERVICE_UNAVAILABLE,
+            `服务 ${toolInfo.serviceName} 不可用`,
+            { serverName: toolInfo.serviceName }
+          );
         }
 
         if (!service.isConnected()) {
-          throw new Error(`服务 ${toolInfo.serviceName} 未连接`);
+          throw MCPError.connectionError(
+            MCPErrorCode.CONNECTION_FAILED,
+            `服务 ${toolInfo.serviceName} 未连接`,
+            { serverName: toolInfo.serviceName }
+          );
         }
 
         result = (await service.callTool(
@@ -968,11 +985,19 @@ export class MCPServiceManager extends EventEmitter {
 
     const service = this.services.get(serviceName);
     if (!service) {
-      throw new Error(`服务 ${serviceName} 不可用`);
+      throw MCPError.connectionError(
+        MCPErrorCode.SERVICE_UNAVAILABLE,
+        `服务 ${serviceName} 不可用`,
+        { serverName: serviceName }
+      );
     }
 
     if (!service.isConnected()) {
-      throw new Error(`服务 ${serviceName} 未连接`);
+      throw MCPError.connectionError(
+        MCPErrorCode.CONNECTION_FAILED,
+        `服务 ${serviceName} 未连接`,
+        { serverName: serviceName }
+      );
     }
 
     try {
@@ -1251,7 +1276,10 @@ export class MCPServiceManager extends EventEmitter {
       serviceName = internalConfig.name;
       finalConfig = internalConfig;
     } else {
-      throw new Error("Invalid arguments for addServiceConfig");
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_VALIDATION_FAILED,
+        "Invalid arguments for addServiceConfig"
+      );
     }
 
     // 增强配置
@@ -1592,7 +1620,10 @@ export class MCPServiceManager extends EventEmitter {
    */
   public async start(): Promise<void> {
     if (this.isRunning) {
-      throw new Error("服务器已在运行");
+      throw MCPError.configError(
+        MCPErrorCode.SERVER_ALREADY_EXISTS,
+        "服务器已在运行"
+      );
     }
 
     logger.info("启动 MCP 服务管理器");
