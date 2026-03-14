@@ -17,6 +17,8 @@ function removeThinkTags(content: string): string {
 export class LLMService {
   private client: OpenAI | null = null;
   private model = "";
+  /** 上次生效的配置键值，用于检测配置变更 */
+  private lastConfigKey: string | null = null;
 
   constructor() {
     this.initClient();
@@ -41,22 +43,45 @@ export class LLMService {
       baseURL: config.baseURL,
     });
 
+    // 保存配置快照，用于后续检测配置变更
+    this.lastConfigKey = `${config.apiKey}:${config.baseURL}:${config.model}`;
+
     logger.info(`[LLMService] OpenAI 客户端已初始化，模型: ${this.model}`);
   }
 
   /**
-   * 重新初始化客户端（如果当前客户端不可用但配置有效）
-   * 用于支持配置热更新
+   * 检测 LLM 配置是否发生变更
+   * @returns 配置是否变更
+   */
+  private hasConfigChanged(): boolean {
+    const config = configManager.getLLMConfig();
+    if (!config) return false;
+
+    const configKey = `${config.apiKey}:${config.baseURL}:${config.model}`;
+    if (this.lastConfigKey === null) return true;
+    return this.lastConfigKey !== configKey;
+  }
+
+  /**
+   * 重新初始化客户端（支持配置热更新）
+   * 用于支持配置热更新：
+   * 1. 客户端不存在但配置变为有效时初始化
+   * 2. 配置变更时重新初始化客户端
    */
   private reinitClient(): void {
-    // 如果客户端已存在，不需要重新初始化
-    if (this.client !== null) {
+    // 如果客户端不存在但配置有效，尝试初始化
+    if (this.client === null) {
+      if (configManager.isLLMConfigValid()) {
+        logger.info("[LLMService] 检测到配置更新，初始化客户端");
+        this.initClient();
+      }
       return;
     }
 
-    // 如果客户端不存在但配置有效，尝试初始化
-    if (configManager.isLLMConfigValid()) {
-      logger.info("[LLMService] 检测到配置更新，重新初始化客户端");
+    // 如果客户端已存在，检查配置是否变更
+    if (this.hasConfigChanged() && configManager.isLLMConfigValid()) {
+      logger.info("[LLMService] 检测到配置变更，重新初始化客户端");
+      this.client = null;
       this.initClient();
     }
   }
