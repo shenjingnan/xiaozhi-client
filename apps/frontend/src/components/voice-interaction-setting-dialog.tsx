@@ -48,7 +48,7 @@ import type {
   VoiceInfo,
 } from "@xiaozhi-client/shared-types";
 import { Edit, Plus, SettingsIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
@@ -116,26 +116,38 @@ export function VoiceInteractionSettingDialog() {
     },
   });
 
-  // 当配置加载后，更新表单默认值
+  // 使用 ref 追踪本次打开是否已初始化表单
+  const initializedRef = useRef(false);
+
+  // 当弹窗打开且 config 就绪时，初始化表单数据
+  // 只在本次打开期间初始化一次，关闭时重置标记和表单状态
   useEffect(() => {
-    form.reset({
-      asr: {
-        appid: config?.asr?.appid || "",
-        accessToken: config?.asr?.accessToken || "",
-      },
-      llm: {
-        model: config?.llm?.model || "",
-        apiKey: config?.llm?.apiKey || "",
-        baseURL: config?.llm?.baseURL || "",
-        prompt: config?.llm?.prompt || "",
-      },
-      tts: {
-        appid: config?.tts?.appid || "",
-        accessToken: config?.tts?.accessToken || "",
-        voice_type: config?.tts?.voice_type || "",
-      },
-    });
-  }, [config, form]);
+    if (open && !initializedRef.current && config) {
+      form.reset({
+        asr: {
+          appid: config.asr?.appid || "",
+          accessToken: config.asr?.accessToken || "",
+        },
+        llm: {
+          model: config.llm?.model || "",
+          apiKey: config.llm?.apiKey || "",
+          baseURL: config.llm?.baseURL || "",
+          prompt: config.llm?.prompt || "",
+        },
+        tts: {
+          appid: config.tts?.appid || "",
+          accessToken: config.tts?.accessToken || "",
+          voice_type: config.tts?.voice_type || "",
+        },
+      });
+      initializedRef.current = true;
+    }
+    // 弹窗关闭时重置初始化标记和表单状态
+    if (!open) {
+      initializedRef.current = false;
+      form.reset();
+    }
+  }, [open, config, form]);
 
   // 加载提示词文件列表
   const loadPromptFiles = useCallback(async () => {
