@@ -121,8 +121,9 @@ export function VoiceInteractionSettingDialog() {
 
   // 当弹窗打开且 config 就绪时，初始化表单数据
   // 只在本次打开期间初始化一次，关闭时重置标记
+  // 如果表单已被用户修改（isDirty），则跳过初始化，避免覆盖用户输入
   useEffect(() => {
-    if (open && !initializedRef.current && config) {
+    if (open && !initializedRef.current && config && !form.formState.isDirty) {
       form.reset({
         asr: {
           appid: config.asr?.appid || "",
@@ -146,7 +147,7 @@ export function VoiceInteractionSettingDialog() {
     if (!open) {
       initializedRef.current = false;
     }
-  }, [open, config, form]);
+  }, [open, config, form, form.formState.isDirty]);
 
   // 加载提示词文件列表
   const loadPromptFiles = useCallback(async () => {
