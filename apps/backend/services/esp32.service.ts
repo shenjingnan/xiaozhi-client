@@ -153,6 +153,16 @@ export class ESP32Service {
   }
 
   /**
+   * 重建 LLM 服务实例
+   * 确保 LLM 配置更新后能获取最新配置
+   */
+  private recreateLLMService(): void {
+    logger.info("[ESP32Service] 重建 LLM 服务实例");
+    this.llmService = new LLMService();
+    logger.info("[ESP32Service] LLM 服务实例已重建");
+  }
+
+  /**
    * 获取 ASR 服务实例
    * @returns ASR 服务实例
    */

@@ -102,6 +102,9 @@ export class LLMService {
     // 在调用前检查并尝试重新初始化（支持配置热更新）
     this.reinitClient();
 
+    // 在调用前检查并尝试重新初始化（支持配置热更新）
+    this.reinitClient();
+
     if (!this.client) {
       logger.error("[LLMService] LLM 客户端未初始化");
       return "抱歉，我暂时无法回答";
