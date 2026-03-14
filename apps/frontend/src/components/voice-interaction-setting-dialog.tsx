@@ -116,33 +116,36 @@ export function VoiceInteractionSettingDialog() {
     },
   });
 
-  // 使用 ref 追踪上一次的 open 状态
-  const prevOpenRef = useRef(false);
+  // 使用 ref 追踪本次打开是否已初始化表单
+  const initializedRef = useRef(false);
 
-  // 当弹窗打开时，初始化表单数据
-  // 只在弹窗从关闭变为打开时初始化表单
-  // 编辑期间不响应 config 变化，避免覆盖用户输入
+  // 当弹窗打开且 config 就绪时，初始化表单数据
+  // 只在本次打开期间初始化一次，关闭时重置标记
   useEffect(() => {
-    if (open && !prevOpenRef.current) {
+    if (open && !initializedRef.current && config) {
       form.reset({
         asr: {
-          appid: config?.asr?.appid || "",
-          accessToken: config?.asr?.accessToken || "",
+          appid: config.asr?.appid || "",
+          accessToken: config.asr?.accessToken || "",
         },
         llm: {
-          model: config?.llm?.model || "",
-          apiKey: config?.llm?.apiKey || "",
-          baseURL: config?.llm?.baseURL || "",
-          prompt: config?.llm?.prompt || "",
+          model: config.llm?.model || "",
+          apiKey: config.llm?.apiKey || "",
+          baseURL: config.llm?.baseURL || "",
+          prompt: config.llm?.prompt || "",
         },
         tts: {
-          appid: config?.tts?.appid || "",
-          accessToken: config?.tts?.accessToken || "",
-          voice_type: config?.tts?.voice_type || "",
+          appid: config.tts?.appid || "",
+          accessToken: config.tts?.accessToken || "",
+          voice_type: config.tts?.voice_type || "",
         },
       });
+      initializedRef.current = true;
     }
-    prevOpenRef.current = open;
+    // 弹窗关闭时重置初始化标记
+    if (!open) {
+      initializedRef.current = false;
+    }
   }, [open, config, form]);
 
   // 加载提示词文件列表
