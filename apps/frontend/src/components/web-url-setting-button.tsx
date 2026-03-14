@@ -1,3 +1,12 @@
+/**
+ * Web URL 设置按钮组件
+ *
+ * 功能：
+ * - 提供对话框用于配置 WebSocket 服务器端口
+ * - 支持端口验证（1-65535）
+ * - 提供端口变更状态反馈
+ * - 集成到应用的 WebSocket 连接管理中
+ */
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
