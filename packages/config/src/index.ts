@@ -26,7 +26,13 @@
 // 导出
 // =========================
 
-export * from "./manager.js";
+// 核心配置管理器（从新的管理器模块导出）
+export * from "./managers/index.js";
+
+// 兼容性：从原始 manager.ts 导出（重新导出新实现）
+export { ConfigManager, configManager } from "./managers/ConfigManager.js";
+
+// 其他模块
 export * from "./adapter.js";
 export * from "./resolver.js";
 export * from "./initializer.js";
