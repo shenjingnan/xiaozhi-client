@@ -87,3 +87,35 @@ export * from "./coze.js";
 export * from "./timeout.js";
 export * from "./hono.context.js";
 export * from "./esp32.js";
+
+// API 响应类型
+export type {
+  ApiSuccessResponse,
+  ApiErrorResponse,
+  ApiPaginatedResponse,
+  ApiResponse,
+  PaginationInfo,
+} from "./api.response.js";
+
+// 工具 API 类型
+export type {
+  JSONSchema,
+  ToolHandlerConfig,
+  MCPHandlerConfig,
+  ProxyHandlerConfig,
+  HttpHandlerConfig,
+  FunctionHandlerConfig,
+  CustomMCPToolBase,
+  CustomMCPToolWithStats,
+  MCPToolData,
+  CozeWorkflowData,
+  HttpApiToolData,
+  FunctionToolData,
+  AddCustomToolRequest,
+  ToolValidationErrorDetail,
+  AddToolResponse,
+  ToolMetadata,
+  ToolConfigOptions,
+} from "./toolApi.js";
+
+export { ToolType, ToolValidationError } from "./toolApi.js";
