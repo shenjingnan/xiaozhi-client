@@ -74,6 +74,12 @@ export class ESP32Connection {
   /** ASR 服务获取函数（用于获取最新的实例） */
   private getASRService: () => ASRService;
 
+  /** WebSocket 事件监听器引用 */
+  private messageHandler: (data: Buffer) => void;
+  private closeHandler: () => void;
+  private errorHandler: (error: Error) => void;
+  private pongHandler: () => void;
+
   /**
    * 构造函数
    * @param deviceId - 设备ID
@@ -104,6 +110,26 @@ export class ESP32Connection {
       getASRService: config.getASRService,
     };
 
+    // 初始化事件监听器
+    this.messageHandler = async (data: Buffer) => {
+      await this.handleMessage(data);
+    };
+
+    this.closeHandler = () => {
+      logger.debug(`WebSocket连接关闭: deviceId=${this.deviceId}`);
+      this.state = "disconnected";
+      this.config.onClose();
+    };
+
+    this.errorHandler = (error: Error) => {
+      logger.error(`WebSocket连接错误: deviceId=${this.deviceId}`, error);
+      this.config.onError(error);
+    };
+
+    this.pongHandler = () => {
+      this.updateActivity();
+    };
+
     this.setupWebSocket();
   }
 
@@ -120,24 +146,10 @@ export class ESP32Connection {
    * 设置WebSocket事件监听
    */
   private setupWebSocket(): void {
-    this.ws.on("message", async (data: Buffer) => {
-      await this.handleMessage(data);
-    });
-
-    this.ws.on("close", () => {
-      logger.debug(`WebSocket连接关闭: deviceId=${this.deviceId}`);
-      this.state = "disconnected";
-      this.config.onClose();
-    });
-
-    this.ws.on("error", (error: Error) => {
-      logger.error(`WebSocket连接错误: deviceId=${this.deviceId}`, error);
-      this.config.onError(error);
-    });
-
-    this.ws.on("pong", () => {
-      this.updateActivity();
-    });
+    this.ws.on("message", this.messageHandler);
+    this.ws.on("close", this.closeHandler);
+    this.ws.on("error", this.errorHandler);
+    this.ws.on("pong", this.pongHandler);
   }
 
   /**
@@ -446,6 +458,12 @@ export class ESP32Connection {
     }
 
     this.state = "disconnected";
+
+    // 移除所有WebSocket事件监听器以防止内存泄漏
+    this.ws.off("message", this.messageHandler);
+    this.ws.off("close", this.closeHandler);
+    this.ws.off("error", this.errorHandler);
+    this.ws.off("pong", this.pongHandler);
 
     // 等待实际的 close 事件，而不是依赖 setTimeout
     return new Promise<void>((resolve) => {
