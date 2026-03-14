@@ -4,8 +4,10 @@
  */
 
 import fs from "node:fs";
+import { TTS_VOICES, getVoiceScenes } from "@/constants/voices.js";
 import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
+import type { VoiceInfo, VoicesResponse } from "@xiaozhi-client/shared-types";
 import { TTS } from "@xiaozhi-client/tts";
 import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
@@ -139,6 +141,29 @@ export class TTSApiHandler extends BaseHandler {
       });
     } catch (error) {
       return this.handleError(c, error, "语音合成");
+    }
+  }
+
+  /**
+   * 获取可用音色列表
+   * GET /api/tts/voices
+   */
+  async getVoices(c: Context<AppContext>): Promise<Response> {
+    try {
+      c.get("logger").info("获取音色列表");
+
+      const voices: VoiceInfo[] = TTS_VOICES;
+      const scenes = getVoiceScenes();
+
+      const response: VoicesResponse = {
+        voices,
+        total: voices.length,
+        scenes,
+      };
+
+      return c.success(response);
+    } catch (error) {
+      return this.handleError(c, error, "获取音色列表");
     }
   }
 }

@@ -27,6 +27,7 @@
     "@xiaozhi-client/config": "workspace:*",
     "@xiaozhi-client/endpoint": "workspace:*",
     "@xiaozhi-client/mcp-core": "workspace:*",
+    "@xiaozhi-client/shared-types": "workspace:*",
     "@xiaozhi-client/tts": "workspace:*",
     "@xiaozhi-client/version": "workspace:*",
     "ajv": "^8.18.0",

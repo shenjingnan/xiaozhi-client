@@ -14,6 +14,7 @@ import type {
   MCPServerConfig,
   MCPServerListResponse,
   MCPServerStatus,
+  VoicesResponse,
 } from "@xiaozhi-client/shared-types";
 
 /**
@@ -761,6 +762,18 @@ export class ApiClient {
   }
 
   // ==================== 版本信息 API ====================
+
+  /**
+   * 获取 TTS 音色列表
+   */
+  async getTTSVoices(): Promise<VoicesResponse> {
+    const response: ApiResponse<VoicesResponse> =
+      await this.request("/api/tts/voices");
+    if (!response.success || !response.data) {
+      throw new Error("获取音色列表失败");
+    }
+    return response.data;
+  }
 
   /**
    * 获取版本信息

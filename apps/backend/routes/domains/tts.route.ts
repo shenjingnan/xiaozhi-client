@@ -14,4 +14,9 @@ export const ttsRoutes: RouteDefinition[] = [
     path: "/api/tts",
     handler: h((handler, c) => handler.synthesize(c)),
   },
+  {
+    method: "GET",
+    path: "/api/tts/voices",
+    handler: h((handler, c) => handler.getVoices(c)),
+  },
 ];

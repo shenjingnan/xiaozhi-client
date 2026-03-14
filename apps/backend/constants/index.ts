@@ -30,3 +30,6 @@ export * from "./timeout.constants.js";
 
 // 缓存相关常量
 export * from "./cache.constants.js";
+
+// TTS 音色常量
+export * from "./voices.js";
