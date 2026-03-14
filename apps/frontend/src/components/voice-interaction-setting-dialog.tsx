@@ -120,10 +120,9 @@ export function VoiceInteractionSettingDialog() {
   const initializedRef = useRef(false);
 
   // 当弹窗打开且 config 就绪时，初始化表单数据
-  // 只在本次打开期间初始化一次，关闭时重置标记
-  // 如果表单已被用户修改（isDirty），则跳过初始化，避免覆盖用户输入
+  // 只在本次打开期间初始化一次，关闭时重置标记和表单状态
   useEffect(() => {
-    if (open && !initializedRef.current && config && !form.formState.isDirty) {
+    if (open && !initializedRef.current && config) {
       form.reset({
         asr: {
           appid: config.asr?.appid || "",
@@ -143,11 +142,12 @@ export function VoiceInteractionSettingDialog() {
       });
       initializedRef.current = true;
     }
-    // 弹窗关闭时重置初始化标记
+    // 弹窗关闭时重置初始化标记和表单状态
     if (!open) {
       initializedRef.current = false;
+      form.reset();
     }
-  }, [open, config, form, form.formState.isDirty]);
+  }, [open, config, form]);
 
   // 加载提示词文件列表
   const loadPromptFiles = useCallback(async () => {
