@@ -1,5 +1,27 @@
 /**
  * 格式化工具
+ *
+ * 提供各类数据格式化功能，包括：
+ * - 时间格式化（运行时间、时间戳）
+ * - 数据大小格式化（字节到 TB）
+ * - 系统信息格式化（PID、端口、URL）
+ * - 表格和列表格式化
+ * - 进度条显示
+ * - 错误消息格式化
+ * - JSON 和布尔值格式化
+ *
+ * 所有格式化输出均使用中文，适合命令行界面展示。
+ *
+ * @module packages/cli/src/utils/FormatUtils
+ *
+ * @example
+ * ```typescript
+ * import { FormatUtils } from '@/utils/FormatUtils';
+ *
+ * const uptime = FormatUtils.formatUptime(Date.now());
+ * const size = FormatUtils.formatFileSize(1024 * 1024);
+ * const table = FormatUtils.formatTable(data);
+ * ```
  */
 
 /**
