@@ -1,10 +1,10 @@
+import type { ClientInfo } from "@/types/service-types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   EventBus,
   destroyEventBus,
   getEventBus,
 } from "../event-bus.service.js";
-import type { ClientInfo } from "../status.service.js";
 
 // 模拟依赖
 vi.mock("../../Logger.js", () => ({

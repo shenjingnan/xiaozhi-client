@@ -22,27 +22,10 @@ import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
+import type { ClientInfo, RestartStatus } from "@/types/service-types.js";
 
-/**
- * 客户端信息接口
- */
-export interface ClientInfo {
-  status: "connected" | "disconnected";
-  mcpEndpoint: string;
-  activeMCPServers: string[];
-  lastHeartbeat?: number;
-}
-
-/**
- * 重启状态接口
- */
-export interface RestartStatus {
-  status: "restarting" | "completed" | "failed";
-  error?: string;
-  timestamp: number;
-  serviceName?: string;
-  attempt?: number;
-}
+// 重新导出类型以保持向后兼容性
+export type { ClientInfo, RestartStatus };
 
 /**
  * 状态服务 - 统一的状态管理服务

@@ -1,5 +1,5 @@
+import type { ClientInfo } from "@/types/service-types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ClientInfo } from "../status.service.js";
 import { StatusService } from "../status.service.js";
 
 // Mock dependencies
