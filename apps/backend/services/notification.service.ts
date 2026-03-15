@@ -29,6 +29,17 @@ import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 
 /**
+ * WebSocket readyState 常量
+ * 定义 WebSocket 连接状态的所有可能值
+ */
+export const WEBSOCKET_READY_STATE = {
+  CONNECTING: 0,
+  OPEN: 1,
+  CLOSING: 2,
+  CLOSED: 3,
+} as const;
+
+/**
  * WebSocket 类接口
  * 定义了 WebSocket 实例需要具备的基本属性和方法
  */
@@ -149,8 +160,7 @@ export class NotificationService {
         ws,
         readyState: ws.readyState,
         send: (data: string) => {
-          if (ws.readyState === 1) {
-            // WebSocket.OPEN
+          if (ws.readyState === WEBSOCKET_READY_STATE.OPEN) {
             ws.send(data);
           }
         },
@@ -244,8 +254,7 @@ export class NotificationService {
     clientId: string
   ): void {
     try {
-      if (client.ws.readyState === 1) {
-        // WebSocket.OPEN
+      if (client.ws.readyState === WEBSOCKET_READY_STATE.OPEN) {
         const messageStr = JSON.stringify(message);
         client.send(messageStr);
         this.logger.debug(`消息已发送给客户端 ${clientId}: ${message.type}`);
@@ -346,7 +355,7 @@ export class NotificationService {
     queuedMessages: number;
   } {
     const connectedClients = Array.from(this.clients.values()).filter(
-      (client) => client.ws.readyState === 1
+      (client) => client.ws.readyState === WEBSOCKET_READY_STATE.OPEN
     ).length;
 
     const queuedMessages = Array.from(this.messageQueue.values()).reduce(
@@ -368,8 +377,7 @@ export class NotificationService {
     const disconnectedClients: string[] = [];
 
     for (const [clientId, client] of this.clients) {
-      if (client.ws.readyState !== 1) {
-        // Not WebSocket.OPEN
+      if (client.ws.readyState !== WEBSOCKET_READY_STATE.OPEN) {
         disconnectedClients.push(clientId);
       }
     }
