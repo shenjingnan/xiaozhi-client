@@ -432,6 +432,10 @@ export class ASRService implements IASRService {
   destroy(): void {
     // 清理 ASR 客户端
     for (const asrClient of this.asrClients.values()) {
+      // 移除事件监听器，防止内存泄漏
+      asrClient.removeAllListeners("error");
+      asrClient.removeAllListeners("close");
+      // 关闭连接
       asrClient.close();
     }
     this.asrClients.clear();
