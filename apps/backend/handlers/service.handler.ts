@@ -44,6 +44,20 @@ export class ServiceApiHandler {
       },
     });
 
+    // 监听进程启动失败事件
+    child.on("error", (error) => {
+      const errorMessage = `xiaozhi 进程启动失败: xiaozhi ${args.join(" ")}`;
+      this.logger.error(errorMessage, { error });
+
+      // 发射进程启动失败事件
+      this.eventBus.emitEvent("service:spawn:error", {
+        command: "xiaozhi",
+        args,
+        error: error.message,
+        timestamp: Date.now(),
+      });
+    });
+
     child.unref();
     this.logger.info(`MCP 服务命令已发送: xiaozhi ${args.join(" ")}`);
 
