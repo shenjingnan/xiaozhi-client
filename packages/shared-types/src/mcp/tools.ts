@@ -6,14 +6,14 @@ import type { ToolCallResult } from "./cache";
 
 /**
  * 工具调用结果联合类型
- * 包含正常结果和超时响应
+ * 包含正常结果和工具超时响应
  */
-export type ToolCallResponse = ToolCallResult | TimeoutResponse;
+export type ToolCallResponse = ToolCallResult | ToolTimeoutResponse;
 
 /**
- * 超时响应接口
+ * 工具超时响应接口
  */
-export interface TimeoutResponse {
+export interface ToolTimeoutResponse {
   /** 是否为超时响应 */
   isTimeout: true;
   /** 超时时间（毫秒） */
@@ -40,9 +40,9 @@ export function isToolCallResult(response: any): response is ToolCallResult {
 }
 
 /**
- * 验证是否为超时响应
+ * 验证是否为工具超时响应
  */
-export function isTimeoutResponse(response: any): response is TimeoutResponse {
+export function isToolTimeoutResponse(response: any): response is ToolTimeoutResponse {
   return (
     response &&
     typeof response === "object" &&
