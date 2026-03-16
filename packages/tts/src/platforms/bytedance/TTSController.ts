@@ -281,6 +281,8 @@ export class ByteDanceTTSController implements TTSController {
   close(): void {
     this.isStreamClosed = true;
     if (this.ws) {
+      // 移除所有事件监听器，避免内存泄漏
+      this.ws.removeAllListeners();
       this.ws.close();
       this.ws = null;
     }
