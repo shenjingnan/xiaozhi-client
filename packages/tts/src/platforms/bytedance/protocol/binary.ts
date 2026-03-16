@@ -85,16 +85,12 @@ export function getAuthHeaders(options: TTSOptions): Record<string, string> {
 }
 
 /**
- * 合成语音
- * 连接 WebSocket 并发送 TTS 请求，收集返回的音频数据
+ * 内部函数：建立 WebSocket 连接并发送 TTS 请求
  * @param options - TTS 合成选项
- * @returns 音频二进制数据
+ * @returns 已建立并发送请求的 WebSocket 连接
  */
-export async function synthesizeSpeech(
-  options: TTSOptions
-): Promise<Uint8Array> {
+async function establishConnection(options: TTSOptions): Promise<WebSocket> {
   const endpoint = getEndpoint(options);
-
   const headers = getAuthHeaders(options);
 
   const ws = new WebSocket(endpoint, {
@@ -108,11 +104,24 @@ export async function synthesizeSpeech(
   });
 
   const request = createTTSRequest(options);
-
   await FullClientRequest(
     ws,
     new TextEncoder().encode(JSON.stringify(request))
   );
+
+  return ws;
+}
+
+/**
+ * 合成语音
+ * 连接 WebSocket 并发送 TTS 请求，收集返回的音频数据
+ * @param options - TTS 合成选项
+ * @returns 音频二进制数据
+ */
+export async function synthesizeSpeech(
+  options: TTSOptions
+): Promise<Uint8Array> {
+  const ws = await establishConnection(options);
 
   const totalAudio: Uint8Array[] = [];
 
@@ -168,26 +177,7 @@ export async function synthesizeSpeechStream(
   options: TTSOptions,
   onAudioChunk: (chunk: Uint8Array, isLast: boolean) => Promise<void>
 ): Promise<void> {
-  const endpoint = getEndpoint(options);
-
-  const headers = getAuthHeaders(options);
-
-  const ws = new WebSocket(endpoint, {
-    headers,
-    skipUTF8Validation: true,
-  });
-
-  await new Promise((resolve, reject) => {
-    ws.on("open", resolve);
-    ws.on("error", reject);
-  });
-
-  const request = createTTSRequest(options);
-
-  await FullClientRequest(
-    ws,
-    new TextEncoder().encode(JSON.stringify(request))
-  );
+  const ws = await establishConnection(options);
 
   while (true) {
     const msg = await ReceiveMessage(ws);
