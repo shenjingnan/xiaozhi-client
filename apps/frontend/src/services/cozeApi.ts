@@ -76,8 +76,9 @@ export class CozeApiClient {
       try {
         const errorData: ApiErrorResponse = await response.json();
         errorMessage = errorData.error?.message || errorMessage;
-      } catch {
-        // 如果无法解析错误响应，使用默认错误消息
+      } catch (jsonError) {
+        // 如果无法解析错误响应，记录警告并使用默认错误消息
+        console.warn("无法解析错误响应 JSON，使用默认错误消息:", jsonError);
       }
 
       throw new Error(errorMessage);
