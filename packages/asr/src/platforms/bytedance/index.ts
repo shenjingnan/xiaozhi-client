@@ -11,6 +11,8 @@ import {
   ByteDanceV3Controller,
 } from "@/platforms/bytedance/controllers/index.js";
 import { BYTEDANCE_V2_DEFAULT_CLUSTER } from "@/platforms/bytedance/schemas";
+import type { ByteDanceOption } from "@/platforms/bytedance/schemas/index.js";
+import type { ASRClientByteDanceConfig } from "@/platforms/bytedance/types.js";
 
 // 重新导出控制器，供外部使用
 export {
@@ -48,7 +50,9 @@ export class ByteDancePlatform implements ASRPlatform {
   createController(config: PlatformConfig): ASRController {
     // 创建 ASR 客户端实例
     const asrClient = new ASR({
-      bytedance: this.buildByteDanceConfig(config),
+      // 类型断言：ASRClientByteDanceConfig 与 ByteDanceOption 在运行时兼容
+      // V2 和 V3 的必要字段都已提供，user/audio/request 在运行时会按需处理
+      bytedance: this.buildByteDanceConfig(config) as ByteDanceOption,
     });
 
     this.asrClient = asrClient;
@@ -100,8 +104,9 @@ export class ByteDancePlatform implements ASRPlatform {
   /**
    * 构建 ByteDance 配置
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private buildByteDanceConfig(config: PlatformConfig): any {
+  private buildByteDanceConfig(
+    config: PlatformConfig
+  ): ASRClientByteDanceConfig {
     const version = this.getVersion(config);
     const cfg = config as {
       app?: { appid?: string; token?: string; cluster?: string };
