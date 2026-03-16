@@ -32,6 +32,8 @@ export class MCPConnection {
   // 心跳检测相关
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private heartbeatConfig?: HeartbeatConfig;
+  // 连接超时配置
+  private connectionTimeoutMs: number;
 
   constructor(
     name: string,
@@ -47,6 +49,8 @@ export class MCPConnection {
       enabled: config.heartbeat?.enabled ?? true,  // 默认启用
       interval: config.heartbeat?.interval ?? 30 * 1000,  // 默认 30 秒
     };
+    // 保存连接超时配置 - 优先使用用户配置
+    this.connectionTimeoutMs = config.connection?.timeout ?? 30000;  // 默认 30 秒
 
     // 验证配置
     this.validateConfig();
@@ -93,13 +97,12 @@ export class MCPConnection {
     );
 
     return new Promise((resolve, reject) => {
-      // 设置连接超时（使用固定默认值 30 秒）
-      const CONNECTION_TIMEOUT = 30000;
+      // 设置连接超时（使用配置值，默认 30 秒）
       this.connectionTimeout = setTimeout(() => {
-        const error = new Error(`连接超时 (${CONNECTION_TIMEOUT}ms)`);
+        const error = new Error(`连接超时 (${this.connectionTimeoutMs}ms)`);
         this.handleConnectionError(error);
         reject(error);
-      }, CONNECTION_TIMEOUT);
+      }, this.connectionTimeoutMs);
 
       try {
         this.client = new Client(
