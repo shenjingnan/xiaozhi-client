@@ -1,13 +1,82 @@
 /**
  * 工具添加 API 相关类型定义
  * 支持多种工具类型的添加，包括 MCP 工具、Coze 工作流等
+ *
+ * 注意：此文件中的类型定义已被迁移到 apps/backend/types/toolApi.ts
+ * 实际类型定义请参考 @xiaozhi-client/config 包
+ *
+ * @deprecated 这些类型定义已迁移，请使用 @xiaozhi-client/config 包中的类型
  */
 
 import type { WorkflowParameterConfig, CozeWorkflow } from "../coze";
 import type { CustomMCPToolWithStats } from "../mcp";
 
 /**
- * 工具类型枚举
+ * @deprecated 请使用 @xiaozhi-client/config 包中的 CustomMCPTool
+ */
+export type { CustomMCPTool, CustomMCPToolWithStats } from "../mcp";
+
+/**
+ * 扩展的 CustomMCPTool 接口
+ * 包含额外的元数据信息
+ * 扩展自 CustomMCPToolWithStats，添加元数据和配置选项
+ *
+ * @deprecated 请使用 @xiaozhi-client/config 包中的类型
+ */
+export interface ExtendedCustomMCPTool extends CustomMCPToolWithStats {
+  /** 工具元数据 */
+  metadata?: ToolMetadata;
+  /** 配置选项 */
+  config?: ToolConfigOptions;
+}
+
+/**
+ * 工具元数据信息
+ *
+ * @deprecated 请使用 @xiaozhi-client/config 包中的类型
+ */
+export interface ToolMetadata {
+  /** 工具原始来源 */
+  source: {
+    type: "mcp" | "coze" | "http" | "function";
+    serviceName?: string;
+    toolName?: string;
+    url?: string;
+  };
+  /** 添加时间 */
+  addedAt: string;
+  /** 最后更新时间 */
+  updatedAt?: string;
+  /** 版本信息 */
+  version?: string;
+}
+
+/**
+ * 工具配置选项
+ *
+ * @deprecated 请使用 @xiaozhi-client/config 包中的类型
+ */
+export interface ToolConfigOptions {
+  /** 是否启用工具（默认 true） */
+  enabled?: boolean;
+  /** 超时时间（毫秒） */
+  timeout?: number;
+  /** 重试次数 */
+  retryCount?: number;
+  /** 重试间隔（毫秒） */
+  retryDelay?: number;
+  /** 自定义标签 */
+  tags?: string[];
+  /** 工具分组 */
+  group?: string;
+}
+
+// 以下类型定义已迁移到 apps/backend/types/toolApi.ts
+// 并通过 @xiaozhi-client/config 包重新导出
+// 如需使用这些类型，请通过 @xiaozhi-client/config 包导入
+
+/**
+ * @deprecated 请使用 @xiaozhi-client/config 包中的类型
  */
 export enum ToolType {
   /** MCP 工具（标准 MCP 服务中的工具） */
@@ -21,8 +90,7 @@ export enum ToolType {
 }
 
 /**
- * MCP 工具数据
- * 用于将标准 MCP 服务中的工具添加到 customMCP.tools 配置中
+ * @deprecated 请使用 @xiaozhi-client/config 包中的类型
  */
 export interface MCPToolData {
   /** MCP 服务名称 */
@@ -36,8 +104,7 @@ export interface MCPToolData {
 }
 
 /**
- * Coze 工作流数据
- * 保持与现有格式的兼容性
+ * @deprecated 请使用 @xiaozhi-client/config 包中的类型
  */
 export interface CozeWorkflowData {
   /** Coze 工作流信息 */
@@ -51,7 +118,7 @@ export interface CozeWorkflowData {
 }
 
 /**
- * HTTP API 工具数据（预留）
+ * @deprecated 请使用 @xiaozhi-client/config 包中的类型
  */
 export interface HttpApiToolData {
   /** API 地址 */
@@ -80,7 +147,7 @@ export interface HttpApiToolData {
 }
 
 /**
- * 函数工具数据（预留）
+ * @deprecated 请使用 @xiaozhi-client/config 包中的类型
  */
 export interface FunctionToolData {
   /** 模块路径 */
@@ -100,7 +167,7 @@ export interface FunctionToolData {
 }
 
 /**
- * 添加自定义工具的统一请求接口
+ * @deprecated 请使用 @xiaozhi-client/config 包中的类型
  */
 export interface AddCustomToolRequest {
   /** 工具类型 */
@@ -110,7 +177,7 @@ export interface AddCustomToolRequest {
 }
 
 /**
- * 工具验证错误类型
+ * @deprecated 请使用 @xiaozhi-client/config 包中的类型
  */
 export enum ToolValidationError {
   /** 无效的工具类型 */
@@ -132,7 +199,7 @@ export enum ToolValidationError {
 }
 
 /**
- * 工具验证错误详情
+ * @deprecated 请使用 @xiaozhi-client/config 包中的类型
  */
 export interface ToolValidationErrorDetail {
   /** 错误类型 */
@@ -146,7 +213,7 @@ export interface ToolValidationErrorDetail {
 }
 
 /**
- * 添加工具的响应数据
+ * @deprecated 请使用 @xiaozhi-client/config 包中的类型
  */
 export interface AddToolResponse {
   /** 成功添加的工具 */
@@ -157,53 +224,4 @@ export interface AddToolResponse {
   toolType: ToolType;
   /** 添加时间戳 */
   addedAt: string;
-}
-
-/**
- * 工具元数据信息
- */
-export interface ToolMetadata {
-  /** 工具原始来源 */
-  source: {
-    type: "mcp" | "coze" | "http" | "function";
-    serviceName?: string;
-    toolName?: string;
-    url?: string;
-  };
-  /** 添加时间 */
-  addedAt: string;
-  /** 最后更新时间 */
-  updatedAt?: string;
-  /** 版本信息 */
-  version?: string;
-}
-
-/**
- * 工具配置选项
- */
-export interface ToolConfigOptions {
-  /** 是否启用工具（默认 true） */
-  enabled?: boolean;
-  /** 超时时间（毫秒） */
-  timeout?: number;
-  /** 重试次数 */
-  retryCount?: number;
-  /** 重试间隔（毫秒） */
-  retryDelay?: number;
-  /** 自定义标签 */
-  tags?: string[];
-  /** 工具分组 */
-  group?: string;
-}
-
-/**
- * 扩展的 CustomMCPTool 接口
- * 包含额外的元数据信息
- * 扩展自 CustomMCPToolWithStats，添加元数据和配置选项
- */
-export interface ExtendedCustomMCPTool extends CustomMCPToolWithStats {
-  /** 工具元数据 */
-  metadata?: ToolMetadata;
-  /** 配置选项 */
-  config?: ToolConfigOptions;
 }
