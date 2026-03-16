@@ -576,10 +576,17 @@ function readPayload(msg: Message, data: Uint8Array, offset: number): number {
 const messageQueues = new Map<WebSocket, Message[]>();
 const messageCallbacks = new Map<WebSocket, ((msg: Message) => void)[]>();
 
+// 存储待处理的 Promise 的 resolve 和 reject 函数
+const pendingPromiseResolvers = new Map<
+  WebSocket,
+  Array<{ resolve: (msg: Message) => void; reject: (error: Error) => void }>
+>();
+
 function setupMessageHandler(ws: WebSocket) {
   if (!messageQueues.has(ws)) {
     messageQueues.set(ws, []);
     messageCallbacks.set(ws, []);
+    pendingPromiseResolvers.set(ws, []);
 
     ws.on("message", (data: WebSocket.RawData) => {
       try {
@@ -612,8 +619,24 @@ function setupMessageHandler(ws: WebSocket) {
     });
 
     ws.on("close", () => {
+      // Reject 所有等待中的 Promise，避免内存泄漏
+      const pending = pendingPromiseResolvers.get(ws);
+      if (pending && pending.length > 0) {
+        const closeError = new Error(
+          "WebSocket connection closed while waiting for message"
+        );
+        for (const { reject } of pending) {
+          try {
+            reject(closeError);
+          } catch {
+            // 忽略 reject 错误
+          }
+        }
+      }
+
       messageQueues.delete(ws);
       messageCallbacks.delete(ws);
+      pendingPromiseResolvers.delete(ws);
     });
   }
 }
@@ -629,6 +652,7 @@ export async function ReceiveMessage(ws: WebSocket): Promise<Message> {
   return new Promise((resolve, reject) => {
     const queue = messageQueues.get(ws)!;
     const callbacks = messageCallbacks.get(ws)!;
+    const pending = pendingPromiseResolvers.get(ws)!;
 
     // 如果队列中有消息，立即处理
     if (queue.length > 0) {
@@ -642,6 +666,10 @@ export async function ReceiveMessage(ws: WebSocket): Promise<Message> {
       if (index !== -1) {
         callbacks.splice(index, 1);
       }
+      const pendingIndex = pending.findIndex((p) => p.resolve === resolver);
+      if (pendingIndex !== -1) {
+        pending.splice(pendingIndex, 1);
+      }
       reject(error);
     };
 
@@ -651,6 +679,7 @@ export async function ReceiveMessage(ws: WebSocket): Promise<Message> {
     };
 
     callbacks.push(resolver);
+    pending.push({ resolve, reject });
     ws.once("error", errorHandler);
   });
 }
