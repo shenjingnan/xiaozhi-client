@@ -116,6 +116,9 @@ interface StatusState {
 
   // 状态来源追踪
   lastSource: "http" | "websocket" | "polling" | "initial" | null;
+
+  // 事件监听器清理函数数组（内部使用）
+  _cleanupFns: Array<() => void>;
 }
 
 /**
@@ -160,6 +163,7 @@ interface StatusActions {
   // 工具方法
   reset: () => void;
   initialize: () => Promise<void>;
+  cleanup: () => void;
 }
 
 /**
@@ -198,6 +202,7 @@ const initialState: StatusState = {
     startTime: null,
   },
   lastSource: null,
+  _cleanupFns: [],
 };
 
 /**
@@ -686,22 +691,36 @@ export const useStatusStore = create<StatusStore>()(
       },
 
       initialize: async (): Promise<void> => {
-        const { setLoading, refreshStatus } = get();
+        const { setLoading, refreshStatus, _cleanupFns } = get();
 
         try {
           setLoading({ isLoading: true });
           console.log("[StatusStore] 初始化状态 Store");
 
-          // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:statusUpdate", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 状态更新");
-            get().setClientStatus(status, "websocket");
-          });
+          // 清理旧的监听器（防止重复初始化）
+          for (const fn of _cleanupFns) {
+            fn();
+          }
 
-          webSocketManager.subscribe("data:restartStatus", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 重启状态更新");
-            get().setRestartStatus(status, "websocket");
-          });
+          const cleanupFns: Array<() => void> = [];
+
+          // 设置 WebSocket 事件监听
+          cleanupFns.push(
+            webSocketManager.subscribe("data:statusUpdate", (status) => {
+              console.log("[StatusStore] 收到 WebSocket 状态更新");
+              get().setClientStatus(status, "websocket");
+            })
+          );
+
+          cleanupFns.push(
+            webSocketManager.subscribe("data:restartStatus", (status) => {
+              console.log("[StatusStore] 收到 WebSocket 重启状态更新");
+              get().setRestartStatus(status, "websocket");
+            })
+          );
+
+          // 保存清理函数
+          set({ _cleanupFns: cleanupFns }, false, "initialize");
 
           // 获取初始状态
           await refreshStatus();
@@ -716,6 +735,18 @@ export const useStatusStore = create<StatusStore>()(
         } finally {
           setLoading({ isLoading: false });
         }
+      },
+
+      cleanup: () => {
+        console.log("[StatusStore] 清理状态 Store");
+
+        const { _cleanupFns } = get();
+        for (const fn of _cleanupFns) {
+          fn();
+        }
+        set({ _cleanupFns: [] }, false, "cleanup");
+
+        console.log("[StatusStore] 状态 Store 清理完成");
       },
     }),
     {
