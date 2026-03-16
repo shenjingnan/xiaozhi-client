@@ -1,5 +1,5 @@
 /**
- * Audio type definitions
+ * 音频类型定义
  */
 
 export enum AudioFormat {
@@ -9,16 +9,16 @@ export enum AudioFormat {
   RAW = "raw",
 }
 
-// WAV file information
+// WAV 文件信息
 export interface WavInfo {
-  nchannels: number; // Number of channels
-  sampwidth: number; // Sample width in bytes
-  framerate: number; // Sample rate
-  nframes: number; // Number of frames
-  dataSize: number; // Size of audio data
+  nchannels: number; // 声道数
+  sampwidth: number; // 采样宽度（字节）
+  framerate: number; // 采样率
+  nframes: number; // 帧数
+  dataSize: number; // 音频数据大小
 }
 
-// Audio configuration
+// 音频配置
 export interface AudioConfig {
   format: AudioFormat;
   sampleRate: number;
@@ -28,7 +28,7 @@ export interface AudioConfig {
   codec?: string;
 }
 
-// Audio data with metadata
+// 带元数据的音频数据
 export interface AudioData {
   data: Buffer;
   config: AudioConfig;
