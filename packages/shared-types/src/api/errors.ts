@@ -46,7 +46,7 @@ export interface ApiError {
   /** 错误消息 */
   message: string;
   /** 错误详情 */
-  details?: any;
+  details?: unknown;
   /** 错误堆栈（开发环境） */
   stack?: string;
 }
@@ -62,7 +62,7 @@ export interface ToolValidationError {
   /** 验证字段名称 */
   field?: string;
   /** 错误详情 */
-  details?: any;
+  details?: unknown;
 }
 
 /**
@@ -74,5 +74,5 @@ export interface CozeApiError extends Error {
   /** HTTP 状态码 */
   statusCode?: number;
   /** 原始响应数据 */
-  response?: any;
+  response?: unknown;
 }
