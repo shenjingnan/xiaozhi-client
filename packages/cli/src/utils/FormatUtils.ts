@@ -92,7 +92,10 @@ export class FormatUtils {
   /**
    * 格式化配置键值对
    */
-  static formatConfigPair(key: string, value: any): string {
+  static formatConfigPair(
+    key: string,
+    value: string | number | boolean | object | null
+  ): string {
     if (typeof value === "object") {
       return `${key}: ${JSON.stringify(value, null, 2)}`;
     }
@@ -122,7 +125,7 @@ export class FormatUtils {
   /**
    * 格式化表格数据
    */
-  static formatTable(data: Record<string, any>[]): string {
+  static formatTable<T extends Record<string, unknown>>(data: T[]): string {
     if (data.length === 0) return "";
 
     const keys = Object.keys(data[0]);
@@ -177,7 +180,7 @@ export class FormatUtils {
   /**
    * 格式化 JSON
    */
-  static formatJson(obj: any, indent = 2): string {
+  static formatJson(obj: unknown, indent = 2): string {
     try {
       return JSON.stringify(obj, null, indent);
     } catch (error) {
