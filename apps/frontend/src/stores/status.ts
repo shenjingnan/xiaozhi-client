@@ -116,6 +116,9 @@ interface StatusState {
 
   // 状态来源追踪
   lastSource: "http" | "websocket" | "polling" | "initial" | null;
+
+  // WebSocket 订阅清理函数
+  unsubscribeCallbacks: Array<() => void>;
 }
 
 /**
@@ -198,6 +201,7 @@ const initialState: StatusState = {
     startTime: null,
   },
   lastSource: null,
+  unsubscribeCallbacks: [],
 };
 
 /**
@@ -677,6 +681,13 @@ export const useStatusStore = create<StatusStore>()(
       reset: () => {
         console.log("[StatusStore] 重置状态");
 
+        // 清理 WebSocket 订阅
+        const { unsubscribeCallbacks } = get();
+        for (const fn of unsubscribeCallbacks) {
+          fn();
+        }
+        set({ unsubscribeCallbacks: [] });
+
         // 停止所有轮询
         get().stopPolling();
         get().stopRestartPolling();
@@ -692,16 +703,25 @@ export const useStatusStore = create<StatusStore>()(
           setLoading({ isLoading: true });
           console.log("[StatusStore] 初始化状态 Store");
 
-          // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:statusUpdate", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 状态更新");
-            get().setClientStatus(status, "websocket");
-          });
+          // 设置 WebSocket 事件监听并保存取消订阅函数
+          const unsubscribe1 = webSocketManager.subscribe(
+            "data:statusUpdate",
+            (status) => {
+              console.log("[StatusStore] 收到 WebSocket 状态更新");
+              get().setClientStatus(status, "websocket");
+            }
+          );
 
-          webSocketManager.subscribe("data:restartStatus", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 重启状态更新");
-            get().setRestartStatus(status, "websocket");
-          });
+          const unsubscribe2 = webSocketManager.subscribe(
+            "data:restartStatus",
+            (status) => {
+              console.log("[StatusStore] 收到 WebSocket 重启状态更新");
+              get().setRestartStatus(status, "websocket");
+            }
+          );
+
+          // 保存取消订阅函数
+          set({ unsubscribeCallbacks: [unsubscribe1, unsubscribe2] });
 
           // 获取初始状态
           await refreshStatus();
