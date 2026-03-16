@@ -1,9 +1,18 @@
 import { z } from "zod";
+import type { JSONSchema } from "@xiaozhi-client/shared-types";
+
+/**
+ * JSON Schema 工具函数模块
+ *
+ * 提供 JSON Schema 到 Zod schema 的转换、默认值生成等功能
+ *
+ * @module schema-utils
+ */
 
 /**
  * 根据 JSON Schema 动态生成 Zod schema
  */
-export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
+export function createZodSchemaFromJsonSchema(jsonSchema: JSONSchema): z.ZodTypeAny {
   if (!jsonSchema || typeof jsonSchema !== "object") {
     return z.any();
   }
@@ -92,7 +101,7 @@ export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
 /**
  * 获取字段的默认值
  */
-export function getDefaultValueForSchema(schema: any): any {
+export function getDefaultValueForSchema(schema: JSONSchema): unknown {
   if (!schema) return undefined;
 
   switch (schema.type) {
@@ -112,7 +121,7 @@ export function getDefaultValueForSchema(schema: any): any {
 
     case "object":
       if (schema.properties) {
-        const defaults: Record<string, any> = {};
+        const defaults: Record<string, unknown> = {};
         for (const [key, propSchema] of Object.entries(schema.properties)) {
           defaults[key] = getDefaultValueForSchema(propSchema);
         }
@@ -128,10 +137,10 @@ export function getDefaultValueForSchema(schema: any): any {
 /**
  * 根据 JSON Schema 生成默认值对象
  */
-export function createDefaultValues(jsonSchema: any): Record<string, any> {
+export function createDefaultValues(jsonSchema: JSONSchema): Record<string, unknown> {
   if (!jsonSchema || !jsonSchema.properties) return {};
 
-  const defaults: Record<string, any> = {};
+  const defaults: Record<string, unknown> = {};
   const requiredFields = jsonSchema.required || [];
 
   for (const [key, propSchema] of Object.entries(jsonSchema.properties)) {
