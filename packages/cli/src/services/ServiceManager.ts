@@ -261,6 +261,12 @@ export class ServiceManagerImpl implements IServiceManager {
         }
       );
 
+      // 添加错误处理
+      child.on("error", (error) => {
+        consola.error(`启动子进程失败: ${error.message}`);
+        process.exit(1);
+      });
+
       // 保存 PID 信息
       this.processManager.savePidInfo(child.pid || 0, "daemon");
 
@@ -315,6 +321,12 @@ export class ServiceManagerImpl implements IServiceManager {
         XIAOZHI_CONFIG_DIR: PathUtils.getConfigDir(),
         XIAOZHI_DAEMON: "true",
       },
+    });
+
+    // 添加错误处理
+    child.on("error", (error) => {
+      consola.error(`启动子进程失败: ${error.message}`);
+      process.exit(1);
     });
 
     // 保存 PID 信息
