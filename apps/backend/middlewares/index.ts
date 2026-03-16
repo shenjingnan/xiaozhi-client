@@ -52,8 +52,6 @@ export {
   notFoundHandlerMiddleware,
   createErrorResponse,
   createSuccessResponse,
-  ApiErrorResponse,
-  ApiSuccessResponse,
 } from "./error.middleware.js";
 export { responseEnhancerMiddleware } from "./response-enhancer.middleware.js";
 export {
@@ -62,6 +60,15 @@ export {
 } from "./mcpServiceManager.middleware.js";
 export { endpointManagerMiddleware } from "./endpointManager.middleware.js";
 export { endpointsMiddleware } from "./endpoints.middleware.js";
+
+// 重新导出 API 响应类型（从 error.middleware 重新导出）
+export type {
+  ApiErrorResponse,
+  ApiSuccessResponse,
+  ApiPaginatedResponse,
+  PaginationInfo,
+  ApiResponse,
+} from "./error.middleware.js";
 
 // 重新导出 context 相关函数
 export {
