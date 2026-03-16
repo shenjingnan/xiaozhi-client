@@ -1818,6 +1818,14 @@ export class MCPServiceManager extends EventEmitter {
   async cleanup(): Promise<void> {
     await this.stopAllServices();
 
+    // 清理缓存管理器
+    try {
+      this.cacheManager.cleanup();
+      logger.info("[MCPManager] 缓存管理器已清理");
+    } catch (error) {
+      logger.error("[MCPManager] 缓存管理器清理失败", { error });
+    }
+
     // 清理事件监听器，防止内存泄漏
     this.eventBus.offEvent(
       "mcp:service:connected",
