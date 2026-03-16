@@ -1,51 +1,17 @@
+/**
+ * Apps Backend Vitest 配置
+ *
+ * 使用共享基础配置，添加 backend 特定的配置项。
+ */
+
 import { resolve } from "node:path";
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import tsconfigPaths from "vite-tsconfig-paths";
-import { defineConfig } from "vitest/config";
+import { createSharedVitestConfig } from "../../vitest.config.base";
 
-// ESM 兼容的 __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-export default defineConfig({
-  plugins: [
-    // 添加 tsconfig 路径解析插件
-    tsconfigPaths(),
-  ],
-  test: {
-    globals: true,
-    environment: "node",
-    testTimeout: 10000, // 减少默认测试超时时间
-    hookTimeout: 10000, // 减少默认 hook 超时时间
-    include: ["**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-    exclude: ["**/node_modules", "dist", "templates/**/*"],
-    // 分组配置，将超时测试分离
-    // 超时测试：包含"timeout"字样的测试文件
-    // 普通测试：其他所有测试
-    coverage: {
-      enabled: true,
-      provider: "v8",
-      reporter: ["text", "json", "html", "lcov"],
-      reportsDirectory: resolve(__dirname, "../coverage"),
-      exclude: [
-        "node_modules/**",
-        "dist/**",
-        "templates/**",
-        "**/*.d.ts",
-        "**/*.config.{js,ts}",
-        "coverage/**",
-      ],
-      include: [resolve(__dirname, "**/*.ts")],
-      all: true,
-      thresholds: {
-        global: {
-          branches: 80,
-          functions: 80,
-          lines: 80,
-          statements: 80,
-        },
-      },
-    },
-  },
+export default createSharedVitestConfig({
+  // Backend 特定的排除目录
+  additionalExcludes: ["templates/**/*"],
+  // 覆盖率包含的文件
+  coverageInclude: [resolve(__dirname, "**/*.ts")],
+  // 覆盖率排除的文件
+  coverageExcludes: ["templates/**"],
 });
