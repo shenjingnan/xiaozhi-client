@@ -1,3 +1,14 @@
+/**
+ * 扣子工作流集成组件
+ *
+ * 提供扣子平台工作流的浏览、配置和添加功能，包括：
+ * - 工作空间选择和切换
+ * - 工作流列表展示（支持分页）
+ * - 工作流参数配置
+ * - 添加工作流为 MCP 工具
+ * - 网络状态监听
+ * - 错误处理和用户提示
+ */
 import { WorkflowParameterConfigDialog } from "@/components/common/workflow-parameter-config-dialog";
 import {
   AlertDialog,
