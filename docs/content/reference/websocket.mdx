@@ -1,0 +1,176 @@
+---
+title: "WebSocket 通信 API - Xiaozhi Client"
+description: "WebSocket 通信模块的 API 参考文档"
+---
+
+# WebSocket 通信 API
+
+## 概述
+
+WebSocket 通信模块提供 WebSocket 相关的工具函数和类型定义，用于处理小智接入点和 ESP32 设备的 WebSocket 连接。
+
+**文件位置**: `apps/backend/utils/websocket-helper.ts`
+
+## 核心组件
+
+### WebSocketLike
+
+WebSocket 接口定义，描述具有 send 方法的 WebSocket 对象。
+
+```typescript
+interface WebSocketLike {
+  send(data: string): void;
+}
+```
+
+### sendWebSocketError
+
+向 WebSocket 客户端发送错误消息的工具函数。
+
+**签名**:
+```typescript
+function sendWebSocketError(
+  ws: WebSocketLike,
+  code: string,
+  message: string,
+  logger: Logger
+): void
+```
+
+**参数**:
+- `ws` (WebSocketLike): WebSocket 客户端连接对象
+- `code` (string): 错误代码
+- `message` (string): 错误消息
+- `logger` (Logger): 日志记录器
+
+**发送的错误消息格式**:
+```typescript
+{
+  type: "error",
+  error: {
+    code: string,
+    message: string,
+    timestamp: number
+  }
+}
+```
+
+## 使用示例
+
+### 发送错误消息
+
+```typescript
+import { sendWebSocketError } from "@/utils/websocket-helper.js";
+import { logger } from "@/Logger.js";
+
+// 在 WebSocket 处理函数中使用
+ws.on("message", (data) => {
+  try {
+    // 处理消息
+    handleMessage(data);
+  } catch (error) {
+    // 发送错误响应给客户端
+    sendWebSocketError(
+      ws,
+      "PROCESSING_ERROR",
+      error instanceof Error ? error.message : "处理消息时发生错误",
+      logger
+    );
+  }
+});
+```
+
+### 自定义 WebSocketLike 实现
+
+```typescript
+// WebSocketLike 接口适用于任何具有 send 方法的对象
+class MockWebSocket implements WebSocketLike {
+  sentMessages: string[] = [];
+
+  send(data: string): void {
+    this.sentMessages.push(data);
+    console.log("发送消息:", data);
+  }
+}
+
+// 可以用于测试
+const mockWs = new MockWebSocket();
+sendWebSocketError(mockWs, "TEST_ERROR", "测试错误", logger);
+```
+
+## 错误消息格式
+
+所有通过 `sendWebSocketError` 发送的错误消息都遵循统一的格式：
+
+```typescript
+{
+  "type": "error",
+  "error": {
+    "code": "错误代码",
+    "message": "错误描述",
+    "timestamp": 1234567890
+  }
+}
+```
+
+### 常用错误代码
+
+| 错误代码 | 描述 | 使用场景 |
+|---------|------|---------|
+| `INVALID_MESSAGE_FORMAT` | 消息格式无效 | 收到无法解析的消息 |
+| `INVALID_PARAMS` | 参数无效 | 请求参数验证失败 |
+| `TOOL_NOT_FOUND` | 工具不存在 | 请求的工具不存在 |
+| `SERVICE_UNAVAILABLE` | 服务不可用 | 后端服务未就绪 |
+| `TIMEOUT` | 超时 | 请求处理超时 |
+| `INTERNAL_ERROR` | 内部错误 | 服务器内部错误 |
+
+## 使用场景
+
+### 小智接入点通信
+
+小智接入点使用 WebSocket 进行 MCP 协议通信：
+
+```typescript
+// Endpoint 类中的错误处理示例
+private handleConnectionError(error: Error): void {
+  if (this.ws) {
+    sendWebSocketError(
+      this.ws,
+      "CONNECTION_ERROR",
+      error.message,
+      this.logger
+    );
+  }
+}
+```
+
+### ESP32 设备通信
+
+ESP32 设备通过 WebSocket 连接进行通信：
+
+```typescript
+// ESP32 连接中的错误处理
+async sendError(code: ESP32ErrorCode, message: string): Promise<void> {
+  try {
+    await this.send({
+      type: "error",
+      code,
+      message,
+    });
+  } catch (error) {
+    logger.error(`发送错误消息失败: deviceId=${this.deviceId}`, error);
+  }
+}
+```
+
+## 注意事项
+
+1. **异常处理**: `sendWebSocketError` 内部已处理发送异常，不会抛出错误
+2. **日志记录**: 发送失败时会记录错误日志，便于调试
+3. **接口兼容**: `WebSocketLike` 接口兼容标准 WebSocket 对象和任何实现了 `send` 方法的对象
+
+## 相关模块
+
+- [端点管理](./endpoint) - 小智接入点使用 WebSocket 通信
+- [ESP32 集成](./esp32) - ESP32 设备使用 WebSocket 连接
+- [MCP 模块](./mcp) - MCP 协议通过 WebSocket 传输
