@@ -6,6 +6,40 @@ import type { AudioFormat } from "@/audio";
 import type { AuthMethod } from "@/auth";
 
 /**
+ * ByteDance 平台音频配置
+ */
+export interface ByteDanceAudioConfig {
+  /** 音频格式 */
+  format?: AudioFormat;
+  /** 采样率 */
+  sampleRate?: number;
+  /** 位深 */
+  bits?: number;
+  /** 声道数 */
+  channel?: number;
+  /** 编解码器 */
+  codec?: string;
+}
+
+/**
+ * ByteDance 平台请求配置
+ */
+export interface ByteDanceRequestConfig {
+  /** 分片时长 (ms) */
+  segDuration?: number;
+  /** N-best 数量 */
+  nbest?: number;
+  /** 工作流 */
+  workflow?: string;
+  /** 显示语言 */
+  showLanguage?: boolean;
+  /** 显示分句 */
+  showUtterances?: boolean;
+  /** 结果类型 */
+  resultType?: string;
+}
+
+/**
  * ByteDance 平台配置
  */
 export interface ByteDancePlatformConfig {
@@ -36,34 +70,10 @@ export interface ByteDancePlatformConfig {
   };
 
   /** 音频配置 */
-  audio?: {
-    /** 音频格式 */
-    format?: AudioFormat;
-    /** 采样率 */
-    sampleRate?: number;
-    /** 位深 */
-    bits?: number;
-    /** 声道数 */
-    channel?: number;
-    /** 编解码器 */
-    codec?: string;
-  };
+  audio?: ByteDanceAudioConfig;
 
   /** 请求配置 */
-  request?: {
-    /** 分片时长 (ms) */
-    segDuration?: number;
-    /** N-best 数量 */
-    nbest?: number;
-    /** 工作流 */
-    workflow?: string;
-    /** 显示语言 */
-    showLanguage?: boolean;
-    /** 显示分句 */
-    showUtterances?: boolean;
-    /** 结果类型 */
-    resultType?: string;
-  };
+  request?: ByteDanceRequestConfig;
 
   /** 认证配置 */
   auth?: {
@@ -98,34 +108,10 @@ export interface ByteDanceV2Config {
   };
 
   /** 音频配置 */
-  audio?: {
-    /** 音频格式 */
-    format?: AudioFormat;
-    /** 采样率 */
-    sampleRate?: number;
-    /** 位深 */
-    bits?: number;
-    /** 声道数 */
-    channel?: number;
-    /** 编解码器 */
-    codec?: string;
-  };
+  audio?: ByteDanceAudioConfig;
 
   /** 请求配置 */
-  request?: {
-    /** 分片时长 (ms) */
-    segDuration?: number;
-    /** N-best 数量 */
-    nbest?: number;
-    /** 工作流 */
-    workflow?: string;
-    /** 显示语言 */
-    showLanguage?: boolean;
-    /** 显示分句 */
-    showUtterances?: boolean;
-    /** 结果类型 */
-    resultType?: string;
-  };
+  request?: ByteDanceRequestConfig;
 }
 
 /**
@@ -148,34 +134,10 @@ export interface ByteDanceV3Config {
   };
 
   /** 音频配置 */
-  audio?: {
-    /** 音频格式 */
-    format?: AudioFormat;
-    /** 采样率 */
-    sampleRate?: number;
-    /** 位深 */
-    bits?: number;
-    /** 声道数 */
-    channel?: number;
-    /** 编解码器 */
-    codec?: string;
-  };
+  audio?: ByteDanceAudioConfig;
 
   /** 请求配置 */
-  request?: {
-    /** 分片时长 (ms) */
-    segDuration?: number;
-    /** N-best 数量 */
-    nbest?: number;
-    /** 工作流 */
-    workflow?: string;
-    /** 显示语言 */
-    showLanguage?: boolean;
-    /** 显示分句 */
-    showUtterances?: boolean;
-    /** 结果类型 */
-    resultType?: string;
-  };
+  request?: ByteDanceRequestConfig;
 }
 
 /**
