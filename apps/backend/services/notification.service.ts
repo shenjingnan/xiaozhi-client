@@ -25,17 +25,9 @@ import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { ClientInfo, RestartStatus } from "@/services/status.service.js";
+import type { WebSocketLike } from "@/utils/websocket-helper.js";
 import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
-
-/**
- * WebSocket 类接口
- * 定义了 WebSocket 实例需要具备的基本属性和方法
- */
-export interface WebSocketLike {
-  readyState: number;
-  send(data: string): void;
-}
 
 /**
  * WebSocket 客户端接口
