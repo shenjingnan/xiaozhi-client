@@ -16,6 +16,7 @@ import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { ClientInfo } from "@/services/status.service.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { MCPServerAddResult } from "@/handlers/mcp-manage.handler.js";
 
 /**
  * 事件类型定义
@@ -160,7 +161,7 @@ export interface EventBusEvents {
     addedCount: number;
     failedCount: number;
     successfullyAddedServers: string[];
-    results: any[];
+    results: MCPServerAddResult[];
     timestamp: Date;
   };
   "mcp:server:rollback": {
