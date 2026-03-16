@@ -101,6 +101,12 @@ export class ASR extends EventEmitter {
   // Record triggered VAD end sequences to prevent duplicate triggers
   private triggeredVADSequences: Set<number | string> = new Set();
 
+  // WebSocket 事件处理器引用（用于清理）
+  private openHandler?: () => void;
+  private closeHandler?: () => void;
+  private errorHandler?: (error: Error) => void;
+  private messageHandler?: (data: Buffer) => void;
+
   // V2 请求构造器
   private v2RequestBuilder: ByteDanceV2RequestBuilder | null = null;
 
@@ -556,6 +562,24 @@ export class ASR extends EventEmitter {
    */
   close(): void {
     if (this.ws) {
+      // 清理事件监听器，防止内存泄漏
+      if (this.openHandler) {
+        this.ws.off("open", this.openHandler);
+        this.openHandler = undefined;
+      }
+      if (this.closeHandler) {
+        this.ws.off("close", this.closeHandler);
+        this.closeHandler = undefined;
+      }
+      if (this.errorHandler) {
+        this.ws.off("error", this.errorHandler);
+        this.errorHandler = undefined;
+      }
+      if (this.messageHandler) {
+        this.ws.off("message", this.messageHandler);
+        this.messageHandler = undefined;
+      }
+
       this.ws.close();
       this.ws = null;
       this.connected = false;
@@ -740,32 +764,34 @@ export class ASR extends EventEmitter {
         handshakeTimeout: 30000,
       });
 
-      this.ws.on("open", () => {
+      // 保存事件处理器引用以便后续清理
+      this.openHandler = () => {
         this.connected = true;
         this.emit("open");
         resolve();
-      });
+      };
 
-      this.ws.on("close", () => {
+      this.closeHandler = () => {
         this.connected = false;
         this.emit("close");
-      });
+      };
 
-      this.ws.on("error", (error) => {
+      this.errorHandler = (error: Error) => {
         this.emit("error", error);
         reject(error);
-      });
+      };
 
-      this.ws.on("close", () => {
-        this.connected = false;
-        this.emit("close");
-      });
+      this.messageHandler = (data: Buffer) => {
+        this.handleMessage(data);
+      };
+
+      this.ws.on("open", this.openHandler);
+      this.ws.on("close", this.closeHandler);
+      this.ws.on("error", this.errorHandler);
 
       // Register global message handler for event-driven mode
       // In streaming mode, this enables result/vad_end events via on()
-      this.ws.on("message", (data: Buffer) => {
-        this.handleMessage(data);
-      });
+      this.ws.on("message", this.messageHandler);
     });
   }
 
