@@ -9,7 +9,9 @@ import { ConnectionState } from "@/services/websocket";
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import { useConfigStore } from "./config";
 import { useStatusStore } from "./status";
+import type { RestartStatus } from "./status";
 import { useWebSocketStore } from "./websocket";
+import type { PortChangeStatus } from "./websocket";
 
 /**
  * 向后兼容的配置选择器
