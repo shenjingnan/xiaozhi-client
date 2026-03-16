@@ -461,6 +461,14 @@ export function ToolDebugDialog({
     return createDefaultValues(tool.inputSchema);
   }, [tool?.inputSchema]);
 
+  // 缓存工具参数检查，避免重复计算
+  const hasNoParams = useMemo(() => {
+    return (
+      !tool?.inputSchema?.properties ||
+      Object.keys(tool.inputSchema.properties).length === 0
+    );
+  }, [tool?.inputSchema?.properties]);
+
   // 初始化表单
   const form = useForm({
     resolver: zodResolver(formSchema as any),
@@ -560,11 +568,6 @@ export function ToolDebugDialog({
 
     let args: any;
 
-    // 检查是否无参数工具
-    const hasNoParams =
-      !tool?.inputSchema?.properties ||
-      Object.keys(tool.inputSchema.properties).length === 0;
-
     if (hasNoParams) {
       // 无参数工具使用空对象
       args = {};
@@ -605,7 +608,7 @@ export function ToolDebugDialog({
     } finally {
       setLoading(false);
     }
-  }, [tool, inputMode, form, jsonInput, validateJSON]);
+  }, [tool, inputMode, form, jsonInput, validateJSON, hasNoParams]);
 
   // 复制结果
   const handleCopy = useCallback(async () => {
@@ -821,10 +824,6 @@ export function ToolDebugDialog({
         // 阻止默认行为
         event.preventDefault();
 
-        // 检查是否无参数工具，或者是有参数工具且JSON模式时验证格式
-        const hasNoParams =
-          !tool?.inputSchema?.properties ||
-          Object.keys(tool.inputSchema.properties).length === 0;
         if (!hasNoParams && inputMode === "json" && !validateJSON(jsonInput)) {
           toast.error("输入参数不是有效的JSON格式");
           return;
@@ -841,7 +840,7 @@ export function ToolDebugDialog({
       jsonInput,
       validateJSON,
       handleCallTool,
-      tool?.inputSchema?.properties,
+      hasNoParams,
     ]
   );
 
@@ -890,28 +889,26 @@ export function ToolDebugDialog({
                 <div className="w-1/2 flex flex-col gap-2 flex-shrink-0 overflow-hidden pr-0.5">
                   <div className="flex items-center justify-between h-[40px]">
                     <h3 className="text-sm font-medium">输入参数</h3>
-                    {tool?.inputSchema?.properties &&
-                      Object.keys(tool.inputSchema.properties).length > 0 && (
-                        <Tabs
-                          value={inputMode}
-                          onValueChange={(value) =>
-                            handleModeChange(value as "form" | "json")
-                          }
-                        >
-                          <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="form" className="text-xs">
-                              表单模式
-                            </TabsTrigger>
-                            <TabsTrigger value="json" className="text-xs">
-                              高级模式
-                            </TabsTrigger>
-                          </TabsList>
-                        </Tabs>
-                      )}
+                    {!hasNoParams && (
+                      <Tabs
+                        value={inputMode}
+                        onValueChange={(value) =>
+                          handleModeChange(value as "form" | "json")
+                        }
+                      >
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="form" className="text-xs">
+                            表单模式
+                          </TabsTrigger>
+                          <TabsTrigger value="json" className="text-xs">
+                            高级模式
+                          </TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    )}
                   </div>
                   <div className="flex-1 min-h-0">
-                    {tool?.inputSchema?.properties &&
-                    Object.keys(tool.inputSchema.properties).length > 0 ? (
+                    {!hasNoParams ? (
                       <Tabs
                         value={inputMode}
                         onValueChange={(value) =>
@@ -1035,16 +1032,9 @@ export function ToolDebugDialog({
                   disabled={
                     loading ||
                     // 只有有参数工具且在JSON模式时才检查JSON格式
-                    (() => {
-                      const hasNoParams =
-                        !tool?.inputSchema?.properties ||
-                        Object.keys(tool.inputSchema.properties).length === 0;
-                      return (
-                        !hasNoParams &&
-                        inputMode === "json" &&
-                        !validateJSON(jsonInput)
-                      );
-                    })()
+                    (!hasNoParams &&
+                      inputMode === "json" &&
+                      !validateJSON(jsonInput))
                   }
                 >
                   {loading ? (
@@ -1055,12 +1045,8 @@ export function ToolDebugDialog({
                   ) : (
                     <>
                       <PlayIcon className="h-4 w-4" />
-                      {(() => {
-                        const hasNoParams =
-                          !tool?.inputSchema?.properties ||
-                          Object.keys(tool.inputSchema.properties).length === 0;
-                        return hasNoParams ? "直接调用" : "调用工具";
-                      })()} ({getShortcutText()})
+                      {hasNoParams ? "直接调用" : "调用工具"} (
+                      {getShortcutText()})
                     </>
                   )}
                 </Button>
