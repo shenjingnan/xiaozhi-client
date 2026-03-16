@@ -3,8 +3,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { EndpointManager } from "../manager.js";
 import { Endpoint } from "../endpoint.js";
+import { EndpointManager } from "../manager.js";
 
 // Mock Endpoint 类，内联定义到 vi.mock() 中以符合 Vitest 规范
 vi.mock("../endpoint.js", () => ({
@@ -188,7 +188,9 @@ describe("EndpointManager", () => {
     it("应该处理连接失败", async () => {
       // 创建一个会失败的端点
       const failingEndpoint = new Endpoint("ws://failing.com");
-      vi.spyOn(failingEndpoint, "connect").mockRejectedValue(new Error("连接失败"));
+      vi.spyOn(failingEndpoint, "connect").mockRejectedValue(
+        new Error("连接失败")
+      );
 
       manager.addEndpoint(failingEndpoint);
 
@@ -353,13 +355,17 @@ describe("EndpointManager", () => {
     });
 
     it("未连接时应该返回 false", () => {
-      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(false);
+      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(
+        false
+      );
     });
 
     it("连接后应该返回 true", async () => {
       await manager.connect();
 
-      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(true);
+      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(
+        true
+      );
     });
 
     it("不存在的端点应该返回 false", () => {
@@ -421,7 +427,9 @@ describe("EndpointManager", () => {
 
     it("应该处理部分重连失败", async () => {
       // Mock 一个端点重连失败
-      vi.spyOn(mockEndpoints[0], "reconnect").mockRejectedValue(new Error("重连失败"));
+      vi.spyOn(mockEndpoints[0], "reconnect").mockRejectedValue(
+        new Error("重连失败")
+      );
 
       await expect(manager.reconnectAll()).resolves.toBeUndefined();
 
@@ -441,7 +449,9 @@ describe("EndpointManager", () => {
     it("应该重连指定的端点", async () => {
       await manager.reconnectEndpoint("ws://endpoint1.example.com");
 
-      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(true);
+      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(
+        true
+      );
     });
 
     it("重连不存在的端点应该抛出错误", async () => {
@@ -457,7 +467,9 @@ describe("EndpointManager", () => {
       // 重连
       await manager.reconnectEndpoint("ws://endpoint1.example.com");
 
-      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(true);
+      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(
+        true
+      );
     });
   });
 
@@ -481,7 +493,9 @@ describe("EndpointManager", () => {
     it("应该重连单个端点（传入 endpoint 参数）", async () => {
       await manager.reconnect("ws://endpoint1.example.com");
 
-      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(true);
+      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(
+        true
+      );
     });
 
     it("应该支持自定义延迟参数", async () => {
@@ -491,7 +505,9 @@ describe("EndpointManager", () => {
 
       const elapsed = Date.now() - startTime;
       expect(elapsed).toBeGreaterThanOrEqual(100);
-      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(true);
+      expect(manager.isEndpointConnected("ws://endpoint1.example.com")).toBe(
+        true
+      );
     });
 
     it("重连不存在的端点应该抛出错误", async () => {
@@ -590,7 +606,7 @@ describe("EndpointManager", () => {
 
       manager.setMcpManager(mockMcpManager);
 
-      expect(manager["sharedMCPAdapter"]).toBeDefined();
+      expect(manager.sharedMCPAdapter).toBeDefined();
     });
 
     it("重复设置应该抛出错误", () => {
