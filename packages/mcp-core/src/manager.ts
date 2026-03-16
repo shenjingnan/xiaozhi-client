@@ -105,7 +105,9 @@ export class MCPManager extends EventEmitter {
 
   /**
    * 连接所有已添加的 MCP 服务
-   * 所有服务并行连接，单个服务失败不会影响其他服务
+   * 所有服务并行连接，连接失败会抛出错误
+   *
+   * @throws 如果有服务连接失败，抛出包含失败服务列表的错误
    *
    * @example
    * ```typescript
@@ -148,7 +150,25 @@ export class MCPManager extends EventEmitter {
       }
     );
 
-    await Promise.allSettled(promises);
+    // 使用 Promise.allSettled() 等待所有连接完成，然后检查失败的服务
+    const results = await Promise.allSettled(promises);
+
+    // 收集失败的服务
+    const failedServices: string[] = [];
+    const serviceNames = Array.from(this.configs.keys());
+
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].status === "rejected") {
+        failedServices.push(serviceNames[i]);
+      }
+    }
+
+    // 如果有服务连接失败，抛出包含失败服务列表的错误
+    if (failedServices.length > 0) {
+      throw new Error(
+        `部分 MCP 服务连接失败: ${failedServices.join(", ")}`
+      );
+    }
   }
 
   /**
