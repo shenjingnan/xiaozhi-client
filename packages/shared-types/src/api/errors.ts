@@ -3,6 +3,22 @@
  */
 
 /**
+ * 错误详情接口
+ */
+export interface ErrorDetail {
+  /** 字段名（验证错误时使用） */
+  field?: string;
+  /** 错误值 */
+  value?: unknown;
+  /** 约束条件 */
+  constraint?: string;
+  /** 期望类型 */
+  expectedType?: string;
+  /** 实际类型 */
+  receivedType?: string;
+}
+
+/**
  * MCP 错误代码枚举
  */
 export enum MCPErrorCode {
@@ -46,7 +62,7 @@ export interface ApiError {
   /** 错误消息 */
   message: string;
   /** 错误详情 */
-  details?: any;
+  details?: ErrorDetail;
   /** 错误堆栈（开发环境） */
   stack?: string;
 }
@@ -62,7 +78,7 @@ export interface ToolValidationError {
   /** 验证字段名称 */
   field?: string;
   /** 错误详情 */
-  details?: any;
+  details?: ErrorDetail;
 }
 
 /**
