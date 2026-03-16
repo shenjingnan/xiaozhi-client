@@ -29,8 +29,6 @@ import {
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
   MCP_TIMEOUTS,
   MESSAGE_SIZE_LIMITS,
-  PAGINATION_CONSTANTS,
-  PAGINATION_LIMITS,
   RETRY_CONFIG,
   RETRY_DELAYS,
   STATUS_EVENTS,
@@ -276,26 +274,6 @@ describe("缓存相关常量", () => {
       expect(MESSAGE_SIZE_LIMITS.MAX).toBeGreaterThan(
         MESSAGE_SIZE_LIMITS.DEFAULT
       );
-    });
-  });
-
-  describe("PAGINATION_LIMITS", () => {
-    it("应该包含正确的分页限制", () => {
-      expect(PAGINATION_LIMITS.DEFAULT_LIMIT).toBe(50);
-      expect(PAGINATION_LIMITS.MAX_LIMIT).toBe(200);
-    });
-
-    it("最大限制应该大于默认限制", () => {
-      expect(PAGINATION_LIMITS.MAX_LIMIT).toBeGreaterThan(
-        PAGINATION_LIMITS.DEFAULT_LIMIT
-      );
-    });
-
-    it("应该与 PAGINATION_CONSTANTS 兼容", () => {
-      expect(PAGINATION_LIMITS.DEFAULT_LIMIT).toBe(
-        PAGINATION_CONSTANTS.DEFAULT_LIMIT
-      );
-      expect(PAGINATION_LIMITS.MAX_LIMIT).toBe(PAGINATION_CONSTANTS.MAX_LIMIT);
     });
   });
 
