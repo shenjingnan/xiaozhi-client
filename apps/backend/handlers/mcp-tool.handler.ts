@@ -1651,7 +1651,11 @@ export class MCPToolHandler {
     // 验证必需字段
     const requiredFields = ["name", "description", "inputSchema", "handler"];
     for (const field of requiredFields) {
-      if (!(field in tool) || tool[field as keyof CustomMCPTool] == null) {
+      if (
+        !(field in tool) ||
+        tool[field as keyof CustomMCPTool] === null ||
+        tool[field as keyof CustomMCPTool] === undefined
+      ) {
         throw MCPError.validationError(
           MCPErrorCode.TOOL_VALIDATION_FAILED,
           `工具配置缺少必需字段: ${field}`
