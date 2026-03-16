@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as fsPromises from "node:fs/promises";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Logger, logger } from "../Logger.js";
@@ -10,6 +11,15 @@ vi.mock("node:fs", () => ({
   statSync: vi.fn(),
   renameSync: vi.fn(),
   unlinkSync: vi.fn(),
+}));
+
+// 模拟 fs/promises
+vi.mock("node:fs/promises", () => ({
+  access: vi.fn(),
+  writeFile: vi.fn(),
+  stat: vi.fn(),
+  rename: vi.fn(),
+  unlink: vi.fn(),
 }));
 
 vi.mock("node:path", () => ({
@@ -148,17 +158,19 @@ describe("Logger", async () => {
   });
 
   describe("initLogFile", () => {
-    it("应该在日志文件不存在时初始化", () => {
+    it("应该在日志文件不存在时初始化", async () => {
       const testLogger = new Logger();
-      mockFs.existsSync.mockReturnValue(false);
+      const mockFsPromises = vi.mocked(fsPromises);
+      mockFsPromises.access.mockRejectedValue(new Error("File not found"));
+      mockFsPromises.writeFile.mockResolvedValue(undefined);
 
-      testLogger.initLogFile("/test/project");
+      await testLogger.initLogFile("/test/project");
 
       expect(mockPath.join).toHaveBeenCalledWith(
         "/test/project",
         "xiaozhi.log"
       );
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      expect(mockFsPromises.writeFile).toHaveBeenCalledWith(
         "/test/project/xiaozhi.log",
         ""
       );
@@ -166,23 +178,26 @@ describe("Logger", async () => {
       expect(mockPino).toHaveBeenCalledTimes(2); // 一次构造函数，一次 initLogFile
     });
 
-    it("应该在日志文件已存在时初始化", () => {
+    it("应该在日志文件已存在时初始化", async () => {
       const testLogger = new Logger();
-      mockFs.existsSync.mockReturnValue(true);
+      const mockFsPromises = vi.mocked(fsPromises);
+      mockFsPromises.access.mockResolvedValue(undefined);
 
-      testLogger.initLogFile("/test/project");
+      await testLogger.initLogFile("/test/project");
 
-      expect(mockFs.writeFileSync).not.toHaveBeenCalled();
+      expect(mockFsPromises.writeFile).not.toHaveBeenCalled();
       // 验证 pino 实例被重新创建
       expect(mockPino).toHaveBeenCalledTimes(2); // 一次构造函数，一次 initLogFile
     });
   });
 
   describe("文件日志记录", () => {
-    it("应该在初始化日志文件时自动启用文件日志记录", () => {
+    it("应该在初始化日志文件时自动启用文件日志记录", async () => {
       const testLogger = new Logger();
+      const mockFsPromises = vi.mocked(fsPromises);
+      mockFsPromises.access.mockResolvedValue(undefined);
 
-      testLogger.initLogFile("/test/project");
+      await testLogger.initLogFile("/test/project");
 
       // 验证 pino.destination 被调用来创建文件流
       expect(mockPino.destination).toHaveBeenCalledWith({
@@ -200,10 +215,13 @@ describe("Logger", async () => {
       expect(mockPino.destination).not.toHaveBeenCalled();
     });
 
-    it("应该在守护进程模式下处理文件日志记录", () => {
+    it("应该在守护进程模式下处理文件日志记录", async () => {
       process.env.XIAOZHI_DAEMON = "true";
       const testLogger = new Logger();
-      testLogger.initLogFile("/test/project");
+      const mockFsPromises = vi.mocked(fsPromises);
+      mockFsPromises.access.mockResolvedValue(undefined);
+
+      await testLogger.initLogFile("/test/project");
 
       // 在守护进程模式下，应该只有文件流，没有控制台流
       expect(mockPino.multistream).toHaveBeenCalled();
@@ -221,9 +239,11 @@ describe("Logger", async () => {
   describe("日志记录方法", () => {
     let testLogger: Logger;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       testLogger = new Logger();
-      testLogger.initLogFile("/test/project");
+      const mockFsPromises = vi.mocked(fsPromises);
+      mockFsPromises.access.mockResolvedValue(undefined);
+      await testLogger.initLogFile("/test/project");
     });
 
     it("应该记录 info 消息", () => {
@@ -305,9 +325,11 @@ describe("Logger", async () => {
   });
 
   describe("close", () => {
-    it("应该优雅地处理 close", () => {
+    it("应该优雅地处理 close", async () => {
       const testLogger = new Logger();
-      testLogger.initLogFile("/test/project");
+      const mockFsPromises = vi.mocked(fsPromises);
+      mockFsPromises.access.mockResolvedValue(undefined);
+      await testLogger.initLogFile("/test/project");
 
       // 不应该抛出错误
       expect(() => testLogger.close()).not.toThrow();
@@ -341,16 +363,21 @@ describe("Logger", async () => {
       expect(() => testLogger.setLogFileOptions(1024, 3)).not.toThrow();
     });
 
-    it("应该清理旧日志", () => {
-      testLogger.initLogFile("/test/project");
+    it("应该清理旧日志", async () => {
+      const mockFsPromises = vi.mocked(fsPromises);
+      mockFsPromises.access.mockResolvedValue(undefined);
+      mockFsPromises.unlink.mockResolvedValue(undefined);
+
+      await testLogger.initLogFile("/test/project");
 
       // 不应该抛出错误
-      expect(() => testLogger.cleanupOldLogs()).not.toThrow();
+      await expect(testLogger.cleanupOldLogs()).resolves.not.toThrow();
     });
 
-    it("应该处理日志轮转", () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({
+    it("应该处理日志轮转", async () => {
+      const mockFsPromises = vi.mocked(fsPromises);
+      mockFsPromises.access.mockResolvedValue(undefined);
+      mockFsPromises.stat.mockResolvedValue({
         size: BigInt(20 * 1024 * 1024),
         isFile: () => true,
         isDirectory: () => false,
@@ -377,11 +404,13 @@ describe("Logger", async () => {
         ctime: new Date(),
         birthtime: new Date(),
       } as any); // 20MB 文件
+      mockFsPromises.rename.mockResolvedValue(undefined);
+      mockFsPromises.unlink.mockResolvedValue(undefined);
 
-      testLogger.initLogFile("/test/project");
+      await testLogger.initLogFile("/test/project");
 
       // 轮转期间不应该抛出错误
-      expect(() => testLogger.initLogFile("/test/project")).not.toThrow();
+      await expect(testLogger.initLogFile("/test/project")).resolves.not.toThrow();
     });
   });
 
