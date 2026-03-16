@@ -2,16 +2,22 @@
  * 配置接口定义
  */
 
+import type { ServiceKey } from "../Container";
+
 /**
  * 依赖注入容器接口
  */
 export interface IDIContainer {
   /** 注册服务 */
-  register<T>(key: string, factory: () => T): void;
+  register<K extends ServiceKey>(
+    key: K,
+    factory: () => unknown,
+    singleton?: boolean
+  ): void;
   /** 获取服务实例 */
-  get<T>(key: string): T;
+  get<K extends ServiceKey>(key: K): unknown;
   /** 检查服务是否已注册 */
-  has(key: string): boolean;
+  has(key: ServiceKey): boolean;
 }
 
 /**
