@@ -4,6 +4,9 @@
  * 提供完整的 MCP（Model Context Protocol）核心功能，包括：
  * - MCPServiceManager: MCP 服务管理器，统一管理多个 MCP 服务
  * - MCPService: MCP 服务类，负责单个 MCP 服务的连接和工具管理
+ * - MCPServiceLifecycleManager: MCP 服务生命周期管理器
+ * - MCPToolStatsManager: MCP 工具统计管理器
+ * - MCPConfigManager: MCP 配置管理器
  * - MCPMessageHandler: MCP 消息处理器，处理所有 MCP 协议消息
  * - MCPCacheManager: MCP 缓存管理器，负责工具列表的缓存
  * - CustomMCPHandler: 自定义 MCP 处理器，处理 Coze 工作流等自定义工具
@@ -37,3 +40,6 @@ export * from "./message.js";
 export * from "@/lib/mcp/cache.js";
 export * from "./custom.js";
 export * from "./log.js";
+export * from "./lifecycle.js";
+export * from "./tool-stats.js";
+export * from "./config-manager.js";
