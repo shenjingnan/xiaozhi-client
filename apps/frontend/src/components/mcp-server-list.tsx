@@ -34,13 +34,12 @@ import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
 import type {
   AppConfig,
   CozeWorkflow,
-  CustomMCPToolWithStats,
   JSONSchema,
   MCPServerConfig,
   WorkflowParameter,
 } from "@xiaozhi-client/shared-types";
 import { CoffeeIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { AddMcpServerButton } from "./add-mcp-server-button";
 import { CozeWorkflowIntegration } from "./coze-workflow-integration";
@@ -48,27 +47,7 @@ import { McpServerSettingButton } from "./mcp-server-setting-button";
 import { RemoveMcpServerButton } from "./remove-mcp-server-button";
 import { RestartButton } from "./restart-button";
 import { ToolDebugDialog } from "./tool-debug-dialog";
-
-// 服务名称常量
-const UNKNOWN_SERVICE_NAME = "未知服务";
-const CUSTOM_SERVICE_NAME = "自定义服务";
-
-// 工具类型别名
-type ToolWithServerInfo = {
-  name: string;
-  serverName: string;
-  toolName: string;
-  enable: boolean;
-  description?: string;
-  usageCount?: number;
-  lastUsedTime?: string;
-  inputSchema?: JSONSchema;
-  handler?: {
-    type: string;
-    platform: string;
-    config?: Record<string, unknown>;
-  };
-};
+import { useToolList, type ToolWithServerInfo } from "./hooks";
 
 interface McpServerListProps {
   updateConfig?: (config: AppConfig) => Promise<void>;
@@ -82,110 +61,10 @@ export function McpServerList({
   const mcpServerConfig = useMcpServerConfig();
   const mcpServers = useMcpServers();
   const { refreshConfig } = useConfigActions();
-  // const config = useConfig(); // 不再使用配置更新，改为使用 API
 
-  // 添加工具列表状态管理
-  const [enabledTools, setEnabledTools] = useState<Array<ToolWithServerInfo>>(
-    []
-  );
-  const [disabledTools, setDisabledTools] = useState<Array<ToolWithServerInfo>>(
-    []
-  );
-
-  // 格式化工具信息的辅助函数
-  const formatTool = useCallback(
-    (tool: CustomMCPToolWithStats, enable: boolean) => {
-      const { serviceName, toolName } = (() => {
-        // 安全检查：确保 handler 存在
-        if (!tool || !tool.handler) {
-          return {
-            serviceName: UNKNOWN_SERVICE_NAME,
-            toolName: tool?.name || UNKNOWN_SERVICE_NAME,
-          };
-        }
-
-        if (tool.handler.type === "mcp") {
-          return {
-            serviceName:
-              tool.handler.config?.serviceName || UNKNOWN_SERVICE_NAME,
-            toolName: tool.handler.config?.toolName || tool.name,
-          };
-        }
-        if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
-          return {
-            serviceName: "customMCP",
-            toolName: tool.name,
-          };
-        }
-        return {
-          serviceName: CUSTOM_SERVICE_NAME,
-          toolName: tool.name,
-        };
-      })();
-
-      return {
-        serverName: serviceName,
-        toolName,
-        enable,
-        name: tool.name,
-        description: tool.description,
-        usageCount: tool.usageCount,
-        lastUsedTime: tool.lastUsedTime,
-        inputSchema: tool.inputSchema,
-      };
-    },
-    []
-  );
-
-  // 获取工具列表
-  const fetchTools = useCallback(async () => {
-    try {
-      // 并行获取已启用和未启用的工具列表
-      const [enabledToolsList, disabledToolsList] = await Promise.all([
-        apiClient.getToolsList("enabled"),
-        apiClient.getToolsList("disabled"),
-      ]);
-
-      // 格式化已启用的工具
-      const formattedEnabledTools = enabledToolsList.map((tool) =>
-        formatTool(tool, true)
-      );
-
-      // 格式化未启用的工具
-      const formattedDisabledTools = disabledToolsList.map((tool) =>
-        formatTool(tool, false)
-      );
-
-      setEnabledTools(formattedEnabledTools);
-      setDisabledTools(formattedDisabledTools);
-    } catch (error) {
-      console.error("获取工具列表失败:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "获取工具列表失败";
-      toast.error(errorMessage);
-
-      // 发生错误时回退到使用 mcpServerConfig
-      if (mcpServerConfig) {
-        const fallbackTools = Object.entries(mcpServerConfig).flatMap(
-          ([serverName, value]) => {
-            return Object.entries(value?.tools || {}).map(
-              ([toolName, tool]) => ({
-                serverName,
-                toolName,
-                ...(tool as any),
-              })
-            );
-          }
-        );
-
-        const enabled = fallbackTools.filter((tool) => tool.enable !== false);
-        const disabled = fallbackTools.filter((tool) => tool.enable === false);
-
-        setEnabledTools(enabled);
-        setDisabledTools(disabled);
-      }
-    }
-  }, [mcpServerConfig, formatTool]);
+  // 使用自定义 Hook 管理工具列表状态和逻辑
+  const { enabledTools, disabledTools, refreshToolLists, fetchTools } =
+    useToolList({ mcpServerConfig });
 
   // 添加刷新状态管理
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -205,37 +84,6 @@ export function McpServerList({
       setIsRefreshing(false);
     }
   }, [refreshConfig, fetchTools, isRefreshing]);
-
-  // 更新工具列表状态（用于启用/禁用后刷新）
-  const refreshToolLists = useCallback(async () => {
-    try {
-      const [enabledToolsList, disabledToolsList] = await Promise.all([
-        apiClient.getToolsList("enabled"),
-        apiClient.getToolsList("disabled"),
-      ]);
-
-      // 格式化已启用的工具
-      const formattedEnabledTools = enabledToolsList.map((tool) =>
-        formatTool(tool, true)
-      );
-
-      // 格式化未启用的工具
-      const formattedDisabledTools = disabledToolsList.map((tool) =>
-        formatTool(tool, false)
-      );
-
-      setEnabledTools(formattedEnabledTools);
-      setDisabledTools(formattedDisabledTools);
-    } catch (error) {
-      console.error("刷新工具列表失败:", error);
-      toast.error("刷新工具列表失败");
-    }
-  }, [formatTool]);
-
-  // 组件加载时获取工具列表
-  useEffect(() => {
-    fetchTools();
-  }, [fetchTools]);
 
   // 添加状态来管理 Coze 工具确认对话框
   const [cozeToolToRemove, setCozeToolToRemove] = useState<string | null>(null);
