@@ -1,5 +1,5 @@
 /**
- * Audio module exports
+ * 音频模块导出
  */
 
 export * from "./types.js";

@@ -6,22 +6,22 @@ import { Buffer } from "node:buffer";
 import type { WavInfo } from "@/audio/types.js";
 
 /**
- * Read WAV file information
+ * 读取 WAV 文件信息
  */
 export function readWavInfo(data: Buffer): WavInfo {
-  // Check RIFF header
+  // 检查 RIFF 头部
   const riff = data.subarray(0, 4).toString("ascii");
   if (riff !== "RIFF") {
     throw new Error("Invalid WAV file: missing RIFF header");
   }
 
-  // Check WAVE format
+  // 检查 WAVE 格式
   const wave = data.subarray(8, 12).toString("ascii");
   if (wave !== "WAVE") {
     throw new Error("Invalid WAV file: missing WAVE format");
   }
 
-  // Find fmt chunk
+  // 查找 fmt 块
   let offset = 12;
   let fmtChunk: Buffer | null = null;
   let dataChunk: Buffer | null = null;
@@ -38,7 +38,7 @@ export function readWavInfo(data: Buffer): WavInfo {
     }
 
     offset += 8 + chunkSize;
-    // Word alignment
+    // 字对齐
     if (chunkSize % 2 !== 0) {
       offset += 1;
     }
@@ -48,13 +48,13 @@ export function readWavInfo(data: Buffer): WavInfo {
     throw new Error("Invalid WAV file: missing fmt chunk");
   }
 
-  // Parse fmt chunk
-  fmtChunk.readUInt16LE(0); // audio format (1=PCM)
+  // 解析 fmt 块
+  fmtChunk.readUInt16LE(0); // 音频格式 (1=PCM)
   const nchannels = fmtChunk.readUInt16LE(2);
   const framerate = fmtChunk.readUInt32LE(4);
   const sampwidth = fmtChunk.readUInt16LE(14);
 
-  // Calculate frames
+  // 计算帧数
   const dataSize = dataChunk ? dataChunk.length : 0;
   const nframes = Math.floor(dataSize / (nchannels * sampwidth));
 
@@ -68,10 +68,10 @@ export function readWavInfo(data: Buffer): WavInfo {
 }
 
 /**
- * Read WAV audio data (skipping header)
+ * 读取 WAV 音频数据（跳过头部）
  */
 export function readWavData(data: Buffer): Buffer {
-  // Find data chunk
+  // 查找数据块
   let offset = 12;
   while (offset < data.length - 8) {
     const chunkId = data.subarray(offset, offset + 4).toString("ascii");
@@ -91,7 +91,7 @@ export function readWavData(data: Buffer): Buffer {
 }
 
 /**
- * Create WAV file from PCM data
+ * 从 PCM 数据创建 WAV 文件
  */
 export function createWavFile(
   pcmData: Buffer,
@@ -106,22 +106,22 @@ export function createWavFile(
 
   const header = Buffer.alloc(44);
 
-  // RIFF header
+  // RIFF 头部
   header.write("RIFF", 0);
   header.writeUInt32LE(chunkSize, 4);
   header.write("WAVE", 8);
 
-  // fmt chunk
+  // fmt 块
   header.write("fmt ", 12);
-  header.writeUInt32LE(16, 16); // chunk size
-  header.writeUInt16LE(1, 20); // audio format (PCM)
+  header.writeUInt32LE(16, 16); // 块大小
+  header.writeUInt16LE(1, 20); // 音频格式 (PCM)
   header.writeUInt16LE(channels, 22);
   header.writeUInt32LE(sampleRate, 24);
   header.writeUInt32LE(byteRate, 28);
   header.writeUInt16LE(blockAlign, 32);
   header.writeUInt16LE(bitsPerSample, 34);
 
-  // data chunk
+  // 数据块
   header.write("data", 36);
   header.writeUInt32LE(dataSize, 40);
 
