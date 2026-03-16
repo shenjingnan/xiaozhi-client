@@ -15,6 +15,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { EventSource } from "eventsource";
 import type { InternalMCPServiceConfig, MCPServerTransport } from "./types.js";
 import { MCPTransportType } from "./types.js";
+import { createLogger } from "./utils/index.js";
 
 // 全局 polyfill EventSource（用于 SSE）
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,6 +25,9 @@ if (typeof globalThisAny !== "undefined" && !globalThisAny.EventSource) {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   globalThisAny.EventSource = EventSource;
 }
+
+// 创建日志实例
+const logger = createLogger("TransportFactory");
 
 // Transport 基础接口
 export interface Transport {
@@ -39,9 +43,7 @@ export interface Transport {
 export function createTransport(
   config: InternalMCPServiceConfig
 ): MCPServerTransport {
-  console.debug(
-    `[TransportFactory] 创建 ${config.type} transport for ${config.name}`
-  );
+  logger.debug(`创建 ${config.type} transport for ${config.name}`);
 
   switch (config.type) {
     case MCPTransportType.STDIO:
