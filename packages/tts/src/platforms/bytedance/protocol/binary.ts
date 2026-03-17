@@ -198,7 +198,13 @@ export async function synthesizeSpeechStream(
       case MsgType.AudioOnlyServer: {
         // 每收到一个音频块立即调用回调处理
         const isLast = msg.sequence !== undefined && msg.sequence < 0;
-        await onAudioChunk(msg.payload, isLast);
+        try {
+          await onAudioChunk(msg.payload, isLast);
+        } catch (error) {
+          // 确保回调失败时关闭 WebSocket，防止资源泄漏
+          ws.close();
+          throw error;
+        }
 
         if (isLast) {
           // 最后一块，结束循环
