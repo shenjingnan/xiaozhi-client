@@ -22,6 +22,7 @@
  */
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
+import { MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
 import { CozeApiService } from "@/lib/coze";
 import type { RunWorkflowData } from "@/lib/coze";
 import type { MCPServiceManager } from "@/lib/mcp";
@@ -96,7 +97,10 @@ export class CustomMCPHandler {
     const token = configManager.getConfig().platforms?.coze?.token;
 
     if (!token) {
-      throw new Error("Coze Token 配置不存在");
+      throw MCPError.configError(
+        MCPErrorCode.INVALID_CONFIG,
+        "Coze Token 配置不存在"
+      );
     }
 
     return new CozeApiService(token);
@@ -219,7 +223,11 @@ export class CustomMCPHandler {
   ): Promise<ToolCallResponse> {
     const tool = this.tools.get(toolName);
     if (!tool) {
-      throw new Error(`未找到工具: ${toolName}`);
+      throw MCPError.validationError(
+        MCPErrorCode.TOOL_NOT_FOUND,
+        `未找到工具: ${toolName}`,
+        { context: { toolName } }
+      );
     }
 
     // 首先检查是否有已完成的任务结果（一次性缓存）
@@ -373,7 +381,11 @@ export class CustomMCPHandler {
 
       // 检查 workflow_id 是否存在
       if (!config.workflow_id) {
-        throw new Error("工作流ID未配置");
+        throw MCPError.configError(
+          MCPErrorCode.INVALID_CONFIG,
+          "工作流ID未配置",
+          { context: { toolName: tool.name } }
+        );
       }
 
       // 调用 callWorkflow 方法

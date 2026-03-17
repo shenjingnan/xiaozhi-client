@@ -13,6 +13,7 @@ import {
   MCP_SERVER_INFO,
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
 } from "@/constants/index.js";
+import { MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
 import type { EnhancedToolInfo, MCPServiceManager } from "@/lib/mcp";
 import { validateToolCallParams } from "@/lib/mcp";
 import type { MCPMessage, MCPResponse } from "@/types/mcp.js";
@@ -106,7 +107,11 @@ export class MCPMessageHandler {
             this.logger.warn(`收到未知的通知消息: ${message.method}`, message);
             return null;
           }
-          throw new Error(`未知的方法: ${message.method}`);
+          throw MCPError.validationError(
+            MCPErrorCode.TOOL_VALIDATION_FAILED,
+            `未知的方法: ${message.method}`,
+            { context: { method: message.method } }
+          );
       }
     } catch (error) {
       this.logger.error(`处理消息时出错: ${message.method}`, error);
