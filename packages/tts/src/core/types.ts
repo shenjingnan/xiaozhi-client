@@ -2,6 +2,12 @@
  * TTS 核心类型定义
  */
 
+import type {
+  BasePlatformConfig,
+  Platform,
+  PlatformRegistry as SharedPlatformRegistry,
+} from "@xiaozhi-client/shared-types/platform";
+
 /**
  * 音频块回调类型
  * @param chunk - 音频数据块
@@ -53,65 +59,21 @@ export interface TTSController {
 }
 
 /**
- * 平台配置泛型接口
+ * 平台配置（重新导出共享类型）
  */
-export interface PlatformConfig {
-  /** 平台类型 */
-  platform: string;
-  [key: string]: unknown;
-}
+export type PlatformConfig = BasePlatformConfig;
 
 /**
  * TTS 平台接口
  * 定义平台需要实现的抽象方法
  */
-export interface TTSPlatform {
-  /** 平台唯一标识 */
-  readonly platform: string;
-
-  /**
-   * 创建 TTS 控制器
-   * @param config - 平台配置
-   * @returns 控制器实例
-   */
-  createController(config: PlatformConfig): TTSController;
-
-  /**
-   * 校验配置
-   * @param config - 用户配置
-   * @returns 校验后的配置
-   */
-  validateConfig(config: unknown): PlatformConfig;
-
-  /**
-   * 获取认证头
-   * @param config - 平台配置
-   * @returns 认证头
-   */
-  getAuthHeaders(config: PlatformConfig): Record<string, string>;
-
-  /**
-   * 获取服务地址
-   * @param config - 平台配置
-   * @returns WebSocket URL
-   */
-  getEndpoint(config: PlatformConfig): string;
-}
+export interface TTSPlatform extends Platform<TTSController> {}
 
 /**
  * 平台注册表
  * 存储所有已注册的平台
  */
-export interface PlatformRegistry {
-  /** 获取平台 */
-  get(platform: string): TTSPlatform | undefined;
-
-  /** 注册平台 */
-  register(platform: TTSPlatform): void;
-
-  /** 获取所有已注册的平台 */
-  list(): string[];
-}
+export interface PlatformRegistry extends SharedPlatformRegistry<TTSPlatform> {}
 
 /**
  * 通用 TTS 选项
