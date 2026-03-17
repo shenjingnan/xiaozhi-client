@@ -10,7 +10,7 @@
         "command": "pnpm --filter backend run build"
       },
       "outputs": ["{workspaceRoot}/dist/backend"],
-      "dependsOn": ["shared-types:build", "config:build"]
+      "dependsOn": ["shared-types:build", "config:build", "asr:build", "tts:build"]
     },
     "test": {
       "executor": "nx:run-commands",
@@ -55,7 +55,7 @@
       "options": {
         "command": "pnpm --filter backend run check:type"
       },
-      "dependsOn": ["config:build", "endpoint:build", "version:build"]
+      "dependsOn": ["config:build", "endpoint:build", "version:build", "asr:build", "tts:build"]
     },
     "dev": {
       "executor": "nx:run-commands",
