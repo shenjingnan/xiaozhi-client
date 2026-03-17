@@ -404,10 +404,15 @@ export class MCPHandler {
 
   /**
    * 获取服务状态信息
+   * @param serverName 服务名称
+   * @param config 可选的配置对象，避免重复调用 getConfig()
    */
-  private getServiceStatus(serverName: string): MCPServerStatus {
-    const config = this.configManager.getConfig();
-    const serverConfig = config.mcpServers[serverName];
+  private getServiceStatus(
+    serverName: string,
+    config?: ReturnType<ConfigManager["getConfig"]>
+  ): MCPServerStatus {
+    const appConfig = config || this.configManager.getConfig();
+    const serverConfig = appConfig.mcpServers[serverName];
 
     if (!serverConfig) {
       return {
@@ -746,8 +751,8 @@ export class MCPHandler {
       // 2. 构建服务列表
       const servers: MCPServerStatus[] = [];
 
-      for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
-        const serviceStatus = this.getServiceStatus(serverName);
+      for (const [serverName] of Object.entries(mcpServers)) {
+        const serviceStatus = this.getServiceStatus(serverName, config);
         servers.push(serviceStatus);
       }
 
@@ -935,6 +940,9 @@ export class MCPHandler {
       return { isValid: false, errors };
     }
 
+    // 获取配置一次，避免在循环中重复调用 getConfig()
+    const config = this.configManager.getConfig();
+
     // 验证每个服务
     for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
       // 验证服务名称
@@ -947,11 +955,12 @@ export class MCPHandler {
         continue;
       }
 
-      // 检查是否已存在
+      // 检查是否已存在（传递配置避免重复调用 getConfig()）
       if (
         MCPServerConfigValidator.checkServiceExists(
           serverName,
-          this.configManager
+          this.configManager,
+          config
         )
       ) {
         errors.push(`服务 "${serverName}" 已存在`);
@@ -1101,12 +1110,16 @@ export namespace MCPServerConfigValidator {
 
   /**
    * 检查服务是否已存在
+   * @param name 服务名称
+   * @param configManager 配置管理器
+   * @param config 可选的配置对象，避免重复调用 getConfig()
    */
   export function checkServiceExists(
     name: string,
-    configManager: ConfigManager
+    configManager: ConfigManager,
+    config?: ReturnType<ConfigManager["getConfig"]>
   ): boolean {
-    const config = configManager.getConfig();
-    return config.mcpServers && name in config.mcpServers;
+    const appConfig = config || configManager.getConfig();
+    return appConfig.mcpServers && name in appConfig.mcpServers;
   }
 }
