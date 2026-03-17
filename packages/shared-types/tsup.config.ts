@@ -8,6 +8,7 @@ export default defineConfig({
     api: "src/api/index.ts",
     config: "src/config/index.ts",
     utils: "src/utils/index.ts",
+    platform: "src/platform/index.ts",
   },
   format: ["esm"],
   target: "node20",

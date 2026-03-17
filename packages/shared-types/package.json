@@ -29,6 +29,10 @@
     "./utils": {
       "types": "./dist/utils/index.d.ts",
       "import": "./dist/utils/index.js"
+    },
+    "./platform": {
+      "types": "./dist/platform.d.ts",
+      "import": "./dist/platform.js"
     }
   },
   "files": [
