@@ -12,6 +12,15 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
+// 模拟 prompt-utils
+vi.mock("@/utils/prompt-utils.js", () => ({
+  listPromptFiles: vi.fn(),
+  readPromptFile: vi.fn(),
+  updatePromptFile: vi.fn(),
+  createPromptFile: vi.fn(),
+  deletePromptFile: vi.fn(),
+}));
+
 vi.mock("@xiaozhi-client/config", () => ({
   configManager: {
     getConfig: vi.fn(),
@@ -374,7 +383,7 @@ describe("ConfigApiHandler", () => {
   });
 
   describe("getMcpServers", () => {
-    it("should return MCP servers configuration successfully", async () => {
+    it("应该成功返回 MCP 服务配置", async () => {
       const servers = {
         calculator: { command: "node", args: ["calculator.js"] },
         datetime: { command: "python", args: ["datetime.py"] },
@@ -391,7 +400,7 @@ describe("ConfigApiHandler", () => {
       expect(mockContext.success).toHaveBeenCalledWith({ servers });
     });
 
-    it("should handle MCP servers error", async () => {
+    it("应该处理 MCP 服务配置错误", async () => {
       const error = new Error("MCP servers read failed");
       mockConfigManager.getMcpServers.mockImplementation(() => {
         throw error;
@@ -413,7 +422,7 @@ describe("ConfigApiHandler", () => {
   });
 
   describe("getConnectionConfig", () => {
-    it("should return connection configuration successfully", async () => {
+    it("应该成功返回连接配置", async () => {
       const connection = {
         heartbeatInterval: 30000,
         heartbeatTimeout: 35000,
@@ -429,7 +438,7 @@ describe("ConfigApiHandler", () => {
       expect(mockContext.success).toHaveBeenCalledWith({ connection });
     });
 
-    it("should handle connection config error", async () => {
+    it("应该处理连接配置错误", async () => {
       const error = new Error("Connection config read failed");
       mockConfigManager.getConnectionConfig.mockImplementation(() => {
         throw error;
@@ -448,7 +457,7 @@ describe("ConfigApiHandler", () => {
   });
 
   describe("reloadConfig", () => {
-    it("should reload configuration successfully", async () => {
+    it("应该成功重新加载配置", async () => {
       mockConfigManager.getConfig.mockReturnValue(mockConfig);
 
       await configApiHandler.reloadConfig(mockContext);
@@ -463,7 +472,7 @@ describe("ConfigApiHandler", () => {
       );
     });
 
-    it("should handle reload config error", async () => {
+    it("应该处理重新加载配置错误", async () => {
       const error = new Error("Config reload failed");
       mockConfigManager.getConfig.mockImplementation(() => {
         throw error;
@@ -482,7 +491,7 @@ describe("ConfigApiHandler", () => {
   });
 
   describe("getConfigPath", () => {
-    it("should return config file path successfully", async () => {
+    it("应该成功返回配置文件路径", async () => {
       const path = "/path/to/config.json";
       mockConfigManager.getConfigPath.mockReturnValue(path);
 
@@ -494,7 +503,7 @@ describe("ConfigApiHandler", () => {
       expect(mockContext.success).toHaveBeenCalledWith({ path });
     });
 
-    it("should handle config path error", async () => {
+    it("应该处理配置路径错误", async () => {
       const error = new Error("Config path read failed");
       mockConfigManager.getConfigPath.mockImplementation(() => {
         throw error;
@@ -516,7 +525,7 @@ describe("ConfigApiHandler", () => {
   });
 
   describe("checkConfigExists", () => {
-    it("should return true when config exists", async () => {
+    it("应该返回 true 当配置存在时", async () => {
       mockConfigManager.configExists.mockReturnValue(true);
 
       await configApiHandler.checkConfigExists(mockContext);
@@ -527,7 +536,7 @@ describe("ConfigApiHandler", () => {
       expect(mockContext.success).toHaveBeenCalledWith({ exists: true });
     });
 
-    it("should return false when config does not exist", async () => {
+    it("应该返回 false 当配置不存在时", async () => {
       mockConfigManager.configExists.mockReturnValue(false);
 
       await configApiHandler.checkConfigExists(mockContext);
@@ -538,7 +547,7 @@ describe("ConfigApiHandler", () => {
       expect(mockContext.success).toHaveBeenCalledWith({ exists: false });
     });
 
-    it("should handle config exists check error", async () => {
+    it("应该处理配置存在检查错误", async () => {
       const error = new Error("Config exists check failed");
       mockConfigManager.configExists.mockImplementation(() => {
         throw error;
@@ -553,6 +562,433 @@ describe("ConfigApiHandler", () => {
       expect(mockContext.fail).toHaveBeenCalledWith(
         "CONFIG_EXISTS_CHECK_ERROR",
         "Config exists check failed",
+        undefined,
+        500
+      );
+    });
+  });
+
+  describe("getPromptFiles", () => {
+    it("应该成功获取提示词文件列表", async () => {
+      const { listPromptFiles } = await import("@/utils/prompt-utils.js");
+      const prompts = [
+        { fileName: "default.md", relativePath: "./prompts/default.md" },
+        { fileName: "custom.md", relativePath: "./prompts/custom.md" },
+      ];
+      vi.mocked(listPromptFiles).mockReturnValue(prompts);
+
+      await configApiHandler.getPromptFiles(mockContext);
+
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        "处理获取提示词文件列表请求"
+      );
+      expect(mockContext.success).toHaveBeenCalledWith({ prompts });
+      expect(listPromptFiles).toHaveBeenCalled();
+    });
+
+    it("应该成功获取空的提示词文件列表", async () => {
+      const { listPromptFiles } = await import("@/utils/prompt-utils.js");
+      vi.mocked(listPromptFiles).mockReturnValue([]);
+
+      await configApiHandler.getPromptFiles(mockContext);
+
+      expect(mockContext.success).toHaveBeenCalledWith({ prompts: [] });
+    });
+
+    it("应该处理获取提示词文件列表错误", async () => {
+      const { listPromptFiles } = await import("@/utils/prompt-utils.js");
+      vi.mocked(listPromptFiles).mockImplementation(() => {
+        throw new Error("获取提示词文件列表失败");
+      });
+
+      await configApiHandler.getPromptFiles(mockContext);
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "获取提示词文件列表失败:",
+        expect.any(Error)
+      );
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "PROMPT_FILES_READ_ERROR",
+        "获取提示词文件列表失败",
+        undefined,
+        500
+      );
+    });
+  });
+
+  describe("getPromptFileContent", () => {
+    it("应该成功获取提示词文件内容", async () => {
+      const { readPromptFile } = await import("@/utils/prompt-utils.js");
+      const path = "./prompts/default.md";
+      const fileContent = {
+        fileName: "default.md",
+        relativePath: path,
+        content: "# 默认提示词",
+      };
+      mockContext.req.query = vi.fn().mockReturnValue(path);
+      vi.mocked(readPromptFile).mockReturnValue(fileContent);
+
+      await configApiHandler.getPromptFileContent(mockContext);
+
+      expect(mockContext.success).toHaveBeenCalledWith(fileContent);
+      expect(readPromptFile).toHaveBeenCalledWith(path);
+    });
+
+    it("应该在缺少 path 参数时返回错误", async () => {
+      mockContext.req.query = vi.fn().mockReturnValue(undefined);
+
+      await configApiHandler.getPromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "缺少 path 参数",
+        undefined,
+        400
+      );
+    });
+
+    it("应该处理读取提示词文件错误", async () => {
+      const { readPromptFile } = await import("@/utils/prompt-utils.js");
+      const path = "./prompts/nonexistent.md";
+      mockContext.req.query = vi.fn().mockReturnValue(path);
+      vi.mocked(readPromptFile).mockImplementation(() => {
+        throw new Error("文件不存在");
+      });
+
+      await configApiHandler.getPromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "PROMPT_FILE_READ_ERROR",
+        "文件不存在",
+        undefined,
+        400
+      );
+    });
+  });
+
+  describe("updatePromptFileContent", () => {
+    it("应该成功更新提示词文件内容", async () => {
+      const { updatePromptFile } = await import("@/utils/prompt-utils.js");
+      const body = {
+        path: "./prompts/default.md",
+        content: "更新的提示词内容",
+      };
+      const fileContent = {
+        fileName: "default.md",
+        relativePath: body.path,
+        content: body.content,
+      };
+      mockContext.req.json.mockResolvedValue(body);
+      vi.mocked(updatePromptFile).mockReturnValue(fileContent);
+
+      await configApiHandler.updatePromptFileContent(mockContext);
+
+      expect(mockContext.success).toHaveBeenCalledWith(
+        fileContent,
+        "提示词文件更新成功"
+      );
+      expect(updatePromptFile).toHaveBeenCalledWith(body.path, body.content);
+    });
+
+    it("应该在请求体格式错误时返回错误", async () => {
+      mockContext.req.json.mockResolvedValue(null);
+
+      await configApiHandler.updatePromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "请求体格式错误",
+        undefined,
+        400
+      );
+    });
+
+    it("应该在缺少 path 参数时返回错误", async () => {
+      mockContext.req.json.mockResolvedValue({ content: "内容" });
+
+      await configApiHandler.updatePromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "path 参数必须是字符串",
+        undefined,
+        400
+      );
+    });
+
+    it("应该在 path 参数类型错误时返回错误", async () => {
+      mockContext.req.json.mockResolvedValue({ path: 123, content: "内容" });
+
+      await configApiHandler.updatePromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "path 参数必须是字符串",
+        undefined,
+        400
+      );
+    });
+
+    it("应该在缺少 content 参数时返回错误", async () => {
+      mockContext.req.json.mockResolvedValue({ path: "./prompts/default.md" });
+
+      await configApiHandler.updatePromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "content 参数必须是字符串",
+        undefined,
+        400
+      );
+    });
+
+    it("应该在 content 参数类型错误时返回错误", async () => {
+      mockContext.req.json.mockResolvedValue({
+        path: "./prompts/default.md",
+        content: 123,
+      });
+
+      await configApiHandler.updatePromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "content 参数必须是字符串",
+        undefined,
+        400
+      );
+    });
+
+    it("应该处理更新提示词文件错误", async () => {
+      const { updatePromptFile } = await import("@/utils/prompt-utils.js");
+      const body = {
+        path: "./prompts/default.md",
+        content: "更新的内容",
+      };
+      mockContext.req.json.mockResolvedValue(body);
+      vi.mocked(updatePromptFile).mockImplementation(() => {
+        throw new Error("文件不存在");
+      });
+
+      await configApiHandler.updatePromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "PROMPT_FILE_UPDATE_ERROR",
+        "文件不存在",
+        undefined,
+        400
+      );
+    });
+  });
+
+  describe("createPromptFileContent", () => {
+    it("应该成功创建提示词文件", async () => {
+      const { createPromptFile } = await import("@/utils/prompt-utils.js");
+      const body = {
+        fileName: "custom.md",
+        content: "自定义提示词内容",
+      };
+      const fileContent = {
+        fileName: body.fileName,
+        relativePath: `./prompts/${body.fileName}`,
+        content: body.content,
+      };
+      mockContext.req.json.mockResolvedValue(body);
+      vi.mocked(createPromptFile).mockReturnValue(fileContent);
+
+      await configApiHandler.createPromptFileContent(mockContext);
+
+      expect(mockContext.success).toHaveBeenCalledWith(
+        fileContent,
+        "提示词文件创建成功"
+      );
+      expect(createPromptFile).toHaveBeenCalledWith(
+        body.fileName,
+        body.content
+      );
+    });
+
+    it("应该在请求体格式错误时返回错误", async () => {
+      mockContext.req.json.mockResolvedValue(null);
+
+      await configApiHandler.createPromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "请求体格式错误",
+        undefined,
+        400
+      );
+    });
+
+    it("应该在缺少 fileName 参数时返回错误", async () => {
+      mockContext.req.json.mockResolvedValue({ content: "内容" });
+
+      await configApiHandler.createPromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "fileName 参数必须是字符串",
+        undefined,
+        400
+      );
+    });
+
+    it("应该在 fileName 参数类型错误时返回错误", async () => {
+      mockContext.req.json.mockResolvedValue({
+        fileName: 123,
+        content: "内容",
+      });
+
+      await configApiHandler.createPromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "fileName 参数必须是字符串",
+        undefined,
+        400
+      );
+    });
+
+    it("应该在缺少 content 参数时返回错误", async () => {
+      mockContext.req.json.mockResolvedValue({ fileName: "custom.md" });
+
+      await configApiHandler.createPromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "content 参数必须是字符串",
+        undefined,
+        400
+      );
+    });
+
+    it("应该在 content 参数类型错误时返回错误", async () => {
+      mockContext.req.json.mockResolvedValue({
+        fileName: "custom.md",
+        content: 123,
+      });
+
+      await configApiHandler.createPromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "content 参数必须是字符串",
+        undefined,
+        400
+      );
+    });
+
+    it("应该处理创建提示词文件错误", async () => {
+      const { createPromptFile } = await import("@/utils/prompt-utils.js");
+      const body = {
+        fileName: "custom.md",
+        content: "内容",
+      };
+      mockContext.req.json.mockResolvedValue(body);
+      vi.mocked(createPromptFile).mockImplementation(() => {
+        throw new Error("文件已存在");
+      });
+
+      await configApiHandler.createPromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "PROMPT_FILE_CREATE_ERROR",
+        "文件已存在",
+        undefined,
+        400
+      );
+    });
+  });
+
+  describe("deletePromptFileContent", () => {
+    it("应该成功删除提示词文件", async () => {
+      const { deletePromptFile } = await import("@/utils/prompt-utils.js");
+      const path = "./prompts/old-prompt.md";
+      mockContext.req.query = vi.fn().mockReturnValue(path);
+      vi.mocked(deletePromptFile).mockReturnValue(undefined);
+
+      await configApiHandler.deletePromptFileContent(mockContext);
+
+      expect(mockContext.success).toHaveBeenCalledWith(
+        undefined,
+        "提示词文件删除成功"
+      );
+      expect(deletePromptFile).toHaveBeenCalledWith(path);
+    });
+
+    it("应该在缺少 path 参数时返回错误", async () => {
+      mockContext.req.query = vi.fn().mockReturnValue(undefined);
+
+      await configApiHandler.deletePromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "INVALID_REQUEST",
+        "缺少 path 参数",
+        undefined,
+        400
+      );
+    });
+
+    it("应该处理删除提示词文件错误", async () => {
+      const { deletePromptFile } = await import("@/utils/prompt-utils.js");
+      const path = "./prompts/nonexistent.md";
+      mockContext.req.query = vi.fn().mockReturnValue(path);
+      vi.mocked(deletePromptFile).mockImplementation(() => {
+        throw new Error("文件不存在");
+      });
+
+      await configApiHandler.deletePromptFileContent(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "PROMPT_FILE_DELETE_ERROR",
+        "文件不存在",
+        undefined,
+        400
+      );
+    });
+  });
+
+  describe("边界情况和错误处理", () => {
+    it("应该正确处理非 Error 类型的异常", async () => {
+      mockConfigManager.getConfig.mockImplementation(() => {
+        throw "字符串错误";
+      });
+
+      await configApiHandler.getConfig(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_READ_ERROR",
+        "获取配置失败",
+        undefined,
+        500
+      );
+    });
+
+    it("应该正确处理 null 错误对象", async () => {
+      mockConfigManager.getConfig.mockImplementation(() => {
+        throw null;
+      });
+
+      await configApiHandler.getConfig(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_READ_ERROR",
+        "获取配置失败",
+        undefined,
+        500
+      );
+    });
+
+    it("应该正确处理 undefined 错误对象", async () => {
+      mockConfigManager.getConfig.mockImplementation(() => {
+        throw undefined;
+      });
+
+      await configApiHandler.getConfig(mockContext);
+
+      expect(mockContext.fail).toHaveBeenCalledWith(
+        "CONFIG_READ_ERROR",
+        "获取配置失败",
         undefined,
         500
       );
