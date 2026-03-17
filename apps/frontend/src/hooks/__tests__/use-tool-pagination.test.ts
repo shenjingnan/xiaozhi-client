@@ -14,7 +14,6 @@ describe("useToolPagination", () => {
       enabled: i % 2 === 0,
       usageCount: i * 10,
       lastUsedTime: `2024-01-${(i % 28) + 1}T00:00:00Z`,
-      inputSchema: null,
     }));
   };
 
