@@ -313,11 +313,13 @@ export class MCPToolHandler {
       rawTools = sortTools(rawTools, { field: sortBy });
 
       // 转换为 CustomMCPToolWithStats 格式（使用共享类型）
+      // 注意：inputSchema 需要类型断言，因为本地 JSONSchema 与 shared-types 中的定义略有不同
+      // 这是一个已知的技术债，将来应该统一 JSONSchema 定义
       const tools: CustomMCPToolWithStats[] = rawTools.map(
         (tool: EnhancedToolInfo) => ({
           name: tool.name,
           description: tool.description,
-          inputSchema: tool.inputSchema,
+          inputSchema: tool.inputSchema as JSONSchema,
           handler: {
             type: "mcp",
             config: {
@@ -1891,12 +1893,14 @@ export class MCPToolHandler {
       }
     }
 
+    // 注意：properties 类型断言是因为本地 JSONSchema 与 shared-types 中的定义略有不同
+    // 这是一个已知的技术债，将来应该统一 JSONSchema 定义
     return {
       type: "object",
-      properties,
+      properties: properties as Record<string, JSONSchema>,
       required: required.length > 0 ? required : undefined,
       additionalProperties: false,
-    };
+    } as JSONSchema;
   }
 
   /**
