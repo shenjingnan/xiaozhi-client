@@ -1,6 +1,7 @@
 {
   "name": "@xiaozhi-client/config",
   "version": "2.2.0",
+  "description": "小智项目配置管理模块，支持配置文件的读取、解析、验证和更新",
   "private": false,
   "repository": {
     "type": "git",

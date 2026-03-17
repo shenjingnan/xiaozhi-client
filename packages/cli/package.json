@@ -1,6 +1,7 @@
 {
   "name": "@xiaozhi-client/cli",
   "version": "2.2.0",
+  "description": "小智 AI 客户端命令行工具，提供项目创建、服务启动、配置管理等功能",
   "private": false,
   "repository": {
     "type": "git",
