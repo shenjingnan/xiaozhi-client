@@ -97,7 +97,10 @@ export class TemplateManagerImpl implements ITemplateManager {
           const configContent = FileUtils.readFile(configPath);
           config = JSON.parse(configContent);
         } catch (error) {
-          console.warn(`模板配置文件解析失败: ${templateName}`);
+          console.warn(
+            `模板配置文件解析失败: ${templateName}`,
+            error instanceof Error ? error.message : String(error)
+          );
         }
       }
 
