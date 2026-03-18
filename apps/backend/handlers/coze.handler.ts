@@ -11,6 +11,20 @@ import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
 
 /**
+ * Coze API 分页参数常量
+ */
+const COZE_PAGINATION_LIMITS = {
+  /** 页码最小值 */
+  MIN_PAGE_NUM: 1,
+  /** 页码最大值 */
+  MAX_PAGE_NUM: 1000,
+  /** 每页数量最小值 */
+  MIN_PAGE_SIZE: 1,
+  /** 每页数量最大值 */
+  MAX_PAGE_SIZE: 100,
+} as const;
+
+/**
  * 错误代码类型
  */
 type CozeErrorCode =
@@ -185,19 +199,25 @@ export class CozeHandler extends BaseHandler {
       }
 
       // 验证分页参数
-      if (page_num < 1 || page_num > 1000) {
+      if (
+        page_num < COZE_PAGINATION_LIMITS.MIN_PAGE_NUM ||
+        page_num > COZE_PAGINATION_LIMITS.MAX_PAGE_NUM
+      ) {
         return c.fail(
           "INVALID_PARAMETER",
-          "page_num 必须在 1-1000 之间",
+          `page_num 必须在 ${COZE_PAGINATION_LIMITS.MIN_PAGE_NUM}-${COZE_PAGINATION_LIMITS.MAX_PAGE_NUM} 之间`,
           undefined,
           400
         );
       }
 
-      if (page_size < 1 || page_size > 100) {
+      if (
+        page_size < COZE_PAGINATION_LIMITS.MIN_PAGE_SIZE ||
+        page_size > COZE_PAGINATION_LIMITS.MAX_PAGE_SIZE
+      ) {
         return c.fail(
           "INVALID_PARAMETER",
-          "page_size 必须在 1-100 之间",
+          `page_size 必须在 ${COZE_PAGINATION_LIMITS.MIN_PAGE_SIZE}-${COZE_PAGINATION_LIMITS.MAX_PAGE_SIZE} 之间`,
           undefined,
           400
         );
