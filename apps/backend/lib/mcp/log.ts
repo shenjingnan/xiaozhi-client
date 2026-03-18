@@ -3,7 +3,8 @@
  * 提供工具调用的写入和查询功能
  */
 
-import * as fs from "node:fs";
+import { existsSync } from "node:fs";
+import { promises as fs } from "node:fs";
 import * as path from "node:path";
 import { logger } from "@/Logger.js";
 import { PathUtils } from "@/utils/path-utils.js";
@@ -161,12 +162,12 @@ export class ToolCallLogger {
   private async cleanupOldRecords(): Promise<void> {
     try {
       // 检查日志文件是否存在
-      if (!fs.existsSync(this.logFilePath)) {
+      if (!existsSync(this.logFilePath)) {
         return;
       }
 
       // 读取文件内容
-      const content = fs.readFileSync(this.logFilePath, "utf8");
+      const content = await fs.readFile(this.logFilePath, "utf8");
       const lines = content
         .trim()
         .split("\n")
@@ -186,7 +187,7 @@ export class ToolCallLogger {
       // 重新写入文件
       const newContent =
         linesToKeep.join("\n") + (linesToKeep.length > 0 ? "\n" : "");
-      fs.writeFileSync(this.logFilePath, newContent, "utf8");
+      await fs.writeFile(this.logFilePath, newContent, "utf8");
 
       logger.info("已清理旧的工具调用记录", {
         recordsToRemove,
@@ -254,7 +255,7 @@ export class ToolCallLogService {
    */
   private checkLogFile(): void {
     const logFilePath = this.getLogFilePath();
-    if (!fs.existsSync(logFilePath)) {
+    if (!existsSync(logFilePath)) {
       throw new Error("工具调用日志文件不存在");
     }
   }
@@ -262,11 +263,11 @@ export class ToolCallLogService {
   /**
    * 读取并解析工具调用日志
    */
-  private parseLogFile(): ToolCallRecord[] {
+  private async parseLogFile(): Promise<ToolCallRecord[]> {
     const logFilePath = this.getLogFilePath();
 
     try {
-      const content = fs.readFileSync(logFilePath, "utf8");
+      const content = await fs.readFile(logFilePath, "utf8");
       const lines = content
         .trim()
         .split("\n")
@@ -361,7 +362,7 @@ export class ToolCallLogService {
   }> {
     this.checkLogFile();
 
-    const records = this.parseLogFile();
+    const records = await this.parseLogFile();
     const filtered = this.filterRecords(records, query);
     const total = filtered.length;
 
