@@ -11,7 +11,14 @@ import type {
   SSEMCPServerConfig,
 } from "./manager.js";
 import { ConfigResolver } from "./resolver.js";
+import type { MCPServiceConfig } from "@xiaozhi-client/mcp-core";
 import { MCPTransportType, inferTransportTypeFromUrl } from "@xiaozhi-client/mcp-core";
+
+/**
+ * 传输类型输入值（枚举或字符串字面量）
+ * 本地定义，与 mcp-core 保持一致
+ */
+type MCPTransportTypeInput = MCPTransportType | "stdio" | "sse" | "http";
 
 // 从外部导入 MCP 类型（这些类型将在运行时从 backend 包解析）
 // 为了避免循环依赖，这里使用动态导入的方式
@@ -25,16 +32,6 @@ export class ConfigValidationError extends Error {
     super(message);
     this.name = "ConfigValidationError";
   }
-}
-
-// 定义简化的 MCPServiceConfig 接口
-export interface MCPServiceConfig {
-  type: MCPTransportType;
-  command?: string;
-  args?: string[];
-  env?: Record<string, string>;
-  url?: string;
-  headers?: Record<string, string>;
 }
 
 /**
@@ -325,16 +322,19 @@ export function isModelScopeURL(url: string): boolean {
  * 验证新配置格式
  */
 function validateNewConfig(config: MCPServiceConfig): void {
-  if (config.type && !Object.values(MCPTransportType).includes(config.type)) {
-    throw new ConfigValidationError(`无效的传输类型: ${config.type}`);
-  }
+  // 将 type 转换为枚举类型进行验证
+  // MCPServiceConfig.type 是 MCPTransportTypeInput（可能是字符串字面量或枚举）
+  // 这里需要将其规范化为 MCPTransportType 枚举类型
+  const transportType = config.type
+    ? normalizeTransportType(config.type)
+    : undefined;
 
   // 根据传输类型验证必需字段
-  if (!config.type) {
+  if (!transportType) {
     throw new ConfigValidationError("传输类型未指定，请检查配置或启用自动推断");
   }
 
-  switch (config.type) {
+  switch (transportType) {
     case MCPTransportType.STDIO:
       if (!config.command) {
         throw new ConfigValidationError("STDIO 配置必须包含 command 字段");
@@ -357,7 +357,31 @@ function validateNewConfig(config: MCPServiceConfig): void {
       break;
 
     default:
-      throw new ConfigValidationError(`不支持的传输类型: ${config.type}`);
+      throw new ConfigValidationError(`不支持的传输类型: ${transportType}`);
+  }
+}
+
+/**
+ * 将传输类型字符串规范化为枚举类型
+ */
+function normalizeTransportType(
+  type: MCPTransportTypeInput
+): MCPTransportType {
+  // 如果已经是枚举类型，直接返回
+  if (Object.values(MCPTransportType).includes(type as MCPTransportType)) {
+    return type as MCPTransportType;
+  }
+
+  // 字符串字面量转换为枚举
+  switch (type) {
+    case "stdio":
+      return MCPTransportType.STDIO;
+    case "sse":
+      return MCPTransportType.SSE;
+    case "http":
+      return MCPTransportType.HTTP;
+    default:
+      throw new ConfigValidationError(`无效的传输类型: ${type}`);
   }
 }
 
