@@ -73,7 +73,7 @@ import { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { SimpleConnectionStatus } from "@xiaozhi-client/endpoint";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
-import type WebSocket from "ws";
+import WebSocket from "ws";
 
 import { HTTP_SERVER_CONFIG } from "@/constants/index.js";
 import { MCPServiceManagerNotInitializedError } from "@/errors/mcp-errors.middleware.js";
@@ -708,8 +708,11 @@ export class WebServer {
           error
         );
         // 只有在 WebSocket 处于可关闭状态时才关闭
-        // ws.OPEN = 1, ws.CONNECTING = 0
-        if (ws.readyState === 1 || ws.readyState === 0) {
+        // WebSocket.OPEN = 1, WebSocket.CONNECTING = 0
+        if (
+          ws.readyState === WebSocket.OPEN ||
+          ws.readyState === WebSocket.CONNECTING
+        ) {
           ws.close(1011, "Connection handling failed");
         }
       });
