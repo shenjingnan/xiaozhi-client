@@ -1,5 +1,52 @@
 /**
- * 文件操作工具
+ * 文件操作工具类
+ *
+ * 提供文件和目录操作的封装方法，简化常见的文件系统操作。
+ *
+ * @module FileUtils
+ *
+ * ## 功能类别
+ *
+ * - **文件检查**：检查文件是否存在、获取文件信息、检查权限
+ * - **文件读写**：读取文件内容、写入文件（支持覆盖控制）
+ * - **文件操作**：复制文件、删除文件
+ * - **目录操作**：创建目录、复制目录（支持递归和排除）、删除目录
+ * - **路径处理**：获取扩展名、基础文件名、路径规范化
+ * - **临时文件**：创建临时文件路径
+ *
+ * ## 错误处理
+ *
+ * 所有操作在失败时会抛出 `FileError` 异常，
+ * 包含详细的错误信息和文件路径。
+ *
+ * ## 注意事项
+ *
+ * - 所有写入操作默认不会覆盖已存在的文件（需显式设置 `overwrite: true`）
+ * - 目录删除默认为递归删除
+ * - 路径参数可以是相对路径或绝对路径
+ *
+ * @example
+ * ```typescript
+ * import { FileUtils } from '@xiaozhi-client/cli';
+ *
+ * // 检查文件是否存在
+ * if (FileUtils.exists('./config.json')) {
+ *   const content = FileUtils.readFile('./config.json');
+ * }
+ *
+ * // 写入文件（不覆盖）
+ * FileUtils.writeFile('./output.txt', 'Hello, World!');
+ *
+ * // 复制目录（递归，排除 node_modules）
+ * FileUtils.copyDirectory('./src', './dist', {
+ *   recursive: true,
+ *   exclude: ['node_modules', '.git']
+ * });
+ *
+ * // 获取文件信息
+ * const info = FileUtils.getFileInfo('./package.json');
+ * console.log(`文件大小: ${info.size} bytes`);
+ * ```
  */
 
 import fs from "node:fs";

@@ -1,5 +1,39 @@
 /**
- * 输入验证工具
+ * 输入验证工具类
+ *
+ * 提供统一的输入验证功能，确保配置和数据的有效性。
+ *
+ * @module Validation
+ *
+ * ## 功能类别
+ *
+ * - **网络验证**：端口号、URL（HTTP/WebSocket）格式验证
+ * - **名称验证**：项目名称、模板名称、环境变量名称验证
+ * - **数据类型验证**：字符串长度、数字范围、数组长度验证
+ * - **格式验证**：JSON 格式、正则表达式、配置文件格式验证
+ * - **对象验证**：必填字段、对象属性验证
+ *
+ * ## 错误处理
+ *
+ * 所有验证方法在失败时会抛出 `ValidationError` 异常，
+ * 包含详细的错误信息和建议。
+ *
+ * @example
+ * ```typescript
+ * import { Validation } from '@xiaozhi-client/cli';
+ *
+ * // 验证端口号
+ * Validation.validatePort(8080); // 通过
+ * Validation.validatePort(70000); // 抛出 ValidationError
+ *
+ * // 验证 URL 格式
+ * Validation.validateHttpUrl('https://example.com'); // 通过
+ * Validation.validateWebSocketUrl('ws://localhost:3000'); // 通过
+ *
+ * // 验证项目名称
+ * Validation.validateProjectName('my-project'); // 通过
+ * Validation.validateProjectName('.hidden'); // 抛出 ValidationError
+ * ```
  */
 
 import type { ConfigFormat } from "../Types";
