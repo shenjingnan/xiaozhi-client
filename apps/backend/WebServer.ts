@@ -708,8 +708,7 @@ export class WebServer {
           error
         );
         // 只有在 WebSocket 处于可关闭状态时才关闭
-        // ws.OPEN = 1, ws.CONNECTING = 0
-        if (ws.readyState === 1 || ws.readyState === 0) {
+        if (ws.readyState === ws.OPEN || ws.readyState === ws.CONNECTING) {
           ws.close(1011, "Connection handling failed");
         }
       });
