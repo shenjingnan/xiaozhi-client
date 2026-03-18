@@ -1,5 +1,38 @@
 /**
- * 格式化工具
+ * 格式化工具类
+ *
+ * 提供各种数据格式化功能，用于 CLI 输出美化。
+ *
+ * @module FormatUtils
+ *
+ * ## 功能类别
+ *
+ * - **时间格式化**：运行时间、时间戳、进程 ID 等
+ * - **数据大小格式化**：字节转换为人类可读的单位（B、KB、MB、GB、TB）
+ * - **进度显示**：进度条、百分比显示
+ * - **数据展示**：表格、列表、JSON 格式化
+ * - **网络信息**：URL、端口号格式化
+ * - **文本处理**：截断、布尔值本地化
+ *
+ * @example
+ * ```typescript
+ * import { FormatUtils } from '@xiaozhi-client/cli';
+ *
+ * // 格式化运行时间
+ * FormatUtils.formatUptime(3665000); // "1小时 1分钟 5秒"
+ *
+ * // 格式化文件大小
+ * FormatUtils.formatFileSize(1536); // "1.5 KB"
+ *
+ * // 格式化进度条
+ * FormatUtils.formatProgressBar(75, 100); // "[████████████░░░░░░░░] 75% (75/100)"
+ *
+ * // 格式化表格数据
+ * FormatUtils.formatTable([
+ *   { name: 'Alice', age: 30 },
+ *   { name: 'Bob', age: 25 }
+ * ]);
+ * ```
  */
 
 /**

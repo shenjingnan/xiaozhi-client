@@ -1,5 +1,50 @@
 /**
- * 路径处理工具
+ * 路径处理工具类
+ *
+ * 提供项目中各种路径的获取和解析功能，支持多种部署环境。
+ *
+ * @module PathUtils
+ *
+ * ## 功能类别
+ *
+ * - **配置路径**：配置文件路径、配置目录路径
+ * - **日志路径**：日志文件路径、PID 文件路径
+ * - **模板路径**：模板目录查找、模板文件路径解析
+ * - **项目路径**：项目根目录、构建输出目录、相对路径
+ * - **安全验证**：路径遍历攻击防护、路径安全检查
+ * - **系统路径**：临时目录、用户主目录
+ * - **可执行文件**：CLI 可执行文件路径、Web 服务器路径
+ *
+ * ## 环境适配
+ *
+ * - 支持开发环境（源码目录）
+ * - 支持构建环境（dist 目录）
+ * - 支持全局 npm 安装环境
+ *
+ * ## 安全注意事项
+ *
+ * - 使用 `validatePath()` 防止路径遍历攻击
+ * - 使用 `ensurePathWithin()` 确保路径在指定目录内
+ * - 使用 `createSafePath()` 创建安全的文件路径
+ *
+ * @example
+ * ```typescript
+ * import { PathUtils } from '@xiaozhi-client/cli';
+ *
+ * // 获取配置文件路径
+ * const configPath = PathUtils.resolveConfigPath();
+ *
+ * // 获取模板路径
+ * const templatePath = PathUtils.getTemplatePath('default');
+ *
+ * // 验证路径安全性
+ * if (PathUtils.validatePath(userInput)) {
+ *   const safePath = PathUtils.ensurePathWithin(userInput, baseDir);
+ * }
+ *
+ * // 获取 Web 服务器启动器路径
+ * const launcherPath = PathUtils.getWebServerLauncherPath();
+ * ```
  */
 
 import { realpathSync } from "node:fs";
