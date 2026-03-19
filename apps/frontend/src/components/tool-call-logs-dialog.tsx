@@ -380,6 +380,65 @@ function CopyButton({
   );
 }
 
+// 代码展示面板组件
+interface CodeDisplayPanelProps {
+  content: string | null | undefined;
+  emptyMessage: string;
+  emptyIcon?: React.ReactNode;
+  isError?: boolean;
+  errorContent?: string | null;
+  className?: string;
+}
+
+function CodeDisplayPanel({
+  content,
+  emptyMessage,
+  emptyIcon,
+  isError,
+  errorContent,
+  className = "",
+}: CodeDisplayPanelProps) {
+  if (isError && errorContent) {
+    return (
+      <div className="relative">
+        <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-md">
+          <div className="flex items-center gap-2 mb-2">
+            <XCircle className="h-4 w-4 text-destructive" />
+            <span className="font-medium text-destructive">调用失败</span>
+          </div>
+          <pre className="text-xs text-destructive/80 whitespace-pre-wrap">
+            {errorContent}
+          </pre>
+        </div>
+        <CopyButton copyContent={errorContent} className="absolute top-2 right-2" />
+      </div>
+    );
+  }
+
+  if (!content) {
+    return (
+      <div className="text-center text-muted-foreground py-8">
+        {emptyIcon || <Code className="h-8 w-8 mx-auto mb-2 opacity-50" />}
+        <p>{emptyMessage}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <pre
+        className={`text-xs bg-muted p-3 rounded-md overflow-x-auto text-wrap break-words ${className}`}
+      >
+        {content}
+      </pre>
+      <CopyButton
+        copyContent={content}
+        className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
+      />
+    </div>
+  );
+}
+
 // 详情展示组件
 interface CallLogDetailProps {
   log: ToolCallRecord;
@@ -411,22 +470,10 @@ function CallLogDetail({ log }: CallLogDetailProps) {
               className="h-full data-[state=active]:flex data-[state=active]:flex-col"
             >
               <ScrollArea className="h-full">
-                {log.arguments ? (
-                  <div className="relative">
-                    <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto text-wrap break-words">
-                      {formatJson(log.arguments)}
-                    </pre>
-                    <CopyButton
-                      copyContent={formatJson(log.arguments) || ""}
-                      className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
-                    />
-                  </div>
-                ) : (
-                  <div className="text-center text-muted-foreground py-8">
-                    <Code className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>无入参</p>
-                  </div>
-                )}
+                <CodeDisplayPanel
+                  content={formatJson(log.arguments)}
+                  emptyMessage="无入参"
+                />
               </ScrollArea>
             </TabsContent>
 
@@ -435,46 +482,13 @@ function CallLogDetail({ log }: CallLogDetailProps) {
               className="h-full data-[state=active]:flex data-[state=active]:flex-col"
             >
               <ScrollArea className="h-full">
-                {log.success ? (
-                  log.result ? (
-                    <div className="relative">
-                      <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto text-wrap break-words">
-                        {formatJson(log.result)}
-                      </pre>
-                      <CopyButton
-                        copyContent={formatJson(log.result) || ""}
-                        className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
-                      />
-                    </div>
-                  ) : (
-                    <div className="text-center text-muted-foreground py-8">
-                      <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>无出参</p>
-                    </div>
-                  )
-                ) : (
-                  <div className="relative">
-                    <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-md">
-                      <div className="flex items-center gap-2 mb-2">
-                        <XCircle className="h-4 w-4 text-destructive" />
-                        <span className="font-medium text-destructive">
-                          调用失败
-                        </span>
-                      </div>
-                      {log.error && (
-                        <pre className="text-xs text-destructive/80 whitespace-pre-wrap">
-                          {log.error}
-                        </pre>
-                      )}
-                    </div>
-                    {log.error && (
-                      <CopyButton
-                        copyContent={log.error || ""}
-                        className="absolute top-2 right-2"
-                      />
-                    )}
-                  </div>
-                )}
+                <CodeDisplayPanel
+                  content={log.success ? formatJson(log.result) : null}
+                  emptyMessage="无出参"
+                  emptyIcon={<CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />}
+                  isError={!log.success}
+                  errorContent={log.error}
+                />
               </ScrollArea>
             </TabsContent>
 
@@ -483,15 +497,7 @@ function CallLogDetail({ log }: CallLogDetailProps) {
               className="h-full data-[state=active]:flex data-[state=active]:flex-col"
             >
               <ScrollArea className="h-full">
-                <div className="relative">
-                  <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto text-wrap break-words">
-                    {formatRawData(log)}
-                  </pre>
-                  <CopyButton
-                    copyContent={formatRawData(log)}
-                    className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
-                  />
-                </div>
+                <CodeDisplayPanel content={formatRawData(log)} emptyMessage="无原始数据" />
               </ScrollArea>
             </TabsContent>
           </div>
