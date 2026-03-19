@@ -1,3 +1,9 @@
+/**
+ * MCP 服务器设置按钮组件
+ *
+ * 提供一个按钮，点击后打开对话框用于编辑现有 MCP 服务器的配置。
+ * 支持多种传输协议（stdio、http、sse）和配置选项，提供表单模式和高级 JSON 模式两种编辑方式。
+ */
 import { McpServerForm } from "@/components/mcp-server-form";
 import { Button } from "@/components/ui/button";
 import {
