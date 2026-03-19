@@ -14,16 +14,10 @@ ByteDance 流式 ASR WebSocket 客户端库，提供实时语音识别功能。
 ## 安装
 
 ```bash
-npm install @xiaozhi-client/asr
-# 或
 pnpm add @xiaozhi-client/asr
-# 或
-yarn add @xiaozhi-client/asr
 ```
 
 ## 快速开始
-
-### 流式识别
 
 ```typescript
 import { ASR } from '@xiaozhi-client/asr';
@@ -31,56 +25,26 @@ import { ASR } from '@xiaozhi-client/asr';
 const asr = new ASR({
   bytedance: {
     v2: {
-      app: {
-        appid: 'your-app-id',
-        token: 'your-token',
-        cluster: 'volcengine_streaming_common',
-      },
-      user: {
-        uid: 'user-123',
-      },
-      audio: {
-        format: 'wav',
-      },
+      app: { appid: 'your-app-id', token: 'your-token', cluster: 'volcengine_streaming_common' },
+      user: { uid: 'user-123' },
+      audio: { format: 'wav' },
     },
   },
 });
 
-asr.on('result', (result) => {
-  console.log('识别结果:', result.result?.[0]?.text);
-});
-
-asr.on('vad_end', (finalText) => {
-  console.log('最终结果:', finalText);
-});
+asr.on('result', (result) => console.log('识别结果:', result.result?.[0]?.text));
+asr.on('vad_end', (finalText) => console.log('最终结果:', finalText));
 
 await asr.connect();
-// ... 流式发送音频帧
 await asr.end();
 ```
 
-### 单次识别
+## 单次识别
 
 ```typescript
 import { executeOne } from '@xiaozhi-client/asr';
 
-const result = await executeOne('path/to/audio.wav', 'your-cluster', {
-  bytedance: {
-    v2: {
-      app: {
-        appid: 'your-app-id',
-        token: 'your-token',
-        cluster: 'volcengine_streaming_common',
-      },
-      user: {
-        uid: 'user-123',
-      },
-      audio: {
-        format: 'wav',
-      },
-    },
-  },
-});
+const result = await executeOne('path/to/audio.wav', 'your-cluster', config);
 ```
 
 ## API 参考
