@@ -274,7 +274,8 @@ export const TTS_VOICES: VoiceInfo[] = [
 ];
 
 /**
- * 获取所有场景列表
+ * 获取所有可用的 TTS 音色场景列表
+ * @returns 场景名称数组（如 "通用场景"、"客服"、"导航" 等）
  */
 export function getVoiceScenes(): string[] {
   const scenes = new Set<string>();
@@ -285,7 +286,8 @@ export function getVoiceScenes(): string[] {
 }
 
 /**
- * 按场景分组获取音色
+ * 按场景分组获取 TTS 音色列表
+ * @returns 场景名称到音色列表的映射
  */
 export function getVoicesByScene(): Map<string, VoiceInfo[]> {
   const result = new Map<string, VoiceInfo[]>();
