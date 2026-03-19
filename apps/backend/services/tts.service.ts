@@ -313,7 +313,15 @@ export class TTSService implements ITTSService {
     // 如果缓冲区还有数据，继续处理
     const buffer = this.opusPacketBuffer.get(deviceId);
     if (buffer && buffer.length > 0) {
-      await this.processBuffer(deviceId);
+      try {
+        await this.processBuffer(deviceId);
+      } catch (error) {
+        logger.error(
+          `[TTSService] 处理缓冲区失败: deviceId=${deviceId}`,
+          error
+        );
+        // 继续执行清理操作，不中断流程
+      }
     }
 
     // 再次检查缓冲区是否已清空
