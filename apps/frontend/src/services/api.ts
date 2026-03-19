@@ -8,6 +8,7 @@ import type {
   ApiSuccessResponse,
   AppConfig,
   ClientStatus,
+  ConnectionConfig,
   CustomMCPToolWithStats,
   MCPErrorCode,
   MCPServerAddRequest,
@@ -286,8 +287,8 @@ export class ApiClient {
   /**
    * 获取连接配置
    */
-  async getConnectionConfig(): Promise<any> {
-    const response: ApiResponse<{ connection: any }> = await this.request(
+  async getConnectionConfig(): Promise<ConnectionConfig> {
+    const response: ApiResponse<{ connection: ConnectionConfig }> = await this.request(
       "/api/config/connection"
     );
     if (!response.success || !response.data) {
