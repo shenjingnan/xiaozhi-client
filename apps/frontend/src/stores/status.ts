@@ -18,6 +18,16 @@ import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 
 /**
+ * 状态缓存持续时间（毫秒）
+ */
+const STATUS_CACHE_DURATION = 30 * 1000; // 30秒
+
+/**
+ * 默认轮询间隔（毫秒）
+ */
+const DEFAULT_POLLING_INTERVAL = 30 * 1000; // 30秒
+
+/**
  * 重启状态接口
  */
 interface RestartStatus {
@@ -185,7 +195,7 @@ const initialState: StatusState = {
   },
   polling: {
     enabled: false,
-    interval: 30000, // 30秒
+    interval: DEFAULT_POLLING_INTERVAL,
     maxRetries: 3,
     currentRetries: 0,
   },
@@ -312,7 +322,7 @@ export const useStatusStore = create<StatusStore>()(
         if (
           fullStatus &&
           loading.lastUpdated &&
-          Date.now() - loading.lastUpdated < 30 * 1000
+          Date.now() - loading.lastUpdated < STATUS_CACHE_DURATION
         ) {
           return fullStatus;
         }
@@ -442,7 +452,7 @@ export const useStatusStore = create<StatusStore>()(
 
       // ==================== 轮询控制 ====================
 
-      startPolling: (interval = 30000) => {
+      startPolling: (interval = DEFAULT_POLLING_INTERVAL) => {
         const { polling, refreshStatus } = get();
 
         if (polling.enabled) {
