@@ -346,6 +346,13 @@ export class TTSService implements ITTSService {
    * @param deviceId - 设备 ID
    */
   cleanup(deviceId: string): void {
+    // 获取并销毁 demuxer，释放资源
+    const demuxer = this.audioDemuxers.get(deviceId);
+    if (demuxer) {
+      demuxer.destroy();
+      demuxer.removeAllListeners();
+    }
+
     this.audioDemuxers.delete(deviceId);
     this.cumulativeTimestamps.delete(deviceId);
     this.packetIndices.delete(deviceId);
