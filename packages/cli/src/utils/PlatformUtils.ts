@@ -1,5 +1,32 @@
 /**
- * 平台相关工具
+ * 平台相关工具类
+ *
+ * 提供跨平台的系统信息检测和进程管理功能，包括：
+ * - 平台检测（Windows、macOS、Linux）
+ * - 进程管理和操作（检查、终止进程）
+ * - 系统环境信息获取
+ * - 环境变量读写
+ * - 运行环境检测（容器、测试、开发环境）
+ * - 平台特定的命令生成（如 tail 命令）
+ *
+ * 支持容器环境适配，在容器环境中使用更宽松的进程检查策略。
+ *
+ * @example
+ * ```typescript
+ * import { PlatformUtils } from './PlatformUtils';
+ *
+ * // 检查平台类型
+ * if (PlatformUtils.isWindows()) {
+ *   console.log('Running on Windows');
+ * }
+ *
+ * // 获取系统信息
+ * const sysInfo = PlatformUtils.getSystemInfo();
+ * console.log(`Platform: ${sysInfo.platform}, Arch: ${sysInfo.arch}`);
+ *
+ * // 终止进程
+ * await PlatformUtils.killProcess(pid, 'SIGTERM');
+ * ```
  */
 
 import { execSync } from "node:child_process";
