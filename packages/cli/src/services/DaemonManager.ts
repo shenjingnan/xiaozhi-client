@@ -214,6 +214,15 @@ export class DaemonManagerImpl implements IDaemonManager {
       cwd: options.cwd || process.cwd(),
     });
 
+    // 立即添加错误处理，防止在 setupEventHandlers 调用之前丢失错误事件
+    // 注意：setupEventHandlers 中会再次添加 error 监听器，Node.js 允许多个监听器
+    child.on("error", (error) => {
+      consola.error(`启动守护进程失败: ${error.message}`);
+      this.processManager.cleanupPidFile();
+      this.currentDaemon = null;
+      throw new ProcessError(`无法启动守护进程: ${error.message}`, 0);
+    });
+
     if (!child.pid) {
       throw new ProcessError("无法启动守护进程", 0);
     }
