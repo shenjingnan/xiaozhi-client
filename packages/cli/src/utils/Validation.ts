@@ -1,5 +1,36 @@
 /**
- * 输入验证工具
+ * 输入验证工具类
+ *
+ * 提供全面的数据验证功能，包括：
+ * - 端口号验证（1-65535）
+ * - URL 格式验证（HTTP、HTTPS、WebSocket）
+ * - 配置文件格式验证（json、json5、jsonc）
+ * - 字符串长度和模式验证
+ * - 项目名称和模板名称验证
+ * - 环境变量名称验证
+ * - JSON 格式验证
+ * - 数字范围和数组长度验证
+ * - 对象属性和枚举值验证
+ * - 正则表达式验证
+ *
+ * 所有验证方法在失败时抛出 ValidationError 异常，包含详细的错误信息。
+ *
+ * @example
+ * ```typescript
+ * import { Validation } from './Validation';
+ *
+ * // 验证端口号
+ * Validation.validatePort(8080);
+ *
+ * // 验证 WebSocket URL
+ * Validation.validateWebSocketUrl('wss://example.com/ws');
+ *
+ * // 验证项目名称
+ * Validation.validateProjectName('my-project');
+ *
+ * // 验证必填字段
+ * Validation.validateRequired(config.apiKey, 'apiKey');
+ * ```
  */
 
 import type { ConfigFormat } from "../Types";

@@ -1,5 +1,35 @@
 /**
- * 路径处理工具
+ * 路径处理工具类
+ *
+ * 提供跨平台的路径解析和管理功能，包括：
+ * - 配置文件路径解析
+ * - 日志和 PID 文件路径管理
+ * - 模板目录查找和路径解析
+ * - 工作目录和项目根目录路径获取
+ * - 可执行文件路径解析
+ * - 路径安全性验证（防止路径遍历攻击）
+ * - 临时目录和用户主目录路径获取
+ *
+ * 支持多种运行环境：
+ * - 开发环境（源码直接运行）
+ * - 构建环境（npm 全局安装）
+ * - 容器环境
+ *
+ * @example
+ * ```typescript
+ * import { PathUtils } from './PathUtils';
+ *
+ * // 获取配置文件路径
+ * const configPath = PathUtils.resolveConfigPath('json');
+ *
+ * // 查找模板目录
+ * const templatesDir = PathUtils.findTemplatesDir();
+ *
+ * // 验证路径安全性
+ * if (PathUtils.validatePath(userInput)) {
+ *   const safePath = PathUtils.ensurePathWithin(userInput, baseDir);
+ * }
+ * ```
  */
 
 import { realpathSync } from "node:fs";
