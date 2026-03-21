@@ -168,6 +168,8 @@ export class MCPManager extends EventEmitter {
     this.connections.clear();
 
     this.emit("disconnect");
+    // 清理所有事件监听器，防止内存泄漏
+    this.removeAllListeners();
   }
 
   /**
