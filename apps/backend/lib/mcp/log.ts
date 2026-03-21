@@ -4,6 +4,7 @@
  */
 
 import * as fs from "node:fs";
+import { promises as fsPromises } from "node:fs";
 import * as path from "node:path";
 import { logger } from "@/Logger.js";
 import { PathUtils } from "@/utils/path-utils.js";
@@ -160,13 +161,15 @@ export class ToolCallLogger {
    */
   private async cleanupOldRecords(): Promise<void> {
     try {
-      // 检查日志文件是否存在
-      if (!fs.existsSync(this.logFilePath)) {
+      // 检查日志文件是否存在（使用异步方法）
+      try {
+        await fsPromises.access(this.logFilePath);
+      } catch {
         return;
       }
 
-      // 读取文件内容
-      const content = fs.readFileSync(this.logFilePath, "utf8");
+      // 读取文件内容（使用异步方法）
+      const content = await fsPromises.readFile(this.logFilePath, "utf8");
       const lines = content
         .trim()
         .split("\n")
@@ -183,10 +186,10 @@ export class ToolCallLogger {
       // 删除最旧的记录（从文件开头删除）
       const linesToKeep = lines.slice(recordsToRemove);
 
-      // 重新写入文件
+      // 重新写入文件（使用异步方法）
       const newContent =
         linesToKeep.join("\n") + (linesToKeep.length > 0 ? "\n" : "");
-      fs.writeFileSync(this.logFilePath, newContent, "utf8");
+      await fsPromises.writeFile(this.logFilePath, newContent, "utf8");
 
       logger.info("已清理旧的工具调用记录", {
         recordsToRemove,
