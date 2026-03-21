@@ -13,6 +13,16 @@ export class MCPServiceManagerNotInitializedError extends Error {
 }
 
 /**
+ * EndpointManager 未初始化错误
+ */
+export class EndpointManagerNotInitializedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EndpointManagerNotInitializedError";
+  }
+}
+
+/**
  * WebServer 不可用错误
  */
 export class WebServerNotAvailableError extends Error {
