@@ -9,7 +9,7 @@
   "author": "shenjingnan <sjn.code@gmail.com>",
   "license": "MIT",
   "engines": {
-    "node": ">=20.0.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "keywords": [
     "xiaozhi",
@@ -60,10 +60,10 @@
     "@hono/node-server": "^1.19.10",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@xiaozhi-client/asr": "workspace:*",
-    "@xiaozhi-client/tts": "workspace:*",
     "@xiaozhi-client/config": "workspace:*",
     "@xiaozhi-client/endpoint": "workspace:*",
     "@xiaozhi-client/mcp-core": "workspace:*",
+    "@xiaozhi-client/tts": "workspace:*",
     "@xiaozhi-client/version": "workspace:*",
     "ajv": "^8.18.0",
     "chalk": "^5.6.0",
@@ -87,9 +87,9 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "@nx/vite": "^22.5.1",
-    "@nx/vitest": "^22.5.1",
-    "@nx/workspace": "^22.5.1",
+    "@nx/vite": "^22.6.1",
+    "@nx/vitest": "^22.6.1",
+    "@nx/workspace": "^22.6.1",
     "@types/node": "^24.10.0",
     "@types/semver": "^7.7.1",
     "@vitest/coverage-v8": "^3.2.4",
@@ -107,7 +107,7 @@
     "tsup": "^8.5.0",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
-    "vite": "^7.1.11",
+    "vite": "^8.0.1",
     "vite-tsconfig-paths": "^6.1.0",
     "vitest": "^3.2.4"
   },
