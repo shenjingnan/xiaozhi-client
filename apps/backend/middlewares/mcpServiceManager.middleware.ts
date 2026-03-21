@@ -21,8 +21,7 @@ import type { Context, Next } from "hono";
  * 4. 与 WebServer 生命周期绑定
  * 5. 使用 Hono Context 中的 logger 实现统一的日志配置
  *
- * @param c Hono Context
- * @param next 下一个中间件函数
+ * 允许未初始化状态通过，Handler 中需要处理未初始化的情况
  */
 export const mcpServiceManagerMiddleware = async (
   c: Context<{ Variables: AppContextVariables }>,
