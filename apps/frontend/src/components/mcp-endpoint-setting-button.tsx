@@ -1,3 +1,12 @@
+/**
+ * MCP 接入点设置按钮组件
+ *
+ * 功能：
+ * - 接入点 URL 设置和验证
+ * - 接入点连接状态显示
+ * - 接入点的添加和删除
+ * - 接入点连接和断开操作
+ */
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
