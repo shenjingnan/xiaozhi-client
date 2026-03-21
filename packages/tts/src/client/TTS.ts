@@ -252,6 +252,8 @@ export class TTS extends EventEmitter {
       this.controller = null;
     }
     this.emit("close");
+    // 清理所有事件监听器，防止内存泄漏
+    this.removeAllListeners();
   }
 
   /**

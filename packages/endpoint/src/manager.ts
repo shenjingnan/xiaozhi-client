@@ -484,6 +484,9 @@ export class EndpointManager extends EventEmitter {
 
     await this.clearEndpoints();
 
+    // 清理所有事件监听器，防止内存泄漏
+    this.removeAllListeners();
+
     console.debug("[EndpointManager] 资源清理完成");
   }
 
