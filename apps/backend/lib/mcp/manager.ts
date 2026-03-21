@@ -6,6 +6,7 @@
 
 import { EventEmitter } from "node:events";
 import { logger } from "@/Logger.js";
+import { RETRY_DELAYS } from "@/constants/timeout.constants";
 import { MCPService } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import { ConnectionState } from "@/lib/mcp/types";
@@ -1431,7 +1432,7 @@ export class MCPServiceManager extends EventEmitter {
     logger.info(`[MCPManager] 安排 ${failedServices.length} 个失败服务的重试`);
 
     // 初始重试延迟：30秒
-    const initialDelay = 30000;
+    const initialDelay = RETRY_DELAYS.SERVICE_RETRY_MIN;
 
     for (const serviceName of failedServices) {
       this.failedServices.add(serviceName);
@@ -1512,7 +1513,9 @@ export class MCPServiceManager extends EventEmitter {
     const hash = serviceName
       .split("")
       .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return 30000 + (hash % 60000); // 30-90秒之间的初始延迟
+    return (
+      RETRY_DELAYS.SERVICE_RETRY_MIN + (hash % RETRY_DELAYS.SERVICE_RETRY_RANGE)
+    ); // 30-90秒之间的初始延迟
   }
 
   /**
