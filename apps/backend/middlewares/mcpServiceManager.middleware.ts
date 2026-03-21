@@ -7,7 +7,7 @@
 import {
   MCPServiceManagerNotInitializedError,
   WebServerNotAvailableError,
-} from "@/errors/mcp-errors.middleware.js";
+} from "@/errors/index.js";
 import type { AppContextVariables } from "@/types/hono.context.js";
 import type { Context, Next } from "hono";
 
