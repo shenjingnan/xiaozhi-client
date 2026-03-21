@@ -47,6 +47,10 @@ export const RETRY_DELAYS = {
   MAX: 30000,
   /** 重连延迟 */
   RECONNECT: 2000,
+  /** 服务重试最小延迟（30秒） */
+  SERVICE_RETRY_MIN: 30000,
+  /** 服务重试延迟范围（60秒范围，总延迟为30-90秒） */
+  SERVICE_RETRY_RANGE: 60000,
 } as const;
 
 /**
