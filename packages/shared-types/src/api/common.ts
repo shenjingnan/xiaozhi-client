@@ -1,50 +1,41 @@
 /**
  * 通用 API 响应类型定义
+ * 与 backend 的 response-enhancer.middleware.ts 保持一致
  */
 
 /**
- * 通用 API 响应接口
+ * 成功响应格式
  */
-export interface ApiResponse<T = any> {
-  /** 响应状态码，0表示成功 */
-  code: number;
+export interface ApiSuccessResponse<T = unknown> {
+  /** 操作是否成功 */
+  success: true;
   /** 响应数据 */
-  data: T;
+  data?: T;
   /** 响应消息 */
-  message: string;
-  /** 请求时间戳 */
-  timestamp: number;
+  message?: string;
 }
 
 /**
- * 成功响应接口
- */
-export interface ApiSuccessResponse<T = any> {
-  /** 响应状态码，固定为0 */
-  code: 0;
-  /** 响应数据 */
-  data: T;
-  /** 响应消息 */
-  message: string;
-  /** 请求时间戳 */
-  timestamp: number;
-}
-
-/**
- * 错误响应接口
+ * 错误响应格式
  */
 export interface ApiErrorResponse {
-  /** 响应状态码，非0值 */
-  code: number;
-  /** 错误数据 */
-  data: null;
-  /** 错误消息 */
-  message: string;
-  /** 错误详情 */
-  error?: string;
-  /** 请求时间戳 */
-  timestamp: number;
+  /** 操作是否成功 */
+  success: false;
+  /** 错误信息 */
+  error: {
+    /** 错误码 */
+    code: string;
+    /** 错误消息 */
+    message: string;
+    /** 错误详情 */
+    details?: unknown;
+  };
 }
+
+/**
+ * API 响应联合类型
+ */
+export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
 
 /**
  * 分页请求参数
