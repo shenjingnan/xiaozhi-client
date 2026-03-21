@@ -5,6 +5,8 @@
 
 import { logger } from "@/Logger.js";
 import { ESP32Connection } from "@/lib/esp32/connection.js";
+import { ASRService, LLMService, TTSService } from "@/services";
+import type { DeviceRegistryService } from "@/services";
 import type {
   ESP32DeviceReport,
   ESP32ListenMessage,
@@ -13,10 +15,6 @@ import type {
 } from "@/types/esp32.js";
 import { camelToSnakeCase, extractDeviceInfo } from "@/utils/esp32-utils.js";
 import type WebSocket from "ws";
-import { ASRService } from "./asr.service.js";
-import type { DeviceRegistryService } from "./device-registry.service.js";
-import { LLMService } from "./llm.service.js";
-import { TTSService } from "./tts.service.js";
 
 /**
  * ESP32设备服务

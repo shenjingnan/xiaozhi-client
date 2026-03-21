@@ -12,7 +12,7 @@ import {
   parseBinaryProtocol2,
   parseBinaryProtocol3,
 } from "@/lib/esp32/audio-protocol.js";
-import type { ASRService } from "@/services/asr.service.js";
+import type { ASRService } from "@/services";
 import {
   type ESP32ConnectionState,
   ESP32ErrorCode,
