@@ -23,5 +23,8 @@
 
 export * from "./mcp-errors.js";
 
+// 导出中间件相关的错误类
+export * from "./mcp-errors.middleware.js";
+
 // ErrorHelper 使用命名空间导出以避免与 mcp-errors 中的类型冲突
 export * as ErrorHelper from "./error-helper.js";

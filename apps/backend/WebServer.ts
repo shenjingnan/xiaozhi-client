@@ -76,7 +76,7 @@ import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
 
 import { HTTP_SERVER_CONFIG } from "@/constants/index.js";
-import { MCPServiceManagerNotInitializedError } from "@/errors/mcp-errors.middleware.js";
+import { MCPServiceManagerNotInitializedError } from "@/errors/index.js";
 // 路由系统导入
 import {
   type HandlerDependencies,
