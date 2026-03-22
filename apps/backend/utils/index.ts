@@ -16,3 +16,26 @@ export {
   type DeviceInfoFromHeaders,
   type ExtractedDeviceInfo,
 } from "./esp32-utils.js";
+// Prompt 管理工具
+export {
+  resolvePrompt,
+  getDefaultSystemPrompt,
+  listPromptFiles,
+  validatePromptPath,
+  validatePromptFileName,
+  getPromptsDir,
+  resolvePromptPath,
+  readPromptFile,
+  updatePromptFile,
+  createPromptFile,
+  deletePromptFile,
+  type PromptFileInfo,
+  type PromptFileContent,
+} from "./prompt-utils.js";
+// 工具排序工具
+export {
+  toolSorters,
+  sortTools,
+  type ToolSortField,
+  type ToolSortConfig,
+} from "./toolSorters.js";
