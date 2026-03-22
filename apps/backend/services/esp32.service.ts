@@ -4,6 +4,7 @@
  */
 
 import { logger } from "@/Logger.js";
+import { HTTP_SERVER_CONFIG } from "@/constants/http.constants.js";
 import { ESP32Connection } from "@/lib/esp32/connection.js";
 import type {
   ESP32DeviceReport,
@@ -227,7 +228,9 @@ export class ESP32Service {
     }
 
     // 如果 host 不包含端口，添加默认端口
-    const serverAddress = host.includes(":") ? host : `${host}:9999`;
+    const serverAddress = host.includes(":")
+      ? host
+      : `${host}:${HTTP_SERVER_CONFIG.DEFAULT_PORT}`;
 
     // 构建完整的 WebSocket URL
     const wsUrl = `ws://${serverAddress}/ws`;
