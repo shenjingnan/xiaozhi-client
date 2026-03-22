@@ -11,6 +11,7 @@ import {
   ByteDanceV3Controller,
 } from "@/platforms/bytedance/controllers/index.js";
 import { BYTEDANCE_V2_DEFAULT_CLUSTER } from "@/platforms/bytedance/schemas";
+import type { ByteDanceOption } from "@/platforms/bytedance/schemas/option.js";
 
 // 重新导出控制器，供外部使用
 export {
@@ -100,8 +101,7 @@ export class ByteDancePlatform implements ASRPlatform {
   /**
    * 构建 ByteDance 配置
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private buildByteDanceConfig(config: PlatformConfig): any {
+  private buildByteDanceConfig(config: PlatformConfig): ByteDanceOption {
     const version = this.getVersion(config);
     const cfg = config as {
       app?: { appid?: string; token?: string; cluster?: string };
@@ -129,6 +129,8 @@ export class ByteDancePlatform implements ASRPlatform {
     };
 
     if (version === "v3") {
+      // 运行时保证 v3 配置符合 ASR 客户端要求
+      // ASR 客户端会进行完整的校验并提供默认值
       return {
         v3: {
           appKey: cfg.appKey || cfg.app?.appid || "",
@@ -138,9 +140,11 @@ export class ByteDancePlatform implements ASRPlatform {
           audio: cfg.audio,
           request: cfg.request,
         },
-      };
+      } as ByteDanceOption;
     }
 
+    // 运行时保证 v2 配置符合 ASR 客户端要求
+    // ASR 客户端会进行完整的校验并提供默认值
     return {
       v2: {
         app: {
@@ -152,7 +156,7 @@ export class ByteDancePlatform implements ASRPlatform {
         audio: cfg.audio,
         request: cfg.request,
       },
-    };
+    } as ByteDanceOption;
   }
 
   /**
@@ -174,6 +178,7 @@ export function createByteDancePlatform(config?: PlatformConfig): ASRPlatform {
 
 // 导出平台类型（使用别名避免与 Schema 类型冲突）
 export type {
+  ByteDanceCompatConfig,
   ByteDancePlatformConfig,
   ByteDanceV2Config as ByteDanceV2PlatformConfig,
   ByteDanceV3Config as ByteDanceV3PlatformConfig,
