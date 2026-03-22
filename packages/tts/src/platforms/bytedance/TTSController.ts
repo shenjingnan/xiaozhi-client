@@ -3,12 +3,12 @@
  */
 
 import { randomUUID } from "node:crypto";
-import WebSocket from "ws";
 import type {
   AudioChunkCallback,
   PlatformConfig,
   TTSController,
-} from "../../core/index.js";
+} from "@/core/index.js";
+import WebSocket from "ws";
 import {
   FullClientRequest,
   MsgType,
