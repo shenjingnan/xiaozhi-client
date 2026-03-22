@@ -45,7 +45,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter tts run lint"
+        "command": "bash scripts/biome-lint.sh packages/tts"
       }
     },
     "lint:fix": {

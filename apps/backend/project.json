@@ -35,7 +35,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter backend run lint"
+        "command": "bash scripts/biome-lint.sh apps/backend"
       }
     },
     "lint:fix": {
