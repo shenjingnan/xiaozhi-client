@@ -41,6 +41,7 @@ import {
   createZodSchemaFromJsonSchema,
 } from "@/lib/schema-utils";
 import { apiClient } from "@/services/api";
+import type { JSONSchema } from "@xiaozhi-client/shared-types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
@@ -374,7 +375,7 @@ const FormRenderer = memo(function FormRenderer({
                   <FormItem>
                     <div className="flex items-center gap-2">
                       <FormLabel>
-                        {tool.inputSchema.required?.includes(fieldName) && (
+                        {tool.inputSchema?.required?.includes(fieldName) && (
                           <span className="text-red-500 mr-1">*</span>
                         )}
                         {fieldName}
@@ -432,7 +433,7 @@ interface ToolDebugDialogProps {
     serverName: string;
     toolName: string;
     description?: string;
-    inputSchema?: any;
+    inputSchema?: JSONSchema;
   } | null;
 }
 
