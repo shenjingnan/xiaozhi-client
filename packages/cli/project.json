@@ -39,7 +39,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check packages/cli"
+        "command": "bash scripts/biome-lint.sh packages/cli"
       }
     },
     "lint:fix": {

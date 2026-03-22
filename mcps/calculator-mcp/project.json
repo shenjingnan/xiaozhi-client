@@ -29,8 +29,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check src/",
-        "cwd": "mcps/calculator-mcp"
+        "command": "bash scripts/biome-lint.sh mcps/calculator-mcp"
       }
     },
     "lint:fix": {
