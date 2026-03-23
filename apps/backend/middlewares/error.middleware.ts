@@ -10,22 +10,17 @@
  * @module middlewares/error.middleware
  */
 
+import type {
+  ApiErrorResponse,
+  ApiSuccessResponse,
+} from "@/types/api.response.js";
 import type { Context } from "hono";
 
-// 统一错误响应格式
-export interface ApiErrorResponse {
-  error: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
-}
-
-export interface ApiSuccessResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-}
+// 重新导出 API 响应类型，统一使用 types/api.response.ts 中的定义
+export type {
+  ApiErrorResponse,
+  ApiSuccessResponse,
+} from "@/types/api.response.js";
 
 /**
  * 创建统一的错误响应
@@ -37,6 +32,7 @@ export const createErrorResponse = (
   details?: unknown
 ): ApiErrorResponse => {
   return {
+    success: false,
     error: {
       code,
       message,

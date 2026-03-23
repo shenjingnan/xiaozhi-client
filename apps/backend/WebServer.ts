@@ -99,13 +99,6 @@ import {
   versionRoutes,
 } from "./routes/index.js";
 
-// 统一成功响应格式
-interface ApiSuccessResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  message?: string;
-}
-
 // 小智连接状态响应格式
 interface XiaozhiConnectionStatusResponse {
   type: "multi-endpoint" | "single-endpoint" | "none";

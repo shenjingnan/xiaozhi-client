@@ -15,7 +15,7 @@
  * - {@link hasMCPServiceManager} - 检查是否存在 MCP 服务管理器
  * - {@link getMCPServiceManager} - 获取 MCP 服务管理器
  * - {@link requireMCPServiceManager} - 获取 MCP 服务管理器（不存在则抛错）
- * - {@link ApiErrorResponse} / {@link ApiSuccessResponse} - API 响应类型
+ * - {@link ApiErrorResponse} / {@link ApiSuccessResponse} - API 响应类型（从 @/types/api.response.js 重新导出）
  *
  * @module middlewares
  *
