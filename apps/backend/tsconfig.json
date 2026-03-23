@@ -19,5 +19,9 @@
     "scripts/**/*",
     "templates/**/*",
     "**/*.config.ts"
+  ],
+  "references": [
+    { "path": "../../packages/asr" },
+    { "path": "../../packages/tts" }
   ]
 }
