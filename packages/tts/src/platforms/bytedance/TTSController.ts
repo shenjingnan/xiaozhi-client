@@ -13,6 +13,7 @@ import {
   FullClientRequest,
   MsgType,
   ReceiveMessage,
+  mergeAudioChunks,
 } from "./protocol/index.js";
 import {
   type ByteDanceTTSConfig,
@@ -256,23 +257,7 @@ export class ByteDanceTTSController implements TTSController {
 
     this.close();
 
-    if (totalAudio.length === 0) {
-      throw new Error("no audio received");
-    }
-
-    // 合并所有音频数据块
-    const totalLength = totalAudio.reduce(
-      (sum, chunk) => sum + chunk.length,
-      0
-    );
-    const result = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const chunk of totalAudio) {
-      result.set(chunk, offset);
-      offset += chunk.length;
-    }
-
-    return result;
+    return mergeAudioChunks(totalAudio);
   }
 
   /**

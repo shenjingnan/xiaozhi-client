@@ -4,3 +4,4 @@
 
 export * from "./protocols.js";
 export * from "./binary.js";
+export * from "./utils.js";

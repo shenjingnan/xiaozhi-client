@@ -5,6 +5,7 @@
 import { randomUUID } from "node:crypto";
 import WebSocket from "ws";
 import { FullClientRequest, MsgType, ReceiveMessage } from "./protocols.js";
+import { mergeAudioChunks } from "./utils.js";
 
 /**
  * TTS 合成选项
@@ -141,20 +142,7 @@ export async function synthesizeSpeech(
 
   ws.close();
 
-  if (totalAudio.length === 0) {
-    throw new Error("no audio received");
-  }
-
-  // 合并所有音频数据块
-  const totalLength = totalAudio.reduce((sum, chunk) => sum + chunk.length, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of totalAudio) {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  }
-
-  return result;
+  return mergeAudioChunks(totalAudio);
 }
 
 /**
