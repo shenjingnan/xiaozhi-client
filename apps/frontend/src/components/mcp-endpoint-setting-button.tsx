@@ -389,11 +389,6 @@ export function McpEndpointSettingButton() {
         (event: any) => {
           // 只处理当前端点的事件
           if (event.endpoint === endpoint) {
-            console.log(
-              `[McpEndpointSettingButton] 接收到端点 ${endpoint} 状态变更:`,
-              event
-            );
-
             // 更新端点状态
             updateEndpointState(endpoint, {
               connected: event.connected,
