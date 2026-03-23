@@ -607,7 +607,11 @@ function setupMessageHandler(ws: WebSocket) {
           queue.push(msg);
         }
       } catch (error) {
-        throw new Error(`Error processing message: ${error}`);
+        const wrappedError = new Error(
+          `Error processing message: ${error instanceof Error ? error.message : String(error)}`
+        );
+        wrappedError.cause = error;
+        throw wrappedError;
       }
     });
 
