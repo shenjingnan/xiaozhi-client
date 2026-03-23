@@ -302,5 +302,187 @@ describe("UpdateApiHandler", () => {
         "安装请求已接受"
       );
     });
+
+    test("应该拒绝相同版本的并发安装请求", async () => {
+      // Arrange
+      const firstContext = createMockContext({
+        req: {
+          json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+        },
+      } as any);
+
+      const secondContext = createMockContext({
+        req: {
+          json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+        },
+      } as any);
+
+      // 模拟安装过程需要一些时间
+      let resolveInstall: (value: undefined) => void;
+      mockNPMManager.installVersion.mockReturnValue(
+        new Promise<void>((resolve) => {
+          resolveInstall = resolve;
+        })
+      );
+
+      // Act - 第一个请求
+      const firstResponse = await updateApiHandler.performUpdate(
+        firstContext as unknown as Context
+      );
+
+      // Assert - 第一个请求应该成功
+      expect(firstContext.success).toHaveBeenCalledWith(
+        {
+          version: "1.7.9",
+          message: "安装已启动，请查看实时日志",
+        },
+        "安装请求已接受"
+      );
+
+      // Act - 第二个请求（相同版本）
+      const secondResponse = await updateApiHandler.performUpdate(
+        secondContext as unknown as Context
+      );
+
+      // Assert - 第二个请求应该被拒绝
+      expect(secondContext.fail).toHaveBeenCalledWith(
+        "INSTALL_IN_PROGRESS",
+        "已有安装进程正在进行，请等待完成后再试",
+        undefined,
+        409
+      );
+
+      // 清理：完成安装过程
+      resolveInstall!();
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+
+    test("应该允许不同版本的并发安装请求", async () => {
+      // Arrange
+      const firstContext = createMockContext({
+        req: {
+          json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+        },
+      } as any);
+
+      const secondContext = createMockContext({
+        req: {
+          json: vi.fn().mockResolvedValue({ version: "1.8.0" }),
+        },
+      } as any);
+
+      let resolveFirstInstall: (value: undefined) => void;
+      let resolveSecondInstall: (value: undefined) => void;
+      mockNPMManager.installVersion
+        .mockReturnValueOnce(
+          new Promise<void>((resolve) => {
+            resolveFirstInstall = resolve;
+          })
+        )
+        .mockReturnValueOnce(
+          new Promise<void>((resolve) => {
+            resolveSecondInstall = resolve;
+          })
+        );
+
+      // Act - 两个不同版本的请求
+      const firstResponse = await updateApiHandler.performUpdate(
+        firstContext as unknown as Context
+      );
+      const secondResponse = await updateApiHandler.performUpdate(
+        secondContext as unknown as Context
+      );
+
+      // Assert - 两个请求都应该成功
+      expect(firstContext.success).toHaveBeenCalledWith(
+        {
+          version: "1.7.9",
+          message: "安装已启动，请查看实时日志",
+        },
+        "安装请求已接受"
+      );
+      expect(secondContext.success).toHaveBeenCalledWith(
+        {
+          version: "1.8.0",
+          message: "安装已启动，请查看实时日志",
+        },
+        "安装请求已接受"
+      );
+
+      // 清理：完成安装过程
+      resolveFirstInstall!();
+      resolveSecondInstall!();
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+
+    test("安装完成后应该清除活跃安装状态", async () => {
+      // Arrange
+      const firstContext = createMockContext({
+        req: {
+          json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+        },
+      } as any);
+
+      const secondContext = createMockContext({
+        req: {
+          json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+        },
+      } as any);
+
+      // Act - 第一个请求
+      mockNPMManager.installVersion.mockResolvedValue(undefined);
+      await updateApiHandler.performUpdate(firstContext as unknown as Context);
+
+      // 等待安装完成
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Act - 第二个请求（相同版本，但第一个已完成）
+      mockNPMManager.installVersion.mockResolvedValue(undefined);
+      await updateApiHandler.performUpdate(secondContext as unknown as Context);
+
+      // Assert - 第二个请求应该成功（因为第一个已完成）
+      expect(secondContext.success).toHaveBeenCalledWith(
+        {
+          version: "1.7.9",
+          message: "安装已启动，请查看实时日志",
+        },
+        "安装请求已接受"
+      );
+    });
+
+    test("安装失败时应该清除活跃安装状态", async () => {
+      // Arrange
+      const firstContext = createMockContext({
+        req: {
+          json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+        },
+      } as any);
+
+      const secondContext = createMockContext({
+        req: {
+          json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+        },
+      } as any);
+
+      // Act - 第一个请求（会失败）
+      mockNPMManager.installVersion.mockRejectedValue(new Error("安装失败"));
+      await updateApiHandler.performUpdate(firstContext as unknown as Context);
+
+      // 等待安装失败处理完成
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      // Act - 第二个请求（相同版本，但第一个已失败）
+      mockNPMManager.installVersion.mockResolvedValue(undefined);
+      await updateApiHandler.performUpdate(secondContext as unknown as Context);
+
+      // Assert - 第二个请求应该成功（因为第一个已失败并清除状态）
+      expect(secondContext.success).toHaveBeenCalledWith(
+        {
+          version: "1.7.9",
+          message: "安装已启动，请查看实时日志",
+        },
+        "安装请求已接受"
+      );
+    });
   });
 });
