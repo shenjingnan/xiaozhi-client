@@ -305,6 +305,38 @@ export function unmarshalMessage(data: Uint8Array): Message {
 }
 
 // 序列化辅助函数
+
+/**
+ * 获取消息类型的处理器配置
+ * @param msg - 消息对象
+ * @returns 包含 hasSequence 和 hasErrorCode 的配置对象
+ */
+function getMessageTypeConfig(msg: Message): {
+  hasSequence: boolean;
+  hasErrorCode: boolean;
+} {
+  switch (msg.type) {
+    case MsgType.AudioOnlyClient:
+    case MsgType.AudioOnlyServer:
+    case MsgType.FrontEndResultServer:
+    case MsgType.FullClientRequest:
+    case MsgType.FullServerResponse:
+      return {
+        hasSequence:
+          msg.flag === MsgTypeFlagBits.PositiveSeq ||
+          msg.flag === MsgTypeFlagBits.NegativeSeq,
+        hasErrorCode: false,
+      };
+    case MsgType.Error:
+      return {
+        hasSequence: false,
+        hasErrorCode: true,
+      };
+    default:
+      throw new Error(`unsupported message type: ${msg.type}`);
+  }
+}
+
 function getWriters(msg: Message): Array<(msg: Message) => Uint8Array | null> {
   const writers: Array<(msg: Message) => Uint8Array | null> = [];
 
@@ -312,24 +344,12 @@ function getWriters(msg: Message): Array<(msg: Message) => Uint8Array | null> {
     writers.push(writeEvent, writeSessionId, writeConnectId);
   }
 
-  switch (msg.type) {
-    case MsgType.AudioOnlyClient:
-    case MsgType.AudioOnlyServer:
-    case MsgType.FrontEndResultServer:
-    case MsgType.FullClientRequest:
-    case MsgType.FullServerResponse:
-      if (
-        msg.flag === MsgTypeFlagBits.PositiveSeq ||
-        msg.flag === MsgTypeFlagBits.NegativeSeq
-      ) {
-        writers.push(writeSequence);
-      }
-      break;
-    case MsgType.Error:
-      writers.push(writeErrorCode);
-      break;
-    default:
-      throw new Error(`unsupported message type: ${msg.type}`);
+  const config = getMessageTypeConfig(msg);
+  if (config.hasSequence) {
+    writers.push(writeSequence);
+  }
+  if (config.hasErrorCode) {
+    writers.push(writeErrorCode);
   }
 
   writers.push(writePayload);
@@ -343,24 +363,12 @@ function getReaders(
     (msg: Message, data: Uint8Array, offset: number) => number
   > = [];
 
-  switch (msg.type) {
-    case MsgType.AudioOnlyClient:
-    case MsgType.AudioOnlyServer:
-    case MsgType.FrontEndResultServer:
-    case MsgType.FullClientRequest:
-    case MsgType.FullServerResponse:
-      if (
-        msg.flag === MsgTypeFlagBits.PositiveSeq ||
-        msg.flag === MsgTypeFlagBits.NegativeSeq
-      ) {
-        readers.push(readSequence);
-      }
-      break;
-    case MsgType.Error:
-      readers.push(readErrorCode);
-      break;
-    default:
-      throw new Error(`unsupported message type: ${msg.type}`);
+  const config = getMessageTypeConfig(msg);
+  if (config.hasSequence) {
+    readers.push(readSequence);
+  }
+  if (config.hasErrorCode) {
+    readers.push(readErrorCode);
   }
 
   if (msg.flag === MsgTypeFlagBits.WithEvent) {
