@@ -16,3 +16,16 @@ export {
   type DeviceInfoFromHeaders,
   type ExtractedDeviceInfo,
 } from "./esp32-utils.js";
+// 工具辅助函数
+export {
+  sanitizeToolName,
+  convertChineseToEnglish,
+  resolveToolNameConflict,
+  generateToolDescription,
+  createHttpHandler,
+  getExistingToolNames,
+  UNDERSCORE_TRIM_REGEX,
+  LETTER_START_REGEX,
+  CHINESE_CHAR_REGEX,
+  ALPHANUMERIC_UNDERSCORE_REGEX,
+} from "./tool-utils.js";
