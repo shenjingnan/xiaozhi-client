@@ -469,7 +469,7 @@ describe("EndpointHandler", () => {
       expect(response.status).toBe(500);
       const responseData = await response.json();
       expect(responseData.error.code).toBe("ENDPOINT_CONNECT_ERROR");
-      expect(responseData.error.message).toBe("接入点连接失败");
+      expect(responseData.error.message).toBe("字符串错误");
     });
   });
 
@@ -945,7 +945,7 @@ describe("EndpointHandler", () => {
       expect(response.status).toBe(500);
       const responseData = await response.json();
       expect(responseData.error.code).toBe("ENDPOINT_CONNECT_ERROR");
-      expect(responseData.error.message).toBe("接入点连接失败");
+      expect(responseData.error.message).toBe("字符串错误");
     });
 
     it("应该正确处理空数组返回的状态", async () => {

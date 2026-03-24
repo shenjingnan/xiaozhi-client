@@ -14,7 +14,7 @@ export abstract class BaseHandler {
    * @param error - 错误对象
    * @param operation - 操作描述（用于日志）
    * @param defaultCode - 默认错误码
-   * @param defaultMessage - 默认错误消息
+   * @param defaultMessage - 默认错误消息（可选）
    * @param statusCode - HTTP 状态码（默认 500）
    * @returns JSON 错误响应
    */
@@ -23,10 +23,17 @@ export abstract class BaseHandler {
     error: unknown,
     operation: string,
     defaultCode = "OPERATION_FAILED",
-    defaultMessage = "操作失败",
+    defaultMessage?: string,
     statusCode = 500
   ): Response {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    // 对于 Error 对象，使用其 message；对于非 Error 对象，如果没有提供 defaultMessage 则使用 String(error)，否则使用 defaultMessage
+    let errorMessage: string;
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else {
+      errorMessage = defaultMessage ?? String(error);
+    }
+
     const errorCode =
       error instanceof Error && "code" in error
         ? String((error as { code: unknown }).code)
@@ -36,7 +43,7 @@ export abstract class BaseHandler {
 
     return c.fail(
       errorCode,
-      errorMessage || defaultMessage,
+      errorMessage || "操作失败",
       undefined,
       statusCode
     );

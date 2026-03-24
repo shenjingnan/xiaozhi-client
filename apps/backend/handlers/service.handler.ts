@@ -5,7 +5,6 @@
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
 import { logger } from "@/Logger.js";
-import type { Logger } from "@/Logger.js";
 import { SERVICE_RESTART_DELAYS } from "@/constants/timeout.constants.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EventBus } from "@/services/event-bus.service.js";
@@ -14,17 +13,17 @@ import type { StatusService } from "@/services/status.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import { requireMCPServiceManager } from "@/types/hono.context.js";
 import type { Context } from "hono";
+import { BaseHandler } from "./base.handler.js";
 
 /**
  * 服务 API 处理器
  */
-export class ServiceApiHandler {
-  private logger: Logger;
+export class ServiceApiHandler extends BaseHandler {
   private statusService: StatusService;
   private eventBus: EventBus;
 
   constructor(statusService: StatusService) {
-    this.logger = logger;
+    super();
     this.statusService = statusService;
     this.eventBus = getEventBus();
   }
@@ -45,7 +44,6 @@ export class ServiceApiHandler {
     });
 
     child.unref();
-    this.logger.info(`MCP 服务命令已发送: xiaozhi ${args.join(" ")}`);
 
     return child;
   }
@@ -92,12 +90,12 @@ export class ServiceApiHandler {
 
       return c.success(null, "重启请求已接收");
     } catch (error) {
-      c.get("logger").error("处理重启请求失败:", error);
-      return c.fail(
+      return this.handleError(
+        c,
+        error,
+        "处理重启请求",
         "RESTART_REQUEST_ERROR",
-        error instanceof Error ? error.message : "处理重启请求失败",
-        undefined,
-        500
+        "处理重启请求失败"
       );
     }
   }
@@ -109,14 +107,14 @@ export class ServiceApiHandler {
   private async executeRestart(
     mcpServiceManager: MCPServiceManager
   ): Promise<void> {
-    this.logger.info("正在重启 MCP 服务...");
+    logger.info("正在重启 MCP 服务...");
 
     try {
       // 获取当前服务状态
       const status = mcpServiceManager.getStatus();
 
       if (!status.isRunning) {
-        this.logger.warn("MCP 服务未运行，尝试启动服务");
+        logger.warn("MCP 服务未运行，尝试启动服务");
 
         // 如果服务未运行，尝试启动服务
         this.spawnXiaozhiProcess(["start", "--daemon"]);
@@ -126,7 +124,7 @@ export class ServiceApiHandler {
       // 执行重启命令，始终使用 daemon 模式
       this.spawnXiaozhiProcess(["restart", "--daemon"]);
     } catch (error) {
-      this.logger.error("重启服务失败:", error);
+      logger.error("重启服务失败:", error);
       throw error;
     }
   }
@@ -144,13 +142,7 @@ export class ServiceApiHandler {
 
       return c.success(null, "停止请求已接收");
     } catch (error) {
-      c.get("logger").error("处理停止请求失败:", error);
-      return c.fail(
-        "STOP_REQUEST_ERROR",
-        error instanceof Error ? error.message : "处理停止请求失败",
-        undefined,
-        500
-      );
+      return this.handleError(c, error, "处理停止请求", "STOP_REQUEST_ERROR", "处理停止请求失败");
     }
   }
 
@@ -167,13 +159,7 @@ export class ServiceApiHandler {
 
       return c.success(null, "启动请求已接收");
     } catch (error) {
-      c.get("logger").error("处理启动请求失败:", error);
-      return c.fail(
-        "START_REQUEST_ERROR",
-        error instanceof Error ? error.message : "处理启动请求失败",
-        undefined,
-        500
-      );
+      return this.handleError(c, error, "处理启动请求", "START_REQUEST_ERROR", "处理启动请求失败");
     }
   }
 
@@ -191,12 +177,12 @@ export class ServiceApiHandler {
       c.get("logger").debug("获取服务状态成功");
       return c.success(status);
     } catch (error) {
-      c.get("logger").error("获取服务状态失败:", error);
-      return c.fail(
+      return this.handleError(
+        c,
+        error,
+        "获取服务状态",
         "SERVICE_STATUS_READ_ERROR",
-        error instanceof Error ? error.message : "获取服务状态失败",
-        undefined,
-        500
+        "获取服务状态失败"
       );
     }
   }
@@ -221,12 +207,12 @@ export class ServiceApiHandler {
       c.get("logger").debug("获取服务健康状态成功");
       return c.success(health);
     } catch (error) {
-      c.get("logger").error("获取服务健康状态失败:", error);
-      return c.fail(
+      return this.handleError(
+        c,
+        error,
+        "获取服务健康状态",
         "SERVICE_HEALTH_READ_ERROR",
-        error instanceof Error ? error.message : "获取服务健康状态失败",
-        undefined,
-        500
+        "获取服务健康状态失败"
       );
     }
   }

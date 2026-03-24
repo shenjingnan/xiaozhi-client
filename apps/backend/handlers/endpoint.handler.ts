@@ -1,3 +1,12 @@
+import type { EventBus } from "@/services/event-bus.service.js";
+import { getEventBus } from "@/services/event-bus.service.js";
+import type { AppContext } from "@/types/hono.context.js";
+import type { ConfigManager } from "@xiaozhi-client/config";
+import type {
+  ConnectionStatus,
+  EndpointManager,
+} from "@xiaozhi-client/endpoint";
+import type { Context } from "hono";
 /**
  * 接入点管理 Handler
  *
@@ -10,17 +19,7 @@
  *
  * @see @xiaozhi-client/endpoint - EndpointManager 实现
  */
-import type { Logger } from "@/Logger.js";
-import { logger } from "@/Logger.js";
-import type { EventBus } from "@/services/event-bus.service.js";
-import { getEventBus } from "@/services/event-bus.service.js";
-import type { AppContext } from "@/types/hono.context.js";
-import type { ConfigManager } from "@xiaozhi-client/config";
-import type {
-  ConnectionStatus,
-  EndpointManager,
-} from "@xiaozhi-client/endpoint";
-import type { Context } from "hono";
+import { BaseHandler } from "./base.handler.js";
 
 /**
  * 验证结果类型定义
@@ -35,14 +34,13 @@ interface ValidationResult {
  * 支持通过 HTTP API 动态管理端点（添加、删除、连接、断开、查询状态）
  * 端点变更会自动同步到配置文件，确保重启后状态保持一致
  */
-export class EndpointHandler {
-  private logger: Logger;
+export class EndpointHandler extends BaseHandler {
   private endpointManager: EndpointManager;
   private configManager: ConfigManager;
   private eventBus: EventBus;
 
   constructor(endpointManager: EndpointManager, configManager: ConfigManager) {
-    this.logger = logger;
+    super();
     this.endpointManager = endpointManager;
     this.configManager = configManager;
     this.eventBus = getEventBus();
@@ -62,17 +60,14 @@ export class EndpointHandler {
   > {
     let body: { endpoint: string };
     try {
-      body = await c.req.json();
+      body = await this.parseJsonBody<{ endpoint: string }>(
+        c,
+        "端点参数解析失败"
+      );
     } catch (error) {
-      this.logger.error("JSON解析失败:", error);
       return {
         ok: false,
-        response: c.fail(
-          errorErrorCode,
-          "JSON解析失败",
-          error instanceof Error ? error.message : undefined,
-          500
-        ),
+        response: this.handleError(c, error, "解析端点参数", errorErrorCode),
       };
     }
 
@@ -125,7 +120,7 @@ export class EndpointHandler {
     }
 
     const endpoint = parseResult.endpoint;
-    this.logger.debug(`处理获取接入点状态请求: ${endpoint}`);
+    c.get("logger").debug(`处理获取接入点状态请求: ${endpoint}`);
     try {
       // 获取连接状态
       const connectionStatus = this.endpointManager.getConnectionStatus();
@@ -137,15 +132,14 @@ export class EndpointHandler {
         return c.fail("ENDPOINT_NOT_FOUND", "端点不存在", undefined, 500);
       }
 
-      this.logger.debug(`获取接入点状态成功: ${endpoint}`);
+      c.get("logger").debug(`获取接入点状态成功: ${endpoint}`);
       return c.success(endpointStatus);
     } catch (error) {
-      this.logger.error("获取接入点状态失败:", error);
-      return c.fail(
-        "ENDPOINT_STATUS_READ_ERROR",
-        error instanceof Error ? error.message : "获取接入点状态失败",
-        undefined,
-        500
+      return this.handleError(
+        c,
+        error,
+        "获取接入点状态",
+        "ENDPOINT_STATUS_READ_ERROR"
       );
     }
   }
@@ -164,7 +158,7 @@ export class EndpointHandler {
     }
 
     const endpoint = parseResult.endpoint;
-    this.logger.info(`处理接入点连接请求: ${endpoint}`);
+    c.get("logger").info(`处理接入点连接请求: ${endpoint}`);
     try {
       // 获取端点实例
       const endpointInstance = this.endpointManager.getEndpoint(endpoint);
@@ -208,16 +202,10 @@ export class EndpointHandler {
         source: "http-api",
       });
 
-      this.logger.info(`接入点连接成功: ${endpoint}`);
+      c.get("logger").info(`接入点连接成功: ${endpoint}`);
       return c.success(endpointStatus);
     } catch (error) {
-      this.logger.error("接入点连接失败:", error);
-      return c.fail(
-        "ENDPOINT_CONNECT_ERROR",
-        error instanceof Error ? error.message : "接入点连接失败",
-        undefined,
-        500
-      );
+      return this.handleError(c, error, "接入点连接", "ENDPOINT_CONNECT_ERROR");
     }
   }
 
@@ -235,7 +223,7 @@ export class EndpointHandler {
     }
 
     const endpoint = parseResult.endpoint;
-    this.logger.info(`处理接入点断开请求: ${endpoint}`);
+    c.get("logger").info(`处理接入点断开请求: ${endpoint}`);
     try {
       // 获取端点实例
       const endpointInstance = this.endpointManager.getEndpoint(endpoint);
@@ -265,7 +253,7 @@ export class EndpointHandler {
         source: "http-api",
       });
 
-      this.logger.info(`接入点断开成功: ${endpoint}`);
+      c.get("logger").info(`接入点断开成功: ${endpoint}`);
       const fallbackStatus: ConnectionStatus = {
         endpoint,
         connected: false,
@@ -273,12 +261,11 @@ export class EndpointHandler {
       };
       return c.success(endpointStatus || fallbackStatus);
     } catch (error) {
-      this.logger.error("接入点断开失败:", error);
-      return c.fail(
-        "ENDPOINT_DISCONNECT_ERROR",
-        error instanceof Error ? error.message : "接入点断开失败",
-        undefined,
-        500
+      return this.handleError(
+        c,
+        error,
+        "接入点断开",
+        "ENDPOINT_DISCONNECT_ERROR"
       );
     }
   }
@@ -298,7 +285,7 @@ export class EndpointHandler {
     }
 
     const endpoint = parseResult.endpoint;
-    this.logger.info(`处理接入点添加请求: ${endpoint}`);
+    c.get("logger").info(`处理接入点添加请求: ${endpoint}`);
 
     try {
       // 1. 验证端点 URL 格式
@@ -320,7 +307,7 @@ export class EndpointHandler {
 
       // 3. 添加端点到管理器（使用 URL 字符串）
       this.endpointManager.addEndpoint(endpoint);
-      this.logger.debug(`端点已添加到管理器: ${endpoint}`);
+      c.get("logger").debug(`端点已添加到管理器: ${endpoint}`);
 
       // 4. 获取新添加的端点实例
       const newEndpoint = this.endpointManager.getEndpoint(endpoint);
@@ -336,9 +323,9 @@ export class EndpointHandler {
       // 5. 连接新端点
       try {
         await this.endpointManager.connect(endpoint);
-        this.logger.debug(`端点已连接: ${endpoint}`);
+        c.get("logger").debug(`端点已连接: ${endpoint}`);
       } catch (connectError) {
-        this.logger.warn(
+        c.get("logger").warn(
           `端点连接失败，但已添加到管理器: ${endpoint}`,
           connectError
         );
@@ -348,16 +335,19 @@ export class EndpointHandler {
       // 6. 更新配置文件
       try {
         this.configManager.addMcpEndpoint(endpoint);
-        this.logger.debug(`端点已添加到配置文件: ${endpoint}`);
+        c.get("logger").debug(`端点已添加到配置文件: ${endpoint}`);
       } catch (configError) {
-        this.logger.error(`添加端点到配置文件失败: ${endpoint}`, configError);
+        c.get("logger").error(
+          `添加端点到配置文件失败: ${endpoint}`,
+          configError
+        );
         // 配置更新失败，需要回滚：优先尝试断开连接，其次从管理器移除端点
         try {
           await newEndpoint.disconnect();
-          this.logger.debug(`回滚时已断开端点连接: ${endpoint}`);
+          c.get("logger").debug(`回滚时已断开端点连接: ${endpoint}`);
         } catch (disconnectError) {
           // 断开失败只记录警告，不影响后续回滚流程
-          this.logger.warn(
+          c.get("logger").warn(
             `回滚时断开端点连接失败，将继续从管理器移除端点: ${endpoint}`,
             disconnectError
           );
@@ -384,7 +374,7 @@ export class EndpointHandler {
         source: "http-api",
       });
 
-      this.logger.info(`接入点添加成功: ${endpoint}`);
+      c.get("logger").info(`接入点添加成功: ${endpoint}`);
 
       const defaultEndpointStatus = {
         endpoint,
@@ -396,13 +386,7 @@ export class EndpointHandler {
         "接入点添加成功"
       );
     } catch (error) {
-      this.logger.error("添加接入点失败:", error);
-      return c.fail(
-        "ENDPOINT_ADD_ERROR",
-        error instanceof Error ? error.message : "添加接入点失败",
-        undefined,
-        500
-      );
+      return this.handleError(c, error, "添加接入点", "ENDPOINT_ADD_ERROR");
     }
   }
 
@@ -421,7 +405,7 @@ export class EndpointHandler {
     }
 
     const endpoint = parseResult.endpoint;
-    this.logger.info(`处理接入点移除请求: ${endpoint}`);
+    c.get("logger").info(`处理接入点移除请求: ${endpoint}`);
 
     try {
       // 检查端点是否存在
@@ -436,9 +420,9 @@ export class EndpointHandler {
       // 先从配置文件移除端点，确保配置与运行时状态保持一致
       try {
         this.configManager.removeMcpEndpoint(endpoint);
-        this.logger.debug(`端点已从配置文件中移除: ${endpoint}`);
+        c.get("logger").debug(`端点已从配置文件中移除: ${endpoint}`);
       } catch (error) {
-        this.logger.error(`从配置文件移除端点失败: ${endpoint}`, error);
+        c.get("logger").error(`从配置文件移除端点失败: ${endpoint}`, error);
         // 配置更新失败是致命错误，中断移除操作
         throw error;
       }
@@ -447,7 +431,7 @@ export class EndpointHandler {
       // EndpointManager.removeEndpoint 内部会再次调用 disconnect（幂等操作）
       // 并清理状态和发射 endpointRemoved 事件
       await this.endpointManager.removeEndpoint(endpointInstance);
-      this.logger.debug(`端点已从管理器中移除: ${endpoint}`);
+      c.get("logger").debug(`端点已从管理器中移除: ${endpoint}`);
 
       // 发送事件通知
       this.eventBus.emitEvent("endpoint:status:changed", {
@@ -460,7 +444,7 @@ export class EndpointHandler {
         source: "http-api",
       });
 
-      this.logger.info(`接入点移除成功: ${endpoint}`);
+      c.get("logger").info(`接入点移除成功: ${endpoint}`);
 
       return c.success(
         {
@@ -471,14 +455,7 @@ export class EndpointHandler {
         "接入点移除成功"
       );
     } catch (error) {
-      this.logger.error("移除接入点失败:", error);
-
-      return c.fail(
-        "ENDPOINT_REMOVE_ERROR",
-        error instanceof Error ? error.message : "移除接入点失败",
-        undefined,
-        500
-      );
+      return this.handleError(c, error, "移除接入点", "ENDPOINT_REMOVE_ERROR");
     }
   }
 }
