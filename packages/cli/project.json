@@ -51,8 +51,10 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo 'CLI type-check skipped: bundled by tsup which strips types'"
-      }
+        "command": "tsc --noEmit",
+        "cwd": "packages/cli"
+      },
+      "dependsOn": ["backend:build", "config:build"]
     },
     "dev": {
       "executor": "nx:run-commands",

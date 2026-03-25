@@ -4,7 +4,7 @@
 
 import path from "node:path";
 import chalk from "chalk";
-import ora from "ora";
+import ora, { type Ora } from "ora";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
 import type {
@@ -113,7 +113,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
   /**
    * 确保配置文件存在，如果不存在则显示提示并返回 false
    */
-  private async ensureConfigExists(spinner: ora.Ora): Promise<boolean> {
+  private async ensureConfigExists(spinner: Ora): Promise<boolean> {
     const configManager = this.getService<any>("configManager");
 
     if (!configManager.configExists()) {
