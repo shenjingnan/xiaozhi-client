@@ -18,8 +18,9 @@
     "ai"
   ],
   "type": "module",
-  "main": "dist/cli/index.js",
+  "main": "packages/cli/dist/index.js",
   "files": [
+    "packages/cli/dist",
     "dist",
     "templates",
     "README.md",
@@ -30,8 +31,8 @@
     "registry": "https://registry.npmjs.org"
   },
   "bin": {
-    "xiaozhi": "dist/cli/index.js",
-    "xiaozhi-client": "dist/cli/index.js"
+    "xiaozhi": "packages/cli/dist/index.js",
+    "xiaozhi-client": "packages/cli/dist/index.js"
   },
   "scripts": {
     "build": "pnpm run clean:dist && nx run-many -t build --exclude=docs,xiaozhi-client --parallel=false",
