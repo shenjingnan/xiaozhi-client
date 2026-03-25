@@ -275,19 +275,31 @@ export class ASRService implements IASRService {
 
   /**
    * 创建异步生成器，从队列中读取 PCM 数据
+   * 使用索引跟踪避免 O(n) 的 shift() 操作
    * @param deviceId - 设备 ID
    * @returns 异步生成器
    */
   private async *createAudioStream(
     deviceId: string
   ): AsyncGenerator<Buffer, void, unknown> {
-    const queue = this.audioQueues.get(deviceId) || [];
+    let queue = this.audioQueues.get(deviceId);
+    if (!queue) {
+      queue = [];
+      this.audioQueues.set(deviceId, queue);
+    }
+
+    let readIndex = 0;
 
     while (true) {
       // 等待队列中有数据
-      while (queue.length === 0) {
+      while (readIndex >= queue.length) {
         // 检查是否已结束
         if (this.audioEnded.get(deviceId)) {
+          // 清理已读取的数据
+          if (readIndex > 0) {
+            queue.splice(0, readIndex);
+            readIndex = 0;
+          }
           logger.debug(`[ASRService] 音频流结束: deviceId=${deviceId}`);
           return;
         }
@@ -295,8 +307,15 @@ export class ASRService implements IASRService {
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
 
-      // 从队列取出数据
-      const pcmData = queue.shift()!;
+      // 从队列取出数据（O(1) 操作）
+      const pcmData = queue[readIndex++]!;
+
+      // 定期清理已读取的数据，避免无限增长
+      if (readIndex > 100) {
+        queue.splice(0, readIndex);
+        readIndex = 0;
+      }
+
       yield pcmData;
     }
   }
