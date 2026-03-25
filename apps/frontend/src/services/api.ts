@@ -4,6 +4,7 @@
  */
 
 import type {
+  AddCustomToolRequest,
   ApiErrorResponse,
   ApiSuccessResponse,
   AppConfig,
@@ -559,27 +560,28 @@ export class ApiClient {
    * 添加自定义工具（新格式）
    * 支持多种工具类型：MCP 工具、Coze 工作流等
    */
-  async addCustomTool(request: {
-    type: "mcp" | "coze" | "http" | "function";
-    data: any;
-  }): Promise<any>;
+  async addCustomTool(request: AddCustomToolRequest): Promise<CustomMCPToolWithStats>;
 
   async addCustomTool(
-    param1: any,
+    param1: unknown,
     customName?: string,
     customDescription?: string,
-    parameterConfig?: any
-  ): Promise<any> {
+    parameterConfig?: unknown
+  ): Promise<CustomMCPToolWithStats> {
     // 判断是否为新格式调用
-    if (typeof param1 === "object" && "type" in param1 && "data" in param1) {
+    if (
+      typeof param1 === "object" &&
+      param1 !== null &&
+      "type" in param1 &&
+      "data" in param1
+    ) {
       // 新格式：类型化请求
-      const response: ApiResponse<{ tool: any }> = await this.request(
-        "/api/tools/custom",
-        {
+      const request = param1 as AddCustomToolRequest;
+      const response: ApiResponse<{ tool: CustomMCPToolWithStats }> =
+        await this.request("/api/tools/custom", {
           method: "POST",
-          body: JSON.stringify(param1),
-        }
-      );
+          body: JSON.stringify(request),
+        });
 
       if (!response.success || !response.data) {
         throw new Error(response.error?.message || "添加自定义工具失败");
@@ -588,9 +590,8 @@ export class ApiClient {
     }
     // 旧格式：向后兼容
     const workflow = param1;
-    const response: ApiResponse<{ tool: any }> = await this.request(
-      "/api/tools/custom",
-      {
+    const response: ApiResponse<{ tool: CustomMCPToolWithStats }> =
+      await this.request("/api/tools/custom", {
         method: "POST",
         body: JSON.stringify({
           workflow,
@@ -598,8 +599,7 @@ export class ApiClient {
           customDescription,
           parameterConfig,
         }),
-      }
-    );
+      });
 
     if (!response.success || !response.data) {
       throw new Error(response.error?.message || "添加自定义工具失败");
@@ -614,18 +614,16 @@ export class ApiClient {
    */
   async updateCustomTool(
     toolName: string,
-    updateRequest: {
-      type: "mcp" | "coze" | "http" | "function";
-      data: any;
-    }
-  ): Promise<any> {
-    const response: ApiResponse<{ tool: any }> = await this.request(
-      `/api/tools/custom/${encodeURIComponent(toolName)}`,
-      {
-        method: "PUT",
-        body: JSON.stringify(updateRequest),
-      }
-    );
+    updateRequest: AddCustomToolRequest
+  ): Promise<CustomMCPToolWithStats> {
+    const response: ApiResponse<{ tool: CustomMCPToolWithStats }> =
+      await this.request(
+        `/api/tools/custom/${encodeURIComponent(toolName)}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(updateRequest),
+        }
+      );
 
     if (!response.success || !response.data) {
       throw new Error(response.error?.message || "更新自定义工具失败");
