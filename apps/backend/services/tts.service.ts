@@ -257,7 +257,9 @@ export class TTSService implements ITTSService {
     this.isProcessingBuffer.set(deviceId, true);
 
     try {
-      while (buffer.length > 0) {
+      // 使用索引指针替代 shift()，将时间复杂度从 O(n) 降至 O(1)
+      let index = 0;
+      while (index < buffer.length) {
         // 首次收到 Opus 包时发送 start 消息
         if (!this.ttsStarted.get(deviceId)) {
           await connection.send({
@@ -269,8 +271,8 @@ export class TTSService implements ITTSService {
           logger.info(`[TTSService] 发送 TTS start 消息: deviceId=${deviceId}`);
         }
 
-        // 从缓冲区取出第一个包
-        const opusPacket = buffer.shift()!;
+        // 使用索引从缓冲区取出包
+        const opusPacket = buffer[index]!;
 
         // 计算时间戳和时长
         const timestamp = this.cumulativeTimestamps.get(deviceId) || 0;
@@ -290,7 +292,11 @@ export class TTSService implements ITTSService {
 
         // 流控：等待硬件处理
         await new Promise((resolve) => setTimeout(resolve, duration * 0.8));
+
+        index++;
       }
+      // 处理完成后清空数组
+      buffer.length = 0;
     } finally {
       this.isProcessingBuffer.set(deviceId, false);
     }
@@ -453,16 +459,22 @@ export class TTSService implements ITTSService {
       // 使用 Promise 队列确保串行处理
       let isProcessing = false;
       const packetQueue: Buffer[] = [];
+      // 队列消费索引，用于替代 shift() 操作
+      let queueHead = 0;
 
       const processQueue = async (): Promise<void> => {
-        if (isProcessing || packetQueue.length === 0) return;
+        if (isProcessing || queueHead >= packetQueue.length) return;
 
         isProcessing = true;
-        while (packetQueue.length > 0) {
-          const packet = packetQueue.shift()!;
+        while (queueHead < packetQueue.length) {
+          const packet = packetQueue[queueHead]!;
+          queueHead++;
           await processPacket(packet);
         }
         isProcessing = false;
+        // 处理完成后重置队列
+        packetQueue.length = 0;
+        queueHead = 0;
       };
 
       stream
