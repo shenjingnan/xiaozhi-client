@@ -436,6 +436,12 @@ export class ESP32Connection {
 
     logger.info(`关闭连接: deviceId=${this.deviceId}`);
 
+    // 清理所有事件监听器，防止内存泄漏
+    this.ws.removeAllListeners("message");
+    this.ws.removeAllListeners("error");
+    this.ws.removeAllListeners("pong");
+    this.ws.removeAllListeners("close");
+
     // 如果连接已断开，直接返回
     if (
       this.ws.readyState !== this.ws.OPEN &&
