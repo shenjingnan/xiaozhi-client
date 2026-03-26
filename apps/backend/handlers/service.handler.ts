@@ -82,7 +82,7 @@ export class ServiceApiHandler {
             this.statusService.updateRestartStatus("completed");
           }, SERVICE_RESTART_DELAYS.SUCCESS_NOTIFICATION_DELAY);
         } catch (error) {
-          c.get("logger").error("服务重启失败:", error);
+          this.logger.error("服务重启失败:", error);
           this.statusService.updateRestartStatus(
             "failed",
             error instanceof Error ? error.message : "未知错误"
