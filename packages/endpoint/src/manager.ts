@@ -57,7 +57,7 @@ export class EndpointManager extends EventEmitter {
   private connectionStates: Map<string, SimpleConnectionStatus> = new Map();
   private mcpManager: IMCPServiceManager | null = null;
   private sharedMCPAdapter: SharedMCPAdapter | null = null;
-  private mcpEventListeners: Array<(...args: unknown[]) => void> = [];
+  private mcpEventListeners: Array<{ event: string; listener: (...args: unknown[]) => void }> = [];
 
   /**
    * 构造函数
@@ -103,8 +103,9 @@ export class EndpointManager extends EventEmitter {
       mcpManager.on("connected", connectedHandler);
       mcpManager.on("error", errorHandler);
 
-      // 保存监听器引用以便后续清理
-      this.mcpEventListeners.push(connectedHandler, errorHandler);
+      // 保存事件名和监听器的配对以便后续正确清理
+      this.mcpEventListeners.push({ event: "connected", listener: connectedHandler });
+      this.mcpEventListeners.push({ event: "error", listener: errorHandler });
     }
 
     console.info("[EndpointManager] MCPManager 已设置");
@@ -475,9 +476,8 @@ export class EndpointManager extends EventEmitter {
       "removeListener" in this.mcpManager &&
       typeof this.mcpManager.removeListener === "function"
     ) {
-      for (const listener of this.mcpEventListeners) {
-        this.mcpManager.removeListener("connected", listener);
-        this.mcpManager.removeListener("error", listener);
+      for (const { event, listener } of this.mcpEventListeners) {
+        this.mcpManager.removeListener(event, listener);
       }
     }
     this.mcpEventListeners = [];
