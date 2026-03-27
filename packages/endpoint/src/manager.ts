@@ -490,25 +490,33 @@ export class EndpointManager extends EventEmitter {
   // ==================== 私有方法 ====================
 
   /**
-   * 连接单个端点
+   * 连接或重连单个端点
    */
-  private async connectSingleEndpoint(
+  private async connectOrReconnectEndpoint(
     url: string,
-    endpoint: Endpoint
+    endpoint: Endpoint,
+    action: "connect" | "reconnect"
   ): Promise<void> {
     const status = this.connectionStates.get(url);
     if (!status) {
       throw new Error(`端点状态不存在: ${sliceEndpoint(url)}`);
     }
 
-    console.debug(`[EndpointManager] 连接端点: ${sliceEndpoint(url)}`);
+    const actionText = action === "connect" ? "连接" : "重连";
+    console.debug(`[EndpointManager] ${actionText}端点: ${sliceEndpoint(url)}`);
 
-    // 更新状态为连接中
-    status.connected = false;
-    status.initialized = false;
+    // 如果是首次连接，更新状态为连接中
+    if (action === "connect") {
+      status.connected = false;
+      status.initialized = false;
+    }
 
-    // 执行连接
-    await endpoint.connect();
+    // 执行连接或重连
+    if (action === "connect") {
+      await endpoint.connect();
+    } else {
+      await endpoint.reconnect();
+    }
 
     // 更新连接成功状态
     status.connected = true;
@@ -516,7 +524,17 @@ export class EndpointManager extends EventEmitter {
     status.lastConnected = new Date();
     status.lastError = undefined;
 
-    console.info(`[EndpointManager] 端点连接成功: ${sliceEndpoint(url)}`);
+    console.info(`[EndpointManager] 端点${actionText}成功: ${sliceEndpoint(url)}`);
+  }
+
+  /**
+   * 连接单个端点
+   */
+  private async connectSingleEndpoint(
+    url: string,
+    endpoint: Endpoint
+  ): Promise<void> {
+    return this.connectOrReconnectEndpoint(url, endpoint, "connect");
   }
 
   /**
@@ -526,22 +544,6 @@ export class EndpointManager extends EventEmitter {
     url: string,
     endpoint: Endpoint
   ): Promise<void> {
-    const status = this.connectionStates.get(url);
-    if (!status) {
-      throw new Error(`端点状态不存在: ${sliceEndpoint(url)}`);
-    }
-
-    console.debug(`[EndpointManager] 重连端点: ${sliceEndpoint(url)}`);
-
-    // 执行重连
-    await endpoint.reconnect();
-
-    // 更新连接成功状态
-    status.connected = true;
-    status.initialized = true;
-    status.lastConnected = new Date();
-    status.lastError = undefined;
-
-    console.info(`[EndpointManager] 端点重连成功: ${sliceEndpoint(url)}`);
+    return this.connectOrReconnectEndpoint(url, endpoint, "reconnect");
   }
 }
