@@ -668,7 +668,13 @@ export class MCPToolHandler {
 
     // 从缓存中获取工具信息
     const cacheManager = new MCPCacheManager();
-    const cachedTools = await cacheManager.getAllCachedTools();
+    let cachedTools: Tool[];
+    try {
+      cachedTools = await cacheManager.getAllCachedTools();
+    } finally {
+      // 确保清理定时器，避免资源泄漏
+      cacheManager.cleanup();
+    }
 
     // 查找对应的工具
     const fullToolName = `${serviceName}__${toolName}`;

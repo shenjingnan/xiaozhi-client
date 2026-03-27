@@ -250,6 +250,7 @@ describe("MCPToolHandler - 核心功能测试", () => {
                 inputSchema: { type: "object", properties: {} },
               },
             ]),
+            cleanup: vi.fn(),
           }) as any
       );
 
