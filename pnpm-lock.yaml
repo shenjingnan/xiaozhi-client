@@ -90,7 +90,7 @@ importers:
         specifier: ^4.0.0
         version: 4.1.0
       express:
-        specifier: ^5.1.0
+        specifier: ^5.2.1
         version: 5.2.1
       hono:
         specifier: ^4.12.7
@@ -247,7 +247,7 @@ importers:
         specifier: ^4.0.0
         version: 4.1.0
       express:
-        specifier: ^5.1.0
+        specifier: ^5.2.1
         version: 5.2.1
       hono:
         specifier: ^4.12.7
