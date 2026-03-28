@@ -185,19 +185,19 @@ export class CozeHandler extends BaseHandler {
       }
 
       // 验证分页参数
-      if (page_num < 1 || page_num > 1000) {
+      if (Number.isNaN(page_num) || page_num < 1 || page_num > 1000) {
         return c.fail(
           "INVALID_PARAMETER",
-          "page_num 必须在 1-1000 之间",
+          "page_num 必须是有效的 1-1000 之间的数字",
           undefined,
           400
         );
       }
 
-      if (page_size < 1 || page_size > 100) {
+      if (Number.isNaN(page_size) || page_size < 1 || page_size > 100) {
         return c.fail(
           "INVALID_PARAMETER",
-          "page_size 必须在 1-100 之间",
+          "page_size 必须是有效的 1-100 之间的数字",
           undefined,
           400
         );
