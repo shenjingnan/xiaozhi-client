@@ -2,8 +2,8 @@
  * TTS 便捷函数
  */
 
-import { createTTSController } from "../core/index.js";
 import type { AudioChunkCallback } from "../core/index.js";
+import { createTTSController } from "../core/index.js";
 import {
   type ByteDanceTTSConfig,
   validateByteDanceTTSConfig,

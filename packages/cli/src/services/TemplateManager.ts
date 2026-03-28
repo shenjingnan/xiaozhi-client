@@ -24,7 +24,7 @@ import { PathUtils } from "../utils/PathUtils";
 import { Validation } from "../utils/Validation";
 
 // 重新导出类型以保持向后兼容
-export type { TemplateInfo, TemplateCreateOptions };
+export type { TemplateCreateOptions, TemplateInfo };
 
 /**
  * 模板管理器实现

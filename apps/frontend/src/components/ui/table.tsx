@@ -1,7 +1,6 @@
+import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
-
 import { cn } from "@/lib/utils";
-import { type VariantProps, cva } from "class-variance-authority";
 
 // Context 类型定义
 interface TableSizeContextValue {
@@ -174,11 +173,11 @@ TableCaption.displayName = "TableCaption";
 
 export {
   Table,
-  TableHeader,
   TableBody,
+  TableCaption,
+  TableCell,
   TableFooter,
   TableHead,
+  TableHeader,
   TableRow,
-  TableCell,
-  TableCaption,
 };

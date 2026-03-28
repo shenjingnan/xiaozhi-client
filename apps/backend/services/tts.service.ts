@@ -4,11 +4,11 @@
  */
 
 import { Readable } from "node:stream";
-import { logger } from "@/Logger.js";
-import type { ESP32Connection } from "@/lib/esp32/connection.js";
 import { configManager } from "@xiaozhi-client/config";
 import { TTS } from "@xiaozhi-client/tts";
 import * as prism from "prism-media";
+import { logger } from "@/Logger.js";
+import type { ESP32Connection } from "@/lib/esp32/connection.js";
 import type { ITTSService, TTSServiceOptions } from "./tts.interface.js";
 
 /**

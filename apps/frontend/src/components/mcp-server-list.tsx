@@ -11,6 +11,17 @@
  * - 支持工具参数配置和调试
  */
 
+import type {
+  AppConfig,
+  CozeWorkflow,
+  CustomMCPToolWithStats,
+  JSONSchema,
+  MCPServerConfig,
+  WorkflowParameter,
+} from "@xiaozhi-client/shared-types";
+import { CoffeeIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { WorkflowParameterConfigDialog } from "@/components/common/workflow-parameter-config-dialog";
 import {
   AlertDialog,
@@ -31,17 +42,6 @@ import {
   useMcpServers,
 } from "@/stores/config";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
-import type {
-  AppConfig,
-  CozeWorkflow,
-  CustomMCPToolWithStats,
-  JSONSchema,
-  MCPServerConfig,
-  WorkflowParameter,
-} from "@xiaozhi-client/shared-types";
-import { CoffeeIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { AddMcpServerButton } from "./add-mcp-server-button";
 import { CozeWorkflowIntegration } from "./coze-workflow-integration";
 import { McpServerSettingButton } from "./mcp-server-setting-button";

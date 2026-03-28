@@ -3,8 +3,9 @@
  * 提供便捷的辅助方法
  * logger 通过 c.get("logger") 访问（Hono 推荐做法）
  */
-import type { AppContext } from "@/types/hono.context.js";
+
 import type { Context } from "hono";
+import type { AppContext } from "@/types/hono.context.js";
 
 export abstract class BaseHandler {
   /**

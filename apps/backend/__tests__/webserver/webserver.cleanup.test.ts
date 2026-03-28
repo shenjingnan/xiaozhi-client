@@ -301,7 +301,7 @@ describe("WebServer 配置清理功能", () => {
 
       // 模拟启动过程中的配置加载
       try {
-        // @ts-ignore - 调用私有方法用于测试
+        // @ts-expect-error - 调用私有方法用于测试
         await webServer.loadConfiguration();
       } catch (error) {
         // 忽略其他初始化错误，我们只关心配置清理是否被调用
@@ -320,7 +320,7 @@ describe("WebServer 配置清理功能", () => {
 
       // 应该抛出错误
       await expect(async () => {
-        // @ts-ignore - 调用私有方法用于测试
+        // @ts-expect-error - 调用私有方法用于测试
         await webServer.loadConfiguration();
       }).rejects.toThrow("配置文件不存在");
 
@@ -343,7 +343,7 @@ describe("WebServer 配置清理功能", () => {
 
       webServer = new WebServer(currentPort);
 
-      // @ts-ignore - 调用私有方法用于测试
+      // @ts-expect-error - 调用私有方法用于测试
       const config = await webServer.loadConfiguration();
 
       // 验证配置清理方法被调用

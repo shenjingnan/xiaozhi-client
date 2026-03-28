@@ -4,6 +4,7 @@
  */
 
 import { randomBytes } from "node:crypto";
+import type WebSocket from "ws";
 import { logger } from "@/Logger.js";
 import {
   encodeBinaryProtocol2,
@@ -21,7 +22,6 @@ import {
   type ESP32WSMessage,
 } from "@/types/esp32.js";
 import { camelToSnakeCase } from "@/utils/esp32-utils.js";
-import type WebSocket from "ws";
 
 /**
  * 连接配置

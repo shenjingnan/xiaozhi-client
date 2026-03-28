@@ -48,4 +48,4 @@ export function registerPlatform(platform: ASRPlatform): ClassDecorator {
   };
 }
 
-export type { ASRPlatform, ASRController, PlatformConfig };
+export type { ASRController, ASRPlatform, PlatformConfig };

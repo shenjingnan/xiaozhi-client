@@ -10,11 +10,8 @@ platformRegistry.register(
   new ByteDancePlatform({ platform: "bytedance", version: "v2" })
 );
 
-// 导出平台
-export {
-  ByteDancePlatform,
-  createByteDancePlatform,
-} from "@/platforms/bytedance/index.js";
+// 导出平台注册表
+export { platformRegistry } from "@/core/index.js";
 
 // 导出平台类型（从 bytedance/index.js 重新导出）
 export type {
@@ -22,9 +19,10 @@ export type {
   ByteDanceV2Config,
   ByteDanceV3Config,
 } from "@/platforms/bytedance/index.js";
-
-// 导出平台注册表
-export { platformRegistry } from "@/core/index.js";
-
 // 导出协议、控制器和 Schema（ByteDance）- 通过 bytedance/index.js 统一重新导出
 export * from "@/platforms/bytedance/index.js";
+// 导出平台
+export {
+  ByteDancePlatform,
+  createByteDancePlatform,
+} from "@/platforms/bytedance/index.js";

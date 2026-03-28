@@ -10,6 +10,16 @@
  * @module apps/frontend/src/components/common/workflow-parameter-config-dialog
  */
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import type {
+  CozeWorkflow,
+  JSONSchema,
+  WorkflowParameter,
+} from "@xiaozhi-client/shared-types";
+import { Plus, Trash2 } from "lucide-react";
+import { useEffect } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -36,16 +46,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type {
-  CozeWorkflow,
-  JSONSchema,
-  WorkflowParameter,
-} from "@xiaozhi-client/shared-types";
-import { Plus, Trash2 } from "lucide-react";
-import { useEffect } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
-import { z } from "zod";
 
 /**
  * 参数验证Schema

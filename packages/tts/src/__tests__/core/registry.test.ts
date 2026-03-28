@@ -2,8 +2,8 @@
  * SimplePlatformRegistry 测试
  */
 
-import { SimplePlatformRegistry, type TTSPlatform } from "@/core/index.js";
 import { describe, expect, it, vi } from "vitest";
+import { SimplePlatformRegistry, type TTSPlatform } from "@/core/index.js";
 
 describe("SimplePlatformRegistry", () => {
   describe("构造函数", () => {

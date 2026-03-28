@@ -3,9 +3,9 @@
  * 测试新增的 hasCustomMCPTool 和 getCustomMCPTools 方法
  */
 
-import { MCPServiceManager } from "@/lib/mcp";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MCPServiceManager } from "@/lib/mcp";
 import type { CustomMCPHandler } from "../custom.js";
 
 // Mock dependencies

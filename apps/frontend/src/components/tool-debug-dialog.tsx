@@ -1,5 +1,24 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  AlertCircle,
+  BrushCleaningIcon,
+  CheckIcon,
+  Code,
+  CopyIcon,
+  InfoIcon,
+  Loader2,
+  PlayIcon,
+  Plus,
+  Trash2,
+  Zap,
+} from "lucide-react";
+import type React from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,25 +60,6 @@ import {
   createZodSchemaFromJsonSchema,
 } from "@/lib/schema-utils";
 import { apiClient } from "@/services/api";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AlertCircle,
-  BrushCleaningIcon,
-  CheckIcon,
-  Code,
-  CopyIcon,
-  InfoIcon,
-  Loader2,
-  PlayIcon,
-  Plus,
-  Trash2,
-  Zap,
-} from "lucide-react";
-import type React from "react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
 
 /**
  * 数组字段渲染器组件

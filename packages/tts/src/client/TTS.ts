@@ -3,8 +3,8 @@
  */
 
 import { EventEmitter } from "node:events";
-import { createTTSController } from "../core/index.js";
 import type { AudioChunkCallback } from "../core/index.js";
+import { createTTSController } from "../core/index.js";
 import {
   type ByteDanceTTSConfig,
   validateByteDanceTTSConfig,

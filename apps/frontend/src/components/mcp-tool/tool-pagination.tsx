@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   Pagination,
   PaginationContent,
@@ -10,7 +11,6 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
 
 export interface ToolPaginationProps {
   currentPage: number;

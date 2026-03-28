@@ -3,12 +3,17 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
-import type { Logger } from "@/Logger.js";
-import { logger } from "@/Logger.js";
+import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
+import Ajv from "ajv";
+import dayjs from "dayjs";
+import type { Context } from "hono";
 import { HTTP_TIMEOUTS } from "@/constants/timeout.constants.js";
 import { MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
-import { MCPCacheManager } from "@/lib/mcp";
+import type { Logger } from "@/Logger.js";
+import { logger } from "@/Logger.js";
 import type { MCPServiceManager } from "@/lib/mcp";
+import { MCPCacheManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import type { CozeWorkflow, WorkflowParameterConfig } from "@/types/coze.js";
 import type { AppContext } from "@/types/hono.context.js";
@@ -16,16 +21,12 @@ import type {
   AddCustomToolRequest,
   AddToolResponse,
   CozeWorkflowData,
+  CustomMCPToolWithStats,
+  JSONSchema,
   MCPToolData,
 } from "@/types/toolApi.js";
 import { ToolType } from "@/types/toolApi.js";
-import type { CustomMCPToolWithStats, JSONSchema } from "@/types/toolApi.js";
-import { type ToolSortField, sortTools } from "@/utils/toolSorters";
-import { configManager } from "@xiaozhi-client/config";
-import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
-import Ajv from "ajv";
-import dayjs from "dayjs";
-import type { Context } from "hono";
+import { sortTools, type ToolSortField } from "@/utils/toolSorters";
 
 /**
  * 工具调用请求接口

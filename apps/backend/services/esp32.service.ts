@@ -3,6 +3,7 @@
  * 负责ESP32设备的连接管理和消息路由
  */
 
+import type WebSocket from "ws";
 import { logger } from "@/Logger.js";
 import { ESP32Connection } from "@/lib/esp32/connection.js";
 import type {
@@ -12,7 +13,6 @@ import type {
   ESP32WSMessage,
 } from "@/types/esp32.js";
 import { camelToSnakeCase, extractDeviceInfo } from "@/utils/esp32-utils.js";
-import type WebSocket from "ws";
 import { ASRService } from "./asr.service.js";
 import type { DeviceRegistryService } from "./device-registry.service.js";
 import { LLMService } from "./llm.service.js";

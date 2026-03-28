@@ -12,10 +12,10 @@
  */
 
 import { EventEmitter } from "node:events";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { ClientInfo } from "@/services/status.service.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 /**
  * 事件类型定义

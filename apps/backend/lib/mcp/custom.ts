@@ -1,4 +1,11 @@
 #!/usr/bin/env node
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type {
+  CustomMCPTool,
+  HandlerConfig,
+  ProxyHandlerConfig,
+} from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 /**
  * 自定义 MCP 工具处理器模块
  *
@@ -22,8 +29,8 @@
  */
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
-import { CozeApiService } from "@/lib/coze";
 import type { RunWorkflowData } from "@/lib/coze";
+import { CozeApiService } from "@/lib/coze";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPCacheManager } from "@/lib/mcp";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
@@ -40,14 +47,7 @@ import {
   isCacheExpired,
   shouldCleanupCache,
 } from "@/types/mcp.js";
-import { TimeoutError, createTimeoutResponse } from "@/types/timeout.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type {
-  CustomMCPTool,
-  HandlerConfig,
-  ProxyHandlerConfig,
-} from "@xiaozhi-client/config";
-import { configManager } from "@xiaozhi-client/config";
+import { createTimeoutResponse, TimeoutError } from "@/types/timeout.js";
 
 // 工具调用参数类型
 type ToolArguments = Record<string, unknown>;

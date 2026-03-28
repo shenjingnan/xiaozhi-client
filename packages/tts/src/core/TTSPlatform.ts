@@ -48,4 +48,4 @@ export function registerPlatform(platform: TTSPlatform): ClassDecorator {
   };
 }
 
-export type { TTSController, TTSPlatform, PlatformConfig };
+export type { PlatformConfig, TTSController, TTSPlatform };

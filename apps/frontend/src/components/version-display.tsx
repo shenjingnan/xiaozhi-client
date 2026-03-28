@@ -9,6 +9,8 @@
  * - 支持版本切换
  */
 
+import { CopyIcon, InfoIcon, RocketIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,8 +21,6 @@ import {
 } from "@/components/ui/tooltip";
 import type { VersionInfo } from "@/services/api";
 import { apiClient } from "@/services/api";
-import { CopyIcon, InfoIcon, RocketIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import { VersionUpgradeDialog } from "./version-upgrade-dialog";
 
 interface VersionDisplayProps {

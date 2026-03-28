@@ -95,80 +95,76 @@ export function getStoresStatus() {
   };
 }
 
-// 导出所有 stores 以便统一访问
-export { useWebSocketStore } from "./websocket";
-export { useConfigStore } from "./config";
-export { useStatusStore } from "./status";
-
-// 导出废弃的兼容性选择器（从 websocket-compat.ts 直接导入以避免循环依赖）
-export {
-  useWebSocketConfig,
-  useWebSocketStatus,
-  useWebSocketMcpEndpoint,
-  useWebSocketMcpServers,
-  useWebSocketMcpServerConfig,
-  useWebSocketRestartStatus,
-} from "./websocket-compat";
-
-// 导出所有选择器 hooks（避免命名冲突）
-export {
-  // WebSocket store exports
-  useWebSocketConnectionState,
-  useWebSocketConnected,
-  useWebSocketUrl,
-  useWebSocketConnectionStats,
-  useWebSocketPortChangeStatus,
-  useWebSocketLastError,
-  useWebSocketConnectionTimes,
-  useWebSocketConnectionInfo,
-  useWebSocketPortInfo,
-  useWebSocketActions,
-  useWebSocketControls,
-  useWebSocketData,
-} from "./websocket";
-
 export {
   // Config store exports
   useConfig,
-  useConfigLoading,
+  useConfigActions,
+  useConfigError,
   useConfigIsLoading,
   useConfigIsUpdating,
-  useConfigError,
-  useMcpEndpoint,
-  useMcpServers,
-  useMcpServerConfig,
-  useConnectionConfig,
-  useModelScopeConfig,
-  useWebUIConfig,
+  useConfigLoading,
   useConfigSource,
-  useConfigWithLoading,
-  useMcpConfig,
-  useSystemConfig,
-  useConfigActions,
+  useConfigStore,
   useConfigUpdaters,
+  useConfigWithLoading,
+  useConnectionConfig,
+  useMcpConfig,
+  useMcpEndpoint,
+  useMcpServerConfig,
+  useMcpServers,
+  useModelScopeConfig,
+  useSystemConfig,
+  useWebUIConfig,
 } from "./config";
-
 export {
+  useActiveMcpServers,
   // Status store exports
   useClientStatus,
-  useRestartStatus,
-  useServiceStatus,
-  useServiceHealth,
+  useConnectionInfo,
+  useConnectionStatus,
   useFullStatus,
-  useStatusLoading,
-  useStatusIsLoading,
-  useStatusIsRestarting,
-  useStatusError,
+  useLastHeartbeat,
+  usePollingActions,
   usePollingConfig,
   usePollingEnabled,
-  useStatusSource,
-  useConnectionStatus,
-  useStatusMcpEndpoint,
-  useActiveMcpServers,
-  useLastHeartbeat,
-  useStatusWithLoading,
+  useRestartStatus,
+  useServiceHealth,
   useServiceInfo,
-  useConnectionInfo,
+  useServiceStatus,
   useStatusActions,
-  usePollingActions,
+  useStatusError,
+  useStatusIsLoading,
+  useStatusIsRestarting,
+  useStatusLoading,
+  useStatusMcpEndpoint,
+  useStatusSource,
+  useStatusStore,
+  useStatusWithLoading,
 } from "./status";
+// 导出所有 stores 以便统一访问
+// 导出所有选择器 hooks（避免命名冲突）
+export {
+  useWebSocketActions,
+  useWebSocketConnected,
+  useWebSocketConnectionInfo,
+  // WebSocket store exports
+  useWebSocketConnectionState,
+  useWebSocketConnectionStats,
+  useWebSocketConnectionTimes,
+  useWebSocketControls,
+  useWebSocketData,
+  useWebSocketLastError,
+  useWebSocketPortChangeStatus,
+  useWebSocketPortInfo,
+  useWebSocketStore,
+  useWebSocketUrl,
+} from "./websocket";
+// 导出废弃的兼容性选择器（从 websocket-compat.ts 直接导入以避免循环依赖）
+export {
+  useWebSocketConfig,
+  useWebSocketMcpEndpoint,
+  useWebSocketMcpServerConfig,
+  useWebSocketMcpServers,
+  useWebSocketRestartStatus,
+  useWebSocketStatus,
+} from "./websocket-compat";
