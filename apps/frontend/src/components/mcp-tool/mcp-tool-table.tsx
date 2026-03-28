@@ -1,3 +1,15 @@
+/**
+ * McpToolTable 组件 - MCP 工具表格显示和管理
+ *
+ * 功能：
+ * - 显示所有 MCP 工具的列表（服务名称、工具名称、描述等）
+ * - 支持工具启用/禁用切换
+ * - 提供工具搜索功能
+ * - 支持工具排序（按名称、启用状态、使用次数等）
+ * - 显示工具使用统计信息（使用次数、最近使用时间）
+ * - 支持工具调试功能
+ * - 提供分页功能
+ */
 "use client";
 
 import { CollapsibleText } from "@/components/common/collapsible-text";
