@@ -8,16 +8,6 @@
  * - 显示实时安装日志
  */
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { apiClient } from "@/services/api";
 import {
   AlertCircle,
   Calendar,
@@ -28,6 +18,16 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { apiClient } from "@/services/api";
 import { InstallLogDialog } from "./install-log-dialog";
 import { VersionDisplay } from "./version-display";
 

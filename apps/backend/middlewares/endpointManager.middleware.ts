@@ -3,8 +3,8 @@
  * 负责将 endpointManager 注入到请求上下文中
  */
 
-import type { AppContext } from "@/types/hono.context.js";
 import type { MiddlewareHandler } from "hono";
+import type { AppContext } from "@/types/hono.context.js";
 
 /**
  * 小智连接管理器中间件

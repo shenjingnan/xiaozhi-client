@@ -359,10 +359,9 @@ export class NetworkService {
 // 创建默认的网络服务实例
 export const networkService = new NetworkService();
 
-// 导出其他服务
-export { apiClient, webSocketManager };
+export { CozeApiClient, cozeApiClient } from "./cozeApi";
 export { ConnectionState } from "./websocket";
-export { cozeApiClient, CozeApiClient } from "./cozeApi";
-
 // 导出类型
 export type { ApiClient, WebSocketManager };
+// 导出其他服务
+export { apiClient, webSocketManager };

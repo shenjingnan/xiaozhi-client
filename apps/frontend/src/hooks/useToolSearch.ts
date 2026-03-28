@@ -4,8 +4,8 @@
  * 提供工具列表搜索和筛选功能，支持根据服务名、工具名、描述进行筛选
  */
 
-import type { ToolRowData } from "@/components/mcp-tool/mcp-tool-table";
 import { useCallback, useMemo, useState } from "react";
+import type { ToolRowData } from "@/components/mcp-tool/mcp-tool-table";
 
 interface UseToolSearchResult {
   /** 搜索关键词 */

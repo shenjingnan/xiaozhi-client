@@ -9,8 +9,6 @@
  * - 集成 WebSocket 事件监听
  */
 
-import { apiClient } from "@/services/api";
-import { webSocketManager } from "@/services/websocket";
 import type {
   AppConfig,
   ConnectionConfig,
@@ -22,6 +20,8 @@ import type {
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
+import { apiClient } from "@/services/api";
+import { webSocketManager } from "@/services/websocket";
 
 /**
  * 配置加载状态

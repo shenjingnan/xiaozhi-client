@@ -1,7 +1,7 @@
 import type { AppConfig } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { NotificationService } from "../notification.service.js";
 import type { WebSocketClient } from "../notification.service.js";
+import { NotificationService } from "../notification.service.js";
 import type { ClientInfo } from "../status.service.js";
 
 // 模拟 EventBus

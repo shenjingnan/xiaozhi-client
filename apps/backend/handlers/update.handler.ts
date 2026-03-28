@@ -2,11 +2,12 @@
  * 更新 API HTTP 路由处理器
  * 提供版本更新和 NPM 包安装相关的 RESTful API 接口
  */
+
+import type { Context } from "hono";
+import { z } from "zod";
 import { NPMManager } from "@/lib/npm";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";
-import type { Context } from "hono";
-import { z } from "zod";
 import { BaseHandler } from "./base.handler.js";
 
 // 版本号请求格式验证

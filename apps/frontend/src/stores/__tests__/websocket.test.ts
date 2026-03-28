@@ -1,5 +1,5 @@
-import { ConnectionState } from "@/services/websocket";
 import { beforeEach, describe, expect, it } from "vitest";
+import { ConnectionState } from "@/services/websocket";
 import { useWebSocketStore } from "../websocket";
 
 describe("WebSocket Store - 连接状态管理", () => {

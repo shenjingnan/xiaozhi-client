@@ -2,22 +2,22 @@
  * ByteDance TTS 协议消息测试
  */
 
+import { describe, expect, it } from "vitest";
 import {
   CompressionBits,
+  createMessage,
   EventType,
+  getEventTypeName,
+  getMsgTypeName,
   HeaderSizeBits,
   MsgType,
   MsgTypeFlagBits,
-  SerializationBits,
-  VersionBits,
-  createMessage,
-  getEventTypeName,
-  getMsgTypeName,
   marshalMessage,
   messageToString,
+  SerializationBits,
   unmarshalMessage,
+  VersionBits,
 } from "@/platforms/index.js";
-import { describe, expect, it } from "vitest";
 
 describe("协议消息", () => {
   describe("EventType 枚举", () => {

@@ -99,7 +99,9 @@
   [role="link"]:focus-visible {
     background-color: hsl(var(--accent)) !important;
     color: hsl(var(--accent-foreground)) !important;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
   }
 
   /* input、textarea、select 保留原始焦点样式，包括 Tailwind 的 ring 样式 */

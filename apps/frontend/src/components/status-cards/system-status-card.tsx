@@ -4,6 +4,7 @@
  * 显示系统配置完成度和快速打开设置对话框的入口。
  */
 
+import { useMemo } from "react";
 import { RestartButton } from "@/components/restart-button";
 import { SystemSettingDialog } from "@/components/system-setting-dialog";
 import {
@@ -14,7 +15,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useConfig } from "@/stores/config";
-import { useMemo } from "react";
 import { MiniCircularProgress } from "./mini-circular-progress";
 
 /**

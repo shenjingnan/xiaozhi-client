@@ -9,9 +9,9 @@ import {
   convertMp3ToWav,
   convertOggToWav,
 } from "@/audio/OggConverter.js";
-import { createWavFile, readWavInfo } from "@/audio/WavParser.js";
 import type { AudioConfig, WavInfo } from "@/audio/types.js";
 import { AudioFormat } from "@/audio/types.js";
+import { createWavFile, readWavInfo } from "@/audio/WavParser.js";
 
 /**
  * Process audio file and return WAV format data

@@ -2,13 +2,13 @@
  * TTS 便捷函数测试
  */
 
+import { describe, expect, it, vi } from "vitest";
 import {
   type SynthesizeOptions,
   synthesizeSpeech,
   synthesizeSpeechStream,
   validateConfig,
 } from "@/client/index.js";
-import { describe, expect, it, vi } from "vitest";
 
 describe("TTS 便捷函数", () => {
   describe("validateConfig", () => {

@@ -4,12 +4,12 @@
  */
 
 import fs from "node:fs";
-import { TTS_VOICES, getVoiceScenes } from "@/constants/voices.js";
-import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { VoiceInfo, VoicesResponse } from "@xiaozhi-client/shared-types";
 import { TTS } from "@xiaozhi-client/tts";
 import type { Context } from "hono";
+import { getVoiceScenes, TTS_VOICES } from "@/constants/voices.js";
+import type { AppContext } from "@/types/hono.context.js";
 import { BaseHandler } from "./base.handler.js";
 
 /**

@@ -1,9 +1,17 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "root": false,
+  "$schema": "https://biomejs.dev/schemas/2.4.9/schema.json",
   "extends": ["../../biome.json"],
   "files": {
-    "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts", "*.js"],
-    "ignore": ["node_modules/**", "dist/**", "coverage/**"]
+    "includes": [
+      "**/src/**/*.ts",
+      "**/src/**/*.tsx",
+      "**/*.ts",
+      "**/*.js",
+      "!**/node_modules/**",
+      "!**/dist/**",
+      "!**/coverage/**"
+    ]
   },
   "linter": {
     "rules": {

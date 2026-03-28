@@ -1,5 +1,5 @@
-import { MCPServiceManager } from "@/lib/mcp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MCPServiceManager } from "@/lib/mcp";
 import { WebServer } from "../../WebServer";
 
 // Mock configManager to avoid triggering real config loading

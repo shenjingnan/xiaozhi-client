@@ -1,7 +1,7 @@
-import { McpServerList } from "@/components/mcp-server-list";
 import { render, screen } from "@testing-library/react";
 import { act } from "react";
 import { vi } from "vitest";
+import { McpServerList } from "@/components/mcp-server-list";
 
 // 模拟 sonner toast
 vi.mock("sonner", () => ({

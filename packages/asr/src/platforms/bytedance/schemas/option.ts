@@ -2,6 +2,7 @@
  * 统一配置校验 Schema
  */
 
+import { z } from "zod";
 import {
   type ByteDanceV2Config,
   ByteDanceV2ConfigSchema,
@@ -10,7 +11,6 @@ import {
   type ByteDanceV3Config,
   ByteDanceV3ConfigSchema,
 } from "@/platforms/bytedance/schemas/api-v3.js";
-import { z } from "zod";
 
 /**
  * 字节跳动 V2 配置
@@ -83,5 +83,5 @@ export function getApiVersion(config: ByteDanceOption): "v2" | "v3" {
   return "v3";
 }
 
-export { ByteDanceV2ConfigSchema, ByteDanceV3ConfigSchema };
 export type { ByteDanceV2Config, ByteDanceV3Config };
+export { ByteDanceV2ConfigSchema, ByteDanceV3ConfigSchema };

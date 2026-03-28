@@ -1,11 +1,10 @@
 import path from "node:path";
+import type { ConfigManager, MCPServerConfig } from "@xiaozhi-client/config";
+import type { Context } from "hono";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPErrorCode } from "@/errors/mcp-errors.js";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EventBus } from "@/services/event-bus.service.js";
-import type { ConfigManager } from "@xiaozhi-client/config";
-import type { MCPServerConfig } from "@xiaozhi-client/config";
-import type { Context } from "hono";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPHandler, MCPServerConfigValidator } from "../mcp-manage.handler.js";
 
 // 创建模拟对象

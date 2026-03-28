@@ -2,6 +2,10 @@
  * 配置 API HTTP 路由处理器
  * 提供配置读取、配置更新等配置相关的 RESTful API 接口
  */
+
+import type { AppConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
+import type { Context } from "hono";
 import type { AppContext } from "@/types/hono.context.js";
 import {
   createPromptFile,
@@ -10,9 +14,6 @@ import {
   readPromptFile,
   updatePromptFile,
 } from "@/utils/prompt-utils.js";
-import type { AppConfig } from "@xiaozhi-client/config";
-import { configManager } from "@xiaozhi-client/config";
-import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
 
 /**

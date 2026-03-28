@@ -5,28 +5,26 @@
  */
 
 import { EventEmitter } from "node:events";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { MCPToolConfig } from "@xiaozhi-client/config";
+import { configManager, isModelScopeURL } from "@xiaozhi-client/config";
 import { logger } from "@/Logger.js";
-import { MCPService } from "@/lib/mcp";
-import { MCPCacheManager } from "@/lib/mcp";
-import { ConnectionState } from "@/lib/mcp/types";
+import { MCPCacheManager, MCPService } from "@/lib/mcp";
 import type {
   CustomMCPTool,
   EnhancedToolInfo,
   InternalMCPServiceConfig,
-  MCPServiceConfig,
   ManagerStatus,
+  MCPServiceConfig,
   ToolCallResult,
   ToolInfo,
   ToolStatusFilter,
   UnifiedServerConfig,
   UnifiedServerStatus,
 } from "@/lib/mcp/types";
+import { ConnectionState } from "@/lib/mcp/types";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { MCPMessage } from "@/types/mcp.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { isModelScopeURL } from "@xiaozhi-client/config";
-import type { MCPToolConfig } from "@xiaozhi-client/config";
-import { configManager } from "@xiaozhi-client/config";
 import { CustomMCPHandler } from "./custom.js";
 import { ToolCallLogger } from "./log.js";
 import { MCPMessageHandler } from "./message.js";

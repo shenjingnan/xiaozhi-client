@@ -3,10 +3,10 @@
  * 定义所有表单字段的 UI 属性和验证规则
  */
 
-import type { mcpFormSchema } from "@/schemas/mcp-form";
-import type { FieldConfig } from "@/types/form-config";
 import type { UseFormReturn } from "react-hook-form";
 import type { z } from "zod";
+import type { mcpFormSchema } from "@/schemas/mcp-form";
+import type { FieldConfig } from "@/types/form-config";
 
 /**
  * MCP 服务表单字段配置数组
