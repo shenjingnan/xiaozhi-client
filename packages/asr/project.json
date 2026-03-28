@@ -38,7 +38,7 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter asr run type-check",
+        "command": "pnpm --filter asr run check:type",
         "cwd": "packages/asr"
       }
     },

@@ -38,7 +38,7 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter tts run type-check",
+        "command": "pnpm --filter tts run check:type",
         "cwd": "packages/tts"
       }
     },
