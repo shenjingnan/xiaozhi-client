@@ -7,6 +7,9 @@
 import { PromptEditorDialog } from "@/components/prompt-editor-dialog";
 import { Button } from "@/components/ui/button";
 import {
+  VolcengineConfigFields,
+} from "@/components/volcengine-config-fields";
+import {
   Dialog,
   DialogClose,
   DialogContent,
@@ -301,42 +304,11 @@ export function VoiceInteractionSettingDialog() {
                     ASR 配置
                   </h3>
                   <div className="grid gap-4">
-                    <FormField
+                    <VolcengineConfigFields
                       control={form.control}
-                      name="asr.appid"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>应用 ID</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="请输入火山引擎语音识别应用 ID"
-                              className="font-mono text-sm"
-                              disabled={isLoading}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="asr.accessToken"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>访问令牌</FormLabel>
-                          <FormControl>
-                            <PasswordInput
-                              placeholder="请输入访问令牌"
-                              className="font-mono text-sm"
-                              disabled={isLoading}
-                              autoComplete="off"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      prefix="asr"
+                      serviceLabel="语音识别"
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -487,42 +459,11 @@ export function VoiceInteractionSettingDialog() {
                     TTS 配置
                   </h3>
                   <div className="grid gap-4">
-                    <FormField
+                    <VolcengineConfigFields
                       control={form.control}
-                      name="tts.appid"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>应用 ID</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="请输入火山引擎语音合成应用 ID"
-                              className="font-mono text-sm"
-                              disabled={isLoading}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="tts.accessToken"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>访问令牌</FormLabel>
-                          <FormControl>
-                            <PasswordInput
-                              placeholder="请输入访问令牌"
-                              className="font-mono text-sm"
-                              disabled={isLoading}
-                              autoComplete="off"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      prefix="tts"
+                      serviceLabel="语音合成"
+                      disabled={isLoading}
                     />
                     <FormField
                       control={form.control}
