@@ -137,12 +137,13 @@ export class TTS extends EventEmitter {
       });
 
     // 迭代返回结果
+    let queueIndex = 0;
     while (!streamEnded) {
       // 如果队列中有结果，立即 yield
-      while (queue.length > 0) {
-        const result = queue.shift()!;
+      while (queueIndex < queue.length) {
+        const result = queue[queueIndex++];
         console.log(
-          `[TTS Iterator] Yielding result: isFinal=${result.isFinal}, queue.length after=${queue.length}`
+          `[TTS Iterator] Yielding result: isFinal=${result.isFinal}, remaining=${queue.length - queueIndex}`
         );
         // 如果是最终块，yield 后退出
         if (result.isFinal) {
@@ -150,6 +151,9 @@ export class TTS extends EventEmitter {
         }
         yield result;
       }
+      // 清空队列并重置索引
+      queue.length = 0;
+      queueIndex = 0;
 
       // 如果有错误，抛出错误
       if (error) {
