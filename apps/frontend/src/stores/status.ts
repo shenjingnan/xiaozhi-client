@@ -221,7 +221,6 @@ export const useStatusStore = create<StatusStore>()(
       // ==================== 基础操作 ====================
 
       setClientStatus: (status: ClientStatus, source = "http") => {
-        console.log(`[StatusStore] 设置客户端状态，来源: ${source}`);
         set(
           (state) => ({
             clientStatus: status,
@@ -238,7 +237,6 @@ export const useStatusStore = create<StatusStore>()(
       },
 
       setRestartStatus: (status: RestartStatus | null, source = "http") => {
-        console.log(`[StatusStore] 设置重启状态，来源: ${source}`);
         set(
           (state) => ({
             restartStatus: status,
@@ -255,17 +253,14 @@ export const useStatusStore = create<StatusStore>()(
       },
 
       setServiceStatus: (status: ServiceStatus) => {
-        console.log("[StatusStore] 设置服务状态");
         set({ serviceStatus: status }, false, "setServiceStatus");
       },
 
       setServiceHealth: (health: ServiceHealth) => {
-        console.log("[StatusStore] 设置服务健康状态");
         set({ serviceHealth: health }, false, "setServiceHealth");
       },
 
       setFullStatus: (status: FullStatus, source = "http") => {
-        console.log(`[StatusStore] 设置完整状态，来源: ${source}`);
         set(
           (state) => ({
             fullStatus: status,
@@ -326,7 +321,6 @@ export const useStatusStore = create<StatusStore>()(
 
         try {
           setLoading({ isRefreshing: true, lastError: null });
-          console.log("[StatusStore] 开始刷新状态");
 
           // 从服务器获取最新状态
           const status = await apiClient.getStatus();
