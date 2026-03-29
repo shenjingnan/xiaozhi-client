@@ -314,12 +314,12 @@ process.on(
 );
 
 // 优雅退出处理
-process.on("SIGINT", () => {
+process.once("SIGINT", () => {
   log("info", "接收到 SIGINT 信号，正在退出...");
   process.exit(0);
 });
 
-process.on("SIGTERM", () => {
+process.once("SIGTERM", () => {
   log("info", "接收到 SIGTERM 信号，正在退出...");
   process.exit(0);
 });
