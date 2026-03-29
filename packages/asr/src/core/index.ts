@@ -5,13 +5,15 @@
 // 类型导出（排除与 types/ 重复的类型）
 export type {
   ASRController,
-  PlatformConfig,
   ASRPlatform,
   PlatformRegistry,
   CommonASROptions,
   ASREventType,
   ASREventData,
 } from "./types.js";
+
+// 从 shared-types 重新导出 PlatformConfig
+export type { PlatformConfig } from "@xiaozhi-client/shared-types/platform";
 
 // 平台接口导出
 export {
