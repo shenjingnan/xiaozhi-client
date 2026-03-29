@@ -113,7 +113,9 @@
   },
   "pnpm": {
     "overrides": {
-      "@isaacs/brace-expansion": ">=5.0.1",
+      "@isaacs/brace-expansion": ">=5.0.5",
+      "flatted": ">=3.4.2",
+      "happy-dom": ">=20.8.8",
       "form-data": "^4.0.4",
       "braces": ">=3.0.3",
       "micromatch": ">=4.0.8",
@@ -134,7 +136,13 @@
       "rollup@<5.0.0": ">=4.59.0",
       "express-rate-limit@<9.0.0": ">=8.2.2",
       "dompurify@<4.0.0": ">=3.3.2",
-      "immutable@<6.0.0": ">=5.1.5"
+      "immutable@<6.0.0": ">=5.1.5",
+      "picomatch@<2.3.2": ">=2.3.2",
+      "picomatch@>=4.0.0 <4.0.4": ">=4.0.4",
+      "path-to-regexp@>=8.0.0 <8.4.0": ">=8.4.0",
+      "next@>=16.0.0-beta.0 <16.1.7": ">=16.1.7",
+      "smol-toml": ">=1.6.1",
+      "yaml": ">=2.8.3"
     }
   },
   "packageManager": "pnpm@10.13.1"
