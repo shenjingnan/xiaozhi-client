@@ -475,9 +475,11 @@ export class TTSService implements ITTSService {
         })
         .on("end", () => {
           // 等待所有包处理完成
+          let checkTimer: ReturnType<typeof setTimeout> | undefined;
+
           const checkEnd = (): void => {
             if (packetQueue.length > 0 || isProcessing) {
-              setTimeout(checkEnd, 10);
+              checkTimer = setTimeout(checkEnd, 10);
             } else {
               logger.info(
                 `处理完成，共 ${packetIndex} 个包，总时长 ${(totalDuration / 1000).toFixed(2)}s`
@@ -488,7 +490,16 @@ export class TTSService implements ITTSService {
               });
             }
           };
+
           checkEnd();
+
+          // 如果流被销毁，清除定时器
+          stream.on("close", () => {
+            if (checkTimer) {
+              clearTimeout(checkTimer);
+              checkTimer = undefined;
+            }
+          });
         })
         .on("error", reject);
     });
