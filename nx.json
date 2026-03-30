@@ -20,6 +20,12 @@
       "cache": false
     },
     "test": {
+      "dependsOn": ["^build"],
+      "inputs": ["default", "^production", "sharedGlobals"],
+      "cache": false
+    },
+    "test:coverage": {
+      "dependsOn": ["^build"],
       "inputs": ["default", "^production", "sharedGlobals"],
       "cache": false
     },
