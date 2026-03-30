@@ -16,6 +16,34 @@ import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { ClientInfo } from "@/services/status.service.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { MCPServerConfig } from "@xiaozhi-client/config";
+
+/**
+ * 事件通知数据类型
+ * 用于 notification:broadcast 事件的数据类型定义
+ *
+ * 注意：命名为 EventNotificationData 以避免与 notification.service.ts 中的 NotificationData 冲突
+ */
+export interface EventNotificationData {
+  message?: string;
+  title?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * MCP 服务批量添加结果类型
+ * 用于 mcp:server:batch_added 事件的结果类型定义
+ *
+ * 注意：字段命名与 handlers/mcp-manage.handler.ts 中的 MCPServerAddResult 保持一致
+ */
+export interface MCPBatchAddResult {
+  name: string;
+  success: boolean;
+  error?: string;
+  config?: MCPServerConfig;
+  tools?: string[];
+  status?: string;
+}
 
 /**
  * 事件类型定义
@@ -102,10 +130,18 @@ export interface EventBusEvents {
   // WebSocket 相关事件
   "websocket:client:connected": { clientId: string; timestamp: number };
   "websocket:client:disconnected": { clientId: string; timestamp: number };
-  "websocket:message:received": { type: string; data: any; clientId: string };
+  "websocket:message:received": {
+    type: string;
+    data: unknown;
+    clientId: string;
+  };
 
   // 通知相关事件
-  "notification:broadcast": { type: string; data: any; target?: string };
+  "notification:broadcast": {
+    type: string;
+    data: EventNotificationData;
+    target?: string;
+  };
   "notification:error": { error: Error; type: string };
 
   // MCP服务相关事件
@@ -126,7 +162,7 @@ export interface EventBusEvents {
   };
   "mcp:server:added": {
     serverName: string;
-    config: any;
+    config: MCPServerConfig;
     tools: string[];
     timestamp: Date;
   };
@@ -160,7 +196,7 @@ export interface EventBusEvents {
     addedCount: number;
     failedCount: number;
     successfullyAddedServers: string[];
-    results: any[];
+    results: MCPBatchAddResult[];
     timestamp: Date;
   };
   "mcp:server:rollback": {
