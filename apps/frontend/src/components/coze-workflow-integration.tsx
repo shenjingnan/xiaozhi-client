@@ -1,3 +1,32 @@
+/**
+ * Coze 工作流集成组件
+ *
+ * 提供 Coze 工作流的搜索、选择、参数配置和添加到 MCP 服务的完整流程。
+ * 支持工作流列表浏览、参数预览和编辑、以及自定义工具添加。
+ *
+ * 主要功能：
+ * - 工作空间选择：自动加载并选择工作空间
+ * - 工作流浏览：分页展示工作流列表
+ * - 参数配置：支持工作流参数的预览和自定义配置
+ * - 工具添加：将工作流添加为 MCP 工具
+ *
+ * @module apps/frontend/src/components/coze-workflow-integration
+ * @example
+ * ```tsx
+ * import { CozeWorkflowIntegration } from "@/components/coze-workflow-integration";
+ *
+ * function MyComponent() {
+ *   const handleToolAdded = () => {
+ *     console.log("工具已添加");
+ *   };
+ *
+ *   return (
+ *     <CozeWorkflowIntegration onToolAdded={handleToolAdded} />
+ *   );
+ * }
+ * ```
+ */
+
 import { WorkflowParameterConfigDialog } from "@/components/common/workflow-parameter-config-dialog";
 import {
   AlertDialog,
