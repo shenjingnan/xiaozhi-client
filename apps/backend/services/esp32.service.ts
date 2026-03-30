@@ -403,7 +403,14 @@ export class ESP32Service {
             `[ESP32Service] 处理唤醒词检测: deviceId=${deviceId}, word="${text}"`
           );
           // 初始化 ASR 服务
-          await this.asrService.init(deviceId);
+          try {
+            await this.asrService.init(deviceId);
+          } catch (error) {
+            logger.error(
+              `[ESP32Service] ASR 初始化失败: deviceId=${deviceId}`,
+              error
+            );
+          }
         } else {
           logger.warn(
             `[ESP32Service] 唤醒词消息缺少必要字段: text="${text}", mode=${mode}`
@@ -417,7 +424,14 @@ export class ESP32Service {
         // 开始监听，建立 ASR 连接
         // 注意：硬件端会在发送 start 消息后立刻发送音频数据
         // 所以这里需要尽快建立连接，音频数据会在缓冲区中等待
-        await this.asrService.connect(deviceId);
+        try {
+          await this.asrService.connect(deviceId);
+        } catch (error) {
+          logger.error(
+            `[ESP32Service] ASR 连接失败: deviceId=${deviceId}`,
+            error
+          );
+        }
         if (mode === "manual" || mode === "realtime") {
           logger.info(
             `[ESP32Service] 开始手动/实时监听会话: deviceId=${deviceId}, mode=${mode}`
@@ -436,7 +450,14 @@ export class ESP32Service {
       case "stop":
         // 停止监听，中断当前会话
         logger.info(`[ESP32Service] 停止监听，中断会话: deviceId=${deviceId}`);
-        await this.asrService.end(deviceId);
+        try {
+          await this.asrService.end(deviceId);
+        } catch (error) {
+          logger.error(
+            `[ESP32Service] ASR 结束失败: deviceId=${deviceId}`,
+            error
+          );
+        }
         break;
       default:
         logger.warn(`[ESP32Service] 未知的监听状态: ${state}`);
@@ -482,7 +503,14 @@ export class ESP32Service {
     }
 
     // 交给 ASR 服务处理
-    await this.asrService.handleAudioData(deviceId, audioData);
+    try {
+      await this.asrService.handleAudioData(deviceId, audioData);
+    } catch (error) {
+      logger.error(
+        `[ESP32Service] 处理音频数据失败: deviceId=${deviceId}`,
+        error
+      );
+    }
   }
 
   /**
