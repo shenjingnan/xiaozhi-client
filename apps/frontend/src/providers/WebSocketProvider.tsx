@@ -88,12 +88,10 @@ export function NetworkServiceProvider({
 
     const initStores = async () => {
       try {
-        console.log("[WebSocketProvider] 开始初始化 stores");
         await initializeStores();
 
         if (mounted) {
           setStoresInitialized(true);
-          console.log("[WebSocketProvider] Stores 初始化完成");
         }
       } catch (error) {
         console.error("[WebSocketProvider] Stores 初始化失败:", error);
