@@ -2,6 +2,7 @@
  * 命令注册器
  */
 
+import { VersionUtils } from "@xiaozhi-client/version";
 import type { Command } from "commander";
 import { ErrorHandler } from "../errors/ErrorHandlers";
 import type {
@@ -155,9 +156,7 @@ export class CommandRegistry implements ICommandRegistry {
    * 注册版本命令
    */
   private registerVersionCommand(program: Command): void {
-    const versionUtils = this.container.get("versionUtils") as any;
-
-    program.version(versionUtils.getVersion(), "-v, --version", "显示版本信息");
+    program.version(VersionUtils.getVersion(), "-v, --version", "显示版本信息");
 
     // 注册 --info 选项
     program.option("--info", "显示详细信息");

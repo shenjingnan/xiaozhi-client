@@ -3,6 +3,7 @@
  */
 
 import path from "node:path";
+import type { ConfigManager, MCPServerConfig } from "@xiaozhi-client/config";
 import chalk from "chalk";
 import ora from "ora";
 import type { SubCommand } from "../interfaces/Command";
@@ -79,7 +80,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
         throw new Error("格式必须是 json, json5 或 jsonc");
       }
 
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<ConfigManager>("configManager");
 
       if (configManager.configExists()) {
         spinner.warn("配置文件已存在");
@@ -114,7 +115,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
    * 确保配置文件存在，如果不存在则显示提示并返回 false
    */
   private async ensureConfigExists(spinner: ora.Ora): Promise<boolean> {
-    const configManager = this.getService<any>("configManager");
+    const configManager = this.getService<ConfigManager>("configManager");
 
     if (!configManager.configExists()) {
       spinner.fail("配置文件不存在");
@@ -138,7 +139,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
         return;
       }
 
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<ConfigManager>("configManager");
       const config = configManager.getConfig();
 
       switch (key) {
@@ -163,7 +164,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           for (const [name, serverConfig] of Object.entries(
             config.mcpServers
           )) {
-            const server = serverConfig as any;
+            const server = serverConfig as MCPServerConfig;
             // 检查是否是 SSE 类型
             if ("type" in server && server.type === "sse") {
               console.log(chalk.gray(`  ${name}: [SSE] ${server.url}`));
@@ -242,7 +243,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
         return;
       }
 
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<ConfigManager>("configManager");
 
       switch (key) {
         case "mcpEndpoint":
