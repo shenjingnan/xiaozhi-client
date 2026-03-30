@@ -29,7 +29,7 @@ export default defineConfig({
       enabled: true,
       provider: "v8",
       reporter: ["text", "json", "html", "lcov"],
-      reportsDirectory: resolve(__dirname, "../coverage"),
+      reportsDirectory: "coverage/packages/cli",
       exclude: [
         "node_modules/**",
         "dist/**",
