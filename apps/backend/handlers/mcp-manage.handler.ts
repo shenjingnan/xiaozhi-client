@@ -113,8 +113,9 @@ export type {
 
 /**
  * 配置验证结果接口
+ * 用于 MCP 服务配置验证，返回简化的验证结果
  */
-export interface ValidationResult {
+export interface ConfigValidationResult {
   isValid: boolean;
   errors: string[];
 }
@@ -916,7 +917,7 @@ export class MCPHandler {
    */
   private validateBatchServers(
     mcpServers: Record<string, MCPServerConfig>
-  ): ValidationResult {
+  ): ConfigValidationResult {
     const errors: string[] = [];
 
     if (!mcpServers || typeof mcpServers !== "object") {
@@ -1039,7 +1040,9 @@ export namespace MCPServerConfigValidator {
   /**
    * 验证服务配置
    */
-  export function validateConfig(config: MCPServerConfig): ValidationResult {
+  export function validateConfig(
+    config: MCPServerConfig
+  ): ConfigValidationResult {
     const errors: string[] = [];
 
     // 验证配置基本结构
@@ -1080,7 +1083,7 @@ export namespace MCPServerConfigValidator {
   /**
    * 验证服务名称
    */
-  export function validateServiceName(name: string): ValidationResult {
+  export function validateServiceName(name: string): ConfigValidationResult {
     const errors: string[] = [];
 
     if (!name || typeof name !== "string") {

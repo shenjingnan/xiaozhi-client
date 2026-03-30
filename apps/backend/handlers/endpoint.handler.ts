@@ -23,9 +23,10 @@ import type {
 import type { Context } from "hono";
 
 /**
- * 验证结果类型定义
+ * 端点验证结果类型定义
+ * 用于端点 URL 格式验证，返回简化的验证结果
  */
-interface ValidationResult {
+interface EndpointValidationResult {
   isValid: boolean;
   errors: string[];
 }
@@ -94,7 +95,7 @@ export class EndpointHandler {
    * @param endpoint 端点 URL
    * @returns 验证结果
    */
-  private validateEndpoint(endpoint: string): ValidationResult {
+  private validateEndpoint(endpoint: string): EndpointValidationResult {
     const errors: string[] = [];
 
     if (!endpoint || typeof endpoint !== "string") {

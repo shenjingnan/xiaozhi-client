@@ -5,8 +5,11 @@
 
 import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
 
-// 验证结果接口
-export interface ValidationResult {
+/**
+ * MCP 配置验证结果接口
+ * 用于高级模式下的 MCP 配置验证，包含解析后的数据
+ */
+export interface MCPConfigValidationResult {
   success: boolean;
   data?: Record<string, MCPServerConfig>;
   error?: string;
@@ -83,7 +86,7 @@ export function validateSingleServerConfig(
  * @param input - JSON 字符串格式的配置
  * @returns 验证结果，包含是否成功、解析后的数据和错误信息
  */
-export function validateMCPConfig(input: string): ValidationResult {
+export function validateMCPConfig(input: string): MCPConfigValidationResult {
   try {
     const trimmed = input.trim();
     if (!trimmed) {
