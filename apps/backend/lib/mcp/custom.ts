@@ -231,18 +231,27 @@ export class CustomMCPHandler {
       return completedResult;
     }
 
+    const timeout = options?.timeout || this.TIMEOUT;
+    const { promise: timeoutPromise, cleanup } =
+      this.createTimeoutPromise<ToolCallResult>(toolName, timeout);
+
     try {
-      const timeout = options?.timeout || this.TIMEOUT;
       const result = await Promise.race([
         this.callCozeWorkflow(tool, arguments_),
-        this.createTimeoutPromise(toolName, timeout),
+        timeoutPromise,
       ]);
+
+      // 清理超时定时器
+      cleanup();
 
       // 缓存结果（标记为未消费）
       await this.cacheResult(toolName, arguments_, result);
 
       return result;
     } catch (error) {
+      // 确保在任何错误情况下都清理定时器
+      cleanup();
+
       // 如果是超时错误，返回友好提示
       if (error instanceof TimeoutError) {
         const taskId = await this.generateTaskId(toolName, arguments_);
@@ -257,17 +266,28 @@ export class CustomMCPHandler {
   }
 
   /**
-   * 创建超时 Promise
+   * 创建超时 Promise（带清理功能）
+   * 返回 Promise 和清理函数，确保 Promise.race 结束后能正确清理定时器
    */
-  private async createTimeoutPromise(
+  private createTimeoutPromise<T>(
     toolName: string,
     timeout: number
-  ): Promise<never> {
-    return new Promise((_, reject) => {
-      setTimeout(() => {
+  ): { promise: Promise<T>; cleanup: () => void } {
+    let timeoutId: NodeJS.Timeout | undefined;
+
+    const promise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
         reject(new TimeoutError(`工具调用超时: ${toolName}`));
       }, timeout);
     });
+
+    const cleanup = () => {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+    };
+
+    return { promise, cleanup };
   }
 
   /**
