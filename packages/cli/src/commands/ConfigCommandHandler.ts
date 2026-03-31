@@ -3,6 +3,12 @@
  */
 
 import path from "node:path";
+import type {
+  HTTPMCPServerConfig,
+  LocalMCPServerConfig,
+  MCPServerConfig,
+  SSEMCPServerConfig,
+} from "@xiaozhi-client/config";
 import chalk from "chalk";
 import ora from "ora";
 import type { SubCommand } from "../interfaces/Command";
@@ -163,14 +169,26 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           for (const [name, serverConfig] of Object.entries(
             config.mcpServers
           )) {
-            const server = serverConfig as any;
-            // 检查是否是 SSE 类型
+            const server = serverConfig as MCPServerConfig;
+            // 使用类型守卫区分不同类型的 MCP 服务器配置
             if ("type" in server && server.type === "sse") {
-              console.log(chalk.gray(`  ${name}: [SSE] ${server.url}`));
+              const sseConfig = server as SSEMCPServerConfig;
+              console.log(chalk.gray(`  ${name}: [SSE] ${sseConfig.url}`));
+            } else if (
+              "type" in server &&
+              (server.type === "http" || server.type === "streamable-http")
+            ) {
+              const httpConfig = server as HTTPMCPServerConfig;
+              console.log(chalk.gray(`  ${name}: [HTTP] ${httpConfig.url}`));
+            } else if ("url" in server) {
+              // HTTP 配置（type 未指定，默认为 streamable-http）
+              console.log(chalk.gray(`  ${name}: [HTTP] ${server.url}`));
             } else {
+              // 本地进程配置 (LocalMCPServerConfig)
+              const localConfig = server as LocalMCPServerConfig;
               console.log(
                 chalk.gray(
-                  `  ${name}: ${server.command} ${server.args.join(" ")}`
+                  `  ${name}: ${localConfig.command} ${localConfig.args.join(" ")}`
                 )
               );
             }
