@@ -5,12 +5,19 @@
 // 扣子平台相关类型
 export type {
   CozeWorkspace,
+  CozeWorkspacesData,
   CozeApiResponse,
+  CozeWorkspacesResponse,
+  CozeWorkflowsResponse,
   CozeWorkflow,
   CozeWorkflowCreator,
   WorkflowParameter,
   WorkflowParameterConfig,
   CozeWorkflowsParams,
+  CozeWorkflowsData,
+  CozeApiError,
+  CozePlatformConfig,
+  CozeApiServiceConfig,
 } from "./coze";
 
 // MCP 相关类型

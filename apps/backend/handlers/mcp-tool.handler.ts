@@ -10,7 +10,6 @@ import { MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
 import { MCPCacheManager } from "@/lib/mcp";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
-import type { CozeWorkflow, WorkflowParameterConfig } from "@/types/coze.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type {
   AddCustomToolRequest,
@@ -23,6 +22,10 @@ import type { CustomMCPToolWithStats, JSONSchema } from "@/types/toolApi.js";
 import { type ToolSortField, sortTools } from "@/utils/toolSorters";
 import { configManager } from "@xiaozhi-client/config";
 import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
+import type {
+  CozeWorkflow,
+  WorkflowParameterConfig,
+} from "@xiaozhi-client/shared-types";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";

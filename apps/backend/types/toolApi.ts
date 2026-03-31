@@ -4,7 +4,10 @@
  */
 
 import type { JSONSchema as LibJSONSchema } from "@/lib/mcp/types.js";
-import type { CozeWorkflow, WorkflowParameterConfig } from "./coze.js";
+import type {
+  CozeWorkflow,
+  WorkflowParameterConfig,
+} from "@xiaozhi-client/shared-types";
 
 /**
  * JSON Schema 类型
