@@ -101,9 +101,6 @@ export function WebUrlSettingButton() {
       return;
     }
 
-    console.log(
-      `[WebUrlSettingButton] 开始端口切换: ${currentPort} -> ${newPort}`
-    );
     setIsLoading(true);
 
     try {
