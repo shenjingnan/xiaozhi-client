@@ -53,10 +53,13 @@ export type {
   CustomMCPToolWithStats,
   CustomMCPToolConfig,
   ToolHandlerConfig,
+  BaseHandlerConfig,
   MCPHandlerConfig,
   ProxyHandlerConfig,
   HttpHandlerConfig,
   FunctionHandlerConfig,
+  ScriptHandlerConfig,
+  ChainHandlerConfig,
 } from "./tool-definition";
 
 // JSON Schema 类型

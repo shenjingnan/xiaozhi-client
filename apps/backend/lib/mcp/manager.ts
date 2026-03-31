@@ -539,14 +539,8 @@ export class MCPServiceManager extends EventEmitter {
    * @param tool 工具对象
    * @returns 服务名称
    */
-  private getServiceNameForTool(tool: CustomMCPTool): string {
-    if (tool.handler?.type === "mcp") {
-      // 如果是从 MCP 同步的工具，返回原始服务名称
-      const config = tool.handler.config as
-        | { serviceName?: string; toolName?: string }
-        | undefined;
-      return config?.serviceName || "customMCP";
-    }
+  private getServiceNameForTool(tool: Tool): string {
+    // CustomMCP 工具默认返回 customMCP 服务名
     return "customMCP";
   }
 
@@ -634,17 +628,26 @@ export class MCPServiceManager extends EventEmitter {
 
         if (customTool?.handler?.type === "mcp") {
           // 对于 mcp 类型的工具，直接路由到对应的 MCP 服务
+          const mcpHandlerConfig = customTool.handler.config as
+            | { serviceName: string; toolName: string }
+            | undefined;
+
+          // 确保 MCP 配置存在
+          if (!mcpHandlerConfig?.serviceName || !mcpHandlerConfig?.toolName) {
+            throw new Error(`MCP 工具 ${toolName} 配置无效`);
+          }
+
           result = await this.callMCPTool(
             toolName,
-            customTool.handler.config,
+            mcpHandlerConfig,
             arguments_
           );
 
           // 异步更新工具调用统计（成功调用）
           this.updateToolStatsSafe(
             toolName,
-            customTool.handler.config.serviceName,
-            customTool.handler.config.toolName,
+            mcpHandlerConfig.serviceName,
+            mcpHandlerConfig.toolName,
             true
           );
         } else {
@@ -725,10 +728,13 @@ export class MCPServiceManager extends EventEmitter {
       if (this.customMCPHandler.hasTool(toolName)) {
         const customTool = this.customMCPHandler.getToolInfo(toolName);
         if (customTool?.handler?.type === "mcp") {
+          const mcpHandlerConfig = customTool.handler.config as
+            | { serviceName: string; toolName: string }
+            | undefined;
           this.updateToolStatsSafe(
             toolName,
-            customTool.handler.config.serviceName,
-            customTool.handler.config.toolName,
+            mcpHandlerConfig?.serviceName || "customMCP",
+            mcpHandlerConfig?.toolName || toolName,
             false
           );
         } else {

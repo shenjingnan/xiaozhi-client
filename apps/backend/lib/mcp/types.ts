@@ -185,19 +185,9 @@ export function ensureToolJSONSchema(schema: JSONSchema): {
   };
 }
 
-/**
- * CustomMCP 工具类型定义
- * 统一了 manager.ts 和 configManager.ts 中的定义
- */
-export interface CustomMCPTool {
-  name: string;
-  description?: string;
-  inputSchema: JSONSchema;
-  handler?: {
-    type: string;
-    config?: Record<string, unknown>;
-  };
-}
+// 从 shared-types 导入 CustomMCPTool 类型
+// 保持与权威定义的一致性
+export type { CustomMCPTool } from "@xiaozhi-client/shared-types";
 
 /**
  * 工具信息接口

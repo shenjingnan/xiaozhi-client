@@ -26,6 +26,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@xiaozhi-client/shared-types": "workspace:*",
     "eventsource": "^4.0.0",
     "ws": "^8.14.2"
   },

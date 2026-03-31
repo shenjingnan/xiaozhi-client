@@ -144,104 +144,34 @@ export interface ToolCallLogConfig {
 }
 
 // CustomMCP 相关接口定义
+// 从 shared-types 导入处理器配置类型，保持类型一致性
+import type {
+  ProxyHandlerConfig,
+  HttpHandlerConfig,
+  FunctionHandlerConfig,
+  ScriptHandlerConfig,
+  ChainHandlerConfig,
+  MCPHandlerConfig,
+  ToolHandlerConfig,
+  CustomMCPTool as BaseCustomMCPTool,
+} from "@xiaozhi-client/shared-types";
 
-// 代理处理器配置
-export interface ProxyHandlerConfig {
-  type: "proxy";
-  platform: "coze" | "openai" | "anthropic" | "custom";
-  config: {
-    // Coze 平台配置
-    workflow_id?: string;
-    bot_id?: string;
-    api_key?: string;
-    base_url?: string;
-    // 通用配置
-    timeout?: number;
-    retry_count?: number;
-    retry_delay?: number;
-    headers?: Record<string, string>;
-    params?: Record<string, unknown>;
-  };
-}
+// 向后兼容：重新导出处理器配置类型
+export type {
+  ProxyHandlerConfig,
+  HttpHandlerConfig,
+  FunctionHandlerConfig,
+  ScriptHandlerConfig,
+  ChainHandlerConfig,
+  MCPHandlerConfig,
+};
 
-// HTTP 处理器配置
-export interface HttpHandlerConfig {
-  type: "http";
-  url: string;
-  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  headers?: Record<string, string>;
-  timeout?: number;
-  retry_count?: number;
-  retry_delay?: number;
-  auth?: {
-    type: "bearer" | "basic" | "api_key";
-    token?: string;
-    username?: string;
-    password?: string;
-    api_key?: string;
-    api_key_header?: string;
-  };
-  body_template?: string; // 支持模板变量替换
-  response_mapping?: {
-    success_path?: string; // JSONPath 表达式
-    error_path?: string;
-    data_path?: string;
-  };
-}
+// 向后兼容：HandlerConfig 别名
+export type HandlerConfig = ToolHandlerConfig;
 
-// 函数处理器配置
-export interface FunctionHandlerConfig {
-  type: "function";
-  module: string; // 模块路径
-  function: string; // 函数名
-  timeout?: number;
-  context?: Record<string, unknown>; // 函数执行上下文
-}
-
-// 脚本处理器配置
-export interface ScriptHandlerConfig {
-  type: "script";
-  script: string; // 脚本内容或文件路径
-  interpreter?: "node" | "python" | "bash";
-  timeout?: number;
-  env?: Record<string, string>; // 环境变量
-}
-
-// 链式处理器配置
-export interface ChainHandlerConfig {
-  type: "chain";
-  tools: string[]; // 要链式调用的工具名称
-  mode: "sequential" | "parallel"; // 执行模式
-  error_handling: "stop" | "continue" | "retry"; // 错误处理策略
-}
-
-// MCP 处理器配置（用于同步的工具）
-export interface MCPHandlerConfig {
-  type: "mcp";
-  config: {
-    serviceName: string;
-    toolName: string;
-  };
-}
-
-export type HandlerConfig =
-  | ProxyHandlerConfig
-  | HttpHandlerConfig
-  | FunctionHandlerConfig
-  | ScriptHandlerConfig
-  | ChainHandlerConfig
-  | MCPHandlerConfig;
-
-// CustomMCP 工具接口
-// TODO: 注意：此定义应与 @xiaozhi-client/shared-types 中的 CustomMCPToolConfig 保持一致
-// 未来将迁移到从 shared-types 导入
-export interface CustomMCPTool {
-  // 确保必填字段
-  name: string;
-  description: string;
-  inputSchema: Record<string, unknown>;
-  handler: HandlerConfig;
-
+// 配置文件中使用的 CustomMCP 工具类型
+// 使用 shared-types 的 CustomMCPTool 作为基础，添加 stats 字段（相当于 CustomMCPToolConfig）
+export interface CustomMCPTool extends BaseCustomMCPTool {
   // 使用统计信息（可选）
   stats?: {
     usageCount?: number; // 工具使用次数
@@ -1436,17 +1366,29 @@ export class ConfigManager {
   ): boolean {
     switch (handler.type) {
       case "proxy":
-        return this.validateProxyHandler(toolName, handler);
+        return this.validateProxyHandler(
+          toolName,
+          handler as ProxyHandlerConfig
+        );
       case "http":
-        return this.validateHttpHandler(toolName, handler);
+        return this.validateHttpHandler(toolName, handler as HttpHandlerConfig);
       case "function":
-        return this.validateFunctionHandler(toolName, handler);
+        return this.validateFunctionHandler(
+          toolName,
+          handler as FunctionHandlerConfig
+        );
       case "script":
-        return this.validateScriptHandler(toolName, handler);
+        return this.validateScriptHandler(
+          toolName,
+          handler as ScriptHandlerConfig
+        );
       case "chain":
-        return this.validateChainHandler(toolName, handler);
+        return this.validateChainHandler(
+          toolName,
+          handler as ChainHandlerConfig
+        );
       case "mcp":
-        return this.validateMCPHandler(toolName, handler);
+        return this.validateMCPHandler(toolName, handler as MCPHandlerConfig);
       default:
         console.warn("CustomMCP 工具使用了未知的处理器类型", {
           toolName,

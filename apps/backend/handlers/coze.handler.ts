@@ -228,8 +228,10 @@ export class CozeHandler extends BaseHandler {
         const addedTool = customMCPTools.find(
           (tool) =>
             tool.handler.type === "proxy" &&
+            "platform" in tool.handler &&
             tool.handler.platform === "coze" &&
-            tool.handler.config.workflow_id === item.workflow_id
+            "workflow_id" in (tool.handler.config || {}) &&
+            tool.handler.config?.workflow_id === item.workflow_id
         );
 
         return {

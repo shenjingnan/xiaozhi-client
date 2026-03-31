@@ -95,7 +95,10 @@ export function McpServerList({
   // 格式化工具信息的辅助函数
   const formatTool = useCallback(
     (tool: CustomMCPToolWithStats, enable: boolean) => {
-      const { serviceName, toolName } = (() => {
+      const getServiceInfo = (): {
+        serviceName: string;
+        toolName: string;
+      } => {
         // 安全检查：确保 handler 存在
         if (!tool || !tool.handler) {
           return {
@@ -105,13 +108,18 @@ export function McpServerList({
         }
 
         if (tool.handler.type === "mcp") {
+          const handler = tool.handler as import("@xiaozhi-client/shared-types").MCPHandlerConfig;
           return {
             serviceName:
-              tool.handler.config?.serviceName || UNKNOWN_SERVICE_NAME,
-            toolName: tool.handler.config?.toolName || tool.name,
+              handler.config?.serviceName || UNKNOWN_SERVICE_NAME,
+            toolName: handler.config?.toolName || tool.name,
           };
         }
-        if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
+        if (
+          tool.handler.type === "proxy" &&
+          "platform" in tool.handler &&
+          tool.handler.platform === "coze"
+        ) {
           return {
             serviceName: "customMCP",
             toolName: tool.name,
@@ -121,7 +129,9 @@ export function McpServerList({
           serviceName: CUSTOM_SERVICE_NAME,
           toolName: tool.name,
         };
-      })();
+      };
+
+      const { serviceName, toolName } = getServiceInfo();
 
       return {
         serverName: serviceName,
