@@ -29,6 +29,7 @@ export class ByteDanceV2Controller extends ByteDanceController {
   ): AsyncGenerator<ListenResult, void, unknown> {
     // 设置结果事件处理 - 在 connect() 之前注册，避免错过初始响应
     const resultQueue: ListenResult[] = [];
+    const errorQueue: Error[] = [];
     let resolveNext: (() => void) | null = null;
     let settled = false;
     let endCalled = false; // 标记是否已经调用过 end()
@@ -36,6 +37,15 @@ export class ByteDanceV2Controller extends ByteDanceController {
     // 背压控制：最大并行发送的帧数
     const MAX_PENDING_FRAMES = 10;
     let pendingFrames = 0;
+
+    // 唤醒等待的消费者的辅助函数
+    const wakeUpConsumer = () => {
+      if (resolveNext) {
+        const resolve = resolveNext;
+        resolveNext = null;
+        resolve();
+      }
+    };
 
     // 监听识别结果事件
     this.asr.on("result", (data) => {
@@ -76,11 +86,7 @@ export class ByteDanceV2Controller extends ByteDanceController {
       resultQueue.push(listenResult);
 
       // 如果有等待的消费者，唤醒它
-      if (resolveNext) {
-        const resolve = resolveNext;
-        resolveNext = null;
-        resolve();
-      }
+      wakeUpConsumer();
     });
 
     // 连接服务器（在事件监听器注册之后）
@@ -92,7 +98,9 @@ export class ByteDanceV2Controller extends ByteDanceController {
         settled = true;
         // 关闭连接
         this.asr.close();
-        throw error;
+        // 将错误放入队列，在生成器中抛出以便调用方捕获
+        errorQueue.push(error);
+        wakeUpConsumer();
       }
     });
 
@@ -119,15 +127,15 @@ export class ByteDanceV2Controller extends ByteDanceController {
         resultQueue.push(listenResult);
 
         // 如果有等待的消费者，唤醒它
-        if (resolveNext) {
-          const resolve = resolveNext;
-          resolveNext = null;
-          resolve();
-        }
+        wakeUpConsumer();
       } catch (error) {
         if (!settled) {
           settled = true;
-          throw error;
+          // 将错误放入队列，在生成器中抛出以便调用方捕获
+          errorQueue.push(
+            error instanceof Error ? error : new Error(String(error))
+          );
+          wakeUpConsumer();
         }
       }
     });
@@ -164,11 +172,18 @@ export class ByteDanceV2Controller extends ByteDanceController {
             if (!settled) {
               settled = true;
               this.asr.close();
-              throw error;
+              // 将错误放入队列，在生成器中抛出以便调用方捕获
+              errorQueue.push(error);
+              wakeUpConsumer();
             }
           });
 
-        // 发送帧后立即检查并 yield 可用的结果（不等待帧发送完成）
+        // 发送帧后立即检查错误和 yield 可用的结果（不等待帧发送完成）
+        // 先检查错误队列，如果有错误则在生成器中抛出（可被调用方捕获）
+        if (errorQueue.length > 0) {
+          throw errorQueue.shift()!;
+        }
+
         while (resultQueue.length > 0) {
           yield resultQueue.shift()!;
         }
@@ -196,16 +211,17 @@ export class ByteDanceV2Controller extends ByteDanceController {
     this.asr.on("close", () => {
       connectionClosed = true;
       // 唤醒等待的消费者
-      if (resolveNext) {
-        const resolve = resolveNext;
-        resolveNext = null;
-        resolve();
-      }
+      wakeUpConsumer();
     });
 
     // 现在持续 yield 所有结果，使用 resolveNext 等待新结果
     // 注意：并行发送时，发送完成不代表结果处理完成，需要等待连接关闭
     while (true) {
+      // 先检查错误队列，如果有错误则在生成器中抛出（可被调用方捕获）
+      if (errorQueue.length > 0) {
+        throw errorQueue.shift()!;
+      }
+
       // 如果队列中有结果，立即 yield
       while (resultQueue.length > 0) {
         yield resultQueue.shift()!;
