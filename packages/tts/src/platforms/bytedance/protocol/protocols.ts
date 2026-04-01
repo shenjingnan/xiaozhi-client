@@ -678,6 +678,22 @@ export async function WaitForEvent(
 }
 
 /**
+ * 发送 WebSocket 消息的通用工具函数
+ * @param ws - WebSocket 连接实例
+ * @param msg - 要发送的消息对象
+ * @returns Promise，发送成功后 resolve，失败后 reject
+ */
+async function sendMessage(ws: WebSocket, msg: Message): Promise<void> {
+  const data = marshalMessage(msg);
+  return new Promise((resolve, reject) => {
+    ws.send(data, (error?: Error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+}
+
+/**
  * 发送完整的客户端请求
  * @param ws - WebSocket 连接实例
  * @param payload - 请求负载数据
@@ -689,13 +705,7 @@ export async function FullClientRequest(
 ): Promise<void> {
   const msg = createMessage(MsgType.FullClientRequest, MsgTypeFlagBits.NoSeq);
   msg.payload = payload;
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
+  return sendMessage(ws, msg);
 }
 
 /**
@@ -712,13 +722,7 @@ export async function AudioOnlyClient(
 ): Promise<void> {
   const msg = createMessage(MsgType.AudioOnlyClient, flag);
   msg.payload = payload;
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
+  return sendMessage(ws, msg);
 }
 
 /**
@@ -733,13 +737,7 @@ export async function StartConnection(ws: WebSocket): Promise<void> {
   );
   msg.event = EventType.StartConnection;
   msg.payload = new TextEncoder().encode("{}");
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
+  return sendMessage(ws, msg);
 }
 
 /**
@@ -754,13 +752,7 @@ export async function FinishConnection(ws: WebSocket): Promise<void> {
   );
   msg.event = EventType.FinishConnection;
   msg.payload = new TextEncoder().encode("{}");
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
+  return sendMessage(ws, msg);
 }
 
 /**
@@ -782,13 +774,7 @@ export async function StartSession(
   msg.event = EventType.StartSession;
   msg.sessionId = sessionId;
   msg.payload = payload;
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
+  return sendMessage(ws, msg);
 }
 
 /**
@@ -808,13 +794,7 @@ export async function FinishSession(
   msg.event = EventType.FinishSession;
   msg.sessionId = sessionId;
   msg.payload = new TextEncoder().encode("{}");
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
+  return sendMessage(ws, msg);
 }
 
 /**
@@ -834,13 +814,7 @@ export async function CancelSession(
   msg.event = EventType.CancelSession;
   msg.sessionId = sessionId;
   msg.payload = new TextEncoder().encode("{}");
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
+  return sendMessage(ws, msg);
 }
 
 /**
@@ -862,11 +836,5 @@ export async function TaskRequest(
   msg.event = EventType.TaskRequest;
   msg.sessionId = sessionId;
   msg.payload = payload;
-  const data = marshalMessage(msg);
-  return new Promise((resolve, reject) => {
-    ws.send(data, (error?: Error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
+  return sendMessage(ws, msg);
 }
