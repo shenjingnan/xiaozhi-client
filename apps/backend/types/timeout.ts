@@ -1,39 +1,18 @@
 /**
- * 超时错误类型
+ * 超时处理类型定义
+ *
+ * 从 shared-types/utils 重新导出基础类型定义，避免跨包重复。
+ * 本文件仅保留 apps/backend 特有的辅助函数。
  */
-export class TimeoutError extends Error {
-  public override readonly name = "TimeoutError" as const;
 
-  constructor(message: string) {
-    super(message);
-    this.name = "TimeoutError";
-    Error.captureStackTrace(this, TimeoutError);
-  }
+// 从 shared-types/utils 重新导出超时相关类型
+export {
+  TimeoutError,
+  isTimeoutError,
+  utilsIsTimeoutResponse as isTimeoutResponse,
+} from "@xiaozhi-client/shared-types/utils";
 
-  toJSON() {
-    return {
-      name: this.name,
-      message: this.message,
-      stack: this.stack,
-    };
-  }
-}
-
-/**
- * 超时响应接口
- */
-export interface TimeoutResponse {
-  content: Array<{
-    type: "text";
-    text: string;
-  }>;
-  isError: boolean;
-  taskId: string;
-  status: "timeout";
-  message: string;
-  nextAction: string;
-  [key: string]: unknown; // 支持其他未知字段，与 ToolCallResult 保持兼容
-}
+export type { TimeoutResponse } from "@xiaozhi-client/shared-types/utils";
 
 /**
  * 创建超时响应的工具函数
@@ -41,7 +20,7 @@ export interface TimeoutResponse {
 export function createTimeoutResponse(
   taskId: string,
   toolName?: string
-): TimeoutResponse {
+): import("@xiaozhi-client/shared-types/utils").TimeoutResponse {
   const toolSpecificMessage = toolName
     ? getToolSpecificTimeoutMessage(toolName, taskId)
     : getDefaultTimeoutMessage(taskId);
@@ -70,7 +49,7 @@ function getToolSpecificTimeoutMessage(
 ): string {
   const toolMessages: Record<string, string> = {
     coze_workflow: `⏱️ 扣子工作流执行超时，正在后台处理中...
-    
+
 📋 任务信息：
 - 任务ID: ${taskId}
 - 工具类型: 扣子工作流
@@ -93,7 +72,7 @@ function getToolSpecificTimeoutMessage(
  */
 function getDefaultTimeoutMessage(taskId: string): string {
   return `⏱️ 工具调用超时，正在后台处理中...
-    
+
 📋 任务信息：
 - 任务ID: ${taskId}
 - 状态: 处理中
@@ -103,29 +82,4 @@ function getDefaultTimeoutMessage(taskId: string): string {
 1. 使用相同的参数重新调用工具
 2. 系统会自动返回已完成的任务结果
 3. 如果长时间未完成，请联系管理员`;
-}
-
-/**
- * 验证是否为超时响应
- */
-export function isTimeoutResponse(response: any): response is TimeoutResponse {
-  return !!(
-    response &&
-    response.status === "timeout" &&
-    typeof response.taskId === "string" &&
-    Array.isArray(response.content) &&
-    response.content.length > 0 &&
-    response.content[0].type === "text"
-  );
-}
-
-/**
- * 验证是否为超时错误
- */
-export function isTimeoutError(error: any): error is TimeoutError {
-  return !!(
-    error &&
-    error.name === "TimeoutError" &&
-    error instanceof TimeoutError
-  );
 }
