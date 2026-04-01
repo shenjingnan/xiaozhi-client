@@ -33,6 +33,7 @@ export class ByteDanceV3Controller extends ByteDanceController {
 
     // 设置结果事件处理
     const resultQueue: ListenResult[] = [];
+    const errorQueue: Error[] = [];
     let resolveNext: (() => void) | null = null;
     let settled = false;
     let endCalled = false;
@@ -87,13 +88,19 @@ export class ByteDanceV3Controller extends ByteDanceController {
       }
     });
 
-    // 处理错误事件
+    // 处理错误事件 - 将错误放入队列
     this.asr.on("error", (error) => {
       if (!settled) {
         settled = true;
         // 关闭连接
         this.asr.close();
-        throw error;
+        errorQueue.push(error);
+        // 唤醒消费者
+        if (resolveNext) {
+          const resolve = resolveNext;
+          resolveNext = null;
+          resolve();
+        }
       }
     });
 
@@ -128,7 +135,15 @@ export class ByteDanceV3Controller extends ByteDanceController {
       } catch (error) {
         if (!settled) {
           settled = true;
-          throw error;
+          errorQueue.push(
+            error instanceof Error ? error : new Error(String(error))
+          );
+          // 唤醒消费者
+          if (resolveNext) {
+            const resolve = resolveNext;
+            resolveNext = null;
+            resolve();
+          }
         }
       }
     });
@@ -165,11 +180,22 @@ export class ByteDanceV3Controller extends ByteDanceController {
             if (!settled) {
               settled = true;
               this.asr.close();
-              throw error;
+              errorQueue.push(error);
+              // 唤醒消费者
+              if (resolveNext) {
+                const resolve = resolveNext;
+                resolveNext = null;
+                resolve();
+              }
             }
           });
 
-        // 发送帧后立即检查并 yield 可用的结果（不等待帧发送完成）
+        // 发送帧后立即检查错误并 yield 可用的结果（不等待帧发送完成）
+        // 先检查是否有错误
+        if (errorQueue.length > 0) {
+          throw errorQueue.shift()!;
+        }
+
         while (resultQueue.length > 0) {
           yield resultQueue.shift()!;
         }
@@ -207,6 +233,11 @@ export class ByteDanceV3Controller extends ByteDanceController {
     // 现在持续 yield 所有结果，使用 resolveNext 等待新结果
     // 注意：并行发送时，发送完成不代表结果处理完成，需要等待连接关闭
     while (true) {
+      // 先检查是否有错误
+      if (errorQueue.length > 0) {
+        throw errorQueue.shift()!;
+      }
+
       // 如果队列中有结果，立即 yield
       while (resultQueue.length > 0) {
         yield resultQueue.shift()!;
@@ -225,6 +256,11 @@ export class ByteDanceV3Controller extends ByteDanceController {
       // 如果连接已关闭，退出
       if (connectionClosed) {
         break;
+      }
+
+      // 被唤醒后先检查是否有错误
+      if (errorQueue.length > 0) {
+        throw errorQueue.shift()!;
       }
 
       // 被唤醒后继续循环
