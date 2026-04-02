@@ -41,7 +41,8 @@ export * from "./realtime-notification.handler.js";
 export * from "./service.handler.js";
 export { StaticFileHandler } from "./static-file.handler.js";
 export * from "./status.handler.js";
-export * from "./mcp-tool.handler.js";
+// MCPToolHandler 从新的模块化目录导出
+export * from "./mcp-tool/index.js";
 export * from "./mcp-tool-log.handler.js";
 export * from "./update.handler.js";
 export * from "./version.handler.js";
