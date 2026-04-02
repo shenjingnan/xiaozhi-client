@@ -3,6 +3,7 @@
  * 整合 HTTP API 客户端和 WebSocket 管理器
  */
 
+import { networkLogger } from "@/services/logger";
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import { type ApiClient, apiClient } from "./api";
 import {
@@ -33,20 +34,20 @@ export class NetworkService {
       return;
     }
 
-    console.log("[NetworkService] 初始化网络服务");
+    networkLogger.info("初始化网络服务");
 
     // 启动 WebSocket 连接
     this.webSocketManager.connect();
 
     this.initialized = true;
-    console.log("[NetworkService] 网络服务初始化完成");
+    networkLogger.info("网络服务初始化完成");
   }
 
   /**
    * 销毁网络服务
    */
   destroy(): void {
-    console.log("[NetworkService] 销毁网络服务");
+    networkLogger.info("销毁网络服务");
     this.webSocketManager.disconnect();
     this.initialized = false;
   }

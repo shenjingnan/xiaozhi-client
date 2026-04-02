@@ -340,8 +340,12 @@ describe("WebSocketManager", () => {
       expect(goodListener).toHaveBeenCalled();
       expect(badListener).toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[WebSocket]"),
         expect.stringContaining("事件监听器执行失败"),
-        expect.any(Error)
+        expect.objectContaining({
+          event: "connection:connected",
+          error: expect.any(Error),
+        })
       );
 
       consoleSpy.mockRestore();
@@ -446,7 +450,7 @@ describe("WebSocketManager", () => {
     });
 
     it("应该处理未知消息类型", () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
 
       const testMessage = {
         type: "unknown",
@@ -456,8 +460,9 @@ describe("WebSocketManager", () => {
       (manager as any).ws.mockMessage(testMessage);
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        "[WebSocket] 未处理的消息类型:",
-        "unknown"
+        expect.stringContaining("[WebSocket]"),
+        expect.stringContaining("未处理的消息类型"),
+        expect.objectContaining({ type: "unknown" })
       );
 
       consoleSpy.mockRestore();
@@ -472,8 +477,9 @@ describe("WebSocketManager", () => {
       (manager as any).ws.onmessage?.({ data: "invalid json" } as MessageEvent);
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        "[WebSocket] 消息解析失败:",
-        expect.any(Error)
+        expect.stringContaining("[WebSocket]"),
+        expect.stringContaining("消息解析失败"),
+        expect.objectContaining({ error: expect.any(Error) })
       );
 
       consoleSpy.mockRestore();
@@ -626,7 +632,8 @@ describe("WebSocketManager", () => {
 
       expect(result).toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith(
-        "[WebSocket] 连接未建立，无法发送消息"
+        expect.stringContaining("[WebSocket]"),
+        expect.stringContaining("连接未建立，无法发送消息")
       );
 
       consoleSpy.mockRestore();
