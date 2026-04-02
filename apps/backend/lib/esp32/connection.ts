@@ -132,6 +132,10 @@ export class ESP32Connection {
 
     this.ws.on("error", (error: Error) => {
       logger.error(`WebSocket连接错误: deviceId=${this.deviceId}`, error);
+      // 更新状态为 disconnected，确保状态一致性
+      this.state = "disconnected";
+      // 确保连接被正确关闭
+      this.ws.close();
       this.config.onError(error);
     });
 
