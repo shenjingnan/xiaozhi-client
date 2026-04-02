@@ -1,6 +1,14 @@
 /**
- * LLM 服务
- * 提供基于 OpenAI SDK 的大语言模型调用封装
+ * LLM（大语言模型）服务
+ * 负责与大语言模型 API 的交互，提供智能对话功能
+ *
+ * 主要功能：
+ * - OpenAI 客户端初始化和管理
+ * - 配置热更新支持
+ * - 智能对话接口
+ * - 思考标签（<think>）处理
+ *
+ * @module apps/backend/services/llm.service
  */
 
 import { logger } from "@/Logger.js";
