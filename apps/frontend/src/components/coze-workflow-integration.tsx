@@ -44,6 +44,45 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+/**
+ * 根据错误类型生成友好的错误消息
+ */
+function getWorkflowAddErrorMessage(
+  error: unknown,
+  workflowName: string
+): string {
+  const defaultMessage = "添加工作流失败，请重试";
+
+  if (!(error instanceof Error)) {
+    return defaultMessage;
+  }
+
+  if (error.message.includes("已存在") || error.message.includes("冲突")) {
+    return `工作流 "${workflowName}" 已存在，请勿重复添加`;
+  }
+  if (error.message.includes("配置") || error.message.includes("token")) {
+    return "系统配置错误，请检查扣子API配置";
+  }
+  if (error.message.includes("验证失败") || error.message.includes("格式")) {
+    return "工作流数据格式错误，请联系管理员";
+  }
+  if (
+    error.message.includes("网络") ||
+    error.message.includes("超时") ||
+    error.message.includes("连接")
+  ) {
+    return "网络连接失败，请检查网络后重试";
+  }
+  if (error.message.includes("权限")) {
+    return "权限不足，请检查API权限配置";
+  }
+  if (error.message.includes("频繁")) {
+    return "操作过于频繁，请稍后重试";
+  }
+
+  return error.message;
+}
+
 interface CozeWorkflowIntegrationProps {
   onToolAdded?: () => void;
 }
@@ -224,40 +263,10 @@ export function CozeWorkflowIntegration({
       // 刷新工作流列表以确保状态同步
       await refreshWorkflows();
     } catch (error) {
-      // 根据错误类型显示不同的错误信息
-      let errorMessage = "添加工作流失败，请重试";
-
-      if (error instanceof Error) {
-        if (
-          error.message.includes("已存在") ||
-          error.message.includes("冲突")
-        ) {
-          errorMessage = `工作流 "${workflow.workflow_name}" 已存在，请勿重复添加`;
-        } else if (
-          error.message.includes("配置") ||
-          error.message.includes("token")
-        ) {
-          errorMessage = "系统配置错误，请检查扣子API配置";
-        } else if (
-          error.message.includes("验证失败") ||
-          error.message.includes("格式")
-        ) {
-          errorMessage = "工作流数据格式错误，请联系管理员";
-        } else if (
-          error.message.includes("网络") ||
-          error.message.includes("超时") ||
-          error.message.includes("连接")
-        ) {
-          errorMessage = "网络连接失败，请检查网络后重试";
-        } else if (error.message.includes("权限")) {
-          errorMessage = "权限不足，请检查API权限配置";
-        } else if (error.message.includes("频繁")) {
-          errorMessage = "操作过于频繁，请稍后重试";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-
+      const errorMessage = getWorkflowAddErrorMessage(
+        error,
+        workflow.workflow_name
+      );
       toast.error(errorMessage);
     } finally {
       setIsAddingWorkflow(false);
@@ -331,40 +340,10 @@ export function CozeWorkflowIntegration({
       // 刷新工作流列表以确保状态同步
       await refreshWorkflows();
     } catch (error) {
-      // 根据错误类型显示不同的错误信息
-      let errorMessage = "添加工作流失败，请重试";
-
-      if (error instanceof Error) {
-        if (
-          error.message.includes("已存在") ||
-          error.message.includes("冲突")
-        ) {
-          errorMessage = `工作流 "${workflow.workflow_name}" 已存在，请勿重复添加`;
-        } else if (
-          error.message.includes("配置") ||
-          error.message.includes("token")
-        ) {
-          errorMessage = "系统配置错误，请检查扣子API配置";
-        } else if (
-          error.message.includes("验证失败") ||
-          error.message.includes("格式")
-        ) {
-          errorMessage = "工作流数据格式错误，请联系管理员";
-        } else if (
-          error.message.includes("网络") ||
-          error.message.includes("超时") ||
-          error.message.includes("连接")
-        ) {
-          errorMessage = "网络连接失败，请检查网络后重试";
-        } else if (error.message.includes("权限")) {
-          errorMessage = "权限不足，请检查API权限配置";
-        } else if (error.message.includes("频繁")) {
-          errorMessage = "操作过于频繁，请稍后重试";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-
+      const errorMessage = getWorkflowAddErrorMessage(
+        error,
+        workflow.workflow_name
+      );
       toast.error(errorMessage);
     } finally {
       setIsAddingWorkflow(false);
