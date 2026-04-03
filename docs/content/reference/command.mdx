@@ -5,13 +5,116 @@ description: "xiaozhi-client 命令行工具的常用命令参考。"
 
 # 常用命令
 
+## 基础命令
+
 | 命令                                          | 说明                        |
 | --------------------------------------------- | --------------------------- |
-| xiaozhi help                                  | 帮助信息                    |
-| xiaozhi create                                | 创建应用                    |
-| xiaozhi start                                 | 启动服务                    |
+| xiaozhi help                                  | 显示帮助信息                |
+| xiaozhi --version                             | 显示版本信息                |
+| xiaozhi --info                                | 显示详细信息                |
+| xiaozhi create \<projectName\>                | 创建项目                    |
+
+## 服务管理命令
+
+| 命令                                          | 说明                        |
+| --------------------------------------------- | --------------------------- |
+| xiaozhi start                                 | 启动服务（前台模式）        |
+| xiaozhi start -d                              | 后台启动服务                |
+| xiaozhi start --debug                         | 启用调试模式（输出 DEBUG 级别日志） |
 | xiaozhi stop                                  | 停止服务                    |
 | xiaozhi status                                | 查看服务状态                |
-| xiaozhi config mcpEndpoint \<小智接入点地址\> | 设置小智接入点              |
+| xiaozhi restart                               | 重启服务                    |
+| xiaozhi restart -d                            | 后台重启服务                |
+| xiaozhi attach                                | 连接后台服务查看日志        |
+
+## 配置管理命令
+
+| 命令                                          | 说明                        |
+| --------------------------------------------- | --------------------------- |
+| xiaozhi config init                           | 初始化配置文件              |
+| xiaozhi config init --format \<format\>       | 指定配置文件格式（json/json5/jsonc） |
+| xiaozhi config get \<key\>                    | 获取配置值                  |
+| xiaozhi config set \<key\> \<value\>          | 设置配置值                  |
+
+**支持的配置项：**
+- `mcpEndpoint` - MCP 端点地址
+- `mcpServers` - MCP 服务配置
+- `connection` - 连接配置
+- `heartbeatInterval` - 心跳检测间隔
+- `heartbeatTimeout` - 心跳超时时间
+- `reconnectInterval` - 重连间隔
+
+## 端点管理命令
+
+| 命令                                          | 说明                        |
+| --------------------------------------------- | --------------------------- |
+| xiaozhi endpoint list                         | 列出所有 MCP 端点           |
+| xiaozhi endpoint add \<url\>                  | 添加新的 MCP 端点           |
+| xiaozhi endpoint remove \<url\>               | 移除指定的 MCP 端点         |
+| xiaozhi endpoint set \<url...\>               | 设置 MCP 端点（支持多个）   |
+
+## MCP 服务管理命令
+
+| 命令                                          | 说明                        |
+| --------------------------------------------- | --------------------------- |
 | xiaozhi mcp list                              | 列出所有 MCP 服务           |
-| xiaozhi mcp list --tools                      | 列出所有正在使用的 MCP 工具 |
+| xiaozhi mcp list --tools                      | 列出所有 MCP 工具           |
+| xiaozhi mcp server \<serverName\>             | 查看指定服务的工具列表      |
+| xiaozhi mcp tool \<serverName\> \<toolName\> enable  | 启用指定工具        |
+| xiaozhi mcp tool \<serverName\> \<toolName\> disable | 禁用指定工具        |
+| xiaozhi mcp call \<serviceName\> \<toolName\> --args \<json\> | 调用 MCP 工具 |
+
+## 示例
+
+```bash
+# 初始化配置文件
+xiaozhi config init
+
+# 启动服务（前台模式）
+xiaozhi start
+
+# 后台启动服务
+xiaozhi start -d
+
+# 启用调试模式
+xiaozhi start --debug
+
+# 查看服务状态
+xiaozhi status
+
+# 重启服务
+xiaozhi restart -d
+
+# 连接后台服务查看日志
+xiaozhi attach
+
+# 设置 MCP 端点
+xiaozhi endpoint set https://api.xiaozhi.me/mcp
+
+# 添加多个端点
+xiaozhi endpoint set https://api1.xiaozhi.me/mcp https://api2.xiaozhi.me/mcp
+
+# 列出所有端点
+xiaozhi endpoint list
+
+# 获取配置值
+xiaozhi config get mcpEndpoint
+
+# 设置心跳检测间隔
+xiaozhi config set heartbeatInterval 30000
+
+# 列出所有 MCP 服务
+xiaozhi mcp list
+
+# 列出所有 MCP 工具
+xiaozhi mcp list --tools
+
+# 查看指定服务的工具
+xiaozhi mcp server filesystem
+
+# 启用指定工具
+xiaozhi mcp tool filesystem read_file enable
+
+# 调用 MCP 工具
+xiaozhi mcp call filesystem read_file --args '{"path": "/tmp/test.txt"}'
+```
