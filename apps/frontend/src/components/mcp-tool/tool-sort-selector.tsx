@@ -1,3 +1,15 @@
+/**
+ * MCP 工具排序选择器组件
+ *
+ * 提供工具列表的排序选项，包括：
+ * - 按名称排序
+ * - 按状态排序（启用/禁用）
+ * - 按使用次数排序
+ * - 按最近使用时间排序
+ *
+ * @module apps/frontend/src/components/mcp-tool/tool-sort-selector
+ */
+
 "use client";
 
 import {
@@ -8,9 +20,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+/**
+ * 工具排序字段类型
+ */
 export type ToolSortField = "name" | "enabled" | "usageCount" | "lastUsedTime";
 
+/**
+ * 工具排序配置接口
+ */
 export interface ToolSortConfig {
+  /** 排序字段 */
   field: ToolSortField;
 }
 
