@@ -125,10 +125,10 @@ importers:
         version: 1.9.4
       '@nx/vite':
         specifier: ^22.5.1
-        version: 22.5.1(@babel/traverse@7.29.0)(nx@22.5.1)(typescript@5.9.3)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))
+        version: 22.5.1(@babel/traverse@7.29.0)(nx@22.5.1)(typescript@6.0.2)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))
       '@nx/vitest':
         specifier: ^22.5.1
-        version: 22.5.1(@babel/traverse@7.29.0)(nx@22.5.1)(typescript@5.9.3)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))
+        version: 22.5.1(@babel/traverse@7.29.0)(nx@22.5.1)(typescript@6.0.2)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))
       '@nx/workspace':
         specifier: ^22.5.1
         version: 22.5.1
@@ -173,22 +173,22 @@ importers:
         version: 7.7.3
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@types/node@24.10.9)(typescript@5.9.3)
+        version: 10.9.2(@types/node@24.10.9)(typescript@6.0.2)
       tsup:
         specifier: ^8.5.0
-        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.2)
       tsx:
         specifier: ^4.20.5
         version: 4.21.0
       typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
+        specifier: ^6.0.2
+        version: 6.0.2
       vite:
         specifier: ^7.1.11
         version: 7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2)
       vite-tsconfig-paths:
         specifier: ^6.1.0
-        version: 6.1.0(typescript@5.9.3)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))
+        version: 6.1.0(typescript@6.0.2)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2)
@@ -481,10 +481,10 @@ importers:
         version: 16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)
       nextra:
         specifier: ^4.6.0
-        version: 4.6.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+        version: 4.6.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.2)
       nextra-theme-docs:
         specifier: ^4.6.0
-        version: 4.6.1(@types/react@19.2.2)(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(nextra@4.6.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
+        version: 4.6.1(@types/react@19.2.2)(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(nextra@4.6.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.2))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
@@ -3641,6 +3641,7 @@ packages:
   '@xmldom/xmldom@0.9.8':
     resolution: {integrity: sha512-p96FSY54r+WJ50FIOsCOjyj/wavs8921hG5+kVMmZgKcvIKxMXHTrjNJvRgWa/zuX3B6t2lijLNFaOyuxUH+2A==}
     engines: {node: '>=14.6'}
+    deprecated: this version has critical issues, please update to the latest version
 
   '@yarnpkg/lockfile@1.1.0':
     resolution: {integrity: sha512-GpSwvyXOcOOlV70vbnzjj4fW5xW/FdUF6nQEt1ENy7m4ZCczi1+/buVUPAqmGfqznsORNFzUMjctTIp8a9tuCQ==}
@@ -7071,6 +7072,11 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  typescript@6.0.2:
+    resolution: {integrity: sha512-bGdAIrZ0wiGDo5l8c++HWtbaNCWTS4UTv7RaTH/ThVIgjkveJt83m74bBHMJkuCbslY8ixgLBVZJIOiQlQTjfQ==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
   ua-parser-js@0.7.41:
     resolution: {integrity: sha512-O3oYyCMPYgNNHuO7Jjk3uacJWZF8loBgwrfd/5LE/HyZ3lUIOdniQ7DNXJcIgZbwioZxk0fLfI4EVnetdiX5jg==}
     hasBin: true
@@ -9149,12 +9155,12 @@ snapshots:
   '@nx/nx-win32-x64-msvc@22.5.1':
     optional: true
 
-  '@nx/vite@22.5.1(@babel/traverse@7.29.0)(nx@22.5.1)(typescript@5.9.3)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))':
+  '@nx/vite@22.5.1(@babel/traverse@7.29.0)(nx@22.5.1)(typescript@6.0.2)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
       '@nx/devkit': 22.5.1(nx@22.5.1)
       '@nx/js': 22.5.1(@babel/traverse@7.29.0)(nx@22.5.1)
-      '@nx/vitest': 22.5.1(@babel/traverse@7.29.0)(nx@22.5.1)(typescript@5.9.3)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))
-      '@phenomnomnominal/tsquery': 6.1.4(typescript@5.9.3)
+      '@nx/vitest': 22.5.1(@babel/traverse@7.29.0)(nx@22.5.1)(typescript@6.0.2)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))
+      '@phenomnomnominal/tsquery': 6.1.4(typescript@6.0.2)
       ajv: 8.18.0
       enquirer: 2.3.6
       picomatch: 4.0.2
@@ -9173,11 +9179,11 @@ snapshots:
       - typescript
       - verdaccio
 
-  '@nx/vitest@22.5.1(@babel/traverse@7.29.0)(nx@22.5.1)(typescript@5.9.3)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))':
+  '@nx/vitest@22.5.1(@babel/traverse@7.29.0)(nx@22.5.1)(typescript@6.0.2)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(happy-dom@20.4.0)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
       '@nx/devkit': 22.5.1(nx@22.5.1)
       '@nx/js': 22.5.1(@babel/traverse@7.29.0)(nx@22.5.1)
-      '@phenomnomnominal/tsquery': 6.1.4(typescript@5.9.3)
+      '@phenomnomnominal/tsquery': 6.1.4(typescript@6.0.2)
       semver: 7.7.3
       tslib: 2.8.1
     optionalDependencies:
@@ -9292,11 +9298,11 @@ snapshots:
       '@parcel/watcher-win32-x64': 2.5.6
     optional: true
 
-  '@phenomnomnominal/tsquery@6.1.4(typescript@5.9.3)':
+  '@phenomnomnominal/tsquery@6.1.4(typescript@6.0.2)':
     dependencies:
       '@types/esquery': 1.5.4
       esquery: 1.7.0
-      typescript: 5.9.3
+      typescript: 6.0.2
 
   '@pinojs/redact@0.4.0': {}
 
@@ -9949,12 +9955,12 @@ snapshots:
     dependencies:
       '@shikijs/types': 3.21.0
 
-  '@shikijs/twoslash@3.21.0(typescript@5.9.3)':
+  '@shikijs/twoslash@3.21.0(typescript@6.0.2)':
     dependencies:
       '@shikijs/core': 3.21.0
       '@shikijs/types': 3.21.0
-      twoslash: 0.3.6(typescript@5.9.3)
-      typescript: 5.9.3
+      twoslash: 0.3.6(typescript@6.0.2)
+      typescript: 6.0.2
     transitivePeerDependencies:
       - supports-color
 
@@ -10386,10 +10392,10 @@ snapshots:
     dependencies:
       '@types/node': 24.10.9
 
-  '@typescript/vfs@1.6.2(typescript@5.9.3)':
+  '@typescript/vfs@1.6.2(typescript@6.0.2)':
     dependencies:
       debug: 4.4.3
-      typescript: 5.9.3
+      typescript: 6.0.2
     transitivePeerDependencies:
       - supports-color
 
@@ -13112,13 +13118,13 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  nextra-theme-docs@4.6.1(@types/react@19.2.2)(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(nextra@4.6.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4)):
+  nextra-theme-docs@4.6.1(@types/react@19.2.2)(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(nextra@4.6.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.2))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4)):
     dependencies:
       '@headlessui/react': 2.2.9(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       clsx: 2.1.1
       next: 16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3)
       next-themes: 0.4.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      nextra: 4.6.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      nextra: 4.6.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.2)
       react: 19.2.4
       react-compiler-runtime: 19.1.0-rc.3(react@19.2.4)
       react-dom: 19.2.4(react@19.2.4)
@@ -13130,13 +13136,13 @@ snapshots:
       - immer
       - use-sync-external-store
 
-  nextra@4.6.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3):
+  nextra@4.6.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.97.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.2):
     dependencies:
       '@formatjs/intl-localematcher': 0.6.2
       '@headlessui/react': 2.2.9(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@mdx-js/mdx': 3.1.1
       '@napi-rs/simple-git': 0.1.22
-      '@shikijs/twoslash': 3.21.0(typescript@5.9.3)
+      '@shikijs/twoslash': 3.21.0(typescript@6.0.2)
       '@theguild/remark-mermaid': 0.3.0(react@19.2.4)
       '@theguild/remark-npm2yarn': 0.3.3
       better-react-mathjax: 2.3.0(react@19.2.4)
@@ -14557,7 +14563,7 @@ snapshots:
       '@ts-morph/common': 0.28.1
       code-block-writer: 13.0.3
 
-  ts-node@10.9.2(@types/node@24.10.9)(typescript@5.9.3):
+  ts-node@10.9.2(@types/node@24.10.9)(typescript@6.0.2):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.12
@@ -14571,13 +14577,13 @@ snapshots:
       create-require: 1.1.1
       diff: 4.0.4
       make-error: 1.3.6
-      typescript: 5.9.3
+      typescript: 6.0.2
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
 
-  tsconfck@3.1.6(typescript@5.9.3):
+  tsconfck@3.1.6(typescript@6.0.2):
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 6.0.2
 
   tsconfig-paths@4.2.0:
     dependencies:
@@ -14615,6 +14621,34 @@ snapshots:
       - tsx
       - yaml
 
+  tsup@8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.2):
+    dependencies:
+      bundle-require: 5.1.0(esbuild@0.27.3)
+      cac: 6.7.14
+      chokidar: 4.0.3
+      consola: 3.4.2
+      debug: 4.4.3
+      esbuild: 0.27.3
+      fix-dts-default-cjs-exports: 1.0.1
+      joycon: 3.1.1
+      picocolors: 1.1.1
+      postcss-load-config: 6.0.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(yaml@2.8.2)
+      resolve-from: 5.0.0
+      rollup: 4.59.0
+      source-map: 0.7.6
+      sucrase: 3.35.1
+      tinyexec: 0.3.2
+      tinyglobby: 0.2.15
+      tree-kill: 1.2.2
+    optionalDependencies:
+      postcss: 8.5.6
+      typescript: 6.0.2
+    transitivePeerDependencies:
+      - jiti
+      - supports-color
+      - tsx
+      - yaml
+
   tsx@4.21.0:
     dependencies:
       esbuild: 0.27.3
@@ -14624,11 +14658,11 @@ snapshots:
 
   twoslash-protocol@0.3.6: {}
 
-  twoslash@0.3.6(typescript@5.9.3):
+  twoslash@0.3.6(typescript@6.0.2):
     dependencies:
-      '@typescript/vfs': 1.6.2(typescript@5.9.3)
+      '@typescript/vfs': 1.6.2(typescript@6.0.2)
       twoslash-protocol: 0.3.6
-      typescript: 5.9.3
+      typescript: 6.0.2
     transitivePeerDependencies:
       - supports-color
 
@@ -14641,6 +14675,8 @@ snapshots:
   typed-function@4.2.2: {}
 
   typescript@5.9.3: {}
+
+  typescript@6.0.2: {}
 
   ua-parser-js@0.7.41: {}
 
@@ -14885,11 +14921,11 @@ snapshots:
       - tsx
       - yaml
 
-  vite-tsconfig-paths@6.1.0(typescript@5.9.3)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2)):
+  vite-tsconfig-paths@6.1.0(typescript@6.0.2)(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2)):
     dependencies:
       debug: 4.4.3
       globrex: 0.1.2
-      tsconfck: 3.1.6(typescript@5.9.3)
+      tsconfck: 3.1.6(typescript@6.0.2)
       vite: 7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.2)
     transitivePeerDependencies:
       - supports-color
