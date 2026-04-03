@@ -6,10 +6,11 @@
  * - NotificationService: 通知服务，处理系统通知和消息推送
  * - EventBus / getEventBus: 事件总线服务，提供发布-订阅模式的事件处理机制
  * - CustomMCPHandler: 自定义 MCP 处理器（重新导出，保持向后兼容性）
+ * - TTSFactory: TTS 客户端工厂，管理 TTS 客户端实例的创建和复用
  *
  * @example
  * ```typescript
- * import { StatusService, NotificationService, getEventBus } from '@/services';
+ * import { StatusService, NotificationService, getEventBus, TTSFactory } from '@/services';
  *
  * // 使用状态服务
  * const statusService = new StatusService();
@@ -20,6 +21,10 @@
  * eventBus.onEvent('event-name', (data) => {
  *   console.log('Event received:', data);
  * });
+ *
+ * // 使用 TTS 工厂
+ * const ttsFactory = new TTSFactory();
+ * const ttsClient = ttsFactory.getOrCreateClient(config);
  * ```
  */
 export * from "./status.service.js";
@@ -27,6 +32,7 @@ export * from "./notification.service.js";
 export * from "./event-bus.service.js";
 export * from "./device-registry.service.js";
 export * from "./esp32.service.js";
+export * from "./tts.factory.js";
 
 // CustomMCPHandler 重新导出 - 保持向后兼容性
 export { CustomMCPHandler } from "@/lib/mcp/custom.js";

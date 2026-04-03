@@ -58,6 +58,7 @@ import {
   ESP32Service,
   NotificationService,
   StatusService,
+  TTSFactory,
   destroyEventBus,
   getEventBus,
 } from "@/services/index.js";
@@ -137,6 +138,7 @@ export class WebServer {
   private notificationService: NotificationService;
   private deviceRegistryService: DeviceRegistryService;
   private esp32Service: ESP32Service;
+  private ttsFactory: TTSFactory;
 
   // HTTP API 处理器
   private configApiHandler: ConfigApiHandler;
@@ -192,6 +194,8 @@ export class WebServer {
     this.esp32Service = new ESP32Service(this.deviceRegistryService);
     // 设置 TTS 服务的获取连接回调
     this.esp32Service.setupTTSGetConnection();
+    // 创建 TTS 工厂
+    this.ttsFactory = new TTSFactory();
 
     // 初始化 HTTP API 处理器
     this.configApiHandler = new ConfigApiHandler();
@@ -204,7 +208,7 @@ export class WebServer {
     this.mcpRouteHandler = new MCPRouteHandler();
     this.updateApiHandler = new UpdateApiHandler();
     this.cozeHandler = new CozeHandler();
-    this.ttsApiHandler = new TTSApiHandler();
+    this.ttsApiHandler = new TTSApiHandler(this.ttsFactory);
     this.esp32Handler = new ESP32Handler(this.esp32Service);
 
     // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
@@ -1093,6 +1097,8 @@ export class WebServer {
     this.deviceRegistryService.destroy();
     // 异步销毁 ESP32 服务（fire and forget）
     this.esp32Service.destroy();
+    // 销毁 TTS 工厂
+    this.ttsFactory.destroy();
 
     // 销毁事件总线
     destroyEventBus();

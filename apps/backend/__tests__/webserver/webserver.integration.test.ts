@@ -114,6 +114,18 @@ vi.mock("@/services/index.js", () => {
     setupTTSGetConnection: vi.fn(),
   };
 
+  // Mock TTSFactory
+  const mockTTSFactoryInstance = {
+    getOrCreateClient: vi.fn(() => ({
+      synthesize: vi.fn().mockResolvedValue(new Uint8Array(100)),
+      close: vi.fn(),
+    })),
+    removeClient: vi.fn(),
+    clearCache: vi.fn(),
+    getCacheStats: vi.fn(() => ({ size: 0, maxSize: 10, entries: [] })),
+    destroy: vi.fn(),
+  };
+
   return {
     // EventBus 相关
     getEventBus: vi.fn(() => mockEventBus),
@@ -127,6 +139,8 @@ vi.mock("@/services/index.js", () => {
     DeviceRegistryService: vi.fn(() => mockDeviceRegistryServiceInstance),
     // ESP32Service 相关
     ESP32Service: vi.fn(() => mockESP32ServiceInstance),
+    // TTSFactory 相关
+    TTSFactory: vi.fn(() => mockTTSFactoryInstance),
   };
 });
 
