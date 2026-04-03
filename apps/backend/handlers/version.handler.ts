@@ -74,11 +74,11 @@ export class VersionApiHandler extends BaseHandler {
       c.get("logger").debug("处理获取可用版本列表请求");
 
       // 获取查询参数
-      const type = (c.req.query("type") as unknown) || "stable";
+      const type = c.req.query("type") ?? "stable";
 
       // 验证版本类型参数
-      const validTypes = ["stable", "rc", "beta", "all"];
-      if (!validTypes.includes(type as string)) {
+      const validTypes = ["stable", "rc", "beta", "all"] as const;
+      if (!validTypes.includes(type as "stable" | "rc" | "beta" | "all")) {
         return c.fail(
           "INVALID_VERSION_TYPE",
           `无效的版本类型: ${type}。支持的类型: ${validTypes.join(", ")}`,
@@ -88,7 +88,7 @@ export class VersionApiHandler extends BaseHandler {
       }
 
       const npmManager = new NPMManager();
-      const versions = await npmManager.getAvailableVersions(type as string);
+      const versions = await npmManager.getAvailableVersions(type);
 
       c.get("logger").debug(
         `获取到 ${versions.length} 个可用版本 (类型: ${type})`
