@@ -51,26 +51,42 @@ function isErrorWithCode(error: unknown): error is ErrorWithCode {
 }
 
 /**
- * 获取扣子 API 服务实例
- */
-function getCozeApiService(): CozeApiService {
-  const token = configManager.getCozeToken();
-
-  if (!token) {
-    throw new Error(
-      "扣子 API Token 未配置，请在配置文件中设置 platforms.coze.token"
-    );
-  }
-
-  return new CozeApiService(token);
-}
-
-/**
  * 扣子 API 路由处理器类
+ * 使用依赖注入模式管理 CozeApiService 实例
  */
 export class CozeHandler extends BaseHandler {
-  constructor() {
+  private cozeApiService: CozeApiService | null = null;
+
+  /**
+   * 构造函数，支持依赖注入
+   * @param cozeApiService - 可选的 CozeApiService 实例，用于依赖注入
+   */
+  constructor(cozeApiService?: CozeApiService) {
     super();
+    // 允许注入实例，如果没有提供则延迟初始化
+    if (cozeApiService) {
+      this.cozeApiService = cozeApiService;
+    }
+  }
+
+  /**
+   * 获取扣子 API 服务实例（延迟初始化模式）
+   * 确保同一 Handler 实例复用同一个 CozeApiService 实例
+   */
+  private getCozeApiService(): CozeApiService {
+    // 延迟初始化模式
+    if (!this.cozeApiService) {
+      const token = configManager.getCozeToken();
+
+      if (!token) {
+        throw new Error(
+          "扣子 API Token 未配置，请在配置文件中设置 platforms.coze.token"
+        );
+      }
+
+      this.cozeApiService = new CozeApiService(token);
+    }
+    return this.cozeApiService;
   }
 
   /**
@@ -137,7 +153,7 @@ export class CozeHandler extends BaseHandler {
         );
       }
 
-      const cozeApiService = getCozeApiService();
+      const cozeApiService = this.getCozeApiService();
 
       c.get("logger").info("调用 Coze API 获取工作空间列表");
       const workspaces = await cozeApiService.getWorkspaces();
@@ -209,7 +225,7 @@ export class CozeHandler extends BaseHandler {
         page_size,
       };
 
-      const cozeApiService = getCozeApiService();
+      const cozeApiService = this.getCozeApiService();
 
       c.get("logger").info(
         `开始获取工作空间 ${workspace_id} 的工作流列表，页码: ${page_num}，每页: ${page_size}`
@@ -279,7 +295,7 @@ export class CozeHandler extends BaseHandler {
 
       const pattern = c.req.query("pattern"); // 可选的缓存模式参数
 
-      const cozeApiService = getCozeApiService();
+      const cozeApiService = this.getCozeApiService();
 
       const statsBefore = cozeApiService.getCacheStats();
       c.get("logger").info(
@@ -338,7 +354,7 @@ export class CozeHandler extends BaseHandler {
         );
       }
 
-      const cozeApiService = getCozeApiService();
+      const cozeApiService = this.getCozeApiService();
       const stats = cozeApiService.getCacheStats();
 
       return c.success(stats);
