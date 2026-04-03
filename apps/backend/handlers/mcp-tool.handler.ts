@@ -7,7 +7,6 @@ import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { HTTP_TIMEOUTS } from "@/constants/timeout.constants.js";
 import { MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
-import { MCPCacheManager } from "@/lib/mcp";
 import type { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import type { CozeWorkflow, WorkflowParameterConfig } from "@/types/coze.js";
@@ -666,8 +665,8 @@ export class MCPToolHandler {
       return c.fail("SERVICE_OR_TOOL_NOT_FOUND", errorMessage, undefined, 404);
     }
 
-    // 从缓存中获取工具信息
-    const cacheManager = new MCPCacheManager();
+    // 从 MCPServiceManager 获取缓存管理器实例，避免重复创建和定时器泄漏
+    const cacheManager = serviceManager.getCacheManager();
     const cachedTools = await cacheManager.getAllCachedTools();
 
     // 查找对应的工具

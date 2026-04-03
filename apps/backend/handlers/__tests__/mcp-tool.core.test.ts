@@ -26,6 +26,10 @@ vi.mock("@xiaozhi-client/config", () => ({
 }));
 
 // 模拟 MCPServiceManager - 在 Context 中提供
+const mockCacheManager = {
+  getAllCachedTools: vi.fn().mockResolvedValue([]),
+};
+
 const mockServiceManager = {
   hasTool: vi.fn(() => false),
   hasCustomMCPTool: vi.fn(() => false),
@@ -41,6 +45,7 @@ const mockServiceManager = {
   getConnectedServices: vi.fn(() => []),
   stopService: vi.fn(),
   startService: vi.fn(),
+  getCacheManager: vi.fn(() => mockCacheManager),
 };
 
 // 模拟 MCPCacheManager
@@ -237,21 +242,14 @@ describe("MCPToolHandler - 核心功能测试", () => {
         () => {}
       );
 
-      // 模拟 MCPCacheManager
-      const { MCPCacheManager } = await import("@/lib/mcp");
-      const mockMCPCacheManager = vi.mocked(MCPCacheManager);
-      mockMCPCacheManager.mockImplementation(
-        () =>
-          ({
-            getAllCachedTools: vi.fn().mockResolvedValue([
-              {
-                name: "test-service__test-tool",
-                description: "测试工具",
-                inputSchema: { type: "object", properties: {} },
-              },
-            ]),
-          }) as any
-      );
+      // 模拟缓存管理器返回缓存的工具列表
+      mockCacheManager.getAllCachedTools.mockResolvedValue([
+        {
+          name: "test-service__test-tool",
+          description: "测试工具",
+          inputSchema: { type: "object", properties: {} },
+        },
+      ]);
 
       await handler.addCustomTool(mockContext as Context);
 

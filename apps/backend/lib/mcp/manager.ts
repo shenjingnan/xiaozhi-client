@@ -1811,12 +1811,23 @@ export class MCPServiceManager extends EventEmitter {
   }
 
   /**
+   * 获取缓存管理器
+   * 提供对 MCPCacheManager 实例的访问，避免重复创建实例
+   */
+  getCacheManager(): MCPCacheManager {
+    return this.cacheManager;
+  }
+
+  /**
    * 清理资源（实现 IMCPServiceManager 接口）
    *
-   * 注意：此方法会停止所有 MCP 服务
+   * 注意：此方法会停止所有 MCP 服务并清理缓存管理器
    */
   async cleanup(): Promise<void> {
     await this.stopAllServices();
+
+    // 清理缓存管理器，停止清理定时器
+    this.cacheManager.cleanup();
 
     // 清理事件监听器，防止内存泄漏
     this.eventBus.offEvent(
