@@ -5,10 +5,10 @@
 
 import fs from "node:fs";
 import { TTS_VOICES, getVoiceScenes } from "@/constants/voices.js";
+import type { TTSFactory } from "@/services/tts.factory.js";
 import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { VoiceInfo, VoicesResponse } from "@xiaozhi-client/shared-types";
-import { TTS } from "@xiaozhi-client/tts";
 import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
 
@@ -36,8 +36,11 @@ interface TTSRequestBody {
  * TTS API 路由处理器类
  */
 export class TTSApiHandler extends BaseHandler {
-  constructor() {
+  private ttsFactory: TTSFactory;
+
+  constructor(ttsFactory: TTSFactory) {
     super();
+    this.ttsFactory = ttsFactory;
   }
 
   /**
@@ -104,22 +107,14 @@ export class TTSApiHandler extends BaseHandler {
         );
       }
 
-      // 创建 TTS 客户端
-      const ttsClient = new TTS({
-        bytedance: {
-          v1: {
-            app: {
-              appid: appid!,
-              accessToken: accessToken!,
-            },
-            audio: {
-              voice_type: voice_type!,
-              encoding: encoding || "wav",
-            },
-            cluster,
-            endpoint,
-          },
-        },
+      // 通过工厂获取或创建 TTS 客户端
+      const ttsClient = this.ttsFactory.getOrCreateClient({
+        appid: appid!,
+        accessToken: accessToken!,
+        voice_type: voice_type!,
+        encoding: encoding || "wav",
+        cluster,
+        endpoint,
       });
 
       c.get("logger").info(
