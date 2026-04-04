@@ -1,3 +1,10 @@
+/**
+ * 添加 MCP 服务器按钮组件
+ *
+ * 提供添加 MCP 服务器的入口，点击后打开配置对话框。
+ * 支持表单模式和高级 JSON 模式两种配置方式。
+ */
+
 import { McpServerForm } from "@/components/mcp-server-form";
 import { Button } from "@/components/ui/button";
 import {
