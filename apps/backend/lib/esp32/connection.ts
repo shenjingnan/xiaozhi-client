@@ -430,6 +430,9 @@ export class ESP32Connection {
    * 关闭连接
    */
   async close(): Promise<void> {
+    // 先移除所有事件监听器，防止内存泄漏
+    this.ws.removeAllListeners();
+
     if (this.state === "disconnected") {
       return;
     }
@@ -449,20 +452,16 @@ export class ESP32Connection {
 
     // 等待实际的 close 事件，而不是依赖 setTimeout
     return new Promise<void>((resolve) => {
-      // 监听 close 事件
-      const onClose = () => {
-        this.ws.removeListener("close", onClose);
+      // 监听 close 事件（此时 listeners 已被移除，所以使用 once）
+      this.ws.once("close", () => {
         resolve();
-      };
-
-      this.ws.once("close", onClose);
+      });
 
       // 发起关闭
       this.ws.close(1000, "Normal closure");
 
       // 设置超时以防 close 事件未触发
       setTimeout(() => {
-        this.ws.removeListener("close", onClose);
         resolve();
       }, 1000);
     });
