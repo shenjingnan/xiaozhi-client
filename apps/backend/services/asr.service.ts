@@ -41,6 +41,9 @@ export class ASRService implements IASRService {
   /** 每个设备的音频数据队列（用于 V2 listen API） */
   private readonly audioQueues = new Map<string, Buffer[]>();
 
+  /** 每个设备的音频队列读取索引，用于优化 shift() 性能 */
+  private readonly audioQueueIndices = new Map<string, number>();
+
   /** 每个设备的是否已结束音频输入 */
   private readonly audioEnded = new Map<string, boolean>();
 
@@ -275,6 +278,7 @@ export class ASRService implements IASRService {
 
   /**
    * 创建异步生成器，从队列中读取 PCM 数据
+   * 使用索引标记已处理位置，避免 shift() 的 O(n) 性能开销
    * @param deviceId - 设备 ID
    * @returns 异步生成器
    */
@@ -295,8 +299,22 @@ export class ASRService implements IASRService {
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
 
-      // 从队列取出数据
-      const pcmData = queue.shift()!;
+      // 使用索引读取数据，避免 shift() 的 O(n) 开销
+      const readIndex = this.audioQueueIndices.get(deviceId) || 0;
+      const pcmData = queue[readIndex];
+      this.audioQueueIndices.set(deviceId, readIndex + 1);
+
+      // 定期清理已处理的数据（当已处理数据超过队列长度一半时）
+      if (readIndex >= Math.floor(queue.length / 2) && readIndex > 0) {
+        // 批量删除已处理的数据
+        queue.splice(0, readIndex);
+        // 重置索引
+        this.audioQueueIndices.set(deviceId, 0);
+        logger.debug(
+          `[ASRService] 清理已处理音频数据: deviceId=${deviceId}, cleared=${readIndex}, remaining=${queue.length}`
+        );
+      }
+
       yield pcmData;
     }
   }
@@ -350,6 +368,7 @@ export class ASRService implements IASRService {
       // 重置音频缓冲区状态，准备下一次识别
       // 注意：底层 ASR 客户端已关闭连接，下次识别需要重新 connect
       this.audioQueues.set(deviceId, []);
+      this.audioQueueIndices.set(deviceId, 0);
       this.audioEnded.set(deviceId, false);
       logger.info(
         `[ASRService] 音频缓冲区已重置，准备下一次识别: deviceId=${deviceId}`
@@ -395,6 +414,7 @@ export class ASRService implements IASRService {
     // 清理资源
     this.asrClients.delete(deviceId);
     this.audioQueues.delete(deviceId);
+    this.audioQueueIndices.delete(deviceId);
     this.audioEnded.delete(deviceId);
     this.listenTasks.delete(deviceId);
 
@@ -437,6 +457,7 @@ export class ASRService implements IASRService {
     this.asrClients.clear();
     // 清理 V2 API 相关状态
     this.audioQueues.clear();
+    this.audioQueueIndices.clear();
     this.audioEnded.clear();
     this.listenTasks.clear();
     this.deviceStates.clear();
