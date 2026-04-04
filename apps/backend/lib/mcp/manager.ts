@@ -1680,6 +1680,7 @@ export class MCPServiceManager extends EventEmitter {
     return {
       isRunning: this.isRunning,
       serviceStatus,
+      transportCount: this.services.size,
       activeConnections: this.getActiveConnectionCount(),
       config: this.config,
       // 便捷访问属性
