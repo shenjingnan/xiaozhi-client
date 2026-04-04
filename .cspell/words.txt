@@ -144,6 +144,7 @@ shaonianzixin
 Shen
 shenjingnan
 shuangkuaisisi
+smol
 sonner
 sqlalchemy
 SSEMCP
