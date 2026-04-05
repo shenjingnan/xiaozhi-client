@@ -8,12 +8,14 @@ import type {
   ApiSuccessResponse,
   AppConfig,
   ClientStatus,
+  ConnectionConfig,
   CustomMCPToolWithStats,
   MCPErrorCode,
   MCPServerAddRequest,
   MCPServerConfig,
   MCPServerListResponse,
   MCPServerStatus,
+  ToolCallResult,
   VoicesResponse,
 } from "@xiaozhi-client/shared-types";
 
@@ -286,10 +288,9 @@ export class ApiClient {
   /**
    * 获取连接配置
    */
-  async getConnectionConfig(): Promise<any> {
-    const response: ApiResponse<{ connection: any }> = await this.request(
-      "/api/config/connection"
-    );
+  async getConnectionConfig(): Promise<ConnectionConfig> {
+    const response: ApiResponse<{ connection: ConnectionConfig }> =
+      await this.request("/api/config/connection");
     if (!response.success || !response.data) {
       throw new Error("获取连接配置失败");
     }
@@ -652,8 +653,8 @@ export class ApiClient {
   /**
    * 获取自定义工具列表
    */
-  async getCustomTools(): Promise<any[]> {
-    const response: ApiResponse<{ tools: any[] }> =
+  async getCustomTools(): Promise<CustomMCPToolWithStats[]> {
+    const response: ApiResponse<{ tools: CustomMCPToolWithStats[] }> =
       await this.request("/api/tools/custom");
     if (!response.success || !response.data) {
       throw new Error("获取自定义工具列表失败");
@@ -1108,22 +1109,25 @@ export class ApiClient {
   async callTool(
     serviceName: string,
     toolName: string,
-    args: any = {}
-  ): Promise<any> {
-    const response: ApiResponse = await this.request("/api/tools/call", {
-      method: "POST",
-      body: JSON.stringify({
-        serviceName,
-        toolName,
-        args,
-      }),
-    });
+    args: Record<string, unknown> = {}
+  ): Promise<ToolCallResult> {
+    const response: ApiResponse<{ result: ToolCallResult }> = await this.request(
+      "/api/tools/call",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          serviceName,
+          toolName,
+          args,
+        }),
+      }
+    );
 
     if (!response.success) {
       throw new Error(response.error?.message || "调用工具失败");
     }
 
-    return response.data;
+    return response.data!.result;
   }
 
   /**

@@ -25,6 +25,7 @@ export type {
   CustomMCPToolWithStats,
   CustomMCPToolConfig,
   JSONSchema,
+  ToolCallResult,
 } from "./mcp";
 
 // 工具API相关类型
