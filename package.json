@@ -113,6 +113,7 @@
   },
   "pnpm": {
     "overrides": {
+      "brace-expansion": ">=5.0.5",
       "@isaacs/brace-expansion": ">=5.0.1",
       "form-data": "^4.0.4",
       "braces": ">=3.0.3",
