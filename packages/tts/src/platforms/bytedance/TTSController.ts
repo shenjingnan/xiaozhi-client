@@ -38,6 +38,34 @@ function voiceToCluster(voice: string): string {
 }
 
 /**
+ * TTS 请求参数类型
+ */
+interface TTSRequest {
+  app: {
+    appid: string;
+    token: string;
+    cluster: string;
+  };
+  user: {
+    uid: string;
+  };
+  audio: {
+    voice_type: string;
+    encoding: string;
+    speed?: number;
+    pitch?: number;
+    volume?: number;
+  };
+  request: {
+    reqid: string;
+    text: string;
+    operation: string;
+    extra_param: string;
+    with_timestamp: string;
+  };
+}
+
+/**
  * 字节跳动 TTS 控制器实现类
  */
 export class ByteDanceTTSController implements TTSController {
@@ -50,17 +78,12 @@ export class ByteDanceTTSController implements TTSController {
   }
 
   /**
-   * 流式合成语音
+   * 建立 WebSocket 连接
    */
-  async synthesizeStream(
-    text: string,
-    onAudioChunk: AudioChunkCallback
-  ): Promise<void> {
+  private async setupConnection(): Promise<void> {
     this.isStreamClosed = false;
 
     const endpoint = this.config.endpoint || DEFAULT_TTS_ENDPOINT;
-    const encoding = this.config.audio.encoding || "wav";
-
     const headers = {
       Authorization: `Bearer;${this.config.app.accessToken}`,
     };
@@ -78,8 +101,13 @@ export class ByteDanceTTSController implements TTSController {
       this.ws.on("open", () => resolve());
       this.ws.on("error", (err) => reject(err));
     });
+  }
 
-    const request = {
+  /**
+   * 构建 TTS 请求参数
+   */
+  private buildRequest(text: string, encoding: string): TTSRequest {
+    return {
       app: {
         appid: this.config.app.appid,
         token: this.config.app.accessToken,
@@ -113,15 +141,34 @@ export class ByteDanceTTSController implements TTSController {
         with_timestamp: "1",
       },
     };
+  }
 
+  /**
+   * 发送 TTS 请求
+   */
+  private async sendRequest(text: string, encoding: string): Promise<void> {
     if (!this.ws) {
       throw new Error("WebSocket 未创建");
     }
 
+    const request = this.buildRequest(text, encoding);
     await FullClientRequest(
       this.ws,
       new TextEncoder().encode(JSON.stringify(request))
     );
+  }
+
+  /**
+   * 流式合成语音
+   */
+  async synthesizeStream(
+    text: string,
+    onAudioChunk: AudioChunkCallback
+  ): Promise<void> {
+    const encoding = this.config.audio.encoding || "wav";
+
+    await this.setupConnection();
+    await this.sendRequest(text, encoding);
 
     while (true) {
       if (this.isStreamClosed || !this.ws) {
@@ -134,7 +181,6 @@ export class ByteDanceTTSController implements TTSController {
         case MsgType.FrontEndResultServer:
           break;
         case MsgType.AudioOnlyServer: {
-          // console.log("tts: ", msg);
           const isLast = msg.sequence !== undefined && msg.sequence < 0;
           console.log(
             `[TTSController] Calling onAudioChunk: isLast=${isLast}, sequence=${msg.sequence}`
@@ -158,72 +204,10 @@ export class ByteDanceTTSController implements TTSController {
    * 非流式合成语音
    */
   async synthesize(text: string): Promise<Uint8Array> {
-    this.isStreamClosed = false;
-
-    const endpoint = this.config.endpoint || DEFAULT_TTS_ENDPOINT;
     const encoding = this.config.audio.encoding || "wav";
 
-    const headers = {
-      Authorization: `Bearer;${this.config.app.accessToken}`,
-    };
-
-    this.ws = new WebSocket(endpoint, {
-      headers,
-      skipUTF8Validation: true,
-    });
-
-    await new Promise<void>((resolve, reject) => {
-      if (!this.ws) {
-        reject(new Error("WebSocket 未创建"));
-        return;
-      }
-      this.ws.on("open", () => resolve());
-      this.ws.on("error", (err) => reject(err));
-    });
-
-    const request = {
-      app: {
-        appid: this.config.app.appid,
-        token: this.config.app.accessToken,
-        cluster:
-          this.config.cluster?.trim() ||
-          voiceToCluster(this.config.audio.voice_type),
-      },
-      user: {
-        uid: randomUUID(),
-      },
-      audio: {
-        voice_type: this.config.audio.voice_type,
-        encoding: encoding,
-        ...(this.config.audio.speed !== undefined && {
-          speed: this.config.audio.speed,
-        }),
-        ...(this.config.audio.pitch !== undefined && {
-          pitch: this.config.audio.pitch,
-        }),
-        ...(this.config.audio.volume !== undefined && {
-          volume: this.config.audio.volume,
-        }),
-      },
-      request: {
-        reqid: randomUUID(),
-        text: text,
-        operation: "submit",
-        extra_param: JSON.stringify({
-          disable_markdown_filter: false,
-        }),
-        with_timestamp: "1",
-      },
-    };
-
-    if (!this.ws) {
-      throw new Error("WebSocket 未创建");
-    }
-
-    await FullClientRequest(
-      this.ws,
-      new TextEncoder().encode(JSON.stringify(request))
-    );
+    await this.setupConnection();
+    await this.sendRequest(text, encoding);
 
     const totalAudio: Uint8Array[] = [];
 
