@@ -40,6 +40,7 @@ import {
   VersionApiHandler,
 } from "@/handlers/index.js";
 import { MCPServiceManager } from "@/lib/mcp";
+import { ToolCallLogService } from "@/lib/mcp/log.js";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
 import {
@@ -198,7 +199,7 @@ export class WebServer {
     this.statusApiHandler = new StatusApiHandler(this.statusService);
     this.serviceApiHandler = new ServiceApiHandler(this.statusService);
     this.mcpToolHandler = new MCPToolHandler();
-    this.mcpToolLogHandler = new MCPToolLogHandler();
+    this.mcpToolLogHandler = new MCPToolLogHandler(new ToolCallLogService());
     this.versionApiHandler = new VersionApiHandler();
     this.staticFileHandler = new StaticFileHandler();
     this.mcpRouteHandler = new MCPRouteHandler();
