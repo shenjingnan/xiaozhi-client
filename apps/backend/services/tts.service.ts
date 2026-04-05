@@ -49,6 +49,12 @@ export class TTSService implements ITTSService {
   /** 每个设备的连接引用（用于缓冲区处理） */
   private readonly deviceConnections = new Map<string, ESP32Connection>();
 
+  /** 每个设备的等待缓冲区排空的定时器 */
+  private readonly drainIntervals = new Map<
+    string,
+    ReturnType<typeof setInterval>
+  >();
+
   /**
    * 构造函数
    * @param options - 配置选项
@@ -207,6 +213,13 @@ export class TTSService implements ITTSService {
   private waitForBufferDrain(deviceId: string): void {
     const checkInterval = 50; // 每 50ms 检查一次
 
+    // 清理已存在的定时器（防止重复）
+    const existingInterval = this.drainIntervals.get(deviceId);
+    if (existingInterval) {
+      clearInterval(existingInterval);
+      this.drainIntervals.delete(deviceId);
+    }
+
     const check = (): boolean => {
       const buffer = this.opusPacketBuffer.get(deviceId);
       const isProcessing = this.isProcessingBuffer.get(deviceId);
@@ -216,6 +229,7 @@ export class TTSService implements ITTSService {
         `[TTSService] 缓冲区排空检查: deviceId=${deviceId}, buffer=${buffer?.length}, isProcessing=${isProcessing}`
       );
       if ((!buffer || buffer.length === 0) && !isProcessing) {
+        this.drainIntervals.delete(deviceId);
         this.sendStopAndCleanup(deviceId);
         return true;
       }
@@ -234,6 +248,8 @@ export class TTSService implements ITTSService {
         clearInterval(intervalId);
       }
     }, checkInterval);
+
+    this.drainIntervals.set(deviceId, intervalId);
   }
 
   /**
@@ -346,6 +362,13 @@ export class TTSService implements ITTSService {
    * @param deviceId - 设备 ID
    */
   cleanup(deviceId: string): void {
+    // 清理等待定时器
+    const drainInterval = this.drainIntervals.get(deviceId);
+    if (drainInterval) {
+      clearInterval(drainInterval);
+      this.drainIntervals.delete(deviceId);
+    }
+
     this.audioDemuxers.delete(deviceId);
     this.cumulativeTimestamps.delete(deviceId);
     this.packetIndices.delete(deviceId);
@@ -498,6 +521,12 @@ export class TTSService implements ITTSService {
    * 销毁服务
    */
   destroy(): void {
+    // 清理所有等待定时器
+    for (const interval of this.drainIntervals.values()) {
+      clearInterval(interval);
+    }
+    this.drainIntervals.clear();
+
     this.ttsTriggered.clear();
     this.audioDemuxers.clear();
     this.cumulativeTimestamps.clear();
