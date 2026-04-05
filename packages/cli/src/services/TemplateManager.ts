@@ -13,15 +13,15 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { FileError, ValidationError } from "../errors/index";
+import { FileError, ValidationError } from "../errors/index.js";
 import type {
   TemplateManager as ITemplateManager,
   TemplateCreateOptions,
   TemplateInfo,
-} from "../interfaces/Service";
-import { FileUtils } from "../utils/FileUtils";
-import { PathUtils } from "../utils/PathUtils";
-import { Validation } from "../utils/Validation";
+} from "../interfaces/Service.js";
+import { FileUtils } from "../utils/FileUtils.js";
+import { PathUtils } from "../utils/PathUtils.js";
+import { Validation } from "../utils/Validation.js";
 
 // 重新导出类型以保持向后兼容
 export type { TemplateInfo, TemplateCreateOptions };

@@ -2,7 +2,7 @@
  * 统一错误处理系统
  */
 
-import { ERROR_CODES } from "../Constants";
+import { ERROR_CODES } from "../Constants.js";
 
 /**
  * CLI 基础错误类

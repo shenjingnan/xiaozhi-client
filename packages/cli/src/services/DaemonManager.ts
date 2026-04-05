@@ -15,14 +15,14 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import type { WebServer } from "@/WebServer";
 import consola from "consola";
-import { RETRY_CONSTANTS } from "../Constants";
-import { ProcessError, ServiceError } from "../errors/index";
+import { RETRY_CONSTANTS } from "../Constants.js";
+import { ProcessError, ServiceError } from "../errors/index.js";
 import type {
   DaemonManager as IDaemonManager,
   ProcessManager,
-} from "../interfaces/Service";
-import { PathUtils } from "../utils/PathUtils";
-import { PlatformUtils } from "../utils/PlatformUtils";
+} from "../interfaces/Service.js";
+import { PathUtils } from "../utils/PathUtils.js";
+import { PlatformUtils } from "../utils/PlatformUtils.js";
 
 /**
  * 守护进程选项

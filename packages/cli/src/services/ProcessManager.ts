@@ -10,15 +10,15 @@
  * @module packages/cli/src/services/ProcessManager
  */
 
-import { FileError, ProcessError } from "../errors/index";
+import { FileError, ProcessError } from "../errors/index.js";
 import type {
   ProcessManager as IProcessManager,
   ServiceStatus,
-} from "../interfaces/Service";
-import { FileUtils } from "../utils/FileUtils";
-import { FormatUtils } from "../utils/FormatUtils";
-import { PathUtils } from "../utils/PathUtils";
-import { PlatformUtils } from "../utils/PlatformUtils";
+} from "../interfaces/Service.js";
+import { FileUtils } from "../utils/FileUtils.js";
+import { FormatUtils } from "../utils/FormatUtils.js";
+import { PathUtils } from "../utils/PathUtils.js";
+import { PlatformUtils } from "../utils/PlatformUtils.js";
 
 /**
  * PID 文件信息接口

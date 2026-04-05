@@ -13,16 +13,16 @@
 import type { ConfigManager } from "@xiaozhi-client/config";
 import { ConfigInitializer } from "@xiaozhi-client/config";
 import consola from "consola";
-import { RETRY_CONSTANTS } from "../Constants";
-import { ConfigError, ServiceError } from "../errors/index";
+import { RETRY_CONSTANTS } from "../Constants.js";
+import { ConfigError, ServiceError } from "../errors/index.js";
 import type {
   ServiceManager as IServiceManager,
   ProcessManager,
   ServiceStartOptions,
   ServiceStatus,
-} from "../interfaces/Service";
-import { PathUtils } from "../utils/PathUtils";
-import { Validation } from "../utils/Validation";
+} from "../interfaces/Service.js";
+import { PathUtils } from "../utils/PathUtils.js";
+import { Validation } from "../utils/Validation.js";
 
 /**
  * 服务管理器实现
