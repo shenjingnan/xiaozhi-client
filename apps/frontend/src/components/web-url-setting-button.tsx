@@ -1,3 +1,16 @@
+/**
+ * Web URL 端口配置组件
+ *
+ * 提供服务端 WebSocket 端口的配置功能：
+ * - 端口修改和验证（1-65535）
+ * - 端口切换后的自动重启和重连
+ * - 连接状态显示和处理状态反馈
+ *
+ * @module apps/frontend/src/components/web-url-setting-button
+ * @example
+ * // 在 site-header.tsx 中使用
+ * <WebUrlSettingButton />
+ */
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
