@@ -12,6 +12,17 @@ import { z } from "zod";
 import { BaseHandler } from "./base.handler.js";
 
 /**
+ * 验证日期字符串格式是否有效
+ * @param val - 待验证的日期字符串，undefined 表示未提供
+ * @returns 如果日期格式有效或未提供则返回 true
+ */
+const isValidDateString = (val: string | undefined): boolean => {
+  if (!val) return true;
+  const date = Date.parse(val);
+  return !Number.isNaN(date);
+};
+
+/**
  * 工具调用查询参数 Zod Schema
  */
 const ToolCallQuerySchema = z
@@ -41,32 +52,12 @@ const ToolCallQuerySchema = z
       .string()
       .optional()
       .transform((val) => (val ? val.toLowerCase() === "true" : undefined)),
-    startDate: z
-      .string()
-      .optional()
-      .refine(
-        (val) => {
-          if (!val) return true;
-          const date = Date.parse(val);
-          return !Number.isNaN(date);
-        },
-        {
-          message: "startDate 参数格式无效",
-        }
-      ),
-    endDate: z
-      .string()
-      .optional()
-      .refine(
-        (val) => {
-          if (!val) return true;
-          const date = Date.parse(val);
-          return !Number.isNaN(date);
-        },
-        {
-          message: "endDate 参数格式无效",
-        }
-      ),
+    startDate: z.string().optional().refine(isValidDateString, {
+      message: "startDate 参数格式无效",
+    }),
+    endDate: z.string().optional().refine(isValidDateString, {
+      message: "endDate 参数格式无效",
+    }),
   })
   .refine(
     (data) => {
