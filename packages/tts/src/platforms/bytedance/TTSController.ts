@@ -8,7 +8,7 @@ import type {
   AudioChunkCallback,
   PlatformConfig,
   TTSController,
-} from "../../core/index.js";
+} from "@/core/index.js";
 import {
   FullClientRequest,
   MsgType,
