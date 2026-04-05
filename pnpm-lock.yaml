@@ -597,6 +597,9 @@ importers:
       '@xiaozhi-client/config':
         specifier: workspace:*
         version: link:../config
+      '@xiaozhi-client/version':
+        specifier: workspace:*
+        version: link:../version
       chalk:
         specifier: ^5.6.0
         version: 5.6.2
