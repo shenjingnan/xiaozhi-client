@@ -3,6 +3,10 @@
  */
 
 import type { Readable } from "node:stream";
+import type {
+  PlatformDefinition,
+  PlatformRegistry,
+} from "@xiaozhi-client/shared-types";
 
 /**
  * 音频输入类型
@@ -55,12 +59,9 @@ export interface ASRController {
 
 /**
  * 平台配置泛型接口
+ * 使用共享的 PlatformDefinition 类型
  */
-export interface PlatformConfig {
-  /** 平台类型 */
-  platform: string;
-  [key: string]: unknown;
-}
+export type PlatformConfig = PlatformDefinition;
 
 /**
  * ASR 平台接口
@@ -101,18 +102,9 @@ export interface ASRPlatform {
 
 /**
  * 平台注册表
- * 存储所有已注册的平台
+ * 使用共享的 PlatformRegistry 泛型类型
  */
-export interface PlatformRegistry {
-  /** 获取平台 */
-  get(platform: string): ASRPlatform | undefined;
-
-  /** 注册平台 */
-  register(platform: ASRPlatform): void;
-
-  /** 获取所有已注册的平台 */
-  list(): string[];
-}
+export type ASRPlatformRegistry = PlatformRegistry<ASRPlatform>;
 
 /**
  * 通用 ASR 选项
