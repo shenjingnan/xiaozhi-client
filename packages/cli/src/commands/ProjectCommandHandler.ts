@@ -4,7 +4,7 @@
 
 import path from "node:path";
 import chalk from "chalk";
-import ora from "ora";
+import ora, { type Ora } from "ora";
 import type { CommandOption } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
 import type {
@@ -12,6 +12,7 @@ import type {
   CommandOptions,
 } from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
+import type { TemplateManager } from "../interfaces/Service";
 
 /**
  * 项目管理命令处理器
@@ -102,8 +103,8 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     projectName: string,
     templateName: string,
     targetPath: string,
-    spinner: any,
-    templateManager: any
+    spinner: Ora,
+    templateManager: TemplateManager
   ): Promise<void> {
     spinner.text = "检查模板...";
 
@@ -176,8 +177,8 @@ export class ProjectCommandHandler extends BaseCommandHandler {
   private async createBasicProject(
     projectName: string,
     targetPath: string,
-    spinner: any,
-    templateManager: any
+    spinner: Ora,
+    templateManager: TemplateManager
   ): Promise<void> {
     spinner.text = `创建基本项目 "${projectName}"...`;
 
