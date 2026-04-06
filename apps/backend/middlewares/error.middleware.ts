@@ -67,9 +67,9 @@ export const errorHandlerMiddleware = (err: Error, c: Context) => {
   // 使用 Context 上的 logger 属性
   c.logger.error("HTTP request error:", err);
 
-  // 在开发环境中打印详细错误信息
+  // 在开发环境中使用 logger.debug 打印详细错误信息
   if (process.env.NODE_ENV === "development") {
-    console.error("HTTP Request Error:", {
+    c.logger.debug("HTTP Request Error Details:", {
       error: err.message,
       stack: err.stack,
       path: c.req.path,
