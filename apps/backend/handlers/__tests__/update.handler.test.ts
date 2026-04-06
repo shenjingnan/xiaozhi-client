@@ -1,11 +1,10 @@
-import { NPMManager } from "@/lib/npm";
+import type { NPMManager } from "@/lib/npm";
 import type { Context } from "hono";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../../Logger.js";
 import { UpdateApiHandler } from "../update.handler.js";
 
 // 模拟依赖
-vi.mock("@/lib/npm");
 vi.mock("../../Logger.js");
 vi.mock("@/services/event-bus.service.js");
 
@@ -99,16 +98,11 @@ describe("UpdateApiHandler", () => {
     mockNPMManager = {
       installVersion: vi.fn(),
     };
-    vi.mocked(NPMManager).mockImplementation(
-      () => mockNPMManager as unknown as NPMManager
+
+    // 创建处理器实例（通过构造函数注入 mock NPMManager）
+    updateApiHandler = new UpdateApiHandler(
+      mockNPMManager as unknown as NPMManager
     );
-
-    // 创建处理器实例
-    updateApiHandler = new UpdateApiHandler();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   describe("performUpdate", () => {

@@ -42,6 +42,7 @@ import {
 import { MCPServiceManager } from "@/lib/mcp";
 import type { EnhancedToolInfo } from "@/lib/mcp/types.js";
 import { ensureToolJSONSchema } from "@/lib/mcp/types.js";
+import { NPMManager } from "@/lib/npm";
 import {
   corsMiddleware,
   endpointManagerMiddleware,
@@ -202,7 +203,7 @@ export class WebServer {
     this.versionApiHandler = new VersionApiHandler();
     this.staticFileHandler = new StaticFileHandler();
     this.mcpRouteHandler = new MCPRouteHandler();
-    this.updateApiHandler = new UpdateApiHandler();
+    this.updateApiHandler = new UpdateApiHandler(new NPMManager(this.eventBus));
     this.cozeHandler = new CozeHandler();
     this.ttsApiHandler = new TTSApiHandler();
     this.esp32Handler = new ESP32Handler(this.esp32Service);
