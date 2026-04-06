@@ -7,7 +7,7 @@ export type {
   ASRController,
   PlatformConfig,
   ASRPlatform,
-  PlatformRegistry,
+  ASRPlatformRegistry,
   CommonASROptions,
   ASREventType,
   ASREventData,
@@ -15,7 +15,7 @@ export type {
 
 // 平台接口导出
 export {
-  SimplePlatformRegistry,
+  SimpleASRPlatformRegistry,
   platformRegistry,
   registerPlatform,
 } from "./ASRPlatform.js";

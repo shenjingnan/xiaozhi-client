@@ -57,3 +57,7 @@ export { TimeoutError } from "./utils";
 
 // TTS 相关类型
 export type { VoiceInfo, VoicesResponse } from "./tts";
+
+// 平台相关类型
+export type { PlatformDefinition, PlatformRegistry } from "./platforms";
+export { SimplePlatformRegistry } from "./platforms";

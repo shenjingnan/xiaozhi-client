@@ -2,11 +2,11 @@
  * ASR 平台抽象接口
  */
 
+import { SimplePlatformRegistry } from "@xiaozhi-client/shared-types";
 import type {
   ASRController,
   ASRPlatform,
   PlatformConfig,
-  PlatformRegistry,
 } from "./types.js";
 
 /**
@@ -16,27 +16,14 @@ export type ASRPlatformFactory = (config: PlatformConfig) => ASRPlatform;
 
 /**
  * 简单平台注册表实现
+ * 使用共享的 SimplePlatformRegistry 类型
  */
-export class SimplePlatformRegistry implements PlatformRegistry {
-  private platforms: Map<string, ASRPlatform> = new Map();
-
-  get(platform: string): ASRPlatform | undefined {
-    return this.platforms.get(platform);
-  }
-
-  register(platform: ASRPlatform): void {
-    this.platforms.set(platform.platform, platform);
-  }
-
-  list(): string[] {
-    return Array.from(this.platforms.keys());
-  }
-}
+export class SimpleASRPlatformRegistry extends SimplePlatformRegistry<ASRPlatform> {}
 
 /**
  * 全局平台注册表
  */
-export const platformRegistry = new SimplePlatformRegistry();
+export const platformRegistry = new SimpleASRPlatformRegistry();
 
 /**
  * 注册平台装饰器
