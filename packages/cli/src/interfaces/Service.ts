@@ -78,6 +78,8 @@ export interface DaemonManager {
   startDaemon(serverFactory: () => Promise<any>): Promise<void>;
   /** 停止守护进程 */
   stopDaemon(): Promise<void>;
+  /** 连接到守护进程日志 */
+  attachToLogs(logFileName?: string): Promise<void>;
 }
 
 /**

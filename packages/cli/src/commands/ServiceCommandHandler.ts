@@ -3,6 +3,7 @@
  */
 
 import consola from "consola";
+import type { DaemonManager, ServiceManager } from "../interfaces/Service";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
 import type {
@@ -89,7 +90,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
         consola.level = 5; // debug 级别
       }
 
-      const serviceManager = this.getService<any>("serviceManager");
+      const serviceManager = this.getService<ServiceManager>("serviceManager");
 
       if (options.stdio) {
         // stdio 模式已迁移到 HTTP 方式
@@ -99,7 +100,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
 
       // 传统模式
       await serviceManager.start({
-        daemon: options.daemon || false,
+        daemon: Boolean(options.daemon),
       });
     } catch (error) {
       this.handleError(error as Error);
@@ -111,7 +112,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
    */
   private async handleStop(): Promise<void> {
     try {
-      const serviceManager = this.getService<any>("serviceManager");
+      const serviceManager = this.getService<ServiceManager>("serviceManager");
       await serviceManager.stop();
     } catch (error) {
       this.handleError(error as Error);
@@ -123,7 +124,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
    */
   private async handleStatus(): Promise<void> {
     try {
-      const serviceManager = this.getService<any>("serviceManager");
+      const serviceManager = this.getService<ServiceManager>("serviceManager");
       const status = await serviceManager.getStatus();
 
       if (status.running) {
@@ -147,9 +148,9 @@ export class ServiceCommandHandler extends BaseCommandHandler {
    */
   private async handleRestart(options: CommandOptions): Promise<void> {
     try {
-      const serviceManager = this.getService<any>("serviceManager");
+      const serviceManager = this.getService<ServiceManager>("serviceManager");
       await serviceManager.restart({
-        daemon: options.daemon || false,
+        daemon: Boolean(options.daemon),
       });
     } catch (error) {
       this.handleError(error as Error);
@@ -161,7 +162,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
    */
   private async handleAttach(): Promise<void> {
     try {
-      const daemonManager = this.getService<any>("daemonManager");
+      const daemonManager = this.getService<DaemonManager>("daemonManager");
       await daemonManager.attachToLogs();
     } catch (error) {
       this.handleError(error as Error);
