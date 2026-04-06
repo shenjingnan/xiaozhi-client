@@ -88,6 +88,10 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
    * 清理资源
    */
   async cleanup(): Promise<void> {
+    // 移除事件监听器，防止内存泄漏
+    this.mcpManager.removeAllListeners("connected");
+    this.mcpManager.removeAllListeners("error");
+
     await this.mcpManager.disconnect();
     this.tools.clear();
     this.isInitialized = false;
