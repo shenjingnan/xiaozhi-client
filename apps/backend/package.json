@@ -1,6 +1,7 @@
 {
   "name": "@xiaozhi-client/backend",
   "version": "1.0.0",
+  "description": "小智 AI 客户端后端服务，提供 MCP 协议支持和 Web UI",
   "private": true,
   "type": "module",
   "scripts": {
