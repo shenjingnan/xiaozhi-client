@@ -39,6 +39,7 @@ describe("InternalMCPManagerAdapter", () => {
         content: [{ type: "text", text: "Success" }],
       }),
       on: vi.fn(),
+      removeListener: vi.fn(),
     };
 
     MCPManagerMock.mockImplementation(() => mockMCPManager);
@@ -354,6 +355,8 @@ describe("InternalMCPManagerAdapter", () => {
       await adapter.initialize();
       await adapter.cleanup();
 
+      expect(mockMCPManager.removeListener).toHaveBeenCalledWith("connected", expect.any(Function));
+      expect(mockMCPManager.removeListener).toHaveBeenCalledWith("error", expect.any(Function));
       expect(mockMCPManager.disconnect).toHaveBeenCalled();
     });
 
