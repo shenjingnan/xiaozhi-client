@@ -25,9 +25,14 @@ if (typeof globalThisAny !== "undefined" && !globalThisAny.EventSource) {
   globalThisAny.EventSource = EventSource;
 }
 
-// Transport 基础接口
+/**
+ * Transport 基础接口
+ * 定义传输层的通用方法
+ */
 export interface Transport {
+  /** 连接到传输层 */
   connect?(): Promise<void>;
+  /** 关闭传输层连接 */
   close?(): Promise<void>;
 }
 
