@@ -40,6 +40,7 @@ import {
   formatTimestamp,
   generateStableKey,
 } from "@/utils/formatUtils";
+import { createLogger } from "@/utils/logger";
 import type {
   ApiResponse,
   ToolCallLogsResponse,
@@ -57,6 +58,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+const logger = createLogger("ToolCallLogsDialog");
 
 export function ToolCallLogsDialog() {
   const [open, setOpen] = useState(false);
@@ -90,7 +93,7 @@ export function ToolCallLogsDialog() {
         }
       } catch (err) {
         setError("网络请求失败");
-        console.error("获取工具调用日志失败:", err);
+        logger.error("获取工具调用日志失败:", err);
       } finally {
         if (isRefresh) {
           setRefreshing(false);
@@ -353,7 +356,7 @@ function CopyButton({
         setCopied(false);
       }, 3000);
     } catch (error) {
-      console.error("复制失败:", error);
+      logger.error("复制失败:", error);
     }
   };
 

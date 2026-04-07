@@ -31,6 +31,7 @@ import {
   useMcpServers,
 } from "@/stores/config";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
+import { createLogger } from "@/utils/logger";
 import type {
   AppConfig,
   CozeWorkflow,
@@ -48,6 +49,8 @@ import { McpServerSettingButton } from "./mcp-server-setting-button";
 import { RemoveMcpServerButton } from "./remove-mcp-server-button";
 import { RestartButton } from "./restart-button";
 import { ToolDebugDialog } from "./tool-debug-dialog";
+
+const logger = createLogger("McpServerList");
 
 // 服务名称常量
 const UNKNOWN_SERVICE_NAME = "未知服务";
@@ -159,7 +162,7 @@ export function McpServerList({
       setEnabledTools(formattedEnabledTools);
       setDisabledTools(formattedDisabledTools);
     } catch (error) {
-      console.error("获取工具列表失败:", error);
+      logger.error("获取工具列表失败:", error);
       const errorMessage =
         error instanceof Error ? error.message : "获取工具列表失败";
       toast.error(errorMessage);
@@ -199,7 +202,7 @@ export function McpServerList({
       // 并行刷新配置数据和工具列表
       await Promise.all([refreshConfig(), fetchTools()]);
     } catch (error) {
-      console.error("刷新数据失败:", error);
+      logger.error("刷新数据失败:", error);
       toast.error("刷新数据失败");
     } finally {
       setIsRefreshing(false);
@@ -227,7 +230,7 @@ export function McpServerList({
       setEnabledTools(formattedEnabledTools);
       setDisabledTools(formattedDisabledTools);
     } catch (error) {
-      console.error("刷新工具列表失败:", error);
+      logger.error("刷新工具列表失败:", error);
       toast.error("刷新工具列表失败");
     }
   }, [formatTool]);
@@ -306,7 +309,7 @@ export function McpServerList({
       // 重新获取工具列表以更新状态
       await refreshToolLists();
     } catch (error) {
-      console.error("切换工具状态失败:", error);
+      logger.error("切换工具状态失败:", error);
       toast.error(error instanceof Error ? error.message : "切换工具状态失败");
     }
   };
@@ -322,7 +325,7 @@ export function McpServerList({
       toast.success(`删除工具 ${cozeToolToRemove} 成功`);
       await refreshToolLists();
     } catch (error) {
-      console.error("删除 Coze 工具失败:", error);
+      logger.error("删除 Coze 工具失败:", error);
       toast.error(
         error instanceof Error ? error.message : "删除 Coze 工具失败"
       );
@@ -453,7 +456,7 @@ export function McpServerList({
       // 刷新工具列表
       await refreshToolLists();
     } catch (error) {
-      console.error("更新工具参数配置失败:", error);
+      logger.error("更新工具参数配置失败:", error);
 
       let errorMessage = "更新工具参数配置失败，请重试";
       if (error instanceof Error) {

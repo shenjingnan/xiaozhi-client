@@ -39,6 +39,7 @@ import { Separator } from "@/components/ui/separator";
 import { useWebSocketActions } from "@/providers/WebSocketProvider";
 import { type PromptFileInfo, apiClient } from "@/services/api";
 import { useConfig } from "@/stores/config";
+import { createLogger } from "@/utils/logger";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type {
   ASRConfig,
@@ -52,6 +53,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
+
+const logger = createLogger("VoiceInteractionSettingDialog");
 
 /**
  * 语音交互配置表单 Schema
@@ -156,7 +159,7 @@ export function VoiceInteractionSettingDialog() {
       const files = await apiClient.getPromptFiles();
       setPromptFiles(files);
     } catch (error) {
-      console.error("加载提示词文件列表失败:", error);
+      logger.error("加载提示词文件列表失败:", error);
       setPromptFiles([]);
     } finally {
       setIsLoadingPrompts(false);
@@ -170,7 +173,7 @@ export function VoiceInteractionSettingDialog() {
       const response = await apiClient.getTTSVoices();
       setVoices(response.voices);
     } catch (error) {
-      console.error("加载音色列表失败:", error);
+      logger.error("加载音色列表失败:", error);
       setVoices([]);
     } finally {
       setIsLoadingVoices(false);
@@ -270,7 +273,7 @@ export function VoiceInteractionSettingDialog() {
       toast.success("语音交互配置已更新");
       setOpen(false);
     } catch (error) {
-      console.error("更新语音交互配置失败:", error);
+      logger.error("更新语音交互配置失败:", error);
       toast.error(error instanceof Error ? error.message : "更新配置失败");
     } finally {
       setIsLoading(false);

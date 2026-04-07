@@ -26,10 +26,13 @@ import {
 } from "@/components/ui/select";
 import { useNPMInstall } from "@/hooks/useNPMInstall";
 import { apiClient } from "@/services/api";
+import { createLogger } from "@/utils/logger";
 import { DownloadIcon, ShieldAlertIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import semver from "semver";
 import { InstallLogDialog } from "./install-log-dialog";
+
+const logger = createLogger("VersionUpgradeDialog");
 
 interface VersionUpgradeDialogProps {
   children?: React.ReactNode;
@@ -73,7 +76,7 @@ export function VersionUpgradeDialog({
           label: `v${version}`,
         }));
         setAvailableVersions(versions);
-        console.log(
+        logger.info(
           `[VersionUpgradeDialog] 获取到 ${response.total} 个${type}版本`
         );
         if (
@@ -83,7 +86,7 @@ export function VersionUpgradeDialog({
           setSelectedVersion(defaultSelectedVersion || "");
         }
       } catch (error) {
-        console.error("[VersionUpgradeDialog] 获取版本列表失败:", error);
+        logger.error("[VersionUpgradeDialog] 获取版本列表失败:", error);
         // 如果获取失败，使用默认版本列表
         const defaultVersions = [] as { value: string; label: string }[];
         setAvailableVersions(defaultVersions);
@@ -119,7 +122,7 @@ export function VersionUpgradeDialog({
     }
 
     try {
-      console.log("[VersionUpgradeDialog] 开始安装版本:", selectedVersion);
+      logger.info("[VersionUpgradeDialog] 开始安装版本:", selectedVersion);
 
       // 关闭版本选择对话框
       setIsOpen(false);
@@ -130,7 +133,7 @@ export function VersionUpgradeDialog({
       // 开始安装
       await startInstall(selectedVersion);
     } catch (error) {
-      console.error("[VersionUpgradeDialog] 安装失败:", error);
+      logger.error("[VersionUpgradeDialog] 安装失败:", error);
       // 如果安装失败，关闭安装日志对话框
       setShowInstallDialog(false);
     }

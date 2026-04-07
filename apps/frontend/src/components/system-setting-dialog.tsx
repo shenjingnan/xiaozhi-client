@@ -26,6 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useWebSocketActions } from "@/providers/WebSocketProvider";
 import { useConfig } from "@/stores/config";
+import { createLogger } from "@/utils/logger";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { AppConfig } from "@xiaozhi-client/shared-types";
 import { SettingsIcon } from "lucide-react";
@@ -33,6 +34,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
+
+const logger = createLogger("SystemSettingDialog");
 
 const formSchema = z.object({
   modelscope: z.object({
@@ -131,7 +134,7 @@ export function SystemSettingDialog() {
       toast.success("配置已更新");
       setOpen(false);
     } catch (error) {
-      console.error("更新配置失败:", error);
+      logger.error("更新配置失败:", error);
       toast.error(error instanceof Error ? error.message : "更新配置失败");
     } finally {
       setIsLoading(false);

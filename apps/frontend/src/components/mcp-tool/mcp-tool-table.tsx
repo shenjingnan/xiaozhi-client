@@ -28,6 +28,7 @@ import { useToolSearch } from "@/hooks/useToolSearch";
 import { useToolSortPersistence } from "@/hooks/useToolSortPersistence";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/services/api";
+import { createLogger } from "@/utils/logger";
 import type { CustomMCPToolWithStats } from "@xiaozhi-client/shared-types";
 import { CoffeeIcon, Loader2, ZapIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -35,6 +36,8 @@ import { toast } from "sonner";
 import { ToolPagination } from "./tool-pagination";
 import { ToolSearchInput } from "./tool-search-input";
 import { ToolSortSelector } from "./tool-sort-selector";
+
+const logger = createLogger("McpToolTable");
 
 // 服务名称常量
 const UNKNOWN_SERVICE_NAME = "未知服务";
@@ -174,7 +177,7 @@ export function McpToolTable({
     try {
       await loadToolsData();
     } catch (err) {
-      console.error("获取工具列表失败:", err);
+      logger.error("获取工具列表失败:", err);
       setError(err instanceof Error ? err.message : "获取工具列表失败");
       toast.error("获取工具列表失败");
     } finally {
@@ -187,7 +190,7 @@ export function McpToolTable({
     try {
       await loadToolsData();
     } catch (err) {
-      console.error("刷新工具列表失败:", err);
+      logger.error("刷新工具列表失败:", err);
       toast.error("刷新工具列表失败");
     }
   }, [loadToolsData]);
@@ -250,7 +253,7 @@ export function McpToolTable({
 
         await refreshToolLists();
       } catch (err) {
-        console.error("切换工具状态失败:", err);
+        logger.error("切换工具状态失败:", err);
         toast.error(err instanceof Error ? err.message : "切换工具状态失败");
       }
     },
@@ -266,7 +269,7 @@ export function McpToolTable({
       toast.success(`删除工具 ${cozeToolToRemove} 成功`);
       await refreshToolLists();
     } catch (err) {
-      console.error("删除 Coze 工具失败:", err);
+      logger.error("删除 Coze 工具失败:", err);
       toast.error(err instanceof Error ? err.message : "删除 Coze 工具失败");
     } finally {
       setCozeToolToRemove(null);

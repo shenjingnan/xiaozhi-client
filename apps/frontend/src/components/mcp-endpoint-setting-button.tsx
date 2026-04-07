@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { type EndpointStatusResponse, apiClient } from "@/services/api";
 import { webSocketManager } from "@/services/websocket";
 import { useConfig, useConfigActions, useMcpEndpoint } from "@/stores/config";
+import { createLogger } from "@/utils/logger";
 import {
   BadgeInfoIcon,
   CopyIcon,
@@ -37,6 +38,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+
+const logger = createLogger("McpEndpointSettingButton");
 
 // 接入点状态接口
 interface EndpointState {
@@ -100,7 +103,7 @@ export function McpEndpointSettingButton() {
       try {
         return await apiClient.getEndpointStatus(endpoint);
       } catch (error) {
-        console.error(`获取接入点状态失败: ${endpoint}`, error);
+        logger.error(`获取接入点状态失败: ${endpoint}`, error);
         // 返回默认状态
         return {
           endpoint,
@@ -251,7 +254,7 @@ export function McpEndpointSettingButton() {
         }
       }
     } catch (error) {
-      console.error("复制失败:", error);
+      logger.error("复制失败:", error);
       toast.error("复制失败，请手动复制");
     }
   };
@@ -277,7 +280,7 @@ export function McpEndpointSettingButton() {
       setDeleteConfirmOpen(false);
       setEndpointToDelete("");
     } catch (error) {
-      console.error("删除接入点失败:", error);
+      logger.error("删除接入点失败:", error);
       toast.error(error instanceof Error ? error.message : "删除接入点失败");
     } finally {
       setIsDeleting(false);
@@ -334,7 +337,7 @@ export function McpEndpointSettingButton() {
       setNewEndpoint("");
       setValidationError("");
     } catch (error) {
-      console.error("添加接入点失败:", error);
+      logger.error("添加接入点失败:", error);
       toast.error(error instanceof Error ? error.message : "添加接入点失败");
     } finally {
       setIsAdding(false);
@@ -389,7 +392,7 @@ export function McpEndpointSettingButton() {
         (event: any) => {
           // 只处理当前端点的事件
           if (event.endpoint === endpoint) {
-            console.log(
+            logger.info(
               `[McpEndpointSettingButton] 接收到端点 ${endpoint} 状态变更:`,
               event
             );
