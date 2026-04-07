@@ -3,7 +3,6 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
-import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import { HTTP_TIMEOUTS } from "@/constants/timeout.constants.js";
 import { MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
@@ -26,6 +25,7 @@ import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";
+import { BaseHandler } from "./base.handler.js";
 
 /**
  * 工具调用请求接口
@@ -50,7 +50,7 @@ interface LegacyAddCustomToolRequest {
 /**
  * MCP 工具调用 API 处理器
  */
-export class MCPToolHandler {
+export class MCPToolHandler extends BaseHandler {
   // 预编译的正则表达式常量，避免在频繁调用时重复创建
   private static readonly UNDERSCORE_TRIM_REGEX = /^_+|_+$/g;
   private static readonly LETTER_START_REGEX = /^[a-zA-Z]/;
@@ -59,12 +59,11 @@ export class MCPToolHandler {
   private static readonly ALPHANUMERIC_UNDERSCORE_REGEX = /^[a-zA-Z0-9_-]+$/;
   private static readonly IDENTIFIER_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
-  private logger: Logger;
   private ajv: Ajv;
   private static readonly TOOL_TYPE_VALUES = Object.values(ToolType);
 
   constructor() {
-    this.logger = logger;
+    super();
     this.ajv = new Ajv({ allErrors: true, verbose: true });
   }
 
@@ -136,13 +135,11 @@ export class MCPToolHandler {
 
       return c.success(result, "工具调用成功");
     } catch (error) {
-      c.get("logger").error("工具调用失败:", error);
-
+      // 根据错误类型设置不同的错误码
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       let errorCode = "TOOL_CALL_ERROR";
 
-      // 根据错误类型设置不同的错误码
       if (errorMessage.includes("不存在")) {
         errorCode = "SERVICE_OR_TOOL_NOT_FOUND";
       } else if (
@@ -168,7 +165,7 @@ export class MCPToolHandler {
         errorCode = "TIMEOUT_ERROR";
       }
 
-      return c.fail(errorCode, errorMessage, undefined, 500);
+      return this.handleError(c, error, "工具调用", errorCode);
     }
   }
 
@@ -198,12 +195,11 @@ export class MCPToolHandler {
         customTools = configManager.getCustomMCPTools();
         configPath = configManager.getConfigPath();
       } catch (error) {
-        c.get("logger").error("读取自定义 MCP 工具配置失败:", error);
-        return c.fail(
-          "CONFIG_PARSE_ERROR",
-          `配置文件解析失败: ${error instanceof Error ? error.message : "未知错误"}`,
-          undefined,
-          500
+        return this.handleError(
+          c,
+          error,
+          "读取自定义 MCP 工具配置",
+          "CONFIG_PARSE_ERROR"
         );
       }
 
@@ -245,13 +241,11 @@ export class MCPToolHandler {
         "获取自定义 MCP 工具列表成功"
       );
     } catch (error) {
-      c.get("logger").error("获取自定义 MCP 工具列表失败:", error);
-
-      return c.fail(
-        "GET_CUSTOM_TOOLS_ERROR",
-        error instanceof Error ? error.message : "获取自定义 MCP 工具列表失败",
-        undefined,
-        500
+      return this.handleError(
+        c,
+        error,
+        "获取自定义 MCP 工具列表",
+        "GET_CUSTOM_TOOLS_ERROR"
       );
     }
   }
@@ -339,9 +333,7 @@ export class MCPToolHandler {
 
       return c.success(responseData, `获取工具列表成功（${status}）`);
     } catch (error) {
-      c.get("logger").error("获取工具列表失败:", error);
-
-      return c.fail("GET_TOOLS_FAILED", "获取工具列表失败", undefined, 500);
+      return this.handleError(c, error, "获取工具列表", "GET_TOOLS_FAILED");
     }
   }
 
@@ -381,17 +373,14 @@ export class MCPToolHandler {
         const targetTool = customTools.find((tool) => tool.name === toolName);
 
         if (targetTool && !targetTool.description) {
-          this.logger.warn(`customMCP 工具 '${toolName}' 缺少描述信息`);
+          logger.warn(`customMCP 工具 '${toolName}' 缺少描述信息`);
         }
 
         if (targetTool && !targetTool.inputSchema) {
-          this.logger.warn(`customMCP 工具 '${toolName}' 缺少输入参数定义`);
+          logger.warn(`customMCP 工具 '${toolName}' 缺少输入参数定义`);
         }
       } catch (error) {
-        this.logger.error(
-          `验证 customMCP 工具 '${toolName}' 配置时出错:`,
-          error
-        );
+        logger.error(`验证 customMCP 工具 '${toolName}' 配置时出错:`, error);
         throw MCPError.validationError(
           MCPErrorCode.TOOL_VALIDATION_FAILED,
           `customMCP 工具 '${toolName}' 配置验证失败。请检查配置文件中的工具定义。`
@@ -425,7 +414,7 @@ export class MCPToolHandler {
 
       // 如果工具没有定义 inputSchema，跳过验证
       if (!targetTool.inputSchema) {
-        this.logger.warn(
+        logger.warn(
           `customMCP 工具 '${toolName}' 没有定义 inputSchema，跳过参数验证`
         );
         return;
@@ -461,7 +450,7 @@ export class MCPToolHandler {
         });
 
         const errorMessage = `参数验证失败: ${errorMessages.join("; ")}`;
-        this.logger.error(
+        logger.error(
           `customMCP 工具 '${toolName}' 参数验证失败:`,
           errorMessage
         );
@@ -472,13 +461,13 @@ export class MCPToolHandler {
         );
       }
 
-      this.logger.debug(`customMCP 工具 '${toolName}' 参数验证通过`);
+      logger.debug(`customMCP 工具 '${toolName}' 参数验证通过`);
     } catch (error) {
       if (error instanceof Error && error.message.includes("参数验证失败")) {
         throw error;
       }
 
-      this.logger.error(`验证 customMCP 工具 '${toolName}' 参数时出错:`, error);
+      logger.error(`验证 customMCP 工具 '${toolName}' 参数时出错:`, error);
       throw MCPError.validationError(
         MCPErrorCode.TOOL_VALIDATION_FAILED,
         `参数验证过程中发生错误: ${error instanceof Error ? error.message : "未知错误"}`
@@ -511,11 +500,16 @@ export class MCPToolHandler {
         requestBody as LegacyAddCustomToolRequest
       );
     } catch (error) {
-      c.get("logger").error("添加自定义工具失败:", error);
-
       // 根据错误类型返回不同的HTTP状态码和错误信息
       const { code, message, status } = this.handleAddToolError(error);
-      return c.fail(code, message, undefined, status);
+      return this.handleError(
+        c,
+        error,
+        "添加自定义工具",
+        code,
+        message,
+        status
+      );
     }
   }
 
@@ -848,11 +842,16 @@ export class MCPToolHandler {
         400
       );
     } catch (error) {
-      c.get("logger").error("更新自定义工具配置失败:", error);
-
       // 根据错误类型返回不同的HTTP状态码和错误信息
       const { code, message, status } = this.handleUpdateToolError(error);
-      return c.fail(code, message, undefined, status);
+      return this.handleError(
+        c,
+        error,
+        "更新自定义工具配置",
+        code,
+        message,
+        status
+      );
     }
   }
 
@@ -1117,11 +1116,12 @@ export class MCPToolHandler {
 
       return c.success(null, `工具 "${toolName}" 删除成功`);
     } catch (error) {
-      c.get("logger").error("删除自定义工具失败:", error);
-
-      // 根据错误类型返回不同的HTTP状态码和错误信息
-      const { code, message, status } = this.handleRemoveToolError(error);
-      return c.fail(code, message, undefined, status);
+      return this.handleError(
+        c,
+        error,
+        "删除自定义工具",
+        "REMOVE_CUSTOM_TOOL_ERROR"
+      );
     }
   }
 
@@ -2330,7 +2330,7 @@ export class MCPToolHandler {
       }
     } catch (error) {
       // 资源检查失败不应阻止操作，只记录警告
-      this.logger.warn("资源限制检查失败:", error);
+      logger.warn("资源限制检查失败:", error);
     }
 
     return null;
