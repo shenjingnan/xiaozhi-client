@@ -5,5 +5,5 @@ POST {{baseUrl}}/api/tts
 Content-Type: application/json
 
 {
-  "text": "你好世界"
+  "text": "演示一次性获取完整音频的场景"
 }
