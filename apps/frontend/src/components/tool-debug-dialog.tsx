@@ -100,7 +100,7 @@ const ArrayField = memo(function ArrayField({
 
     switch (itemSchema.type) {
       case "string":
-        newItem = itemSchema.enum ? itemSchema.enum[0] : "";
+        newItem = itemSchema.enum?.[0] ?? "";
         break;
       case "number":
       case "integer":
