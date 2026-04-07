@@ -43,6 +43,8 @@ export interface DaemonOptions {
  */
 export class DaemonManagerImpl implements IDaemonManager {
   private currentDaemon: ChildProcess | null = null;
+  /** SIGINT 处理器引用，用于清理 */
+  private sigintHandler: (() => void) | null = null;
 
   constructor(private processManager: ProcessManager) {}
 
@@ -161,21 +163,39 @@ export class DaemonManagerImpl implements IDaemonManager {
       const { command, args } = PlatformUtils.getTailCommand(logFilePath);
       const tail = spawn(command, args, { stdio: "inherit" });
 
-      // 处理中断信号
-      process.once("SIGINT", () => {
+      // 创建处理器函数并保存引用
+      this.sigintHandler = () => {
         console.log("\n断开连接，服务继续在后台运行");
         tail.kill();
         process.exit(0);
-      });
+      };
+
+      // 注册 SIGINT 处理器
+      process.on("SIGINT", this.sigintHandler);
+
+      // 移除 SIGINT 处理器的辅助函数
+      const removeSigintHandler = () => {
+        if (this.sigintHandler) {
+          process.removeListener("SIGINT", this.sigintHandler);
+          this.sigintHandler = null;
+        }
+      };
 
       tail.on("exit", () => {
+        removeSigintHandler();
         process.exit(0);
       });
 
       tail.on("error", (error) => {
+        removeSigintHandler();
         throw new ServiceError(`连接日志失败: ${error.message}`);
       });
     } catch (error) {
+      // 在异常时移除处理器
+      if (this.sigintHandler) {
+        process.removeListener("SIGINT", this.sigintHandler);
+        this.sigintHandler = null;
+      }
       throw new ServiceError(
         `连接日志失败: ${error instanceof Error ? error.message : String(error)}`
       );
@@ -315,6 +335,12 @@ export class DaemonManagerImpl implements IDaemonManager {
    * 清理守护进程资源
    */
   cleanup(): void {
+    // 清理 SIGINT 处理器
+    if (this.sigintHandler) {
+      process.removeListener("SIGINT", this.sigintHandler);
+      this.sigintHandler = null;
+    }
+
     if (this.currentDaemon) {
       try {
         this.currentDaemon.kill("SIGTERM");
