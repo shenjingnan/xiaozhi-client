@@ -1,3 +1,17 @@
+/**
+ * MCP 工具表格组件
+ *
+ * 功能：
+ * - 展示 MCP 工具列表（包括自定义工具和 MCP 服务提供的工具）
+ * - 支持工具搜索、排序、分页
+ * - 支持工具启用/禁用切换
+ * - 支持工具调试（打开 ToolDebugDialog）
+ * - 支持工具删除（仅限自定义工具）
+ * - 显示工具状态、来源、参数等信息
+ *
+ * @module apps/frontend/src/components/mcp-tool/mcp-tool-table
+ */
+
 "use client";
 
 import { CollapsibleText } from "@/components/common/collapsible-text";
