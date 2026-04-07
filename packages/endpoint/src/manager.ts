@@ -29,6 +29,9 @@ import type {
   SimpleConnectionStatus,
 } from "./types.js";
 import { sliceEndpoint } from "./utils.js";
+import { createLogger } from "./logger.js";
+
+const logger = createLogger("EndpointManager");
 
 /**
  * MCP 服务连接事件数据
@@ -66,7 +69,7 @@ export class EndpointManager extends EventEmitter {
    */
   constructor(private config?: EndpointManagerConfig) {
     super();
-    console.debug("[EndpointManager] 实例已创建");
+    logger.debug("实例已创建");
   }
 
   /**
@@ -88,14 +91,14 @@ export class EndpointManager extends EventEmitter {
     if ("on" in mcpManager && typeof mcpManager.on === "function") {
       const connectedHandler = (...args: unknown[]) => {
         const data = args[0] as MCPConnectedEvent;
-        console.info(
-          `[EndpointManager] MCP 服务已连接: ${data.serverName}, 工具数: ${data.tools?.length || 0}`
+        logger.info(
+          `MCP 服务已连接: ${data.serverName}, 工具数: ${data.tools?.length || 0}`
         );
       };
       const errorHandler = (...args: unknown[]) => {
         const data = args[0] as MCPErrorEvent;
-        console.error(
-          `[EndpointManager] MCP 服务连接失败: ${data.serverName}`,
+        logger.error(
+          `MCP 服务连接失败: ${data.serverName}`,
           data.error
         );
       };
@@ -107,7 +110,7 @@ export class EndpointManager extends EventEmitter {
       this.mcpEventListeners.push(connectedHandler, errorHandler);
     }
 
-    console.info("[EndpointManager] MCPManager 已设置");
+    logger.info("MCPManager 已设置");
   }
 
   /**
@@ -153,13 +156,13 @@ export class EndpointManager extends EventEmitter {
     const url = endpoint.getUrl();
 
     if (this.endpoints.has(url)) {
-      console.debug(
-        `[EndpointManager] 接入点 ${sliceEndpoint(url)} 已存在，跳过添加`
+      logger.debug(
+        `接入点 ${sliceEndpoint(url)} 已存在，跳过添加`
       );
       return;
     }
 
-    console.debug(`[EndpointManager] 添加接入点: ${sliceEndpoint(url)}`);
+    logger.debug(`添加接入点: ${sliceEndpoint(url)}`);
 
     this.endpoints.set(url, endpoint);
     this.connectionStates.set(url, {
@@ -181,13 +184,13 @@ export class EndpointManager extends EventEmitter {
     const url = endpoint.getUrl();
 
     if (!this.endpoints.has(url)) {
-      console.debug(
-        `[EndpointManager] 接入点 ${sliceEndpoint(url)} 不存在，跳过移除`
+      logger.debug(
+        `接入点 ${sliceEndpoint(url)} 不存在，跳过移除`
       );
       return;
     }
 
-    console.debug(`[EndpointManager] 移除接入点: ${sliceEndpoint(url)}`);
+    logger.debug(`移除接入点: ${sliceEndpoint(url)}`);
 
     // 断开连接
     await endpoint.disconnect();
@@ -217,8 +220,8 @@ export class EndpointManager extends EventEmitter {
 
       const status = this.connectionStates.get(endpoint);
       if (status?.connected) {
-        console.debug(
-          `[EndpointManager] 接入点已连接，跳过: ${sliceEndpoint(endpoint)}`
+        logger.debug(
+          `接入点已连接，跳过: ${sliceEndpoint(endpoint)}`
         );
         return;
       }
@@ -228,8 +231,8 @@ export class EndpointManager extends EventEmitter {
     }
 
     // 连接所有未连接的 Endpoint
-    console.debug(
-      `[EndpointManager] 开始连接接入点，总数: ${this.endpoints.size}`
+    logger.debug(
+      `开始连接接入点，总数: ${this.endpoints.size}`
     );
 
     const promises: Promise<void>[] = [];
@@ -239,16 +242,16 @@ export class EndpointManager extends EventEmitter {
 
       // 跳过已连接的端点
       if (status?.connected) {
-        console.debug(
-          `[EndpointManager] 接入点已连接，跳过: ${sliceEndpoint(url)}`
+        logger.debug(
+          `接入点已连接，跳过: ${sliceEndpoint(url)}`
         );
         continue;
       }
 
       promises.push(
         this.connectSingleEndpoint(url, endpoint).catch((error) => {
-          console.error(
-            `[EndpointManager] 连接失败: ${sliceEndpoint(url)}`,
+          logger.error(
+            `连接失败: ${sliceEndpoint(url)}`,
             error
           );
           // 更新失败状态
@@ -270,8 +273,8 @@ export class EndpointManager extends EventEmitter {
       (s) => s.connected
     ).length;
 
-    console.info(
-      `[EndpointManager] 连接完成: 成功 ${connectedCount}/${this.endpoints.size}`
+    logger.info(
+      `连接完成: 成功 ${connectedCount}/${this.endpoints.size}`
     );
   }
 
@@ -298,14 +301,14 @@ export class EndpointManager extends EventEmitter {
         status.initialized = false;
       }
 
-      console.debug(
-        `[EndpointManager] 接入点已断开: ${sliceEndpoint(endpoint)}`
+      logger.debug(
+        `接入点已断开: ${sliceEndpoint(endpoint)}`
       );
       return;
     }
 
     // 断开所有连接
-    console.debug("[EndpointManager] 开始断开所有连接");
+    logger.debug("开始断开所有连接");
 
     const promises: Promise<void>[] = [];
 
@@ -325,7 +328,7 @@ export class EndpointManager extends EventEmitter {
       status.initialized = false;
     }
 
-    console.debug("[EndpointManager] 所有接入点已断开连接");
+    logger.debug("所有接入点已断开连接");
   }
 
   /**
@@ -390,34 +393,34 @@ export class EndpointManager extends EventEmitter {
    *               注意：此参数只控制断开和重新连接之间的等待时间，不影响底层 Endpoint 实例的重连延迟
    */
   async reconnect(endpoint?: string, delay = 1000): Promise<void> {
-    console.info("[EndpointManager] 开始重连");
+    logger.info("开始重连");
 
     // 先断开连接
     await this.disconnect(endpoint);
 
     // 等待一段时间
-    console.debug(`[EndpointManager] 等待 ${delay}ms 后重连`);
+    logger.debug(`等待 ${delay}ms 后重连`);
     await new Promise((resolve) => setTimeout(resolve, delay));
 
     // 再重新连接
     await this.connect(endpoint);
 
-    console.info("[EndpointManager] 重连完成");
+    logger.info("重连完成");
   }
 
   /**
    * 重连所有端点
    */
   async reconnectAll(): Promise<void> {
-    console.info("[EndpointManager] 开始重连所有接入点");
+    logger.info("开始重连所有接入点");
 
     const promises: Promise<void>[] = [];
 
     for (const [url, endpoint] of this.endpoints) {
       promises.push(
         this.reconnectSingleEndpoint(url, endpoint).catch((error) => {
-          console.error(
-            `[EndpointManager] 重连失败: ${sliceEndpoint(url)}`,
+          logger.error(
+            `重连失败: ${sliceEndpoint(url)}`,
             error
           );
         })
@@ -447,7 +450,7 @@ export class EndpointManager extends EventEmitter {
    * 注意：此方法不会清理 MCPManager，MCPManager 的生命周期由外部管理
    */
   async clearEndpoints(): Promise<void> {
-    console.debug("[EndpointManager] 清除所有接入点");
+    logger.debug("清除所有接入点");
 
     await this.disconnect();
 
@@ -458,7 +461,7 @@ export class EndpointManager extends EventEmitter {
     // this.mcpManager = null;
     // this.sharedMCPAdapter = null;
 
-    console.info("[EndpointManager] 所有接入点已清除");
+    logger.info("所有接入点已清除");
   }
 
   /**
@@ -467,7 +470,7 @@ export class EndpointManager extends EventEmitter {
    * 注意：此方法不会清理 MCPManager，MCPManager 的生命周期由外部管理
    */
   async cleanup(): Promise<void> {
-    console.debug("[EndpointManager] 开始清理资源");
+    logger.debug("开始清理资源");
 
     // 移除 MCP 服务事件监听器
     if (
@@ -484,7 +487,7 @@ export class EndpointManager extends EventEmitter {
 
     await this.clearEndpoints();
 
-    console.debug("[EndpointManager] 资源清理完成");
+    logger.debug("资源清理完成");
   }
 
   // ==================== 私有方法 ====================
@@ -501,7 +504,7 @@ export class EndpointManager extends EventEmitter {
       throw new Error(`端点状态不存在: ${sliceEndpoint(url)}`);
     }
 
-    console.debug(`[EndpointManager] 连接端点: ${sliceEndpoint(url)}`);
+    logger.debug(`连接端点: ${sliceEndpoint(url)}`);
 
     // 更新状态为连接中
     status.connected = false;
@@ -516,7 +519,7 @@ export class EndpointManager extends EventEmitter {
     status.lastConnected = new Date();
     status.lastError = undefined;
 
-    console.info(`[EndpointManager] 端点连接成功: ${sliceEndpoint(url)}`);
+    logger.info(`端点连接成功: ${sliceEndpoint(url)}`);
   }
 
   /**
@@ -531,7 +534,7 @@ export class EndpointManager extends EventEmitter {
       throw new Error(`端点状态不存在: ${sliceEndpoint(url)}`);
     }
 
-    console.debug(`[EndpointManager] 重连端点: ${sliceEndpoint(url)}`);
+    logger.debug(`重连端点: ${sliceEndpoint(url)}`);
 
     // 执行重连
     await endpoint.reconnect();
@@ -542,6 +545,6 @@ export class EndpointManager extends EventEmitter {
     status.lastConnected = new Date();
     status.lastError = undefined;
 
-    console.info(`[EndpointManager] 端点重连成功: ${sliceEndpoint(url)}`);
+    logger.info(`端点重连成功: ${sliceEndpoint(url)}`);
   }
 }
