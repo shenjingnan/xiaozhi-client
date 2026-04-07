@@ -7,7 +7,7 @@ import { logger } from "@/Logger.js";
 import { configManager } from "@xiaozhi-client/config";
 import { createASR, decodeOpusStream } from "univoice/asr";
 import "univoice/asr/providers";
-import type { ASRConnection, BaseASR } from "univoice/asr";
+import type { ASRConnection } from "univoice/asr";
 import type {
   ASRServiceEvents,
   ASRServiceOptions,
@@ -36,9 +36,6 @@ export class ASRService implements IASRService {
 
   /** 每个设备的 ASR 状态 */
   private readonly deviceStates = new Map<string, DeviceASRState>();
-
-  /** 每个设备的 ASR 实例 */
-  private readonly asrInstances = new Map<string, BaseASR>();
 
   /** 每个设备的 ASR 连接（预建立连接模式） */
   private readonly asrConnections = new Map<string, ASRConnection>();
@@ -138,6 +135,11 @@ export class ASRService implements IASRService {
     // 创建 ASR 实例并建立连接
     await this.createASRConnection(deviceId);
 
+    const connection = this.asrConnections.get(deviceId);
+    if (!connection || connection.state !== "connected") {
+      throw new Error(`[ASRService] ASR 连接建立失败: deviceId=${deviceId}`);
+    }
+
     logger.info(`[ASRService] ASR 连接已建立: deviceId=${deviceId}`);
   }
 
@@ -149,8 +151,7 @@ export class ASRService implements IASRService {
     const asrConfig = configManager.getASRConfig();
 
     if (!asrConfig.appid || !asrConfig.accessToken) {
-      logger.error("[ASRService] ASR 配置不完整，请检查配置文件");
-      return;
+      throw new Error("[ASRService] ASR 配置不完整，请检查配置文件");
     }
 
     // 创建 ASR 实例，配置字段映射：
@@ -164,8 +165,6 @@ export class ASRService implements IASRService {
       format: "pcm",
       codec: "raw",
     });
-
-    this.asrInstances.set(deviceId, asr);
 
     // 使用 connect() 预建立连接
     try {
@@ -185,6 +184,7 @@ export class ASRService implements IASRService {
         error
       );
       this.events.onError?.(deviceId, error as Error);
+      throw error;
     }
   }
 
@@ -263,7 +263,11 @@ export class ASRService implements IASRService {
   private async *createOpusStream(
     deviceId: string
   ): AsyncGenerator<Buffer, void, unknown> {
-    const queue = this.opusQueues.get(deviceId) || [];
+    let queue = this.opusQueues.get(deviceId);
+    if (!queue) {
+      queue = [];
+      this.opusQueues.set(deviceId, queue);
+    }
 
     while (true) {
       // 等待队列中有数据
@@ -299,7 +303,7 @@ export class ASRService implements IASRService {
 
       // 使用 univoice 的 decodeOpusStream 将 Opus 解码为 PCM
       const pcmStream = decodeOpusStream(opusStream, {
-        sampleRate: 16000,
+        sampleRate: 24000,
         channels: 1,
       });
 
@@ -336,13 +340,6 @@ export class ASRService implements IASRService {
       }
 
       logger.info(`[ASRService] listen 任务完成: deviceId=${deviceId}`);
-
-      // 重置音频缓冲区状态，准备下一次识别
-      this.opusQueues.set(deviceId, []);
-      this.audioEnded.set(deviceId, false);
-      logger.info(
-        `[ASRService] 音频缓冲区已重置，准备下一次识别: deviceId=${deviceId}`
-      );
     } catch (error) {
       logger.error(`[ASRService] listen 任务出错: deviceId=${deviceId}`, error);
       this.events.onError?.(deviceId, error as Error);
@@ -387,7 +384,6 @@ export class ASRService implements IASRService {
 
     // 清理资源
     this.asrConnections.delete(deviceId);
-    this.asrInstances.delete(deviceId);
     this.opusQueues.delete(deviceId);
     this.audioEnded.delete(deviceId);
     this.listenTasks.delete(deviceId);
@@ -429,7 +425,6 @@ export class ASRService implements IASRService {
       connection.close();
     }
     this.asrConnections.clear();
-    this.asrInstances.clear();
     // 清理音频队列相关状态
     this.opusQueues.clear();
     this.audioEnded.clear();
