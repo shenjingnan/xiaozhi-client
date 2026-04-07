@@ -116,7 +116,6 @@ export default defineConfig({
     "@xiaozhi-client/endpoint",
     "@xiaozhi-client/mcp-core",
     "@xiaozhi-client/shared-types",
-    "@xiaozhi-client/asr",
     "univoice",
   ],
   onSuccess: async () => {
