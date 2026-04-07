@@ -1,8 +1,8 @@
+import { Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { RestartNotificationProvider } from "@/hooks/useRestartNotifications";
 import DashboardPage from "@/pages/DashboardPage";
 import { WebSocketProvider } from "@/providers/WebSocketProvider";
-import { Navigate, Route, Routes } from "react-router-dom";
 
 function App() {
   return (

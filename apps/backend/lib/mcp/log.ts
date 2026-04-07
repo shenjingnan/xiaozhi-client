@@ -5,10 +5,10 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import type { Logger as PinoLogger } from "pino";
+import pino from "pino";
 import { logger } from "@/Logger.js";
 import { PathUtils } from "@/utils/path-utils.js";
-import pino from "pino";
-import type { Logger as PinoLogger } from "pino";
 
 // ==================== 类型定义 ====================
 

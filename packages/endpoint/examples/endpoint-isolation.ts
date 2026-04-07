@@ -44,12 +44,10 @@ async function main(): Promise<void> {
 
   // 1. 配置两个小智接入点 URL
   // 接入点 1：连接 calculator 服务
-  const endpointUrl1 =
-    "wss://api.xiaozhi.me/mcp/?token=<token>";
+  const endpointUrl1 = "wss://api.xiaozhi.me/mcp/?token=<token>";
 
   // 接入点 2：连接 datetime 服务
-  const endpointUrl2 =
-    "wss://api.xiaozhi.me/mcp/?token=<token>";
+  const endpointUrl2 = "wss://api.xiaozhi.me/mcp/?token=<token>";
 
   // 提取 endpoint ID 用于显示
   const endpointId1 = "agent_1324149";
@@ -277,7 +275,9 @@ async function main(): Promise<void> {
       try {
         const status1 = endpoint1.getStatus();
         console.error("当前连接状态:");
-        console.error(`  接入点 1 - 已连接: ${status1.connected ? "是" : "否"}`);
+        console.error(
+          `  接入点 1 - 已连接: ${status1.connected ? "是" : "否"}`
+        );
       } catch {
         // 忽略获取状态的错误
       }
@@ -285,7 +285,9 @@ async function main(): Promise<void> {
     if (endpoint2) {
       try {
         const status2 = endpoint2.getStatus();
-        console.error(`  接入点 2 - 已连接: ${status2.connected ? "是" : "否"}`);
+        console.error(
+          `  接入点 2 - 已连接: ${status2.connected ? "是" : "否"}`
+        );
       } catch {
         // 忽略获取状态的错误
       }

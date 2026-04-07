@@ -42,7 +42,7 @@ function parseProtocol2(buffer: Buffer): Buffer {
   // 解析头部字段（大端序）
   const version = buffer.readUInt16BE(0);
   const type = buffer.readUInt16BE(2);
-  const timestamp = buffer.readUInt32BE(8);
+  const _timestamp = buffer.readUInt32BE(8);
   const payloadSize = buffer.readUInt32BE(12);
 
   // 验证协议版本

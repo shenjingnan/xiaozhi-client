@@ -4,6 +4,19 @@
  * 在对话框中展示和编辑 ASR/LLM/TTS 配置。
  */
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import type {
+  AppConfig,
+  ASRConfig,
+  LLMConfig,
+  TTSConfig,
+  VoiceInfo,
+} from "@xiaozhi-client/shared-types";
+import { Edit, Plus, SettingsIcon } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import z from "zod";
 import { PromptEditorDialog } from "@/components/prompt-editor-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,21 +50,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useWebSocketActions } from "@/providers/WebSocketProvider";
-import { type PromptFileInfo, apiClient } from "@/services/api";
+import { apiClient, type PromptFileInfo } from "@/services/api";
 import { useConfig } from "@/stores/config";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type {
-  ASRConfig,
-  AppConfig,
-  LLMConfig,
-  TTSConfig,
-  VoiceInfo,
-} from "@xiaozhi-client/shared-types";
-import { Edit, Plus, SettingsIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import z from "zod";
 
 /**
  * 语音交互配置表单 Schema

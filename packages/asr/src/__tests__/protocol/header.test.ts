@@ -2,20 +2,20 @@
  * 协议头测试
  */
 
+import { describe, expect, it } from "vitest";
 import {
   CompressionType,
-  MessageType,
-  MessageTypeSpecificFlags,
-  PROTOCOL_VERSION,
-  SerializationMethod,
   compressGzipSync,
   generateAudioDefaultHeader,
   generateFullDefaultHeader,
   generateHeader,
   generateLastAudioDefaultHeader,
+  MessageType,
+  MessageTypeSpecificFlags,
+  PROTOCOL_VERSION,
   parseResponse,
+  SerializationMethod,
 } from "@/platforms/index.js";
-import { describe, expect, it } from "vitest";
 
 describe("协议头生成", () => {
   it("应生成默认完整请求头", () => {

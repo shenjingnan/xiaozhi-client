@@ -1362,7 +1362,7 @@ export class ConfigManager {
    */
   public getCustomMCPTools(): CustomMCPTool[] {
     const customMCPConfig = this.getCustomMCPConfig();
-    if (!customMCPConfig || !customMCPConfig.tools) {
+    if (!customMCPConfig?.tools) {
       return [];
     }
 
@@ -1772,7 +1772,7 @@ export class ConfigManager {
 
     const config = this.getMutableConfig();
 
-    if (!config.customMCP || !config.customMCP.tools) {
+    if (!config.customMCP?.tools) {
       throw new Error("未配置自定义 MCP 工具");
     }
 
@@ -1808,7 +1808,7 @@ export class ConfigManager {
 
     const config = this.getMutableConfig();
 
-    if (!config.customMCP || !config.customMCP.tools) {
+    if (!config.customMCP?.tools) {
       throw new Error("未配置自定义 MCP 工具");
     }
 
@@ -1962,7 +1962,7 @@ export class ConfigManager {
     const config = this.getConfig();
     const cozeConfig = config.platforms?.coze;
 
-    if (!cozeConfig || !cozeConfig.token) {
+    if (!cozeConfig?.token) {
       return null;
     }
 
@@ -2102,7 +2102,7 @@ export class ConfigManager {
       let toolName: string;
       let callTime: string;
       let incrementUsageCount = true;
-      let logPrefix: string;
+      let _logPrefix: string;
 
       // 判断参数类型来区分不同的重载
       if (typeof arg3 === "string") {
@@ -2110,13 +2110,13 @@ export class ConfigManager {
         const serverName = arg1;
         toolName = `${serverName}__${arg2}`;
         callTime = arg3;
-        logPrefix = `${serverName}/${arg2}`;
+        _logPrefix = `${serverName}/${arg2}`;
       } else {
         // 两个或三个参数的情况：updateCustomMCPToolStats(toolName, callTime, incrementUsageCount?)
         toolName = arg1;
         callTime = arg2;
         incrementUsageCount = (arg3 as boolean) || true;
-        logPrefix = toolName;
+        _logPrefix = toolName;
       }
 
       const customTools = this.getCustomMCPTools();
@@ -2182,7 +2182,7 @@ export class ConfigManager {
       return false;
     }
 
-    const updatePromise = new Promise<void>((resolve) => {
+    const updatePromise = new Promise<void>((_resolve) => {
       // 锁定逻辑在调用者中实现
     });
 

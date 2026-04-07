@@ -2,9 +2,9 @@
  * MCPMessageHandler resources/list 功能测试
  */
 
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MCPServiceManager } from "@/lib/mcp";
 import { MCPMessageHandler } from "@/lib/mcp";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock MCPServiceManager
 const mockServiceManager = {

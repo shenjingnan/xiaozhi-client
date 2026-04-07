@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { MCPTransportType } from "../types.js";
-import type { InternalMCPServiceConfig } from "../types.js";
 import { TransportFactory } from "../transport-factory.js";
+import type { InternalMCPServiceConfig } from "../types.js";
+import { MCPTransportType } from "../types.js";
 
 describe("TransportFactory", () => {
   describe("validateConfig", () => {
@@ -225,9 +225,7 @@ describe("TransportFactory", () => {
         type: "unsupported" as MCPTransportType,
       } as InternalMCPServiceConfig;
 
-      expect(() => TransportFactory.create(config)).toThrow(
-        "不支持的传输类型"
-      );
+      expect(() => TransportFactory.create(config)).toThrow("不支持的传输类型");
     });
   });
 

@@ -2,9 +2,9 @@
  * useNetworkService Hook 测试
  */
 
-import { ConnectionState, networkService } from "@/services/index";
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ConnectionState, networkService } from "@/services/index";
 import { useNetworkService } from "../useNetworkService";
 
 // Mock 依赖

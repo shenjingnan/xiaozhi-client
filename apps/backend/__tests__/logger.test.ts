@@ -194,7 +194,7 @@ describe("Logger", async () => {
     });
 
     it("应该在没有设置日志文件路径时不创建文件流", () => {
-      const testLogger = new Logger();
+      const _testLogger = new Logger();
 
       // 只应该创建控制台流，不创建文件流
       expect(mockPino.destination).not.toHaveBeenCalled();

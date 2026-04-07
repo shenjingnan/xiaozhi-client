@@ -3,8 +3,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { EnhancedToolInfo, ToolCallResult } from "../types.js";
 import { InternalMCPManagerAdapter } from "../internal-mcp-manager.js";
+import type { EnhancedToolInfo, ToolCallResult } from "../types.js";
 
 // Mock 依赖
 vi.mock("@xiaozhi-client/mcp-core", () => ({
@@ -69,16 +69,22 @@ describe("InternalMCPManagerAdapter", () => {
     it("应该为每个 MCP 服务调用 MCPManager.addServer", () => {
       const config = {
         mcpServers: {
-          "service1": { command: "node", args: ["s1.js"] },
-          "service2": { url: "https://example.com/sse" },
+          service1: { command: "node", args: ["s1.js"] },
+          service2: { url: "https://example.com/sse" },
         },
       };
 
       new InternalMCPManagerAdapter(config);
 
       expect(mockMCPManager.addServer).toHaveBeenCalledTimes(2);
-      expect(mockMCPManager.addServer).toHaveBeenCalledWith("service1", expect.any(Object));
-      expect(mockMCPManager.addServer).toHaveBeenCalledWith("service2", expect.any(Object));
+      expect(mockMCPManager.addServer).toHaveBeenCalledWith(
+        "service1",
+        expect.any(Object)
+      );
+      expect(mockMCPManager.addServer).toHaveBeenCalledWith(
+        "service2",
+        expect.any(Object)
+      );
     });
 
     it("应该设置事件监听器", () => {
@@ -90,8 +96,14 @@ describe("InternalMCPManagerAdapter", () => {
 
       new InternalMCPManagerAdapter(config);
 
-      expect(mockMCPManager.on).toHaveBeenCalledWith("connected", expect.any(Function));
-      expect(mockMCPManager.on).toHaveBeenCalledWith("error", expect.any(Function));
+      expect(mockMCPManager.on).toHaveBeenCalledWith(
+        "connected",
+        expect.any(Function)
+      );
+      expect(mockMCPManager.on).toHaveBeenCalledWith(
+        "error",
+        expect.any(Function)
+      );
     });
 
     it("应该正确转换配置", () => {
@@ -262,7 +274,9 @@ describe("InternalMCPManagerAdapter", () => {
         },
       });
 
-      const result = await adapter.callTool("test-service__tool1", { param: "value" });
+      const result = await adapter.callTool("test-service__tool1", {
+        param: "value",
+      });
 
       expect(mockMCPManager.callTool).toHaveBeenCalledWith(
         "test-service",
@@ -405,8 +419,14 @@ describe("InternalMCPManagerAdapter", () => {
         },
       });
 
-      expect(mockMCPManager.on).toHaveBeenCalledWith("connected", expect.any(Function));
-      expect(mockMCPManager.on).toHaveBeenCalledWith("error", expect.any(Function));
+      expect(mockMCPManager.on).toHaveBeenCalledWith(
+        "connected",
+        expect.any(Function)
+      );
+      expect(mockMCPManager.on).toHaveBeenCalledWith(
+        "error",
+        expect.any(Function)
+      );
     });
 
     it("connected 事件应该正确记录", () => {
@@ -419,7 +439,9 @@ describe("InternalMCPManagerAdapter", () => {
       });
 
       const onCalls = mockMCPManager.on.mock.calls;
-      const connectedCallback = onCalls.find((call) => call[0] === "connected")?.[1];
+      const connectedCallback = onCalls.find(
+        (call) => call[0] === "connected"
+      )?.[1];
 
       if (connectedCallback) {
         connectedCallback({ serverName: "test-service", tools: [] });
@@ -432,7 +454,9 @@ describe("InternalMCPManagerAdapter", () => {
     });
 
     it("error 事件应该正确记录", () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
 
       new InternalMCPManagerAdapter({
         mcpServers: {
@@ -444,7 +468,10 @@ describe("InternalMCPManagerAdapter", () => {
       const errorCallback = onCalls.find((call) => call[0] === "error")?.[1];
 
       if (errorCallback) {
-        errorCallback({ serverName: "test-service", error: new Error("测试错误") });
+        errorCallback({
+          serverName: "test-service",
+          error: new Error("测试错误"),
+        });
         expect(consoleSpy).toHaveBeenCalledWith(
           expect.stringContaining("MCP 服务 test-service 出错"),
           expect.any(Error)
@@ -469,7 +496,11 @@ describe("InternalMCPManagerAdapter", () => {
 
       await adapter.callTool("test-service__tool1", {});
 
-      expect(mockMCPManager.callTool).toHaveBeenCalledWith("test-service", "tool1", {});
+      expect(mockMCPManager.callTool).toHaveBeenCalledWith(
+        "test-service",
+        "tool1",
+        {}
+      );
     });
 
     it("应该正确解析包含 __ 的工具名", async () => {
@@ -519,8 +550,18 @@ describe("InternalMCPManagerAdapter", () => {
 
     it("应该处理多个服务", async () => {
       mockMCPManager.listTools.mockReturnValue([
-        { serverName: "service1", name: "tool1", description: "工具1", inputSchema: {} },
-        { serverName: "service2", name: "tool2", description: "工具2", inputSchema: {} },
+        {
+          serverName: "service1",
+          name: "tool1",
+          description: "工具1",
+          inputSchema: {},
+        },
+        {
+          serverName: "service2",
+          name: "tool2",
+          description: "工具2",
+          inputSchema: {},
+        },
       ]);
 
       const adapter = new InternalMCPManagerAdapter({

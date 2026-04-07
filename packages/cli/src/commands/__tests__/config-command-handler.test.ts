@@ -8,7 +8,7 @@ import { ConfigCommandHandler } from "../ConfigCommandHandler";
 
 // Mock ora
 vi.mock("ora", () => ({
-  default: vi.fn().mockImplementation((text) => ({
+  default: vi.fn().mockImplementation((_text) => ({
     start: () => ({
       succeed: (message: string) => {
         console.log(`✅ ${message}`);
@@ -75,7 +75,7 @@ const mockContainer: IDIContainer = {
 
 // Mock console methods
 const mockConsoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
-const mockConsoleError = vi
+const _mockConsoleError = vi
   .spyOn(console, "error")
   .mockImplementation(() => {});
 

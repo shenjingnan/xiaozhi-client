@@ -3,13 +3,13 @@
  * 提供直接、高效的路由注册和管理功能
  */
 
+import type { Context, Hono, Next } from "hono";
 import type { Logger } from "@/Logger.js";
 import type { AppContext } from "@/types/hono.context.js";
-import type { Context, Hono, Next } from "hono";
 import {
+  normalizeRoutes,
   type RouteDefinition,
   type RouteRegistry,
-  normalizeRoutes,
 } from "./types.js";
 
 /**
@@ -97,12 +97,12 @@ export class RouteManager {
   private applyRouteDefinition(
     app: Hono<AppContext>,
     route: RouteDefinition,
-    groupName: string
+    _groupName: string
   ): void {
     const { method, path, handler, middleware = [] } = route;
 
     // 创建包装的处理器，添加错误处理
-    const wrappedHandler = async (c: Context<AppContext>, next: Next) => {
+    const wrappedHandler = async (c: Context<AppContext>, _next: Next) => {
       try {
         return await handler(c);
       } catch (error) {

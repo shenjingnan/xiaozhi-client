@@ -65,4 +65,4 @@ import type { CozeWorkflowsData, CozeWorkflowsParams } from "./workflow";
 import type { CozeWorkspacesData } from "./workspace";
 
 // 重新导出这些类型，便于外部使用
-export type { CozeWorkspacesData, CozeWorkflowsParams, CozeWorkflowsData };
+export type { CozeWorkflowsData, CozeWorkflowsParams, CozeWorkspacesData };

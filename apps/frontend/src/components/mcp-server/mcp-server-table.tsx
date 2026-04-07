@@ -1,5 +1,9 @@
 "use client";
 
+import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
+import { CoffeeIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,10 +19,6 @@ import { useServerSortPersistence } from "@/hooks/useServerSortPersistence";
 import { useToolPagination } from "@/hooks/useToolPagination";
 import { cn } from "@/lib/utils";
 import { useMcpServersWithStatus } from "@/stores/config";
-import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
-import { CoffeeIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo } from "react";
-import { toast } from "sonner";
 import { McpServerSettingButton } from "../mcp-server-setting-button";
 import { RemoveMcpServerButton } from "../remove-mcp-server-button";
 import { ServerPagination } from "./server-pagination";

@@ -4,6 +4,7 @@
  * 展示 ASR/LLM/TTS 配置状态，提供语音交互设置入口。
  */
 
+import { useMemo } from "react";
 import {
   Card,
   CardDescription,
@@ -13,7 +14,6 @@ import {
 } from "@/components/ui/card";
 import { VoiceInteractionSettingDialog } from "@/components/voice-interaction-setting-dialog";
 import { useVoiceInteractionConfig } from "@/stores/config";
-import { useMemo } from "react";
 import { MiniCircularProgress } from "./mini-circular-progress";
 
 /**

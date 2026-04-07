@@ -3,11 +3,12 @@
  * 提供类型安全的路由配置和依赖注入
  */
 
+import type { Context, MiddlewareHandler } from "hono";
 import type {
   ConfigApiHandler,
   CozeHandler,
-  ESP32Handler,
   EndpointHandler,
+  ESP32Handler,
   MCPHandler,
   MCPRouteHandler,
   MCPToolHandler,
@@ -19,7 +20,6 @@ import type {
   UpdateApiHandler,
   VersionApiHandler,
 } from "@/handlers/index.js";
-import type { Context, MiddlewareHandler } from "hono";
 
 /**
  * 处理器依赖接口

@@ -1,30 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { type EndpointStatusResponse, apiClient } from "@/services/api";
-import { webSocketManager } from "@/services/websocket";
-import { useConfig, useConfigActions, useMcpEndpoint } from "@/stores/config";
 import {
   BadgeInfoIcon,
   CopyIcon,
@@ -37,6 +10,32 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { apiClient, type EndpointStatusResponse } from "@/services/api";
+import { webSocketManager } from "@/services/websocket";
+import { useConfig, useConfigActions, useMcpEndpoint } from "@/stores/config";
 
 // 接入点状态接口
 interface EndpointState {
@@ -147,7 +146,7 @@ export function McpEndpointSettingButton() {
               timestamp: 0,
             },
           };
-        } catch (error) {
+        } catch (_error) {
           states[endpoint] = {
             connected: false,
             isOperating: false,

@@ -2,29 +2,27 @@
  * 扣子平台相关类型导出
  */
 
-// 工作空间相关类型
-export type { CozeWorkspace, CozeWorkspacesData } from "./workspace";
-
 // API 相关类型
 export type {
-  CozeApiDetail,
-  CozeApiResponse,
-  CozeWorkspacesResponse,
-  CozeWorkflowsResponse,
-  CozeApiError,
   CacheItem,
+  CozeApiDetail,
+  CozeApiError,
+  CozeApiResponse,
   CozeWorkflowsData,
   CozeWorkflowsParams,
+  CozeWorkflowsResponse,
+  CozeWorkspacesResponse,
 } from "./api";
+// 配置相关类型
+export type { CozeApiServiceConfig, CozePlatformConfig } from "./config";
 
 // 工作流相关类型
 export type {
-  CozeWorkflowCreator,
   CozeWorkflow,
+  CozeWorkflowCreator,
+  CozeWorkflowsParams as WorkflowCozeWorkflowsParams,
   WorkflowParameter,
   WorkflowParameterConfig,
-  CozeWorkflowsParams as WorkflowCozeWorkflowsParams,
 } from "./workflow";
-
-// 配置相关类型
-export type { CozePlatformConfig, CozeApiServiceConfig } from "./config";
+// 工作空间相关类型
+export type { CozeWorkspace, CozeWorkspacesData } from "./workspace";

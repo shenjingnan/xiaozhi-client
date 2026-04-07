@@ -5,8 +5,8 @@
  * 这些选择器将数据从新的专门 stores 中获取并以旧格式返回
  */
 
-import { ConnectionState } from "@/services/websocket";
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
+import { ConnectionState } from "@/services/websocket";
 import { useConfigStore } from "./config";
 import { useStatusStore } from "./status";
 import { useWebSocketStore } from "./websocket";
@@ -174,13 +174,13 @@ export function useWebSocketState() {
 // 导出所有兼容性选择器
 export {
   useWebSocketConfig as useWebSocketConfig_DEPRECATED,
-  useWebSocketStatus as useWebSocketStatus_DEPRECATED,
-  useWebSocketMcpEndpoint as useWebSocketMcpEndpoint_DEPRECATED,
-  useWebSocketMcpServers as useWebSocketMcpServers_DEPRECATED,
-  useWebSocketMcpServerConfig as useWebSocketMcpServerConfig_DEPRECATED,
   useWebSocketConnected as useWebSocketConnected_DEPRECATED,
-  useWebSocketRestartStatus as useWebSocketRestartStatus_DEPRECATED,
-  useWebSocketWsUrl as useWebSocketWsUrl_DEPRECATED,
+  useWebSocketMcpEndpoint as useWebSocketMcpEndpoint_DEPRECATED,
+  useWebSocketMcpServerConfig as useWebSocketMcpServerConfig_DEPRECATED,
+  useWebSocketMcpServers as useWebSocketMcpServers_DEPRECATED,
   useWebSocketPortChangeStatus as useWebSocketPortChangeStatus_DEPRECATED,
+  useWebSocketRestartStatus as useWebSocketRestartStatus_DEPRECATED,
   useWebSocketState as useWebSocketState_DEPRECATED,
+  useWebSocketStatus as useWebSocketStatus_DEPRECATED,
+  useWebSocketWsUrl as useWebSocketWsUrl_DEPRECATED,
 };

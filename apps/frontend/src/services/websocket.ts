@@ -7,8 +7,8 @@
  * - 支持多个 store 订阅 WebSocket 事件
  */
 
-import { WEBSOCKET_RECONNECT_DELAY } from "@/constants/timeouts";
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
+import { WEBSOCKET_RECONNECT_DELAY } from "@/constants/timeouts";
 
 /**
  * WebSocket 消息类型
@@ -723,12 +723,12 @@ export class WebSocketManager {
 // 创建默认的 WebSocket 管理器实例（使用单例模式）
 export const webSocketManager = WebSocketManager.getInstance();
 
-// 导出类型和枚举
-export { ConnectionState };
 export type {
-  WebSocketMessage,
-  RestartStatus,
-  WebSocketManagerConfig,
   EventBusEvents,
   EventListener,
+  RestartStatus,
+  WebSocketManagerConfig,
+  WebSocketMessage,
 };
+// 导出类型和枚举
+export { ConnectionState };

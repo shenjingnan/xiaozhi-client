@@ -3,40 +3,34 @@
  */
 
 // 应用配置相关类型
+// 重新导出 ConnectionConfig 以避免命名冲突，使用默认的 app.ts 中的定义
+// 语音交互配置相关类型
 export type {
+  AppConfig,
+  ASRConfig,
+  ConnectionConfig,
+  LLMConfig,
   LocalMCPServerConfig,
+  MCPServerConfig,
+  MCPServerToolsConfig,
+  MCPToolConfig,
+  ModelScopeConfig,
+  PlatformConfig,
+  PlatformsConfig,
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
-  MCPServerConfig,
-  MCPToolConfig,
-  MCPServerToolsConfig,
-  AppConfig,
-  ModelScopeConfig,
+  TTSConfig,
   WebUIConfig,
-  PlatformsConfig,
-  PlatformConfig,
 } from "./app";
-
 // 连接配置相关类型
 export type {
   ConnectionConfig as ConfigConnectionConfig,
   EndpointConfig,
   LoadBalancingConfig,
 } from "./connection";
-
 // 服务器配置相关类型
 export type {
   ClientStatus as ConfigClientStatus,
-  ServerInfo,
   RestartStatus,
+  ServerInfo,
 } from "./server";
-
-// 重新导出 ConnectionConfig 以避免命名冲突，使用默认的 app.ts 中的定义
-export type { ConnectionConfig } from "./app";
-
-// 语音交互配置相关类型
-export type {
-  ASRConfig,
-  TTSConfig,
-  LLMConfig,
-} from "./app";

@@ -76,23 +76,18 @@
 // 模块导出
 // =========================
 
-// 核心抽象层
-export * from "./core/index.js";
-
-// 平台实现
-export * from "./platforms/index.js";
-
 // 音频处理模块
 export * from "./audio/index.js";
-
 // 认证模块
 export * from "./auth/index.js";
-
-// 类型定义
-export * from "./types/index.js";
-
 // 客户端模块
 export * from "./client/index.js";
+// 核心抽象层
+export * from "./core/index.js";
+// 平台实现
+export * from "./platforms/index.js";
+// 类型定义
+export * from "./types/index.js";
 
 // 工具函数
 export * from "./utils/index.js";
@@ -101,11 +96,10 @@ export * from "./utils/index.js";
 // 主要导出
 // =========================
 
-export { ASR, executeOne } from "./client/index.js";
-
 export type {
+  ASREventData,
+  ASREventType,
   ASROption,
   ASRResult,
-  ASREventType,
-  ASREventData,
 } from "./client/index.js";
+export { ASR, executeOne } from "./client/index.js";

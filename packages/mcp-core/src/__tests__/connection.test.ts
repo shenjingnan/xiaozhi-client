@@ -1,10 +1,17 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { ConnectionState } from "../types.js";
-import { MCPTransportType } from "../types.js";
-import type { MCPServerTransport, MCPServiceConfig } from "../types.js";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { MCPConnection } from "../connection.js";
+import type { MCPServerTransport, MCPServiceConfig } from "../types.js";
+import { ConnectionState, MCPTransportType } from "../types.js";
 
 // Mock 接口定义
 interface MockClient {
@@ -25,11 +32,7 @@ vi.mock("../transport-factory.js", () => {
   const mockTransportFactory = {
     validateConfig: vi.fn(),
     create: vi.fn(),
-    getSupportedTypes: vi.fn().mockReturnValue([
-      "stdio",
-      "sse",
-      "http",
-    ]),
+    getSupportedTypes: vi.fn().mockReturnValue(["stdio", "sse", "http"]),
   };
 
   return {
@@ -48,13 +51,15 @@ let mockTransportFactory: {
 // 使用 beforeAll 来获取 mock 函数
 beforeAll(async () => {
   const module = await import("../transport-factory.js");
-  mockTransportFactory = (module as unknown as {
-    __mockTransportFactory: {
-      validateConfig: ReturnType<typeof vi.fn>;
-      create: ReturnType<typeof vi.fn>;
-      getSupportedTypes: ReturnType<typeof vi.fn>;
-    };
-  }).__mockTransportFactory;
+  mockTransportFactory = (
+    module as unknown as {
+      __mockTransportFactory: {
+        validateConfig: ReturnType<typeof vi.fn>;
+        create: ReturnType<typeof vi.fn>;
+        getSupportedTypes: ReturnType<typeof vi.fn>;
+      };
+    }
+  ).__mockTransportFactory;
 });
 
 describe("MCPConnection", () => {
@@ -330,9 +335,9 @@ describe("MCPConnection", () => {
     it("未连接时应该抛出错误", async () => {
       await connection.disconnect();
 
-      await expect(
-        connection.callTool("test-tool", {})
-      ).rejects.toThrow("服务 test-service 未连接");
+      await expect(connection.callTool("test-tool", {})).rejects.toThrow(
+        "服务 test-service 未连接"
+      );
     });
 
     it("工具不存在时应该抛出错误", async () => {
@@ -420,7 +425,11 @@ describe("MCPConnection", () => {
 
   describe("error handling", () => {
     it("连接失败时应该设置 DISCONNECTED 状态", async () => {
-      const testConnection = new MCPConnection("test-service", config, mockCallbacks);
+      const testConnection = new MCPConnection(
+        "test-service",
+        config,
+        mockCallbacks
+      );
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
       await testConnection.connect().catch(() => {});
@@ -431,7 +440,11 @@ describe("MCPConnection", () => {
     });
 
     it("应该正确处理连接失败", async () => {
-      const testConnection = new MCPConnection("test-service", config, mockCallbacks);
+      const testConnection = new MCPConnection(
+        "test-service",
+        config,
+        mockCallbacks
+      );
       mockClient.connect.mockRejectedValue(new Error("Connection failed"));
 
       await expect(testConnection.connect()).rejects.toThrow(
@@ -460,9 +473,7 @@ describe("MCPConnection", () => {
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockRejectedValue(new Error("Failed to get tools"));
 
-      await expect(connection.connect()).rejects.toThrow(
-        "Failed to get tools"
-      );
+      await expect(connection.connect()).rejects.toThrow("Failed to get tools");
     });
 
     it("断开连接后工具列表应该被保留", async () => {
@@ -491,7 +502,11 @@ describe("MCPConnection", () => {
         apiKey: "test-key",
       };
 
-      const sseConnection = new MCPConnection("test-sse-service", sseConfig, mockCallbacks);
+      const sseConnection = new MCPConnection(
+        "test-sse-service",
+        sseConfig,
+        mockCallbacks
+      );
       const status = sseConnection.getStatus();
 
       expect(status.name).toBe("test-sse-service");
@@ -505,7 +520,11 @@ describe("MCPConnection", () => {
         headers: { "Custom-Header": "value" },
       };
 
-      const httpConnection = new MCPConnection("test-http-service", httpConfig, mockCallbacks);
+      const httpConnection = new MCPConnection(
+        "test-http-service",
+        httpConfig,
+        mockCallbacks
+      );
       const status = httpConnection.getStatus();
 
       expect(status.name).toBe("test-http-service");
@@ -562,9 +581,9 @@ describe("MCPConnection", () => {
       const invalidConfig = {
         type: MCPTransportType.SSE,
       } as MCPServiceConfig;
-      expect(() => new MCPConnection("test", invalidConfig, mockCallbacks)).toThrow(
-        "sse 类型需要 url 字段"
-      );
+      expect(
+        () => new MCPConnection("test", invalidConfig, mockCallbacks)
+      ).toThrow("sse 类型需要 url 字段");
     });
 
     it("缺少 command 时应该抛出错误", () => {
@@ -577,9 +596,9 @@ describe("MCPConnection", () => {
         type: MCPTransportType.STDIO,
         command: undefined,
       } as MCPServiceConfig;
-      expect(() => new MCPConnection("test", invalidConfig, mockCallbacks)).toThrow(
-        "stdio 类型需要 command 字段"
-      );
+      expect(
+        () => new MCPConnection("test", invalidConfig, mockCallbacks)
+      ).toThrow("stdio 类型需要 command 字段");
     });
   });
 
@@ -598,7 +617,11 @@ describe("MCPConnection", () => {
         },
       };
 
-      const sseConnection = new MCPConnection("test-sse", sseConfig, mockCallbacks);
+      const sseConnection = new MCPConnection(
+        "test-sse",
+        sseConfig,
+        mockCallbacks
+      );
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
@@ -620,7 +643,11 @@ describe("MCPConnection", () => {
         },
       };
 
-      const sseConnection = new MCPConnection("test-sse", sseConfig, mockCallbacks);
+      const sseConnection = new MCPConnection(
+        "test-sse",
+        sseConfig,
+        mockCallbacks
+      );
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
       mockClient.close.mockResolvedValue(undefined);
@@ -653,7 +680,11 @@ describe("MCPConnection", () => {
         },
       };
 
-      const stdioConnection = new MCPConnection("test-stdio", stdioConfig, mockCallbacks);
+      const stdioConnection = new MCPConnection(
+        "test-stdio",
+        stdioConfig,
+        mockCallbacks
+      );
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
@@ -674,7 +705,11 @@ describe("MCPConnection", () => {
         },
       };
 
-      const sseConnection = new MCPConnection("test-sse", sseConfig, mockCallbacks);
+      const sseConnection = new MCPConnection(
+        "test-sse",
+        sseConfig,
+        mockCallbacks
+      );
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
@@ -694,7 +729,11 @@ describe("MCPConnection", () => {
         },
       };
 
-      const sseConnection = new MCPConnection("test-sse", sseConfig, mockCallbacks);
+      const sseConnection = new MCPConnection(
+        "test-sse",
+        sseConfig,
+        mockCallbacks
+      );
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
@@ -716,7 +755,11 @@ describe("MCPConnection", () => {
         },
       };
 
-      const sseConnection = new MCPConnection("test-sse", sseConfig, mockCallbacks);
+      const sseConnection = new MCPConnection(
+        "test-sse",
+        sseConfig,
+        mockCallbacks
+      );
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 
@@ -742,7 +785,11 @@ describe("MCPConnection", () => {
         },
       };
 
-      const sseConnection = new MCPConnection("test-sse", sseConfig, mockCallbacks);
+      const sseConnection = new MCPConnection(
+        "test-sse",
+        sseConfig,
+        mockCallbacks
+      );
       mockClient.connect.mockResolvedValue(undefined);
       mockClient.listTools.mockResolvedValue({ tools: [] });
 

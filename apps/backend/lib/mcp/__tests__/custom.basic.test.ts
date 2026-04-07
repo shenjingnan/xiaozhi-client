@@ -3,10 +3,10 @@
  * 专门测试 Coze 工作流功能
  */
 
-import type { EventBus } from "@/services/event-bus.service.js";
-import { getEventBus } from "@/services/event-bus.service.js";
 import type { CustomMCPTool } from "@xiaozhi-client/config";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { EventBus } from "@/services/event-bus.service.js";
+import { getEventBus } from "@/services/event-bus.service.js";
 import { CustomMCPHandler } from "../custom.js";
 
 // Mock logger

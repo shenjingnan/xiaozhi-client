@@ -4,8 +4,8 @@
  * 提供工具列表的分页功能，自动计算分页状态和当前页数据
  */
 
-import type { ToolRowData } from "@/components/mcp-tool/mcp-tool-table";
 import { useCallback, useMemo, useState } from "react";
+import type { ToolRowData } from "@/components/mcp-tool/mcp-tool-table";
 
 interface UseToolPaginationResult {
   /** 当前页码 */

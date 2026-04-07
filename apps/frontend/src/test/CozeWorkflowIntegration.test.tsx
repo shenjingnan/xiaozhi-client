@@ -2,13 +2,13 @@
  * CozeWorkflowIntegration 组件测试
  */
 
-import { CozeWorkflowIntegration } from "@/components/coze-workflow-integration";
-import * as useCozeWorkflowsModule from "@/hooks/useCozeWorkflows";
-import * as toolsApiModule from "@/services/api";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { CozeWorkflow, CozeWorkspace } from "@xiaozhi-client/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { CozeWorkflowIntegration } from "@/components/coze-workflow-integration";
+import * as useCozeWorkflowsModule from "@/hooks/useCozeWorkflows";
+import * as toolsApiModule from "@/services/api";
 
 // Mock toast
 vi.mock("sonner", () => ({

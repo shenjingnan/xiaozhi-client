@@ -2,6 +2,10 @@
  * 性能测试 - 验证重构后的性能优化效果
  */
 
+import { act, render } from "@testing-library/react";
+import type React from "react";
+import { useEffect } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   useConfig,
   useConfigStore,
@@ -18,10 +22,6 @@ import {
   useWebSocketStore,
   useWebSocketUrl,
 } from "@/stores/websocket";
-import { act, render } from "@testing-library/react";
-import type React from "react";
-import { useEffect } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // 性能监控组件
 const PerformanceMonitor: React.FC<{

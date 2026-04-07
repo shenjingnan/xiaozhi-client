@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ConfigValidationError,
-  normalizeServiceConfig,
   isModelScopeURL,
   MCPTransportType,
+  normalizeServiceConfig,
 } from "../adapter.js";
 
 // Mock console 方法
@@ -106,7 +106,10 @@ describe("ConfigAdapter 配置适配器测试", () => {
 
   describe("显式类型指定", () => {
     it("应该优先使用显式指定的 sse 类型", () => {
-      const config = { type: "sse" as const, url: "https://example.com/custom" };
+      const config = {
+        type: "sse" as const,
+        url: "https://example.com/custom",
+      };
       const result = normalizeServiceConfig(config);
       expect(result.type).toBe(MCPTransportType.SSE);
     });
@@ -124,7 +127,9 @@ describe("ConfigAdapter 配置适配器测试", () => {
   describe("ModelScope URL 检测", () => {
     it("应该正确识别 ModelScope .net 域名", () => {
       expect(
-        isModelScopeURL("https://mcp.api-inference.modelscope.net/8928ccc99fa34b/mcp")
+        isModelScopeURL(
+          "https://mcp.api-inference.modelscope.net/8928ccc99fa34b/mcp"
+        )
       ).toBe(true);
     });
 
@@ -167,13 +172,16 @@ describe("ConfigAdapter 配置适配器测试", () => {
 
   describe("错误处理", () => {
     it("应该为空配置对象抛出错误", () => {
-      expect(() =>
-        normalizeServiceConfig(null as unknown as any)
-      ).toThrow(ConfigValidationError);
+      expect(() => normalizeServiceConfig(null as unknown as any)).toThrow(
+        ConfigValidationError
+      );
     });
 
     it("应该为无效的传输类型抛出错误", () => {
-      const config = { type: "invalid-type" as any, url: "https://example.com" };
+      const config = {
+        type: "invalid-type" as any,
+        url: "https://example.com",
+      };
       expect(() => normalizeServiceConfig(config)).toThrow(
         ConfigValidationError
       );

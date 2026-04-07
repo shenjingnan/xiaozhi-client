@@ -3,6 +3,7 @@
  * 测试命令解析、键值对解析、表单与 API 配置的双向转换等功能
  */
 
+import { describe, expect, it } from "vitest";
 import {
   apiConfigToForm,
   formToApiConfig,
@@ -12,7 +13,6 @@ import {
   parseCommandString,
   parseKeyValuePairs,
 } from "@/utils/mcpFormConverter";
-import { describe, expect, it } from "vitest";
 
 describe("parseCommandString", () => {
   it("应该正确解析简单命令", () => {

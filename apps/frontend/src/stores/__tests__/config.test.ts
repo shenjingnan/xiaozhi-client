@@ -1,6 +1,6 @@
-import { apiClient } from "@/services/api";
 import type { AppConfig } from "@xiaozhi-client/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { apiClient } from "@/services/api";
 import { useConfigStore } from "../config";
 
 // Mock API client
