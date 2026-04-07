@@ -4,9 +4,9 @@
  */
 
 import { Readable } from "node:stream";
-import { logger } from "@/Logger.js";
 import { configManager } from "@xiaozhi-client/config";
 import { createASR, decodeOpusStream } from "univoice/asr";
+import { logger } from "@/Logger.js";
 import "univoice/asr/providers";
 import type { ASRConnection } from "univoice/asr";
 import type {

@@ -2,12 +2,12 @@
  * 重启通知系统测试
  */
 
+import { render, waitFor } from "@testing-library/react";
+import { vi } from "vitest";
 import {
   RestartNotificationProvider,
   useRestartNotifications,
 } from "@/hooks/useRestartNotifications";
-import { render, waitFor } from "@testing-library/react";
-import { vi } from "vitest";
 
 // Mock sonner toast
 vi.mock("sonner", () => ({

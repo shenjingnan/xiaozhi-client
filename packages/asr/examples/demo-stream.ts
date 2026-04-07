@@ -108,7 +108,7 @@ async function main() {
     console.log("Step 2: Sending audio frames...");
 
     // Import required modules for file reading
-    const fs = await import("node:fs");
+    const _fs = await import("node:fs");
 
     // For OGG/Opus files, we read the raw Opus data
     // In production, use prism-media to decode OGG to Opus frames
@@ -126,7 +126,7 @@ async function main() {
         offset,
         Math.min(offset + frameSize, opusData.length)
       );
-      const isLast = offset + frameSize >= opusData.length;
+      const _isLast = offset + frameSize >= opusData.length;
 
       await client.sendFrame(chunk);
       frameCount++;

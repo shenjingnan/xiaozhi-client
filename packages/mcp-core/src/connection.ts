@@ -9,11 +9,18 @@
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { MCPServerTransport, MCPServiceConfig, MCPServiceStatus, ToolCallResult } from "./types.js";
-import { ConnectionState, MCPTransportType } from "./types.js";
 import { TransportFactory } from "./transport-factory.js";
+import type {
+  HeartbeatConfig,
+  InternalMCPServiceConfig,
+  MCPServerTransport,
+  MCPServiceConfig,
+  MCPServiceEventCallbacks,
+  MCPServiceStatus,
+  ToolCallResult,
+} from "./types.js";
+import { ConnectionState, MCPTransportType } from "./types.js";
 import { inferTransportTypeFromConfig } from "./utils/index.js";
-import type { HeartbeatConfig, MCPServiceEventCallbacks, InternalMCPServiceConfig } from './types.js';
 
 /**
  * MCP 连接类
@@ -44,8 +51,8 @@ export class MCPConnection {
     this.callbacks = callbacks;
     // 保存心跳配置 - 优先使用用户配置
     this.heartbeatConfig = {
-      enabled: config.heartbeat?.enabled ?? true,  // 默认启用
-      interval: config.heartbeat?.interval ?? 30 * 1000,  // 默认 30 秒
+      enabled: config.heartbeat?.enabled ?? true, // 默认启用
+      interval: config.heartbeat?.interval ?? 30 * 1000, // 默认 30 秒
     };
 
     // 验证配置
@@ -88,9 +95,7 @@ export class MCPConnection {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    console.debug(
-      `[MCP-${this.name}] 正在连接 MCP 服务: ${this.name}`
-    );
+    console.debug(`[MCP-${this.name}] 正在连接 MCP 服务: ${this.name}`);
 
     return new Promise((resolve, reject) => {
       // 设置连接超时（使用固定默认值 30 秒）
@@ -161,9 +166,7 @@ export class MCPConnection {
     this.connectionState = ConnectionState.CONNECTED;
     this.initialized = true;
 
-    console.info(
-      `[MCP-${this.name}] MCP 服务 ${this.name} 连接已建立`
-    );
+    console.info(`[MCP-${this.name}] MCP 服务 ${this.name} 连接已建立`);
 
     // 启动心跳检测
     this.startHeartbeat();
@@ -208,7 +211,7 @@ export class MCPConnection {
         this.client.close().catch(() => {
           // 忽略关闭时的错误
         });
-      } catch (error) {
+      } catch (_error) {
         // 忽略关闭时的错误
       }
       this.client = null;
@@ -309,9 +312,7 @@ export class MCPConnection {
    */
   private async reconnect(): Promise<void> {
     this.connectionState = ConnectionState.RECONNECTING;
-    console.debug(
-      `[MCP-${this.name}] 检测到会话过期，正在重新连接...`
-    );
+    console.debug(`[MCP-${this.name}] 检测到会话过期，正在重新连接...`);
 
     // 清理旧连接
     this.cleanupConnection();
@@ -343,9 +344,7 @@ export class MCPConnection {
       });
     }, interval);
 
-    console.debug(
-      `[MCP-${this.name}] 心跳检测已启动，间隔: ${interval}ms`
-    );
+    console.debug(`[MCP-${this.name}] 心跳检测已启动，间隔: ${interval}ms`);
   }
 
   /**

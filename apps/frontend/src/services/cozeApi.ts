@@ -184,4 +184,4 @@ export class CozeApiClient {
 export const cozeApiClient = new CozeApiClient();
 
 // 导出类型
-export type { ApiResponse, ApiErrorResponse, CacheStats };
+export type { ApiErrorResponse, ApiResponse, CacheStats };

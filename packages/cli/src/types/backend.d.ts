@@ -10,29 +10,29 @@
  * 对应 apps/backend/WebServer.ts
  */
 declare module "@/WebServer.js" {
-	/**
-	 * WebServer - Web 服务器主控制器
-	 */
-	export class WebServer {
-		/**
-		 * 创建 WebServer 实例
-		 * @param port - 可选的端口号，不指定则使用配置文件中的端口
-		 */
-		constructor(port?: number);
+  /**
+   * WebServer - Web 服务器主控制器
+   */
+  export class WebServer {
+    /**
+     * 创建 WebServer 实例
+     * @param port - 可选的端口号，不指定则使用配置文件中的端口
+     */
+    constructor(port?: number);
 
-		/**
-		 * 启动 Web 服务器
-		 */
-		start(): Promise<void>;
+    /**
+     * 启动 Web 服务器
+     */
+    start(): Promise<void>;
 
-		/**
-		 * 停止 Web 服务器
-		 */
-		stop(): Promise<void>;
+    /**
+     * 停止 Web 服务器
+     */
+    stop(): Promise<void>;
 
-		/**
-		 * 销毁 WebServer 实例，清理所有资源
-		 */
-		destroy(): void;
-	}
+    /**
+     * 销毁 WebServer 实例，清理所有资源
+     */
+    destroy(): void;
+  }
 }

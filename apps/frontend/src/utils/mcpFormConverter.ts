@@ -2,6 +2,7 @@
  * MCP 服务表单数据与 API 配置的双向转换工具
  */
 
+import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
 import type {
   HttpFormData,
   McpServerFormData,
@@ -9,7 +10,6 @@ import type {
   SseFormData,
   StdioFormData,
 } from "@/types/mcp-form";
-import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
 
 // ============ 表单 → API 配置 ============
 

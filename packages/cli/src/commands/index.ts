@@ -199,7 +199,7 @@ export class CommandRegistry implements ICommandRegistry {
   ): void {
     // 找到服务命令处理器
     const serviceHandler = handlers.find((h) => h.name === "service");
-    if (!serviceHandler || !serviceHandler.subcommands) {
+    if (!serviceHandler?.subcommands) {
       return;
     }
 

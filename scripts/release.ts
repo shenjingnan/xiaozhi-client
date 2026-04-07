@@ -224,7 +224,10 @@ async function main(options: ReleaseOptions): Promise<void> {
   log("info", "🔍 验证版本号格式...");
   if (!validateVersion(options.version)) {
     log("error", `无效的版本号: ${options.version}`);
-    log("info", "版本号格式应为: major.minor.patch 或 major.minor.patch-prerelease");
+    log(
+      "info",
+      "版本号格式应为: major.minor.patch 或 major.minor.patch-prerelease"
+    );
     log("info", "示例: 1.10.7, 1.10.8-beta.0, 1.10.8-rc.0");
     process.exit(1);
     return;
@@ -251,10 +254,7 @@ async function main(options: ReleaseOptions): Promise<void> {
   log("info", `  主分支: ${baseBranch}`);
 
   if (currentBranch !== baseBranch) {
-    log(
-      "warn",
-      `当前分支不是主分支 (${baseBranch})，建议在主分支上进行发布`
-    );
+    log("warn", `当前分支不是主分支 (${baseBranch})，建议在主分支上进行发布`);
     log("info", "如需切换到主分支:");
     log("info", `  git checkout ${baseBranch}`);
   }
@@ -434,4 +434,4 @@ if (isMainModule) {
   });
 }
 
-export { main, parseArgs, validateVersion, checkWorkingTreeClean };
+export { checkWorkingTreeClean, main, parseArgs, validateVersion };

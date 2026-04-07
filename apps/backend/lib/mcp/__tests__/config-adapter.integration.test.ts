@@ -3,12 +3,6 @@
  * 验证两个组件的协同工作和类型推断一致性
  */
 
-import { MCPService, MCPTransportType } from "@/lib/mcp";
-import {
-  getConfigTypeDescription,
-  normalizeServiceConfig,
-  normalizeServiceConfigBatch,
-} from "@xiaozhi-client/config";
 import type {
   HTTPMCPServerConfig,
   LocalMCPServerConfig,
@@ -16,14 +10,20 @@ import type {
   SSEMCPServerConfig,
   StreamableHTTPMCPServerConfig,
 } from "@xiaozhi-client/config";
+import {
+  getConfigTypeDescription,
+  normalizeServiceConfig,
+  normalizeServiceConfigBatch,
+} from "@xiaozhi-client/config";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MCPService, MCPTransportType } from "@/lib/mcp";
 
 // 统一的mockLogger定义
-let mockLogger: any;
+let _mockLogger: any;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockLogger = {
+  _mockLogger = {
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
@@ -412,7 +412,9 @@ describe("ConfigAdapter 和 MCPService 集成测试", () => {
       }
 
       // 第四步：验证配置描述功能
-      for (const [serviceName, originalConfig] of Object.entries(userConfigs)) {
+      for (const [_serviceName, originalConfig] of Object.entries(
+        userConfigs
+      )) {
         const description = getConfigTypeDescription(originalConfig);
         expect(typeof description).toBe("string");
         expect(description.length).toBeGreaterThan(0);

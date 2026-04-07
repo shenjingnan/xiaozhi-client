@@ -1,5 +1,5 @@
-import { MCPManager } from '@xiaozhi-client/mcp-core';
 import { EndpointManager } from "@xiaozhi-client/endpoint";
+import { MCPManager } from "@xiaozhi-client/mcp-core";
 
 async function main(): Promise<void> {
   const mcpServers = {

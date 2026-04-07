@@ -6,6 +6,8 @@
 
 "use client";
 
+import { Server } from "lucide-react";
+import { useState } from "react";
 import { McpServerTable } from "@/components/mcp-server/mcp-server-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,8 +17,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Server } from "lucide-react";
-import { useState } from "react";
 
 /**
  * MCP 服务器表格对话框组件

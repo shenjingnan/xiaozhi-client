@@ -129,7 +129,7 @@ export function getDefaultValueForSchema(schema: any): any {
  * 根据 JSON Schema 生成默认值对象
  */
 export function createDefaultValues(jsonSchema: any): Record<string, any> {
-  if (!jsonSchema || !jsonSchema.properties) return {};
+  if (!jsonSchema?.properties) return {};
 
   const defaults: Record<string, any> = {};
   const requiredFields = jsonSchema.required || [];

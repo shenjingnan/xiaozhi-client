@@ -1,3 +1,18 @@
+import type {
+  CozeWorkflow,
+  WorkflowParameter,
+} from "@xiaozhi-client/shared-types";
+import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Workflow,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { WorkflowParameterConfigDialog } from "@/components/common/workflow-parameter-config-dialog";
 import {
   AlertDialog,
@@ -28,21 +43,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCozeWorkflows } from "@/hooks/useCozeWorkflows";
 import { apiClient } from "@/services/api";
-import type {
-  CozeWorkflow,
-  WorkflowParameter,
-} from "@xiaozhi-client/shared-types";
-import {
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Plus,
-  RefreshCw,
-  Workflow,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 interface CozeWorkflowIntegrationProps {
   onToolAdded?: () => void;

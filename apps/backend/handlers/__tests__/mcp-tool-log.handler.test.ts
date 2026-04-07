@@ -3,8 +3,8 @@
  * 专注于基本功能验证
  */
 
-import { PAGINATION_CONSTANTS } from "@/constants/api.constants.js";
 import { describe, expect, it } from "vitest";
+import { PAGINATION_CONSTANTS } from "@/constants/api.constants.js";
 import { MCPToolLogHandler } from "../mcp-tool-log.handler.js";
 
 describe("MCPToolLogHandler - 基本功能测试", () => {

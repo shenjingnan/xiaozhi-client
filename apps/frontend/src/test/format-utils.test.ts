@@ -1,3 +1,5 @@
+import type { ToolCallRecord } from "@xiaozhi-client/shared-types";
+import { describe, expect, it } from "vitest";
 import {
   formatDuration,
   formatError,
@@ -5,8 +7,6 @@ import {
   formatTimestamp,
   generateStableKey,
 } from "@/utils/formatUtils";
-import type { ToolCallRecord } from "@xiaozhi-client/shared-types";
-import { describe, expect, it } from "vitest";
 
 describe("formatUtils", () => {
   describe("formatTimestamp", () => {

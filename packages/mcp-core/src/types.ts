@@ -3,10 +3,10 @@
  * 统一管理所有 MCP 相关的类型定义
  */
 
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import type { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 // =========================
 // 1. 基础传输类型

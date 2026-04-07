@@ -39,7 +39,10 @@ describe("类型和枚举测试", () => {
 
   describe("ToolCallError 错误类", () => {
     it("应该创建带有错误码和消息的错误", () => {
-      const error = new ToolCallError(ToolCallErrorCode.INVALID_PARAMS, "无效参数");
+      const error = new ToolCallError(
+        ToolCallErrorCode.INVALID_PARAMS,
+        "无效参数"
+      );
       expect(error).toBeInstanceOf(Error);
       expect(error.name).toBe("ToolCallError");
       expect(error.code).toBe(ToolCallErrorCode.INVALID_PARAMS);
@@ -62,7 +65,10 @@ describe("类型和枚举测试", () => {
     });
 
     it("应该正确捕获堆栈信息", () => {
-      const error = new ToolCallError(ToolCallErrorCode.TOOL_NOT_FOUND, "工具不存在");
+      const error = new ToolCallError(
+        ToolCallErrorCode.TOOL_NOT_FOUND,
+        "工具不存在"
+      );
       expect(error.stack).toBeDefined();
       expect(typeof error.stack).toBe("string");
     });

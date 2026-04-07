@@ -2,8 +2,8 @@
  * toolSorters 工具函数测试
  */
 
-import type { EnhancedToolInfo } from "@/lib/mcp";
 import { describe, expect, it } from "vitest";
+import type { EnhancedToolInfo } from "@/lib/mcp";
 import { sortTools, toolSorters } from "./toolSorters";
 
 // 创建模拟工具数据

@@ -3,10 +3,10 @@
  * 包装 @xiaozhi-client/mcp-core 的 MCPConnection，使用 EventBus 发射事件
  */
 
-import { MCP_SERVICE_EVENTS } from "@/constants/index.js";
-import { getEventBus } from "@/services/event-bus.service.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { MCPConnection } from "@xiaozhi-client/mcp-core";
+import { MCP_SERVICE_EVENTS } from "@/constants/index.js";
+import { getEventBus } from "@/services/event-bus.service.js";
 import type { InternalMCPServiceConfig } from "./types.js";
 
 /**

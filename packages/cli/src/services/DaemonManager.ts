@@ -13,8 +13,8 @@
 import type { ChildProcess } from "node:child_process";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import type { WebServer } from "@/WebServer";
 import consola from "consola";
+import type { WebServer } from "@/WebServer";
 import { RETRY_CONSTANTS } from "../Constants";
 import { ProcessError, ServiceError } from "../errors/index";
 import type {
@@ -149,7 +149,7 @@ export class DaemonManagerImpl implements IDaemonManager {
   /**
    * 连接到守护进程日志
    */
-  async attachToLogs(logFileName = "xiaozhi.log"): Promise<void> {
+  async attachToLogs(_logFileName = "xiaozhi.log"): Promise<void> {
     try {
       const logFilePath = PathUtils.getLogFile();
 
@@ -186,7 +186,7 @@ export class DaemonManagerImpl implements IDaemonManager {
    * 生成守护进程
    */
   private async spawnDaemonProcess(
-    serverFactory: () => Promise<WebServer>,
+    _serverFactory: () => Promise<WebServer>,
     options: DaemonOptions
   ): Promise<ChildProcess> {
     // 获取启动脚本路径
@@ -226,7 +226,7 @@ export class DaemonManagerImpl implements IDaemonManager {
    */
   private async setupLogging(
     child: ChildProcess,
-    logFileName: string
+    _logFileName: string
   ): Promise<void> {
     try {
       const logFilePath = PathUtils.getLogFile();

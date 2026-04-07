@@ -1,6 +1,6 @@
-import type { ToolRowData } from "@/components/mcp-tool/mcp-tool-table";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import type { ToolRowData } from "@/components/mcp-tool/mcp-tool-table";
 import { useToolSearch } from "../useToolSearch";
 
 describe("useToolSearch", () => {

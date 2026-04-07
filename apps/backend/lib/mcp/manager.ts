@@ -5,28 +5,26 @@
  */
 
 import { EventEmitter } from "node:events";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { MCPToolConfig } from "@xiaozhi-client/config";
+import { configManager, isModelScopeURL } from "@xiaozhi-client/config";
 import { logger } from "@/Logger.js";
-import { MCPService } from "@/lib/mcp";
-import { MCPCacheManager } from "@/lib/mcp";
-import { ConnectionState } from "@/lib/mcp/types";
+import { MCPCacheManager, MCPService } from "@/lib/mcp";
 import type {
   CustomMCPTool,
   EnhancedToolInfo,
   InternalMCPServiceConfig,
-  MCPServiceConfig,
   ManagerStatus,
+  MCPServiceConfig,
   ToolCallResult,
   ToolInfo,
   ToolStatusFilter,
   UnifiedServerConfig,
   UnifiedServerStatus,
 } from "@/lib/mcp/types";
+import { ConnectionState } from "@/lib/mcp/types";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { MCPMessage } from "@/types/mcp.js";
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { isModelScopeURL } from "@xiaozhi-client/config";
-import type { MCPToolConfig } from "@xiaozhi-client/config";
-import { configManager } from "@xiaozhi-client/config";
 import { CustomMCPHandler } from "./custom.js";
 import { ToolCallLogger } from "./log.js";
 import { MCPMessageHandler } from "./message.js";
@@ -207,7 +205,7 @@ export class MCPServiceManager extends EventEmitter {
   /**
    * 处理MCP服务连接失败事件
    */
-  private async handleServiceConnectionFailed(data: {
+  private async handleServiceConnectionFailed(_data: {
     serviceName: string;
     error: Error;
     attempt: number;
@@ -850,7 +848,7 @@ export class MCPServiceManager extends EventEmitter {
    */
   private async updateCustomMCPToolStats(
     toolName: string,
-    currentTime: string
+    _currentTime: string
   ): Promise<void> {
     try {
       await configManager.updateToolUsageStatsWithLock(toolName, true);
@@ -871,7 +869,7 @@ export class MCPServiceManager extends EventEmitter {
    */
   private async updateCustomMCPToolLastUsedTime(
     toolName: string,
-    currentTime: string
+    _currentTime: string
   ): Promise<void> {
     try {
       await configManager.updateToolUsageStatsWithLock(toolName, false); // 只更新时间，不增加计数

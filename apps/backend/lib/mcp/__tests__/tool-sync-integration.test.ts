@@ -1,6 +1,6 @@
-import type { MCPServiceConfig } from "@/lib/mcp/types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { MCPServiceConfig } from "@/lib/mcp/types.js";
 
 // Mock CustomMCPHandler - 需要在其他 mock 之前定义
 let mockCustomMCPTools: any[] = [];
@@ -12,7 +12,7 @@ vi.mock("@/lib/mcp", () => {
     private connected = false;
     private tools: Tool[] = [];
 
-    constructor(private config: MCPServiceConfig) {}
+    constructor(_config: MCPServiceConfig) {}
 
     async connect() {
       // 模拟连接延迟
@@ -93,7 +93,7 @@ vi.mock("@/lib/mcp", () => {
   class MockMCPServiceManager {
     private services: Map<string, any> = new Map();
 
-    constructor(configs?: any) {
+    constructor(_configs?: any) {
       // 初始化
     }
 
@@ -251,7 +251,7 @@ vi.mock("@/services/CustomMCPHandler.js", () => {
       return mockCustomMCPTools.find((tool) => tool.name === name);
     }
 
-    async callTool(name: string, args: any) {
+    async callTool(name: string, _args: any) {
       return {
         content: [{ type: "text", text: `Custom MCP result for ${name}` }],
       };

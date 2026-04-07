@@ -11,7 +11,7 @@
  * - 安全地写入 GITHUB_OUTPUT
  */
 
-import { writeFileSync, appendFileSync } from "node:fs";
+import { appendFileSync, writeFileSync } from "node:fs";
 import { consola } from "consola";
 
 /**
@@ -52,7 +52,7 @@ interface IssueData {
  *
  * 如果值中包含结束分隔符（如 EOF），需要转义或替换
  */
-function escapeHeredocValue(value: string): string {
+function _escapeHeredocValue(value: string): string {
   // 替换可能被误认为分隔符的内容
   // 使用一个不太可能出现的随机字符串作为分隔符
   return value;
@@ -70,11 +70,7 @@ function escapeHeredocValue(value: string): string {
  * @param name - 输出变量名
  * @param value - 输出值（可能包含多行）
  */
-function setOutput(
-  outputFile: string,
-  name: string,
-  value: string
-): void {
+function setOutput(outputFile: string, name: string, value: string): void {
   // 使用 GitHub Actions 的 heredoc 语法
   // 格式: name<<DELIMITER\nvalue\nDELIMITER
   const delimiter = "GHA_DELIMITER";
@@ -123,10 +119,7 @@ async function main(): Promise<void> {
   setOutput(githubOutput, "content_file", contentFile);
   setOutput(githubOutput, "issue_number", issueNumber);
 
-  log(
-    "success",
-    `已提取 Issue #${issueNumber}: ${issueTitle || "(无标题)"}`
-  );
+  log("success", `已提取 Issue #${issueNumber}: ${issueTitle || "(无标题)"}`);
   log("info", `内容已保存到: ${contentFile}`);
 }
 

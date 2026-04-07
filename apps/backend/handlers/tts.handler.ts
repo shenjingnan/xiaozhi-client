@@ -3,13 +3,13 @@
  * 提供语音合成 RESTful API 接口
  */
 
-import { TTS_VOICES, getVoiceScenes } from "@/constants/voices.js";
-import { mapClusterToResourceId } from "@/services/tts.service.js";
-import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { VoiceInfo, VoicesResponse } from "@xiaozhi-client/shared-types";
 import type { Context } from "hono";
 import { createTTS } from "univoice";
+import { getVoiceScenes, TTS_VOICES } from "@/constants/voices.js";
+import { mapClusterToResourceId } from "@/services/tts.service.js";
+import type { AppContext } from "@/types/hono.context.js";
 import { BaseHandler } from "./base.handler.js";
 
 /**

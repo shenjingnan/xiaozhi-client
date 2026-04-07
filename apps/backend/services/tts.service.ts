@@ -4,11 +4,11 @@
  */
 
 import { Readable } from "node:stream";
-import { logger } from "@/Logger.js";
-import type { ESP32Connection } from "@/lib/esp32/connection.js";
 import { configManager } from "@xiaozhi-client/config";
 import * as prism from "prism-media";
 import { createTTS } from "univoice";
+import { logger } from "@/Logger.js";
+import type { ESP32Connection } from "@/lib/esp32/connection.js";
 import type { ITTSService, TTSServiceOptions } from "./tts.interface.js";
 
 /**
@@ -157,7 +157,7 @@ export class TTSService implements ITTSService {
   private setupDemuxerEvents(
     deviceId: string,
     demuxer: prism.opus.OggDemuxer,
-    connection: ESP32Connection
+    _connection: ESP32Connection
   ) {
     demuxer.on("data", (opusPacket: Buffer) => {
       // 只负责将包推入缓冲区，不做异步操作

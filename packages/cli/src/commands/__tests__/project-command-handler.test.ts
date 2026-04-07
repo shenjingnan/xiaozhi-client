@@ -21,7 +21,7 @@ class TestableProjectCommandHandler extends ProjectCommandHandler {
 
 // Mock ora
 vi.mock("ora", () => ({
-  default: vi.fn().mockImplementation((text) => ({
+  default: vi.fn().mockImplementation((_text) => ({
     start: () => ({
       succeed: (message: string) => {
         console.log(`✅ ${message}`);

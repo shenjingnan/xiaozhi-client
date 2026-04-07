@@ -4,11 +4,14 @@
  * 使用 @xiaozhi-client/mcp-core 的 MCPManager 实现真实的 MCP 功能
  */
 
-import { MCPManager } from "@xiaozhi-client/mcp-core";
-import type { EnhancedToolInfo, ToolCallResult } from "./types.js";
-import type { IMCPServiceManager } from "./types.js";
-import type { EndpointConfig } from "./types.js";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
+import { MCPManager } from "@xiaozhi-client/mcp-core";
+import type {
+  EndpointConfig,
+  EnhancedToolInfo,
+  IMCPServiceManager,
+  ToolCallResult,
+} from "./types.js";
 
 /**
  * 内部 MCP 服务管理器适配器
@@ -19,7 +22,7 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
   private tools: Map<string, EnhancedToolInfo> = new Map();
   private isInitialized = false;
 
-  constructor(private config: EndpointConfig) {
+  constructor(config: EndpointConfig) {
     this.mcpManager = new MCPManager();
 
     // 转换配置并添加到 MCPManager
