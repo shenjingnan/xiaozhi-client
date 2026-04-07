@@ -23,7 +23,6 @@
     "@discordjs/opus": "^0.10.0",
     "@hono/node-server": "^1.19.10",
     "@modelcontextprotocol/sdk": "^1.26.0",
-    "@xiaozhi-client/asr": "workspace:*",
     "@xiaozhi-client/config": "workspace:*",
     "@xiaozhi-client/endpoint": "workspace:*",
     "@xiaozhi-client/mcp-core": "workspace:*",

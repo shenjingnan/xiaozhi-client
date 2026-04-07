@@ -1,11 +1,13 @@
 /**
  * ASR 服务实现
- * 处理语音识别功能
+ * 处理语音识别功能，使用 univoice SDK
  */
 
 import { logger } from "@/Logger.js";
-import { ASR, AudioFormat, AuthMethod, OpusDecoder } from "@xiaozhi-client/asr";
 import { configManager } from "@xiaozhi-client/config";
+import { createASR, decodeOpusStream } from "univoice/asr";
+import "univoice/asr/providers";
+import type { ASRConnection, BaseASR } from "univoice/asr";
 import type {
   ASRServiceEvents,
   ASRServiceOptions,
@@ -35,16 +37,19 @@ export class ASRService implements IASRService {
   /** 每个设备的 ASR 状态 */
   private readonly deviceStates = new Map<string, DeviceASRState>();
 
-  /** 每个设备的 ASR 客户端（用于语音识别） */
-  private readonly asrClients = new Map<string, ASR>();
+  /** 每个设备的 ASR 实例 */
+  private readonly asrInstances = new Map<string, BaseASR>();
 
-  /** 每个设备的音频数据队列（用于 V2 listen API） */
-  private readonly audioQueues = new Map<string, Buffer[]>();
+  /** 每个设备的 ASR 连接（预建立连接模式） */
+  private readonly asrConnections = new Map<string, ASRConnection>();
 
-  /** 每个设备的是否已结束音频输入 */
+  /** 每个设备的 Opus 音频数据队列 */
+  private readonly opusQueues = new Map<string, Buffer[]>();
+
+  /** 每个设备是否已结束音频输入 */
   private readonly audioEnded = new Map<string, boolean>();
 
-  /** 每个设备的 V2 listen 任务 */
+  /** 每个设备的 listen 任务 */
   private readonly listenTasks = new Map<string, Promise<void>>();
 
   /**
@@ -71,7 +76,7 @@ export class ASRService implements IASRService {
     }
 
     // 初始化音频队列
-    this.audioQueues.set(deviceId, []);
+    this.opusQueues.set(deviceId, []);
     this.audioEnded.set(deviceId, false);
     state.prepared = true;
 
@@ -80,16 +85,16 @@ export class ASRService implements IASRService {
 
   /**
    * 建立 ASR 连接
-   * 建立 WebSocket 连接并开始处理音频流
+   * 使用 univoice 的 connect() 预建立 WebSocket 连接
    * @param deviceId - 设备 ID
    */
   async connect(deviceId: string): Promise<void> {
     const state = this.getOrCreateDeviceState(deviceId);
 
-    // 如果已经连接或正在连接，等待连接完成
-    const existingClient = this.asrClients.get(deviceId);
-    if (existingClient?.isConnected()) {
-      logger.debug(`[ASRService] ASR 客户端已连接，跳过: deviceId=${deviceId}`);
+    // 如果已有连接，跳过
+    const existingConnection = this.asrConnections.get(deviceId);
+    if (existingConnection && existingConnection.state === "connected") {
+      logger.debug(`[ASRService] ASR 已连接，跳过: deviceId=${deviceId}`);
       return;
     }
 
@@ -117,30 +122,30 @@ export class ASRService implements IASRService {
    * @param deviceId - 设备 ID
    */
   private async doConnect(deviceId: string): Promise<void> {
-    // 如果已存在但未连接，先关闭
-    const existingClient = this.asrClients.get(deviceId);
-    if (existingClient) {
+    // 如果已存在连接，先关闭
+    const existingConnection = this.asrConnections.get(deviceId);
+    if (existingConnection) {
       logger.warn(
-        `[ASRService] ASR 客户端存在但未连接，关闭旧的: deviceId=${deviceId}`
+        `[ASRService] ASR 连接存在但状态异常，关闭旧的: deviceId=${deviceId}`
       );
-      await existingClient.close();
-      this.asrClients.delete(deviceId);
+      existingConnection.close();
+      this.asrConnections.delete(deviceId);
     }
 
     // 确保已准备
     await this.prepare(deviceId);
 
-    // 创建 ASR 客户端
-    await this.createASRClient(deviceId);
+    // 创建 ASR 实例并建立连接
+    await this.createASRConnection(deviceId);
 
     logger.info(`[ASRService] ASR 连接已建立: deviceId=${deviceId}`);
   }
 
   /**
-   * 创建 ASR 客户端
+   * 创建 ASR 实例并建立连接
    * @param deviceId - 设备 ID
    */
-  private async createASRClient(deviceId: string): Promise<void> {
+  private async createASRConnection(deviceId: string): Promise<void> {
     const asrConfig = configManager.getASRConfig();
 
     if (!asrConfig.appid || !asrConfig.accessToken) {
@@ -148,53 +153,39 @@ export class ASRService implements IASRService {
       return;
     }
 
-    // 使用 V2 配置格式
-    const asrClient = new ASR({
-      bytedance: {
-        v2: {
-          app: {
-            appid: asrConfig.appid,
-            token: asrConfig.accessToken,
-            cluster: asrConfig.cluster || "volcengine_streaming_common",
-          },
-          user: {
-            uid: `device_${deviceId}`,
-          },
-          audio: {
-            format: AudioFormat.RAW,
-            language: "zh-CN",
-          },
-          request: {
-            reqid: `req_${deviceId}_${Date.now()}`,
-            sequence: 1,
-          },
-        },
-      },
-      authMethod: AuthMethod.TOKEN,
+    // 创建 ASR 实例，配置字段映射：
+    // asrConfig.appid → appKey
+    // asrConfig.accessToken → accessKey
+    const asr = createASR({
+      provider: "doubao",
+      appKey: asrConfig.appid,
+      accessKey: asrConfig.accessToken,
+      language: "zh-CN",
+      format: "pcm",
+      codec: "raw",
     });
 
-    // 设置事件监听
-    asrClient.on("error", (error: Error) => {
-      logger.error(
-        `[ASRService] ASR 错误: deviceId=${deviceId}, error=${error.message}`
+    this.asrInstances.set(deviceId, asr);
+
+    // 使用 connect() 预建立连接
+    try {
+      const connection = await asr.connect();
+      this.asrConnections.set(deviceId, connection);
+
+      // 启动 listen 任务处理音频流
+      const listenTask = this.startListenTask(deviceId, connection);
+      this.listenTasks.set(deviceId, listenTask);
+
+      logger.info(
+        `[ASRService] ASR 连接已创建（univoice doubao）: deviceId=${deviceId}`
       );
-      this.events.onError?.(deviceId, error);
-    });
-
-    asrClient.on("close", () => {
-      logger.info(`[ASRService] ASR 连接关闭: deviceId=${deviceId}`);
-      this.asrClients.delete(deviceId);
-      this.events.onClose?.(deviceId);
-    });
-
-    // 保存 ASR 客户端
-    this.asrClients.set(deviceId, asrClient);
-
-    // 启动 listen 任务处理音频流
-    const listenTask = this.startListenTask(deviceId, asrClient);
-    this.listenTasks.set(deviceId, listenTask);
-
-    logger.info(`[ASRService] ASR 客户端已创建（V2）: deviceId=${deviceId}`);
+    } catch (error) {
+      logger.error(
+        `[ASRService] ASR 连接建立失败: deviceId=${deviceId}`,
+        error
+      );
+      this.events.onError?.(deviceId, error as Error);
+    }
   }
 
   /**
@@ -211,7 +202,7 @@ export class ASRService implements IASRService {
 
   /**
    * 处理音频数据
-   * 将音频数据推入队列，由 listen() 异步生成器消费
+   * 将 Opus 音频数据推入队列，由 listen 任务通过 decodeOpusStream 消费
    * 如果连接未建立，数据会被缓存直到连接建立
    * @param deviceId - 设备 ID
    * @param audioData - 裸 Opus 音频数据
@@ -239,26 +230,17 @@ export class ASRService implements IASRService {
       return;
     }
 
-    // 解码 Opus 为 PCM 并推入队列
-    try {
-      // 使用 OpusDecoder 解码
-      const pcmData = await OpusDecoder.toPcm(audioBuffer);
-
-      // 获取或创建队列
-      let queue = this.audioQueues.get(deviceId);
-      if (!queue) {
-        queue = [];
-        this.audioQueues.set(deviceId, queue);
-      }
-
-      // 推入队列
-      queue.push(pcmData);
-      logger.debug(
-        `[ASRService] 已将 PCM 推入队列: deviceId=${deviceId}, pcmSize=${pcmData.length}, queueLength=${queue.length}`
-      );
-    } catch (error) {
-      logger.error(`[ASRService] PCM 解码失败: deviceId=${deviceId}`, error);
+    // 获取或创建队列，直接缓存 Opus 数据
+    let queue = this.opusQueues.get(deviceId);
+    if (!queue) {
+      queue = [];
+      this.opusQueues.set(deviceId, queue);
     }
+
+    queue.push(audioBuffer);
+    logger.debug(
+      `[ASRService] 已将 Opus 数据推入队列: deviceId=${deviceId}, queueLength=${queue.length}`
+    );
   }
 
   /**
@@ -274,21 +256,21 @@ export class ASRService implements IASRService {
   }
 
   /**
-   * 创建异步生成器，从队列中读取 PCM 数据
+   * 创建异步生成器，从队列中读取 Opus 数据
    * @param deviceId - 设备 ID
    * @returns 异步生成器
    */
-  private async *createAudioStream(
+  private async *createOpusStream(
     deviceId: string
   ): AsyncGenerator<Buffer, void, unknown> {
-    const queue = this.audioQueues.get(deviceId) || [];
+    const queue = this.opusQueues.get(deviceId) || [];
 
     while (true) {
       // 等待队列中有数据
       while (queue.length === 0) {
         // 检查是否已结束
         if (this.audioEnded.get(deviceId)) {
-          logger.debug(`[ASRService] 音频流结束: deviceId=${deviceId}`);
+          logger.debug(`[ASRService] Opus 流结束: deviceId=${deviceId}`);
           return;
         }
         // 短暂等待
@@ -296,27 +278,35 @@ export class ASRService implements IASRService {
       }
 
       // 从队列取出数据
-      const pcmData = queue.shift()!;
-      yield pcmData;
+      const opusData = queue.shift()!;
+      yield opusData;
     }
   }
 
   /**
    * 启动 listen 任务
-   * 使用 V2 API 的 listen() 方法处理音频流
+   * 使用 univoice 的 connection.listen() 处理音频流
    * @param deviceId - 设备 ID
-   * @param asrClient - ASR 客户端
+   * @param connection - ASR 连接
    */
   private async startListenTask(
     deviceId: string,
-    asrClient: ASR
+    connection: ASRConnection
   ): Promise<void> {
     try {
-      // 创建音频流生成器
-      const audioStream = this.createAudioStream(deviceId);
+      // 创建 Opus 数据流
+      const opusStream = this.createOpusStream(deviceId);
 
-      // 使用 V2 listen API 进行流式识别
-      for await (const result of asrClient.bytedance.v2.listen(audioStream)) {
+      // 使用 univoice 的 decodeOpusStream 将 Opus 解码为 PCM
+      const pcmStream = decodeOpusStream(opusStream, {
+        sampleRate: 16000,
+        channels: 1,
+      });
+
+      // 使用 connection.listen() 进行流式识别
+      for await (const result of connection.listen(pcmStream, {
+        stream: true,
+      })) {
         logger.info(
           `[ASRService] ASR 识别结果: deviceId=${deviceId}, isFinal=${result.isFinal}, text=${result.text}`
         );
@@ -348,14 +338,14 @@ export class ASRService implements IASRService {
       logger.info(`[ASRService] listen 任务完成: deviceId=${deviceId}`);
 
       // 重置音频缓冲区状态，准备下一次识别
-      // 注意：底层 ASR 客户端已关闭连接，下次识别需要重新 connect
-      this.audioQueues.set(deviceId, []);
+      this.opusQueues.set(deviceId, []);
       this.audioEnded.set(deviceId, false);
       logger.info(
         `[ASRService] 音频缓冲区已重置，准备下一次识别: deviceId=${deviceId}`
       );
     } catch (error) {
       logger.error(`[ASRService] listen 任务出错: deviceId=${deviceId}`, error);
+      this.events.onError?.(deviceId, error as Error);
     }
   }
 
@@ -382,19 +372,23 @@ export class ASRService implements IASRService {
       }
     }
 
-    // 关闭 ASR 客户端
-    const asrClient = this.asrClients.get(deviceId);
-    if (asrClient) {
+    // 关闭 ASR 连接
+    const connection = this.asrConnections.get(deviceId);
+    if (connection) {
       try {
-        await asrClient.close();
+        connection.close();
       } catch (error) {
-        logger.error(`[ASRService] ASR 关闭失败: deviceId=${deviceId}`, error);
+        logger.error(
+          `[ASRService] ASR 连接关闭失败: deviceId=${deviceId}`,
+          error
+        );
       }
     }
 
     // 清理资源
-    this.asrClients.delete(deviceId);
-    this.audioQueues.delete(deviceId);
+    this.asrConnections.delete(deviceId);
+    this.asrInstances.delete(deviceId);
+    this.opusQueues.delete(deviceId);
     this.audioEnded.delete(deviceId);
     this.listenTasks.delete(deviceId);
 
@@ -430,13 +424,14 @@ export class ASRService implements IASRService {
    * 销毁服务
    */
   destroy(): void {
-    // 清理 ASR 客户端
-    for (const asrClient of this.asrClients.values()) {
-      asrClient.close();
+    // 关闭所有 ASR 连接
+    for (const connection of this.asrConnections.values()) {
+      connection.close();
     }
-    this.asrClients.clear();
-    // 清理 V2 API 相关状态
-    this.audioQueues.clear();
+    this.asrConnections.clear();
+    this.asrInstances.clear();
+    // 清理音频队列相关状态
+    this.opusQueues.clear();
     this.audioEnded.clear();
     this.listenTasks.clear();
     this.deviceStates.clear();
