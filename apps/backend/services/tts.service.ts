@@ -137,7 +137,12 @@ export class TTSService implements ITTSService {
         demuxer.end();
       } catch (error) {
         logger.error(`[TTSService] TTS 调用失败: deviceId=${deviceId}`, error);
-        this.cleanup(deviceId);
+        void this.sendStopAndCleanup(deviceId).catch((cleanupError) => {
+          logger.error(
+            `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
+            cleanupError
+          );
+        });
       }
     }
   }
@@ -503,7 +508,7 @@ export class TTSService implements ITTSService {
  * 将 cluster 参数映射为 univoice 的 resourceId
  * volcano_icl 对应声音克隆 V1，其他情况默认使用 V2
  */
-function mapClusterToResourceId(cluster?: string): string {
+export function mapClusterToResourceId(cluster?: string): string {
   if (cluster === "volcano_icl") return "seed-tts-1.0";
   return "seed-tts-2.0";
 }

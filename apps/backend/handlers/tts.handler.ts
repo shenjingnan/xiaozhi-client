@@ -3,14 +3,56 @@
  * 提供语音合成 RESTful API 接口
  */
 
-import fs from "node:fs";
 import { TTS_VOICES, getVoiceScenes } from "@/constants/voices.js";
+import { mapClusterToResourceId } from "@/services/tts.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { VoiceInfo, VoicesResponse } from "@xiaozhi-client/shared-types";
 import type { Context } from "hono";
 import { createTTS } from "univoice";
 import { BaseHandler } from "./base.handler.js";
+
+/**
+ * 允许的 encoding 值白名单
+ */
+const ALLOWED_ENCODINGS = [
+  "mp3",
+  "wav",
+  "ogg",
+  "flac",
+  "pcm",
+  "opus",
+  "ogg_opus",
+] as const;
+
+type AllowedEncoding = (typeof ALLOWED_ENCODINGS)[number];
+
+/**
+ * encoding 到 MIME Content-Type 的映射
+ * 部分值不对应标准 MIME 类型，需要显式映射
+ */
+const ENCODING_TO_MIME: Record<AllowedEncoding, string> = {
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
+  flac: "audio/flac",
+  pcm: "audio/pcm",
+  opus: "audio/opus",
+  ogg_opus: "audio/ogg",
+};
+
+/**
+ * encoding 到文件扩展名的映射
+ */
+const ENCODING_TO_EXT: Record<AllowedEncoding, string> = {
+  mp3: "mp3",
+  wav: "wav",
+  ogg: "ogg",
+  flac: "flac",
+  pcm: "pcm",
+  opus: "opus",
+  ogg_opus: "ogg",
+};
 
 /**
  * TTS 合成请求体
@@ -71,14 +113,20 @@ export class TTSApiHandler extends BaseHandler {
       const voice_type = body.voice_type || ttsConfig.voice_type;
       const cluster = body.cluster || ttsConfig.cluster;
       const endpoint = body.endpoint || ttsConfig.endpoint;
-      const encoding = (body.encoding || ttsConfig.encoding || "wav") as
-        | "mp3"
-        | "wav"
-        | "ogg"
-        | "flac"
-        | "pcm"
-        | "opus"
-        | "ogg_opus";
+      const encoding = body.encoding || ttsConfig.encoding || "wav";
+
+      // 运行时校验 encoding 值
+      if (!ALLOWED_ENCODINGS.includes(encoding as AllowedEncoding)) {
+        c.get("logger").warn(`不支持的 encoding 参数: ${encoding}`);
+        return c.fail(
+          "INVALID_PARAMETER",
+          `不支持的 encoding 参数: ${encoding}，允许值: ${ALLOWED_ENCODINGS.join(", ")}`,
+          undefined,
+          400
+        );
+      }
+
+      const safeEncoding = encoding as AllowedEncoding;
 
       // 验证必需的 TTS 参数
       if (!appid) {
@@ -117,8 +165,8 @@ export class TTSApiHandler extends BaseHandler {
         appId: appid!,
         accessToken: accessToken!,
         voice: voice_type!,
-        format: encoding || "wav",
-        resourceId: cluster === "volcano_icl" ? "seed-tts-1.0" : "seed-tts-2.0",
+        format: safeEncoding,
+        resourceId: mapClusterToResourceId(cluster),
         sampleRate: 24000,
         ...(endpoint && { baseUrl: endpoint }),
       });
@@ -130,15 +178,14 @@ export class TTSApiHandler extends BaseHandler {
       // 调用 TTS 合成（非流式）
       const response = await tts.synthesize({ text: body.text });
       const audioData = response.audio;
-      fs.writeFileSync("audio.wav", Buffer.from(audioData));
 
       c.get("logger").info(`语音合成成功: audioSize=${audioData.length} bytes`);
 
-      // 返回音频数据
+      // 返回音频数据，使用正确的 MIME 类型和文件扩展名
       return new Response(Buffer.from(audioData), {
         headers: {
-          "Content-Type": `audio/${encoding}`,
-          "Content-Disposition": `attachment; filename="tts_${Date.now()}.${encoding}"`,
+          "Content-Type": ENCODING_TO_MIME[safeEncoding],
+          "Content-Disposition": `attachment; filename="tts_${Date.now()}.${ENCODING_TO_EXT[safeEncoding]}"`,
         },
       });
     } catch (error) {
