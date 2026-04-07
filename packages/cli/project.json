@@ -10,7 +10,7 @@
         "command": "tsup",
         "cwd": "packages/cli"
       },
-      "outputs": ["{workspaceRoot}/dist/cli"],
+      "outputs": ["packages/cli/dist"],
       "dependsOn": ["backend:build", "config:build"]
     },
     "test": {

@@ -12,7 +12,7 @@ export default defineConfig({
   },
   format: ["esm"],
   target: "node20",
-  outDir: "../../dist/cli",
+  outDir: "./dist",
   clean: true,
   sourcemap: true,
   dts: false,
@@ -74,7 +74,7 @@ export default defineConfig({
   }),
   onSuccess: async () => {
     // 构建后处理：修复导入路径
-    const filePath = resolve("../../dist/cli/index.js");
+    const filePath = resolve("./dist/index.js");
     let content = readFileSync(filePath, "utf-8");
 
     // 替换 @/* 为指向正确位置的相对路径
@@ -96,7 +96,7 @@ export default defineConfig({
       );
 
     writeFileSync(filePath, content);
-    console.log("✅ 已修复 dist/cli/index.js 中的导入路径");
+    console.log("✅ 已修复 dist/index.js 中的导入路径");
 
     // 同步根 package.json 版本到与 CLI 包一致
     const cliPkgPath = resolve("../../packages/cli/package.json");
