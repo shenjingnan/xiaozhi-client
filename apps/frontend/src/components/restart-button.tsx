@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger";
 import { useRestartPollingStatus, useStatusStore } from "@/stores/status";
 import clsx from "clsx";
 import { LoaderCircleIcon, PowerIcon } from "lucide-react";
@@ -50,7 +51,7 @@ export function RestartButton({
     try {
       await restartService();
     } catch (error) {
-      console.error("[RestartButton] 重启失败:", error);
+      logger.error("重启失败", error);
     }
   };
 
