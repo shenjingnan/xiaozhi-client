@@ -7,8 +7,8 @@ import { Readable } from "node:stream";
 import { logger } from "@/Logger.js";
 import type { ESP32Connection } from "@/lib/esp32/connection.js";
 import { configManager } from "@xiaozhi-client/config";
-import { TTS } from "@xiaozhi-client/tts";
 import * as prism from "prism-media";
+import { createTTS } from "univoice";
 import type { ITTSService, TTSServiceOptions } from "./tts.interface.js";
 
 /**
@@ -114,39 +114,27 @@ export class TTSService implements ITTSService {
       const demuxer = this.audioDemuxers.get(deviceId)!;
       this.setupDemuxerEvents(deviceId, demuxer, connection);
 
-      // 创建 TTS 客户端
-      const ttsClient = new TTS({
-        bytedance: {
-          v1: {
-            app: {
-              appid: ttsConfig.appid!,
-              accessToken: ttsConfig.accessToken!,
-            },
-            audio: {
-              voice_type: ttsConfig.voice_type!,
-              encoding: "ogg_opus",
-            },
-            cluster: ttsConfig.cluster,
-            endpoint: ttsConfig.endpoint,
-          },
-        },
+      // 创建 TTS 客户端（使用 univoice SDK）
+      const tts = createTTS({
+        provider: "doubao",
+        appId: ttsConfig.appid!,
+        accessToken: ttsConfig.accessToken!,
+        voice: ttsConfig.voice_type!,
+        format: "ogg_opus",
+        resourceId: mapClusterToResourceId(ttsConfig.cluster),
+        sampleRate: 24000,
+        ...(ttsConfig.endpoint && { baseUrl: ttsConfig.endpoint }),
       });
 
       // 调用流式 TTS，边接收边处理
       try {
-        for await (const result of ttsClient.bytedance.v1.speak(text)) {
+        for await (const { audioChunk } of tts.speak(text, { stream: true })) {
           // 直接将数据写入 demuxer 进行解封装
-          demuxer.write(Buffer.from(result.chunk));
-
-          // logger.info(
-          //   `[TTSService] TTS 数据接收: deviceId=${deviceId}, isFinal=${result.isFinal}`
-          // );
-          if (result.isFinal) {
-            logger.info(`[TTSService] TTS 数据接收完成: deviceId=${deviceId}`);
-            demuxer.end();
-            break;
-          }
+          demuxer.write(Buffer.from(audioChunk));
         }
+        // univoice 流自然结束表示完成，手动关闭 demuxer
+        logger.info(`[TTSService] TTS 数据接收完成: deviceId=${deviceId}`);
+        demuxer.end();
       } catch (error) {
         logger.error(`[TTSService] TTS 调用失败: deviceId=${deviceId}`, error);
         this.cleanup(deviceId);
@@ -509,4 +497,13 @@ export class TTSService implements ITTSService {
     this.deviceConnections.clear();
     logger.debug("[TTSService] 服务已销毁");
   }
+}
+
+/**
+ * 将 cluster 参数映射为 univoice 的 resourceId
+ * volcano_icl 对应声音克隆 V1，其他情况默认使用 V2
+ */
+function mapClusterToResourceId(cluster?: string): string {
+  if (cluster === "volcano_icl") return "seed-tts-1.0";
+  return "seed-tts-2.0";
 }

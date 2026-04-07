@@ -8,8 +8,8 @@ import { TTS_VOICES, getVoiceScenes } from "@/constants/voices.js";
 import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { VoiceInfo, VoicesResponse } from "@xiaozhi-client/shared-types";
-import { TTS } from "@xiaozhi-client/tts";
 import type { Context } from "hono";
+import { createTTS } from "univoice";
 import { BaseHandler } from "./base.handler.js";
 
 /**
@@ -71,7 +71,14 @@ export class TTSApiHandler extends BaseHandler {
       const voice_type = body.voice_type || ttsConfig.voice_type;
       const cluster = body.cluster || ttsConfig.cluster;
       const endpoint = body.endpoint || ttsConfig.endpoint;
-      const encoding = body.encoding || ttsConfig.encoding || "wav";
+      const encoding = (body.encoding || ttsConfig.encoding || "wav") as
+        | "mp3"
+        | "wav"
+        | "ogg"
+        | "flac"
+        | "pcm"
+        | "opus"
+        | "ogg_opus";
 
       // 验证必需的 TTS 参数
       if (!appid) {
@@ -104,22 +111,16 @@ export class TTSApiHandler extends BaseHandler {
         );
       }
 
-      // 创建 TTS 客户端
-      const ttsClient = new TTS({
-        bytedance: {
-          v1: {
-            app: {
-              appid: appid!,
-              accessToken: accessToken!,
-            },
-            audio: {
-              voice_type: voice_type!,
-              encoding: encoding || "wav",
-            },
-            cluster,
-            endpoint,
-          },
-        },
+      // 创建 TTS 客户端（使用 univoice SDK）
+      const tts = createTTS({
+        provider: "doubao",
+        appId: appid!,
+        accessToken: accessToken!,
+        voice: voice_type!,
+        format: encoding || "wav",
+        resourceId: cluster === "volcano_icl" ? "seed-tts-1.0" : "seed-tts-2.0",
+        sampleRate: 24000,
+        ...(endpoint && { baseUrl: endpoint }),
       });
 
       c.get("logger").info(
@@ -127,7 +128,8 @@ export class TTSApiHandler extends BaseHandler {
       );
 
       // 调用 TTS 合成（非流式）
-      const audioData = await ttsClient.synthesize(body.text);
+      const response = await tts.synthesize({ text: body.text });
+      const audioData = response.audio;
       fs.writeFileSync("audio.wav", Buffer.from(audioData));
 
       c.get("logger").info(`语音合成成功: audioSize=${audioData.length} bytes`);
