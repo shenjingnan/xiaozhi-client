@@ -44,15 +44,19 @@ export class ESP32Service {
   /**
    * 构造函数
    * @param deviceRegistry - 设备注册服务
+   * @param llmService - LLM 服务实例
+   * @param asrService - ASR 服务实例
    */
-  constructor(deviceRegistry: DeviceRegistryService) {
+  constructor(
+    deviceRegistry: DeviceRegistryService,
+    llmService: LLMService,
+    asrService: ASRService
+  ) {
     this.deviceRegistry = deviceRegistry;
+    this.llmService = llmService;
+    this.asrService = asrService;
     this.connections = new Map();
     this.clientIdToDeviceId = new Map();
-
-    // 初始化语音服务
-    this.llmService = new LLMService();
-    this.asrService = new ASRService();
     this.ttsService = this.createTTSService();
     this.setupTTSGetConnection();
   }
