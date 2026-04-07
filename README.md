@@ -114,6 +114,43 @@ docker-compose logs -f
 docker-compose down
 ```
 
-## 贡献者
+## 开发者指南
+
+### 开发前准备
+
+首次检出代码后，需要安装依赖并构建项目：
+
+```bash
+# 克隆仓库
+git clone https://github.com/shenjingnan/xiaozhi-client.git
+cd xiaozhi-client
+
+# 安装依赖（postinstall 脚本会自动构建 workspace 包）
+pnpm install
+```
+
+### 开发命令
+
+```bash
+# 构建项目
+pnpm build
+
+# 开发模式（监听文件变化）
+pnpm dev
+
+# 运行测试
+pnpm test
+
+# 类型检查
+pnpm check:type
+
+# 代码检查和修复
+pnpm lint:fix
+
+# 运行所有质量检查
+pnpm check:all
+```
+
+### 贡献者
 
 ![Contributors](https://contrib.rocks/image?repo=shenjingnan/xiaozhi-client&max=100&columns=10)

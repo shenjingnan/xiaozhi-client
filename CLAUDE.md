@@ -17,6 +17,42 @@
 - **简单直接**：避免为了工程化而工程化
 - **渐进改进**：遇到问题再优化，不过度预防
 
+## 开发前准备
+
+### 首次检出代码
+
+首次检出代码后，需要安装依赖：
+
+```bash
+# 安装依赖（postinstall 脚本会自动构建 workspace 包）
+pnpm install
+```
+
+**重要说明**：
+- 项目使用 workspace 架构，`apps/backend` 依赖于 `packages/` 中的多个包
+- 这些依赖包需要先构建才能生成类型定义文件（`dist/index.d.ts`）
+- `pnpm install` 会自动触发 `postinstall` 脚本，检测并构建缺失的 workspace 包
+- 如果构建产物已存在，`postinstall` 会跳过构建，加快安装速度
+
+### 手动构建
+
+如果需要手动重新构建所有包：
+
+```bash
+# 构建所有包
+pnpm build
+
+# 仅构建 workspace 包
+nx run-many -t build --projects=shared-types,version,config,endpoint,mcp-core,asr,tts,cli --parallel=false
+```
+
+### 类型检查
+
+```bash
+# 运行类型检查（确保 workspace 包已构建）
+pnpm check:type
+```
+
 ## 开发命令
 
 ### 构建和测试
