@@ -1,3 +1,31 @@
+/**
+ * 共享 MCP 服务实例到多接入点示例
+ *
+ * 功能说明：
+ * - 展示如何使用 MCPManager 管理 MCP 服务
+ * - 展示如何将同一个 MCP 服务实例共享给多个接入点
+ * - 展示通过 EndpointManager.setMcpManager() 实现实例共享
+ * - 展示优雅关闭所有连接
+ *
+ * 与 dual-endpoint-shared-mcp.ts 的区别：
+ * - dual-endpoint-shared-mcp.ts: 两个接入点各自创建独立的 MCP 实例，但配置相同的服务
+ * - shared-mcp-to-multi-endpoints.ts: 两个接入点共享同一个 MCP 实例（真正共享）
+ *
+ * 适用场景：
+ * - 需要确保多个接入点使用完全相同的 MCP 工具实例
+ * - 希望减少 MCP 服务连接数，节省资源
+ *
+ * 运行方式：
+ * ```bash
+ * # 运行前请先替换接入点 token
+ * tsx packages/endpoint/examples/shared-mcp-to-multi-endpoints.ts
+ * ```
+ *
+ * 如何修改为自己的服务：
+ * 1. 替换 `endpointUrl1` 和 `endpointUrl2` 为你的小智接入点地址
+ * 2. 在 `mcpServers` 中添加或修改你的 MCP 服务配置
+ */
+
 import { MCPManager } from '@xiaozhi-client/mcp-core';
 import { EndpointManager } from "@xiaozhi-client/endpoint";
 
