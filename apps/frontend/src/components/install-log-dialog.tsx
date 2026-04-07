@@ -60,7 +60,6 @@ export function InstallLogDialog({
   // 对话框打开时开始安装
   useEffect(() => {
     if (isOpen && version) {
-      console.log("[InstallLogDialog] 对话框打开，开始安装版本:", version);
       clearStatus();
       startInstall(version).catch((error) => {
         console.error("[InstallLogDialog] 启动安装失败:", error);
