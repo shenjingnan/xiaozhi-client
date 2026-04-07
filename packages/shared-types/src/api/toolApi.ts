@@ -150,7 +150,7 @@ export interface ToolValidationErrorDetail {
  */
 export interface AddToolResponse {
   /** 成功添加的工具 */
-  tool: any;
+  tool: CustomMCPToolWithStats;
   /** 工具名称 */
   toolName: string;
   /** 工具类型 */
