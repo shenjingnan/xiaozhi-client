@@ -460,8 +460,8 @@ export class Endpoint {
   public async reconnect(): Promise<void> {
     console.info(`重连小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
 
-    // 先断开连接
-    this.disconnect();
+    // 先断开连接（使用 await 确保完成）
+    await this.disconnect();
 
     // 等待可配置的时间确保连接完全断开
     await new Promise((resolve) => setTimeout(resolve, this.reconnectDelay));
