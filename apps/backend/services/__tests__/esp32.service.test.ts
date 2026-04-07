@@ -5,8 +5,10 @@
 
 import type { ESP32DeviceReport } from "@/types/esp32.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ASRService } from "../asr.service.js";
 import { DeviceRegistryService } from "../device-registry.service.js";
 import { ESP32Service } from "../esp32.service.js";
+import { LLMService } from "../llm.service.js";
 
 // Mock dependencies
 vi.mock("../../Logger.js", () => ({
@@ -51,8 +53,12 @@ describe("ESP32Service", () => {
     // 创建设备注册服务
     deviceRegistry = new DeviceRegistryService();
 
-    // 创建ESP32服务（使用默认的空实现语音服务）
-    esp32Service = new ESP32Service(deviceRegistry);
+    // 创建语音服务（依赖注入）
+    const llmService = new LLMService();
+    const asrService = new ASRService();
+
+    // 创建ESP32服务（依赖注入）
+    esp32Service = new ESP32Service(deviceRegistry, llmService, asrService);
 
     // Mock WebSocket
     mockWebSocket = {

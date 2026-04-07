@@ -54,8 +54,10 @@ import {
 } from "@/middlewares/index.js";
 import type { EventBus, EventBusEvents } from "@/services/index.js";
 import {
+  ASRService,
   DeviceRegistryService,
   ESP32Service,
+  LLMService,
   NotificationService,
   StatusService,
   destroyEventBus,
@@ -188,8 +190,15 @@ export class WebServer {
     this.statusService = new StatusService();
     this.notificationService = new NotificationService();
     this.deviceRegistryService = new DeviceRegistryService();
-    // 创建 ESP32 服务
-    this.esp32Service = new ESP32Service(this.deviceRegistryService);
+    // 初始化语音服务
+    const llmService = new LLMService();
+    const asrService = new ASRService();
+    // 创建 ESP32 服务（依赖注入）
+    this.esp32Service = new ESP32Service(
+      this.deviceRegistryService,
+      llmService,
+      asrService
+    );
     // 设置 TTS 服务的获取连接回调
     this.esp32Service.setupTTSGetConnection();
 
