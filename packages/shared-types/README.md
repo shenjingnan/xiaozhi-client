@@ -1,61 +1,64 @@
 # @xiaozhi-client/shared-types
 
-小智项目的共享类型定义包，为 backend 和 frontend 提供统一的类型定义。
+共享类型包，用于 xiaozhi-client 项目中的类型定义。
 
-## 安装
+## 功能
 
-```bash
-pnpm add @xiaozhi-client/shared-types
-```
+此包提供了以下核心类型：
 
-## 使用
+- `UserType` - 用户类型定义
+- `MessageType` - 消息类型定义
+- `ConfigType` - 配置类型定义
+- `ResponseType` - 响应类型定义
 
-### 导入所有类型
-
-```typescript
-import * as SharedTypes from '@xiaozhi-client/shared-types'
-```
-
-### 按模块导入
+## 使用方法
 
 ```typescript
-// MCP 协议相关类型
-import { MCPMessage, ToolCallOptions } from '@xiaozhi-client/shared-types/mcp'
+import { UserType, MessageType } from '@xiaozhi-client/shared-types';
 
-// 扣子平台相关类型
-import { CozeWorkflow, CozeWorkspace } from '@xiaozhi-client/shared-types/coze'
-
-// API 响应类型
-import { ApiResponse, ToolValidationError } from '@xiaozhi-client/shared-types/api'
-
-// 配置类型
-import { AppConfig, ConnectionConfig } from '@xiaozhi-client/shared-types/config'
-
-// 工具类型
-import { TimeoutError, PerformanceMetrics } from '@xiaozhi-client/shared-types/utils'
+const user: UserType = {
+  id: '123',
+  name: '张三',
+  // ... 其他字段
+};
 ```
 
-## 模块结构
+## API 参考
 
-- **mcp/**: MCP 协议相关类型定义
-- **coze/**: 扣子平台相关类型定义
-- **api/**: API 响应和错误类型定义
-- **config/**: 应用配置相关类型定义
-- **utils/**: 工具类型（日志、性能监控、超时等）
+### UserType
+
+用户类型定义。
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| id | string | 用户 ID |
+| name | string | 用户名 |
+| email | string | 邮箱 |
+
+### MessageType
+
+消息类型定义。
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| id | string | 消息 ID |
+| content | string | 消息内容 |
+| timestamp | number | 时间戳 |
 
 ## 开发
 
+### 构建项目
+
 ```bash
-# 开发模式（监听文件变化）
-pnpm dev
-
-# 构建
-pnpm build
-
-# 类型检查
-pnpm type:check
+npm run build
 ```
 
-## 发布
+### 运行测试
 
-这个包会随主项目一起发布，不需要单独发布。
+```bash
+npm test
+```
+
+## 许可证
+
+MIT
