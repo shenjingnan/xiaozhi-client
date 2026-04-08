@@ -801,19 +801,24 @@ export function ToolDebugDialog({
     }
   }, []);
 
+  // 缓存平台检测结果，避免每次键盘事件都重新检测
+  const isMacPlatform = useMemo(() => {
+    return (
+      typeof window !== "undefined" &&
+      /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+    );
+  }, []);
+
   // 检测操作系统并获取快捷键文本
   const getShortcutText = useCallback(() => {
-    if (typeof window === "undefined") return "⌘+Enter";
-    const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
-    return isMac ? "⌘+Enter" : "Ctrl+Enter";
-  }, []);
+    return isMacPlatform ? "⌘+Enter" : "Ctrl+Enter";
+  }, [isMacPlatform]);
 
   // 处理键盘事件
   const handleKeyDown = useCallback(
     async (event: KeyboardEvent) => {
       // 检查是否是 Command+Enter (Mac) 或 Ctrl+Enter (Windows/Linux)
-      const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
-      const isShortcutKey = isMac
+      const isShortcutKey = isMacPlatform
         ? event.metaKey && event.key === "Enter"
         : event.ctrlKey && event.key === "Enter";
 
@@ -842,6 +847,7 @@ export function ToolDebugDialog({
       validateJSON,
       handleCallTool,
       tool?.inputSchema?.properties,
+      isMacPlatform,
     ]
   );
 
