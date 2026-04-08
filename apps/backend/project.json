@@ -10,14 +10,15 @@
         "command": "pnpm --filter backend run build"
       },
       "outputs": ["{workspaceRoot}/dist/backend"],
-      "dependsOn": ["shared-types:build", "config:build"]
+      "dependsOn": ["shared-types:build", "config:build", "endpoint:build", "version:build", "mcp-core:build"]
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "command": "pnpm --filter backend run test"
       },
-      "outputs": ["{workspaceRoot}/coverage"]
+      "outputs": ["{workspaceRoot}/coverage"],
+      "dependsOn": ["config:build", "endpoint:build", "version:build"]
     },
     "test:watch": {
       "executor": "nx:run-commands",
@@ -30,7 +31,8 @@
       "options": {
         "command": "pnpm --filter backend run test:coverage"
       },
-      "outputs": ["{workspaceRoot}/coverage"]
+      "outputs": ["{workspaceRoot}/coverage"],
+      "dependsOn": ["config:build", "endpoint:build", "version:build"]
     },
     "lint": {
       "executor": "nx:run-commands",
