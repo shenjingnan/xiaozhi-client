@@ -19,94 +19,36 @@ import {
 } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { mcpFormSchema } from "@/schemas/mcp-form";
+import { useMcpFormDialog, type jsonFormSchema } from "@/hooks/useMcpFormDialog";
+import type { mcpFormSchema } from "@/schemas/mcp-form";
 import { apiClient } from "@/services/api";
-import {
-  formToApiConfig,
-  formToJson,
-  jsonToFormData,
-} from "@/utils/mcpFormConverter";
+import { formToApiConfig } from "@/utils/mcpFormConverter";
 import { validateMCPConfig } from "@/utils/mcpValidation";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "lucide-react";
-import { useCallback, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useCallback } from "react";
+import type { z } from "zod";
 import { toast } from "sonner";
-import z from "zod";
-
-// 高级模式的 JSON 表单 schema
-const jsonFormSchema = z.object({
-  config: z.string().min(2, {
-    message: "配置不能为空",
-  }),
-});
 
 export function AddMcpServerButton() {
-  const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [inputMode, setInputMode] = useState<"form" | "json">("form");
-  const [jsonInput, setJsonInput] = useState<string>("");
-
-  // 表单模式的表单实例
-  const form = useForm<z.infer<typeof mcpFormSchema>>({
-    resolver: zodResolver(mcpFormSchema),
-    defaultValues: {
+  const {
+    open,
+    setOpen,
+    isLoading,
+    setIsLoading,
+    inputMode,
+    setJsonInput,
+    form,
+    advancedForm,
+    handleOpenChange,
+    handleModeChange,
+  } = useMcpFormDialog({
+    defaultFormValues: {
       type: "stdio",
       name: "",
       command: "",
       env: "",
     },
   });
-
-  // 高级模式的表单实例（保持原有验证逻辑）
-  const advancedForm = useForm<z.infer<typeof jsonFormSchema>>({
-    resolver: zodResolver(jsonFormSchema),
-    defaultValues: {
-      config: "",
-    },
-  });
-
-  // 当弹窗关闭时重置状态
-  const handleOpenChange = useCallback(
-    (newOpen: boolean) => {
-      if (!newOpen) {
-        // 重置表单和状态
-        form.reset();
-        advancedForm.reset();
-        setJsonInput("");
-        setInputMode("form");
-      }
-      setOpen(newOpen);
-    },
-    [form, advancedForm]
-  );
-
-  // 处理模式切换
-  const handleModeChange = useCallback(
-    (newMode: string) => {
-      if (newMode !== "form" && newMode !== "json") {
-        return; // 忽略无效值
-      }
-
-      if (newMode === "json" && inputMode === "form") {
-        // 表单 → JSON
-        const formValues = form.getValues();
-        try {
-          setJsonInput(formToJson(formValues));
-        } catch {
-          setJsonInput("");
-        }
-      } else if (newMode === "form" && inputMode === "json") {
-        // JSON → 表单
-        const formData = jsonToFormData(jsonInput);
-        if (formData) {
-          form.reset(formData);
-        }
-      }
-      setInputMode(newMode);
-    },
-    [inputMode, form, jsonInput]
-  );
 
   // 表单模式提交处理
   const handleFormSubmit = useCallback(
@@ -141,7 +83,7 @@ export function AddMcpServerButton() {
         setIsLoading(false);
       }
     },
-    [form]
+    [form, setIsLoading, setOpen]
   );
 
   // 高级模式提交处理
@@ -199,7 +141,7 @@ export function AddMcpServerButton() {
         setIsLoading(false);
       }
     },
-    [advancedForm]
+    [advancedForm, setIsLoading, setOpen]
   );
 
   return (

@@ -19,30 +19,20 @@ import {
 } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useMcpFormDialog, type jsonFormSchema } from "@/hooks/useMcpFormDialog";
 import { useNetworkServiceActions } from "@/providers/WebSocketProvider";
-import { mcpFormSchema } from "@/schemas/mcp-form";
+import type { mcpFormSchema } from "@/schemas/mcp-form";
 import { useConfig } from "@/stores/config";
 import {
   apiConfigToForm,
   formToApiConfig,
-  formToJson,
-  jsonToFormData,
 } from "@/utils/mcpFormConverter";
 import { validateMCPConfig } from "@/utils/mcpValidation";
-import { zodResolver } from "@hookform/resolvers/zod";
 import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
 import { SettingsIcon } from "lucide-react";
-import { useCallback, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useCallback } from "react";
+import type { z } from "zod";
 import { toast } from "sonner";
-import z from "zod";
-
-// 高级模式的 JSON 表单 schema
-const jsonFormSchema = z.object({
-  config: z.string().min(2, {
-    message: "配置不能为空",
-  }),
-});
 
 export function McpServerSettingButton({
   mcpServer,
@@ -51,75 +41,34 @@ export function McpServerSettingButton({
   mcpServer: MCPServerConfig;
   mcpServerName: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [inputMode, setInputMode] = useState<"form" | "json">("form");
-  const [jsonInput, setJsonInput] = useState<string>("");
   const config = useConfig();
   const { updateConfig } = useNetworkServiceActions();
 
   // 将现有配置转换为表单数据
   const defaultFormValues = apiConfigToForm(mcpServerName, mcpServer);
 
-  // 表单模式的表单实例
-  const form = useForm<z.infer<typeof mcpFormSchema>>({
-    resolver: zodResolver(mcpFormSchema),
-    defaultValues: defaultFormValues,
-  });
-
-  // 高级模式的表单实例（保持原有验证逻辑）
-  const advancedForm = useForm<z.infer<typeof jsonFormSchema>>({
-    resolver: zodResolver(jsonFormSchema),
-    defaultValues: {
-      config: JSON.stringify(
-        { mcpServers: { [mcpServerName]: mcpServer } },
-        null,
-        2
-      ),
-    },
-  });
-
-  // 当弹窗关闭时重置状态
-  const handleOpenChange = useCallback(
-    (newOpen: boolean) => {
-      if (!newOpen) {
-        // 重置表单和状态
-        form.reset(defaultFormValues);
-        advancedForm.reset();
-        setJsonInput("");
-        setInputMode("form");
-      }
-      setOpen(newOpen);
-    },
-    [form, advancedForm, defaultFormValues]
+  // 高级模式的默认 JSON 配置
+  const defaultJsonConfig = JSON.stringify(
+    { mcpServers: { [mcpServerName]: mcpServer } },
+    null,
+    2
   );
 
-  // 处理模式切换
-  const handleModeChange = useCallback(
-    (newMode: string) => {
-      if (newMode !== "form" && newMode !== "json") {
-        return; // 忽略无效值
-      }
-
-      if (newMode === "json" && inputMode === "form") {
-        // 表单 → JSON
-        const formValues = form.getValues();
-        try {
-          setJsonInput(formToJson(formValues));
-        } catch {
-          setJsonInput("");
-        }
-      } else if (newMode === "form" && inputMode === "json") {
-        // JSON → 表单
-        const formData = jsonToFormData(jsonInput);
-        if (formData) {
-          form.reset(formData);
-        }
-      }
-      setInputMode(newMode);
-    },
-    [inputMode, form, jsonInput]
-  );
+  const {
+    open,
+    setOpen,
+    isLoading,
+    setIsLoading,
+    inputMode,
+    setJsonInput,
+    form,
+    advancedForm,
+    handleOpenChange,
+    handleModeChange,
+  } = useMcpFormDialog({
+    defaultFormValues,
+    defaultJsonConfig,
+  });
 
   // 表单模式提交处理
   const handleFormSubmit = useCallback(
@@ -170,7 +119,7 @@ export function McpServerSettingButton({
         setIsLoading(false);
       }
     },
-    [config, mcpServerName, updateConfig]
+    [config, mcpServerName, updateConfig, setIsLoading, setOpen]
   );
 
   // 高级模式提交处理
@@ -241,7 +190,7 @@ export function McpServerSettingButton({
         setIsLoading(false);
       }
     },
-    [config, mcpServerName, updateConfig]
+    [config, mcpServerName, updateConfig, setIsLoading, setOpen]
   );
 
   return (
