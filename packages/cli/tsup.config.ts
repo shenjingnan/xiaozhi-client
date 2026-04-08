@@ -15,7 +15,12 @@ export default defineConfig({
   outDir: "../../dist/cli",
   clean: true,
   sourcemap: true,
-  dts: false,
+  dts: {
+    entry: ["src/index.ts"],
+    compilerOptions: {
+      composite: false,
+    },
+  },
   minify: process.env.NODE_ENV === "production",
   splitting: false,
   bundle: true,
