@@ -1,5 +1,31 @@
 /**
- * 文件操作工具
+ * 文件操作工具类
+ *
+ * 提供跨平台的文件和目录操作功能，包括：
+ * - 文件存在性检查和权限验证
+ * - 目录创建和管理
+ * - 文件读写操作
+ * - 文件复制和删除
+ * - 路径规范化处理
+ * - 临时文件创建
+ * - 文件信息查询
+ *
+ * @example
+ * ```typescript
+ * import { FileUtils } from './FileUtils';
+ *
+ * // 检查文件是否存在
+ * if (FileUtils.exists('/path/to/file.txt')) {
+ *   const content = FileUtils.readFile('/path/to/file.txt');
+ *   console.log(content);
+ * }
+ *
+ * // 确保目录存在
+ * FileUtils.ensureDir('/path/to/directory');
+ *
+ * // 写入文件（不覆盖已存在的文件）
+ * FileUtils.writeFile('/path/to/file.txt', 'content', { overwrite: false });
+ * ```
  */
 
 import fs from "node:fs";

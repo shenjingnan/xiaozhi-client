@@ -1,9 +1,29 @@
 /**
- * 格式化工具
- */
-
-/**
  * 格式化工具类
+ *
+ * 提供各种数据格式的转换和显示功能，包括：
+ * - 时间和运行时长格式化
+ * - 文件大小格式化
+ * - 进度条显示
+ * - 表格数据格式化
+ * - URL 和端口号格式化
+ * - 错误消息格式化
+ * - JSON 数据格式化
+ * - 列表和命令行参数格式化
+ *
+ * @example
+ * ```typescript
+ * import { FormatUtils } from './FormatUtils';
+ *
+ * // 格式化运行时间
+ * const uptime = FormatUtils.formatUptime(3665000); // "1小时 1分钟"
+ *
+ * // 格式化文件大小
+ * const size = FormatUtils.formatFileSize(1536000); // "1.5 MB"
+ *
+ * // 格式化进度条
+ * const progress = FormatUtils.formatProgressBar(50, 100, 20);
+ * ```
  */
 export class FormatUtils {
   /**
