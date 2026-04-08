@@ -13,8 +13,12 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import type { StreamableHTTPClientTransportOptions } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { EventSource } from "eventsource";
+import { createLogger } from "./logger.js";
 import type { InternalMCPServiceConfig, MCPServerTransport } from "./types.js";
 import { MCPTransportType } from "./types.js";
+
+// 创建工厂日志记录器
+const factoryLogger = createLogger("TransportFactory");
 
 // 全局 polyfill EventSource（用于 SSE）
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,9 +43,7 @@ export interface Transport {
 export function createTransport(
   config: InternalMCPServiceConfig
 ): MCPServerTransport {
-  console.debug(
-    `[TransportFactory] 创建 ${config.type} transport for ${config.name}`
-  );
+  factoryLogger.debug(`创建 ${config.type} transport for ${config.name}`);
 
   switch (config.type) {
     case MCPTransportType.STDIO:

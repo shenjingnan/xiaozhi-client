@@ -53,6 +53,17 @@ export { MCPConnection } from "./connection.js";
 export { MCPManager, MCPServiceManager } from "./manager.js";
 
 // =========================
+// 日志系统导出
+// =========================
+
+export {
+  MCPLogger,
+  createLogger,
+  LogLevel,
+} from "./logger.js";
+export type { LogLevelType, LoggerLike } from "./logger.js";
+
+// =========================
 // 传输工厂导出
 // =========================
 
