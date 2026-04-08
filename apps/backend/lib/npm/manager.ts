@@ -71,7 +71,7 @@ export class NPMManager {
       // 监听进程启动失败事件
       npmProcess.on("error", (error) => {
         const errorMessage = `进程启动失败: ${error.message}`;
-        console.log(errorMessage, { error });
+        logger.error(errorMessage, error);
 
         // 清理资源
         cleanup();
