@@ -1,3 +1,15 @@
+/**
+ * McpEndpointSettingButton 组件 - MCP 接入点管理
+ *
+ * 功能：
+ * - 显示和管理多个 MCP 接入点
+ * - 支持添加、删除新的接入点
+ * - 支持连接、断开接入点
+ * - 显示接入点连接状态
+ * - 支持接入点复制功能
+ * - 管理 WebSocket 事件监听
+ */
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 

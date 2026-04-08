@@ -1,3 +1,15 @@
+/**
+ * McpServerSettingButton 组件 - MCP 服务器配置编辑
+ *
+ * 功能：
+ * - 编辑已配置的 MCP 服务器配置
+ * - 支持表单模式和高级模式（JSON）两种编辑方式
+ * - 支持表单与 JSON 格式之间的双向转换
+ * - 支持修改服务器名称（重命名）
+ * - 验证配置格式
+ * - 提交后需要重启服务才会生效
+ */
+
 import { McpServerForm } from "@/components/mcp-server-form";
 import { Button } from "@/components/ui/button";
 import {
