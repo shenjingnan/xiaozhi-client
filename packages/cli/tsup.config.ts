@@ -1,4 +1,10 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig } from "tsup";
 
@@ -109,6 +115,20 @@ export default defineConfig({
       rootPkg.version = cliPkg.version;
       writeFileSync(rootPkgPath, `${JSON.stringify(rootPkg, null, 2)}\n`);
       console.log(`✅ 已同步根 package.json 版本到 ${cliPkg.version}`);
+    }
+
+    // 复制类型声明文件到输出目录
+    const dtsSourcePath = resolve("./src/index.d.ts");
+    const dtsDestPath = resolve("../../dist/cli/index.d.ts");
+
+    if (existsSync(dtsSourcePath)) {
+      // 确保输出目录存在
+      const destDir = resolve("../../dist/cli");
+      if (!existsSync(destDir)) {
+        mkdirSync(destDir, { recursive: true });
+      }
+      copyFileSync(dtsSourcePath, dtsDestPath);
+      console.log("✅ 已复制类型声明文件到 dist/cli/index.d.ts");
     }
   },
 });
