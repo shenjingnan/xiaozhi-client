@@ -381,20 +381,22 @@ export class WebServer {
         await this.endpointManager.connect();
 
         // 设置端点添加事件监听器
-        this.endpointManager.on(
-          "endpointAdded",
-          (event: { endpoint: string }) => {
-            this.logger.debug(`端点已添加: ${event.endpoint}`);
-          }
-        );
+        const endpointAddedListener = (event: { endpoint: string }) => {
+          this.logger.debug(`端点已添加: ${event.endpoint}`);
+        };
+        this.endpointManager.on("endpointAdded", endpointAddedListener);
 
         // 设置端点移除事件监听器
-        this.endpointManager.on(
-          "endpointRemoved",
-          (event: { endpoint: string }) => {
-            this.logger.debug(`端点已移除: ${event.endpoint}`);
-          }
-        );
+        const endpointRemovedListener = (event: { endpoint: string }) => {
+          this.logger.debug(`端点已移除: ${event.endpoint}`);
+        };
+        this.endpointManager.on("endpointRemoved", endpointRemovedListener);
+
+        // 存储清理函数，用于在 destroy 时移除监听器
+        this.eventListenerUnsubscribers.push(() => {
+          this.endpointManager?.off("endpointAdded", endpointAddedListener);
+          this.endpointManager?.off("endpointRemoved", endpointRemovedListener);
+        });
 
         this.logger.debug(
           `小智接入点连接管理器初始化完成，管理 ${validEndpoints.length} 个端点`
