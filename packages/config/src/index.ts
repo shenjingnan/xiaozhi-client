@@ -26,7 +26,11 @@
 // 导出
 // =========================
 
+// 从 manager.ts 导出配置管理器和类型（向后兼容）
 export * from "./manager.js";
+// 从独立的类型文件导出所有类型定义
+export * from "./types/index.js";
+// 导出其他模块
 export * from "./adapter.js";
 export * from "./resolver.js";
 export * from "./initializer.js";
