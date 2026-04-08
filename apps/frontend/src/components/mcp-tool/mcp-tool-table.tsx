@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 import { apiClient } from "@/services/api";
 import type { CustomMCPToolWithStats } from "@xiaozhi-client/shared-types";
 import { CoffeeIcon, Loader2, ZapIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ToolPagination } from "./tool-pagination";
 import { ToolSearchInput } from "./tool-search-input";
@@ -57,15 +57,16 @@ interface McpToolTableProps {
 }
 
 /**
- * 格式化时间显示
+ * 格式化时间显示（接受预计算的时间戳以提升性能）
+ * @param timeStr 时间字符串
+ * @param now 当前时间戳
  */
-function formatTime(timeStr?: string): string {
+function formatTime(timeStr: string | undefined, now: number): string {
   if (!timeStr) return "-";
 
   try {
-    const date = new Date(timeStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+    const date = new Date(timeStr).getTime();
+    const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
 
     if (diffMins < 1) return "刚刚";
@@ -84,6 +85,17 @@ export function McpToolTable({
   // 使用持久化 Hook，自动保存和恢复排序配置
   const { sortConfig, setSortConfig } = useToolSortPersistence();
 
+  // 当前时间戳，每 30 秒更新一次用于时间显示
+  const [now, setNow] = useState(Date.now());
+
+  // 每隔 30 秒更新一次时间
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
   const [tools, setTools] = useState<ToolRowData[]>([]);
 
   // 使用搜索 Hook
@@ -93,6 +105,16 @@ export function McpToolTable({
   // 使用分页 Hook
   const { currentPage, totalPages, paginatedTools, setPage, resetPage } =
     useToolPagination(filteredTools, 10);
+
+  // 预计算时间显示，避免每次渲染创建 Date 对象
+  const toolsWithFormattedTime = useMemo(
+    () =>
+      paginatedTools.map((tool) => ({
+        ...tool,
+        formattedLastUsedTime: formatTime(tool.lastUsedTime, now),
+      })),
+    [paginatedTools, now]
+  );
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -382,7 +404,7 @@ export function McpToolTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedTools.map((tool) => (
+                {toolsWithFormattedTime.map((tool) => (
                   <TableRow key={tool.name}>
                     <TableCell>
                       <Badge variant="secondary" className="rounded-md">
@@ -404,7 +426,7 @@ export function McpToolTable({
                       {tool.usageCount}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
-                      {formatTime(tool.lastUsedTime)}
+                      {tool.formattedLastUsedTime}
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end">
