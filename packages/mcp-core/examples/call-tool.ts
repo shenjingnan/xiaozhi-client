@@ -26,6 +26,12 @@
  */
 
 import { MCPConnection } from "@xiaozhi-client/mcp-core";
+import {
+  createStandardCallbacks,
+  handleStandardError,
+  printToolResult,
+  runMain,
+} from "./shared.js";
 
 /**
  * 主函数
@@ -42,26 +48,7 @@ async function main(): Promise<void> {
       command: "npx",
       args: ["-y", "@xiaozhi-client/calculator-mcp"],
     },
-    {
-      // 连接成功回调
-      onConnected: (data) => {
-        console.log(`✅ 服务 ${data.serviceName} 已连接`);
-        console.log(`   发现 ${data.tools.length} 个工具`);
-        console.log();
-      },
-
-      // 连接失败回调
-      onConnectionFailed: (data) => {
-        console.error(`❌ 服务 ${data.serviceName} 连接失败`);
-        console.error(`   错误: ${data.error.message}`);
-      },
-
-      // 断开连接回调
-      onDisconnected: (data) => {
-        console.log(`👋 服务 ${data.serviceName} 已断开`);
-        console.log(`   原因: ${data.reason || "正常关闭"}`);
-      },
-    }
+    createStandardCallbacks()
   );
 
   try {
@@ -143,7 +130,10 @@ async function main(): Promise<void> {
       const result = await connection.callTool("calculator", {
         expression: expr,
       });
-      console.log(`  ${expr} = ${result.content[0]?.text || "计算失败"}`);
+      const firstItem = result.content[0];
+      const text =
+        firstItem && firstItem.type === "text" ? firstItem.text : undefined;
+      console.log(`  ${expr} = ${text || "计算失败"}`);
     }
     console.log();
 
@@ -181,10 +171,7 @@ async function main(): Promise<void> {
     }
     console.log();
   } catch (error) {
-    console.error("执行过程中出错:");
-    if (error instanceof Error) {
-      console.error(`  ${error.message}`);
-    }
+    handleStandardError(error);
   } finally {
     // 9. 断开连接
     console.log("正在断开连接...");
@@ -194,37 +181,5 @@ async function main(): Promise<void> {
   }
 }
 
-/**
- * 打印工具调用结果
- */
-function printToolResult(result: {
-  content: Array<{ type: string; text: string }>;
-  isError?: boolean;
-}): void {
-  // 检查是否有错误标志
-  if (result.isError) {
-    console.log("  状态: 错误");
-  }
-
-  // 打印所有内容
-  if (result.content && result.content.length > 0) {
-    for (const item of result.content) {
-      console.log(`  类型: ${item.type}`);
-      if (item.type === "text") {
-        console.log(`  内容: ${item.text}`);
-      } else if (item.type === "image") {
-        console.log("  内容: [图片数据]");
-      } else {
-        console.log(`  内容: ${JSON.stringify(item)}`);
-      }
-    }
-  } else {
-    console.log("  内容: [空]");
-  }
-}
-
 // 运行主函数
-main().catch((error) => {
-  console.error("未捕获的错误:", error);
-  process.exit(1);
-});
+runMain(main);
