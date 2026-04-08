@@ -283,15 +283,27 @@ export class ToolsApiService {
     let lastError: Error;
 
     for (let attempt = 0; attempt <= retries; attempt++) {
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
       try {
         // 设置超时
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("请求超时")), this.REQUEST_TIMEOUT);
+          timeoutId = setTimeout(() => reject(new Error("请求超时")), this.REQUEST_TIMEOUT);
         });
 
         const result = await Promise.race([operation(), timeoutPromise]);
+
+        // 成功后清理定时器
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+
         return result;
       } catch (error) {
+        // 失败时也要清理定时器
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
         lastError = error instanceof Error ? error : new Error(String(error));
 
         // 如果是最后一次尝试，或者是不可重试的错误，直接抛出
