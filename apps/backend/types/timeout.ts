@@ -108,13 +108,23 @@ function getDefaultTimeoutMessage(taskId: string): string {
 /**
  * 验证是否为超时响应
  */
-export function isTimeoutResponse(response: any): response is TimeoutResponse {
+export function isTimeoutResponse(
+  response: unknown
+): response is TimeoutResponse {
   return !!(
     response &&
+    typeof response === "object" &&
+    response !== null &&
+    "status" in response &&
     response.status === "timeout" &&
+    "taskId" in response &&
     typeof response.taskId === "string" &&
+    "content" in response &&
     Array.isArray(response.content) &&
     response.content.length > 0 &&
+    typeof response.content[0] === "object" &&
+    response.content[0] !== null &&
+    "type" in response.content[0] &&
     response.content[0].type === "text"
   );
 }
@@ -122,10 +132,10 @@ export function isTimeoutResponse(response: any): response is TimeoutResponse {
 /**
  * 验证是否为超时错误
  */
-export function isTimeoutError(error: any): error is TimeoutError {
+export function isTimeoutError(error: unknown): error is TimeoutError {
   return !!(
     error &&
-    error.name === "TimeoutError" &&
-    error instanceof TimeoutError
+    error instanceof TimeoutError &&
+    error.name === "TimeoutError"
   );
 }
