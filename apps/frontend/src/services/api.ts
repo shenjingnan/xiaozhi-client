@@ -169,6 +169,11 @@ interface MCPToolListResponse {
 /**
  * HTTP API 客户端类
  */
+/**
+ * 默认请求超时时间（毫秒）
+ */
+const DEFAULT_REQUEST_TIMEOUT = 30000;
+
 export class ApiClient {
   private baseUrl: string;
 
@@ -186,36 +191,55 @@ export class ApiClient {
 
   /**
    * 通用请求方法
+   * @param endpoint API 端点
+   * @param options 请求选项
+   * @param timeout 超时时间（毫秒），默认 30000ms
    */
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    timeout = DEFAULT_REQUEST_TIMEOUT
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
-    const defaultOptions: RequestInit = {
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    };
+    // 创建 AbortController 用于超时控制
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    const response = await fetch(url, { ...defaultOptions, ...options });
+    try {
+      const defaultOptions: RequestInit = {
+        headers: {
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
+        signal: controller.signal,
+      };
 
-    if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      const response = await fetch(url, { ...defaultOptions, ...options });
 
-      try {
-        const errorData: ApiErrorResponse = await response.json();
-        errorMessage = errorData.error?.message || errorMessage;
-      } catch {
-        // 如果无法解析错误响应，使用默认错误消息
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+
+        try {
+          const errorData: ApiErrorResponse = await response.json();
+          errorMessage = errorData.error?.message || errorMessage;
+        } catch {
+          // 如果无法解析错误响应，使用默认错误消息
+        }
+
+        throw new Error(errorMessage);
       }
 
-      throw new Error(errorMessage);
+      return response.json();
+    } catch (error) {
+      // 处理超时错误
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error(`请求超时 (${timeout}ms)`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    return response.json();
   }
 
   // ==================== 配置管理 API ====================
