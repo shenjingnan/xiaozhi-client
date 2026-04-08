@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -60,7 +61,7 @@ export function CollapsibleText({
     try {
       localStorage.setItem(storageKey, String(isExpanded));
     } catch (error) {
-      console.warn("无法写入 localStorage:", error);
+      logger.warn("无法写入 localStorage", error);
     }
   }, [isExpanded, storageKey]);
 
