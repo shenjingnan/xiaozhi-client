@@ -29,8 +29,12 @@ import {
   HeartbeatHandler,
   MCPHandler,
   MCPRouteHandler,
+  MCPToolCallHandler,
   MCPToolHandler,
   MCPToolLogHandler,
+  MCPToolManagementHandler,
+  MCPToolMutationHandler,
+  MCPToolQueryHandler,
   RealtimeNotificationHandler,
   ServiceApiHandler,
   StaticFileHandler,
@@ -143,6 +147,10 @@ export class WebServer {
   private statusApiHandler: StatusApiHandler;
   private serviceApiHandler: ServiceApiHandler;
   private mcpToolHandler: MCPToolHandler;
+  private mcpToolCallHandler: MCPToolCallHandler;
+  private mcpToolQueryHandler: MCPToolQueryHandler;
+  private mcpToolMutationHandler: MCPToolMutationHandler;
+  private mcpToolManagementHandler: MCPToolManagementHandler;
   private mcpToolLogHandler: MCPToolLogHandler;
   private versionApiHandler: VersionApiHandler;
   private staticFileHandler: StaticFileHandler;
@@ -198,6 +206,10 @@ export class WebServer {
     this.statusApiHandler = new StatusApiHandler(this.statusService);
     this.serviceApiHandler = new ServiceApiHandler(this.statusService);
     this.mcpToolHandler = new MCPToolHandler();
+    this.mcpToolCallHandler = new MCPToolCallHandler();
+    this.mcpToolQueryHandler = new MCPToolQueryHandler();
+    this.mcpToolMutationHandler = new MCPToolMutationHandler();
+    this.mcpToolManagementHandler = new MCPToolManagementHandler();
     this.mcpToolLogHandler = new MCPToolLogHandler();
     this.versionApiHandler = new VersionApiHandler();
     this.staticFileHandler = new StaticFileHandler();
@@ -585,6 +597,10 @@ export class WebServer {
       statusApiHandler: this.statusApiHandler,
       serviceApiHandler: this.serviceApiHandler,
       mcpToolHandler: this.mcpToolHandler,
+      mcpToolCallHandler: this.mcpToolCallHandler,
+      mcpToolQueryHandler: this.mcpToolQueryHandler,
+      mcpToolMutationHandler: this.mcpToolMutationHandler,
+      mcpToolManagementHandler: this.mcpToolManagementHandler,
       mcpToolLogHandler: this.mcpToolLogHandler,
       versionApiHandler: this.versionApiHandler,
       staticFileHandler: this.staticFileHandler,
