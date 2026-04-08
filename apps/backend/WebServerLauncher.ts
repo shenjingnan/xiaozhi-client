@@ -51,7 +51,9 @@ async function main() {
   }
 }
 
-// 检查是否为直接执行
-if (import.meta.url === `file://${process.argv[1]}`) {
+// 检查是否为直接执行（跨平台兼容）
+import { fileURLToPath } from "node:url";
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main();
 }
