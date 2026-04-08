@@ -20,7 +20,7 @@ import { useShallow } from "zustand/react/shallow";
 /**
  * 重启状态接口
  */
-interface RestartStatus {
+export interface RestartStatus {
   status: "restarting" | "completed" | "failed";
   error?: string;
   timestamp: number;
