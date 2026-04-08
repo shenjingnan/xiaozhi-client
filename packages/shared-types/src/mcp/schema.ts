@@ -16,6 +16,25 @@ export interface JSONSchema {
   description?: string;
   enum?: unknown[];
   const?: unknown;
+  // 字符串类型约束
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  format?: string;
+  // 数值类型约束
+  minimum?: number;
+  maximum?: number;
+  exclusiveMinimum?: number;
+  exclusiveMaximum?: number;
+  multipleOf?: number;
+  // 数组类型约束
+  minItems?: number;
+  maxItems?: number;
+  uniqueItems?: boolean;
+  // 其他常见属性
+  title?: string;
+  default?: unknown;
+  examples?: unknown[];
   [key: string]: unknown;
 }
 
