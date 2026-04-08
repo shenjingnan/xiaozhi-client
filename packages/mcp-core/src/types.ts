@@ -13,15 +13,6 @@ import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/cl
 // =========================
 
 /**
- * MCP 传输层联合类型定义
- * 支持 STDIO、SSE、StreamableHTTP 三种传输协议
- */
-export type MCPServerTransport =
-  | StdioClientTransport
-  | SSEClientTransport
-  | StreamableHTTPClientTransport;
-
-/**
  * 通信方式枚举
  * 定义 MCP 支持的传输类型
  */
@@ -41,6 +32,65 @@ export type MCPTransportTypeString = "stdio" | "sse" | "http";
  * 传输类型输入值（枚举或字符串字面量）
  */
 export type MCPTransportTypeInput = MCPTransportType | MCPTransportTypeString;
+
+/**
+ * 传输类型推断选项
+ */
+export interface InferTransportTypeOptions {
+  /** 服务名称（用于日志输出） */
+  serviceName?: string;
+}
+
+/**
+ * 根据 URL 路径推断传输类型
+ * 基于路径末尾推断，支持包含多个 / 的复杂路径
+ *
+ * @param url - 要推断的 URL
+ * @param options - 可选配置项
+ * @returns 推断出的传输类型
+ */
+export function inferTransportTypeFromUrl(
+  url: string,
+  options?: InferTransportTypeOptions
+): MCPTransportType {
+  try {
+    const parsedUrl = new URL(url);
+    const pathname = parsedUrl.pathname;
+
+    // 检查路径末尾
+    if (pathname.endsWith("/sse")) {
+      return MCPTransportType.SSE;
+    }
+    if (pathname.endsWith("/mcp")) {
+      return MCPTransportType.HTTP;
+    }
+
+    // 默认类型 - 使用 console 输出
+    if (options?.serviceName) {
+      console.info(
+        `[MCP-${options.serviceName}] URL 路径 ${pathname} 不匹配特定规则，默认推断为 http 类型`
+      );
+    }
+    return MCPTransportType.HTTP;
+  } catch (error) {
+    if (options?.serviceName) {
+      console.warn(
+        `[MCP-${options.serviceName}] URL 解析失败，默认推断为 http 类型`,
+        error
+      );
+    }
+    return MCPTransportType.HTTP;
+  }
+}
+
+/**
+ * MCP 传输层联合类型定义
+ * 支持 STDIO、SSE、StreamableHTTP 三种传输协议
+ */
+export type MCPServerTransport =
+  | StdioClientTransport
+  | SSEClientTransport
+  | StreamableHTTPClientTransport;
 
 // =========================
 // 1.1 事件回调接口

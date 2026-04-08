@@ -11,7 +11,10 @@ import type {
   SSEMCPServerConfig,
 } from "./manager.js";
 import { ConfigResolver } from "./resolver.js";
-import { MCPTransportType, inferTransportTypeFromUrl } from "@xiaozhi-client/mcp-core";
+import {
+  MCPTransportType,
+  inferTransportTypeFromUrl,
+} from "./transport-types.js";
 
 // 从外部导入 MCP 类型（这些类型将在运行时从 backend 包解析）
 // 为了避免循环依赖，这里使用动态导入的方式
