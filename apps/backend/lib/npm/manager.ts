@@ -154,11 +154,18 @@ export class NPMManager {
    * 获取当前版本
    */
   async getCurrentVersion(): Promise<string> {
-    const { stdout } = await execAsync(
-      "npm list -g xiaozhi-client --depth=0 --json --registry=https://registry.npmmirror.com"
-    );
-    const info = JSON.parse(stdout);
-    return info.dependencies?.["xiaozhi-client"]?.version || "unknown";
+    try {
+      const { stdout } = await execAsync(
+        "npm list -g xiaozhi-client --depth=0 --json --registry=https://registry.npmmirror.com"
+      );
+      const info = JSON.parse(stdout) as {
+        dependencies?: Record<string, { version: string }>;
+      };
+      return info.dependencies?.["xiaozhi-client"]?.version || "unknown";
+    } catch (error) {
+      logger.error("获取当前版本失败", { error });
+      return "unknown";
+    }
   }
 
   /**
