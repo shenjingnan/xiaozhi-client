@@ -1,5 +1,22 @@
 /**
  * 路径处理工具
+ *
+ * 提供跨平台的路径解析和管理功能，包括：
+ * - 配置文件路径解析（支持 json、json5、jsonc）
+ * - 模板目录查找（支持多种构建环境）
+ * - 可执行文件路径解析（支持 npm 全局安装）
+ * - 路径安全性验证（防止路径遍历攻击）
+ * - 临时目录和用户目录获取
+ *
+ * @module packages/cli/src/utils/PathUtils
+ *
+ * @example
+ * ```typescript
+ * import { PathUtils } from '@/utils/PathUtils';
+ *
+ * const configPath = PathUtils.resolveConfigPath('json');
+ * const templateDir = PathUtils.findTemplatesDir();
+ * ```
  */
 
 import { realpathSync } from "node:fs";
@@ -16,7 +33,6 @@ import { FileUtils } from "./FileUtils";
 /**
  * 路径工具类
  */
-
 export class PathUtils {
   /**
    * 获取 PID 文件路径

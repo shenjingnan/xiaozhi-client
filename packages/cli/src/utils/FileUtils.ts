@@ -1,5 +1,28 @@
 /**
  * 文件操作工具
+ *
+ * 提供安全的文件和目录操作功能，包括：
+ * - 文件读写（支持错误处理和覆盖保护）
+ * - 目录复制和删除（支持递归和排除规则）
+ * - 文件信息获取（大小、类型、修改时间）
+ * - 目录内容列出（支持递归和隐藏文件过滤）
+ * - 临时文件创建
+ * - 文件权限检查
+ *
+ * 所有操作都有完善的错误处理，使用统一的 FileError 异常。
+ *
+ * @module packages/cli/src/utils/FileUtils
+ *
+ * @example
+ * ```typescript
+ * import { FileUtils } from '@/utils/FileUtils';
+ *
+ * // 安全复制目录
+ * FileUtils.copyDirectory(src, dest, {
+ *   recursive: true,
+ *   exclude: ['node_modules', '.git']
+ * });
+ * ```
  */
 
 import fs from "node:fs";
