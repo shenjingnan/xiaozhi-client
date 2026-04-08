@@ -38,14 +38,3 @@ export interface EndpointConfig {
   priority?: number;
 }
 
-/**
- * 负载均衡配置
- */
-export interface LoadBalancingConfig {
-  /** 负载均衡策略 */
-  strategy: "round-robin" | "random" | "least-connections" | "weighted";
-  /** 健康检查间隔（毫秒） */
-  healthCheckInterval?: number;
-  /** 健康检查超时时间（毫秒） */
-  healthCheckTimeout?: number;
-}

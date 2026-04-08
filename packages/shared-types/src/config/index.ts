@@ -21,7 +21,6 @@ export type {
 export type {
   ConnectionConfig as ConfigConnectionConfig,
   EndpointConfig,
-  LoadBalancingConfig,
 } from "./connection";
 
 // 服务器配置相关类型
