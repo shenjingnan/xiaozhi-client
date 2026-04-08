@@ -16,6 +16,7 @@ import type { ClientStatus } from "@xiaozhi-client/shared-types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
+import { createLoadingActions } from "./utils";
 
 /**
  * 重启状态接口
@@ -283,25 +284,7 @@ export const useStatusStore = create<StatusStore>()(
         );
       },
 
-      setLoading: (loading: Partial<StatusLoadingState>) => {
-        set(
-          (state) => ({
-            loading: { ...state.loading, ...loading },
-          }),
-          false,
-          "setLoading"
-        );
-      },
-
-      setError: (error: Error | null) => {
-        set(
-          (state) => ({
-            loading: { ...state.loading, lastError: error },
-          }),
-          false,
-          "setError"
-        );
-      },
+      ...createLoadingActions<StatusStore>(set),
 
       // ==================== 异步操作 ====================
 
