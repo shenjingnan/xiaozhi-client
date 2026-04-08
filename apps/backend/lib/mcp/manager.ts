@@ -30,6 +30,7 @@ import { configManager } from "@xiaozhi-client/config";
 import { CustomMCPHandler } from "./custom.js";
 import { ToolCallLogger } from "./log.js";
 import { MCPMessageHandler } from "./message.js";
+import { MCPRetryManager } from "./retry.js";
 export class MCPServiceManager extends EventEmitter {
   private services: Map<string, MCPService> = new Map();
   private configs: Record<string, MCPServiceConfig> = {};
@@ -38,8 +39,7 @@ export class MCPServiceManager extends EventEmitter {
   private cacheManager: MCPCacheManager; // 缓存管理器
   private eventBus = getEventBus(); // 事件总线
   private toolCallLogger: ToolCallLogger; // 工具调用记录器
-  private retryTimers: Map<string, NodeJS.Timeout> = new Map(); // 重试定时器
-  private failedServices: Set<string> = new Set(); // 失败的服务集合
+  private retryManager: MCPRetryManager; // 重试管理器
 
   private messageHandler: MCPMessageHandler;
 
@@ -111,6 +111,12 @@ export class MCPServiceManager extends EventEmitter {
     const toolCallLogConfig = configManager.getToolCallLogConfig();
     const configDir = configManager.getConfigDir();
     this.toolCallLogger = new ToolCallLogger(toolCallLogConfig, configDir);
+
+    // 初始化重试管理器
+    this.retryManager = new MCPRetryManager({
+      startService: this.startService.bind(this),
+      refreshCustomMCPHandler: this.refreshCustomMCPHandlerPublic.bind(this),
+    });
 
     // 初始化事件监听器引用
     this.eventListeners = {
@@ -304,7 +310,7 @@ export class MCPServiceManager extends EventEmitter {
 
     // 启动失败服务重试机制
     if (failedServices.length > 0) {
-      this.scheduleFailedServicesRetry(failedServices);
+      this.retryManager.scheduleFailedServicesRetry(failedServices);
     }
   }
 
@@ -1007,7 +1013,7 @@ export class MCPServiceManager extends EventEmitter {
     logger.info("[MCPManager] 正在停止所有 MCP 服务...");
 
     // 停止所有服务重试
-    this.stopAllServiceRetries();
+    this.retryManager.stopAllServiceRetries();
 
     // 停止所有服务实例
     for (const [serviceName, service] of this.services) {
@@ -1420,99 +1426,14 @@ export class MCPServiceManager extends EventEmitter {
     return false;
   }
 
-  /**
-   * 安排失败服务的重试
-   * @param failedServices 失败的服务列表
-   */
-  private scheduleFailedServicesRetry(failedServices: string[]): void {
-    if (failedServices.length === 0) return;
-
-    // 记录重试安排
-    logger.info(`[MCPManager] 安排 ${failedServices.length} 个失败服务的重试`);
-
-    // 初始重试延迟：30秒
-    const initialDelay = 30000;
-
-    for (const serviceName of failedServices) {
-      this.failedServices.add(serviceName);
-      this.scheduleServiceRetry(serviceName, initialDelay);
-    }
-  }
+  // ==================== 重试管理（委托给 MCPRetryManager） ====================
 
   /**
-   * 安排单个服务的重试
-   * @param serviceName 服务名称
-   * @param delay 延迟时间（毫秒）
+   * 获取重试管理器（供外部使用）
+   * @returns 重试管理器实例
    */
-  private scheduleServiceRetry(serviceName: string, delay: number): void {
-    // 清除现有定时器
-    const existingTimer = this.retryTimers.get(serviceName);
-    if (existingTimer) {
-      clearTimeout(existingTimer);
-      this.retryTimers.delete(serviceName);
-    }
-
-    logger.debug(`[MCPManager] 安排服务 ${serviceName} 在 ${delay}ms 后重试`);
-
-    const timer = setTimeout(async () => {
-      this.retryTimers.delete(serviceName);
-      await this.retryFailedService(serviceName);
-    }, delay);
-
-    this.retryTimers.set(serviceName, timer);
-  }
-
-  /**
-   * 重试失败的服务
-   * @param serviceName 服务名称
-   */
-  private async retryFailedService(serviceName: string): Promise<void> {
-    if (!this.failedServices.has(serviceName)) {
-      return; // 服务已经成功启动或不再需要重试
-    }
-
-    try {
-      await this.startService(serviceName);
-
-      // 重试成功
-      this.failedServices.delete(serviceName);
-      logger.info(`[MCPManager] 服务 ${serviceName} 重试启动成功`);
-
-      // 重新初始化CustomMCPHandler以包含新启动的服务工具
-      try {
-        await this.refreshCustomMCPHandlerPublic();
-      } catch (error) {
-        logger.error("[MCPManager] 刷新CustomMCPHandler失败", { error });
-      }
-    } catch (error) {
-      logger.error(`[MCPManager] 服务 ${serviceName} 重试启动失败`, {
-        error: (error as Error).message,
-      });
-
-      // 指数退避重试策略：延迟时间翻倍，最大不超过5分钟
-      const currentDelay = this.getRetryDelay(serviceName);
-      const nextDelay = Math.min(currentDelay * 2, 300000); // 最大5分钟
-
-      logger.debug(
-        `[MCPManager] 服务 ${serviceName} 下次重试将在 ${nextDelay}ms 后进行`
-      );
-
-      this.scheduleServiceRetry(serviceName, nextDelay);
-    }
-  }
-
-  /**
-   * 获取当前重试延迟时间
-   * @param serviceName 服务名称
-   * @returns 当前延迟时间
-   */
-  private getRetryDelay(serviceName: string): number {
-    // 这里可以实现更复杂的状态跟踪来计算准确的延迟
-    // 简化实现：返回一个基于服务名称的哈希值的初始延迟
-    const hash = serviceName
-      .split("")
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return 30000 + (hash % 60000); // 30-90秒之间的初始延迟
+  getRetryManager(): MCPRetryManager {
+    return this.retryManager;
   }
 
   /**
@@ -1520,28 +1441,14 @@ export class MCPServiceManager extends EventEmitter {
    * @param serviceName 服务名称
    */
   public stopServiceRetry(serviceName: string): void {
-    const timer = this.retryTimers.get(serviceName);
-    if (timer) {
-      clearTimeout(timer);
-      this.retryTimers.delete(serviceName);
-      logger.debug(`[MCPManager] 已停止服务 ${serviceName} 的重试`);
-    }
-    this.failedServices.delete(serviceName);
+    this.retryManager.stopServiceRetry(serviceName);
   }
 
   /**
    * 停止所有服务的重试
    */
   public stopAllServiceRetries(): void {
-    logger.info("[MCPManager] 停止所有服务重试");
-
-    for (const [serviceName, timer] of this.retryTimers) {
-      clearTimeout(timer);
-      logger.debug(`[MCPManager] 已停止服务 ${serviceName} 的重试`);
-    }
-
-    this.retryTimers.clear();
-    this.failedServices.clear();
+    this.retryManager.stopAllServiceRetries();
   }
 
   /**
@@ -1549,7 +1456,7 @@ export class MCPServiceManager extends EventEmitter {
    * @returns 失败的服务名称数组
    */
   public getFailedServices(): string[] {
-    return Array.from(this.failedServices);
+    return this.retryManager.getFailedServices();
   }
 
   /**
@@ -1558,7 +1465,7 @@ export class MCPServiceManager extends EventEmitter {
    * @returns 如果服务失败返回true
    */
   public isServiceFailed(serviceName: string): boolean {
-    return this.failedServices.has(serviceName);
+    return this.retryManager.isServiceFailed(serviceName);
   }
 
   /**
@@ -1571,12 +1478,7 @@ export class MCPServiceManager extends EventEmitter {
     totalFailed: number;
     totalActiveRetries: number;
   } {
-    return {
-      failedServices: Array.from(this.failedServices),
-      activeRetries: Array.from(this.retryTimers.keys()),
-      totalFailed: this.failedServices.size,
-      totalActiveRetries: this.retryTimers.size,
-    };
+    return this.retryManager.getRetryStats();
   }
 
   /**
@@ -1817,6 +1719,9 @@ export class MCPServiceManager extends EventEmitter {
    */
   async cleanup(): Promise<void> {
     await this.stopAllServices();
+
+    // 清理重试管理器
+    this.retryManager.cleanup();
 
     // 清理事件监听器，防止内存泄漏
     this.eventBus.offEvent(
