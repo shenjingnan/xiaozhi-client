@@ -29,13 +29,3 @@ export interface CozeUIState {
   /** 工作流列表错误信息 */
   workflowsError: string | null;
 }
-
-/**
- * 客户端状态
- */
-export interface ClientStatus {
-  status: "connected" | "disconnected";
-  mcpEndpoint: string;
-  activeMCPServers: string[];
-  lastHeartbeat?: number;
-}
