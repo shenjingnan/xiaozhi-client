@@ -92,7 +92,7 @@ export class MCPConnection {
       `[MCP-${this.name}] 正在连接 MCP 服务: ${this.name}`
     );
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       // 设置连接超时（使用固定默认值 30 秒）
       const CONNECTION_TIMEOUT = 30000;
       this.connectionTimeout = setTimeout(() => {
@@ -119,28 +119,28 @@ export class MCPConnection {
         };
         this.transport = TransportFactory.create(fullConfig);
 
-        // 连接到 MCP 服务
-        this.client
-          .connect(this.transport as MCPServerTransport)
-          .then(async () => {
-            this.handleConnectionSuccess();
+        // 连接到 MCP 服务（使用 async/await 确保错误正确传播）
+        await this.client.connect(this.transport as MCPServerTransport);
 
-            // 获取工具列表
-            await this.refreshTools();
+        // 检查是否因超时而导致状态已变为 DISCONNECTED
+        if (this.connectionState === ConnectionState.DISCONNECTED) {
+          // 超时已触发，连接已被清理，不再继续处理
+          return;
+        }
 
-            // 发射连接成功事件
-            this.callbacks?.onConnected?.({
-              serviceName: this.name,
-              tools: this.getTools(),
-              connectionTime: new Date(),
-            });
+        this.handleConnectionSuccess();
 
-            resolve();
-          })
-          .catch((error) => {
-            this.handleConnectionError(error);
-            reject(error);
-          });
+        // 获取工具列表
+        await this.refreshTools();
+
+        // 发射连接成功事件
+        this.callbacks?.onConnected?.({
+          serviceName: this.name,
+          tools: this.getTools(),
+          connectionTime: new Date(),
+        });
+
+        resolve();
       } catch (error) {
         this.handleConnectionError(error as Error);
         reject(error);
