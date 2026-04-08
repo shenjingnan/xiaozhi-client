@@ -1,49 +1,76 @@
 /**
  * 通用 API 响应类型定义
+ * 与后端响应格式保持一致
  */
 
 /**
- * 通用 API 响应接口
+ * API 响应联合类型
+ * 包含成功响应、错误响应和分页响应
  */
-export interface ApiResponse<T = any> {
-  /** 响应状态码，0表示成功 */
-  code: number;
-  /** 响应数据 */
-  data: T;
-  /** 响应消息 */
-  message: string;
-  /** 请求时间戳 */
-  timestamp: number;
-}
+export type ApiResponse<T = unknown> =
+  | ApiSuccessResponse<T>
+  | ApiErrorResponse
+  | ApiPaginatedResponse<T>;
 
 /**
  * 成功响应接口
  */
-export interface ApiSuccessResponse<T = any> {
-  /** 响应状态码，固定为0 */
-  code: 0;
+export interface ApiSuccessResponse<T = unknown> {
+  /** 操作是否成功 */
+  success: true;
   /** 响应数据 */
-  data: T;
+  data?: T;
   /** 响应消息 */
-  message: string;
-  /** 请求时间戳 */
-  timestamp: number;
+  message?: string;
 }
 
 /**
  * 错误响应接口
  */
 export interface ApiErrorResponse {
-  /** 响应状态码，非0值 */
-  code: number;
-  /** 错误数据 */
-  data: null;
-  /** 错误消息 */
-  message: string;
-  /** 错误详情 */
-  error?: string;
-  /** 请求时间戳 */
-  timestamp: number;
+  /** 操作是否成功 */
+  success: false;
+  /** 错误信息 */
+  error: {
+    /** 错误码 */
+    code: string;
+    /** 错误消息 */
+    message: string;
+    /** 错误详情 */
+    details?: unknown;
+  };
+}
+
+/**
+ * 分页响应接口
+ */
+export interface ApiPaginatedResponse<T = unknown> {
+  /** 操作是否成功 */
+  success: true;
+  /** 响应数据列表 */
+  data: T[];
+  /** 分页信息 */
+  pagination: PaginationInfo;
+  /** 响应消息 */
+  message?: string;
+}
+
+/**
+ * 分页信息
+ */
+export interface PaginationInfo {
+  /** 当前页码（从 1 开始） */
+  page: number;
+  /** 每页数量 */
+  pageSize: number;
+  /** 总记录数 */
+  total: number;
+  /** 总页数 */
+  totalPages: number;
+  /** 是否有下一页 */
+  hasNext: boolean;
+  /** 是否有上一页 */
+  hasPrev: boolean;
 }
 
 /**

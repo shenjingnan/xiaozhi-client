@@ -4,6 +4,14 @@
 
 import type { MCPServerConfig } from "../config";
 
+// 重新导出通用 API 响应类型，保持与后端一致
+export type {
+  ApiResponse,
+  ApiSuccessResponse,
+  ApiErrorResponse,
+  ApiPaginatedResponse,
+} from "../api/common";
+
 /**
  * MCP 服务添加请求接口（单服务格式）
  */
@@ -60,28 +68,6 @@ export interface MCPServerStatus {
 export interface MCPServerListResponse {
   servers: MCPServerStatus[];
   total: number;
-}
-
-/**
- * API 统一响应格式接口
- */
-export interface ApiSuccessResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-}
-
-export interface ApiErrorResponse {
-  error: {
-    code: string;
-    message: string;
-    details?: {
-      serverName?: string;
-      config?: any;
-      tools?: string[];
-      timestamp: string;
-    };
-  };
 }
 
 /**
@@ -143,17 +129,4 @@ export interface ToolCallLogsResponse {
   total: number;
   /** 是否有更多数据 */
   hasMore: boolean;
-}
-
-/**
- * API通用响应格式
- */
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: any;
-  };
 }
