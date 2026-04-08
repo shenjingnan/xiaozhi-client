@@ -462,6 +462,34 @@ export class MCPCacheManager {
   }
 
   /**
+   * 加载并验证缓存条目
+   * @private
+   */
+  private async loadAndValidateCacheEntry(
+    toolName: string,
+    arguments_: Record<string, unknown>
+  ): Promise<{
+    cache: ExtendedMCPToolsCache;
+    cacheEntry: EnhancedToolResultCache;
+  } | null> {
+    try {
+      const cache = await this.loadExtendedCache();
+      const cacheKey = generateCacheKey(toolName, arguments_);
+
+      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
+        return null;
+      }
+
+      return {
+        cache,
+        cacheEntry: cache.customMCPResults[cacheKey],
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * 更新 CustomMCP 缓存状态
    */
   async updateCustomMCPStatus(
@@ -472,14 +500,16 @@ export class MCPCacheManager {
     error?: string
   ): Promise<boolean> {
     try {
-      const cache = await this.loadExtendedCache();
-      const cacheKey = generateCacheKey(toolName, arguments_);
+      const loadResult = await this.loadAndValidateCacheEntry(
+        toolName,
+        arguments_
+      );
 
-      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
+      if (!loadResult) {
         return false;
       }
 
-      const cacheEntry = cache.customMCPResults[cacheKey];
+      const { cache, cacheEntry } = loadResult;
       const oldStatus = cacheEntry.status;
 
       // 更新状态
@@ -527,14 +557,16 @@ export class MCPCacheManager {
     arguments_: Record<string, unknown>
   ): Promise<boolean> {
     try {
-      const cache = await this.loadExtendedCache();
-      const cacheKey = generateCacheKey(toolName, arguments_);
+      const loadResult = await this.loadAndValidateCacheEntry(
+        toolName,
+        arguments_
+      );
 
-      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
+      if (!loadResult) {
         return false;
       }
 
-      const cacheEntry = cache.customMCPResults[cacheKey];
+      const { cache, cacheEntry } = loadResult;
       if (cacheEntry.consumed) {
         return true;
       }
@@ -564,14 +596,20 @@ export class MCPCacheManager {
     arguments_: Record<string, unknown>
   ): Promise<boolean> {
     try {
-      const cache = await this.loadExtendedCache();
-      const cacheKey = generateCacheKey(toolName, arguments_);
+      const loadResult = await this.loadAndValidateCacheEntry(
+        toolName,
+        arguments_
+      );
 
-      if (!cache.customMCPResults || !cache.customMCPResults[cacheKey]) {
+      if (!loadResult) {
         return false;
       }
 
-      delete cache.customMCPResults[cacheKey];
+      const { cache } = loadResult;
+      const cacheKey = generateCacheKey(toolName, arguments_);
+
+      // helper 确保了 customMCPResults 存在
+      delete cache.customMCPResults![cacheKey];
       await this.saveExtendedCache(cache);
 
       this.logger.debug(`[CacheManager] 删除缓存条目: ${toolName}`);
