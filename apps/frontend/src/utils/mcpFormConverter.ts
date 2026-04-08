@@ -98,6 +98,20 @@ function stripQuotes(str: string): string {
 }
 
 /**
+ * 高效检查对象是否有属性
+ * 使用 for...in 循环避免创建临时数组
+ * @returns 如果对象有至少一个自有属性则返回 true
+ */
+function hasProperties(obj: Record<string, unknown>): boolean {
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * 解析多行键值对文本为对象
  * 支持格式: KEY=value 或 KEY: value
  * 支持注释行 (# 开头)
@@ -158,7 +172,7 @@ function stdioFormToApiConfig(formData: StdioFormData): MCPServerConfig {
   };
 
   // 只有在有环境变量时才添加 env 字段
-  if (Object.keys(env).length > 0) {
+  if (hasProperties(env)) {
     config.env = env;
   }
 
@@ -177,7 +191,7 @@ function httpFormToApiConfig(formData: HttpFormData): MCPServerConfig {
   };
 
   // 只有在有请求头时才添加 headers 字段
-  if (Object.keys(headers).length > 0) {
+  if (hasProperties(headers)) {
     config.headers = headers;
   }
 
@@ -196,7 +210,7 @@ function sseFormToApiConfig(formData: SseFormData): MCPServerConfig {
   };
 
   // 只有在有请求头时才添加 headers 字段
-  if (Object.keys(headers).length > 0) {
+  if (hasProperties(headers)) {
     config.headers = headers;
   }
 
@@ -269,7 +283,7 @@ function buildCommandString(config: {
 export function keyValuePairsToMultilineText(
   obj: Record<string, string> | undefined
 ): string {
-  if (!obj || Object.keys(obj).length === 0) {
+  if (!obj || !hasProperties(obj)) {
     return "";
   }
   return Object.entries(obj)
