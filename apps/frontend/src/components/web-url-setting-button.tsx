@@ -101,9 +101,6 @@ export function WebUrlSettingButton() {
       return;
     }
 
-    console.log(
-      `[WebUrlSettingButton] 开始端口切换: ${currentPort} -> ${newPort}`
-    );
     setIsLoading(true);
 
     try {
@@ -124,7 +121,6 @@ export function WebUrlSettingButton() {
       );
       setOpen(false);
     } catch (error) {
-      console.error("端口切换失败:", error);
       const errorMessage =
         error instanceof Error ? error.message : "端口切换失败";
       toast.error(`端口切换失败: ${errorMessage}`);
