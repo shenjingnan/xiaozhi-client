@@ -12,6 +12,13 @@ import { BaseHandler } from "./base.handler.js";
  * 版本 API 处理器
  */
 export class VersionApiHandler extends BaseHandler {
+  private npmManager: NPMManager;
+
+  constructor() {
+    super();
+    this.npmManager = new NPMManager();
+  }
+
   /**
    * 获取版本信息
    * GET /api/version
@@ -87,8 +94,9 @@ export class VersionApiHandler extends BaseHandler {
         );
       }
 
-      const npmManager = new NPMManager();
-      const versions = await npmManager.getAvailableVersions(type as string);
+      const versions = await this.npmManager.getAvailableVersions(
+        type as string
+      );
 
       c.get("logger").debug(
         `获取到 ${versions.length} 个可用版本 (类型: ${type})`
@@ -117,8 +125,7 @@ export class VersionApiHandler extends BaseHandler {
     try {
       c.get("logger").debug("处理检查最新版本请求");
 
-      const npmManager = new NPMManager();
-      const result = await npmManager.checkForLatestVersion();
+      const result = await this.npmManager.checkForLatestVersion();
 
       c.get("logger").debug("版本检查结果:", result);
 
