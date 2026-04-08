@@ -937,6 +937,7 @@ export class MCPToolHandler {
     // 验证是否为 Coze 工具
     if (
       existingTool.handler.type !== "proxy" ||
+      !("platform" in existingTool.handler) ||
       existingTool.handler.platform !== "coze"
     ) {
       return c.fail(
@@ -949,7 +950,7 @@ export class MCPToolHandler {
 
     // 如果前端提供的 workflow 中没有 workflow_id，尝试从现有工具中获取
     if (!workflow.workflow_id && existingTool.handler?.config?.workflow_id) {
-      workflow.workflow_id = existingTool.handler.config.workflow_id;
+      workflow.workflow_id = String(existingTool.handler.config.workflow_id);
     }
 
     // 如果还没有 workflow_id，尝试从其他字段获取
@@ -1082,8 +1083,10 @@ export class MCPToolHandler {
 
       if (toolToDelete && toolToDelete.handler.type === "mcp") {
         // 这是 MCP 工具，需要在 mcpServerConfig 中同步禁用
-        const mcpConfig = toolToDelete.handler.config;
-        if (mcpConfig.serviceName && mcpConfig.toolName) {
+        const mcpConfig = toolToDelete.handler.config as
+          | { serviceName?: string; toolName?: string }
+          | undefined;
+        if (mcpConfig?.serviceName && mcpConfig?.toolName) {
           c.get("logger").info(
             `检测到 MCP 工具删除，同步禁用 mcpServerConfig 中的工具: ${mcpConfig.serviceName}/${mcpConfig.toolName}`
           );

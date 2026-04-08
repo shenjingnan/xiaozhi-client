@@ -126,9 +126,10 @@ function extractParametersFromSchema(
 
       return {
         fieldName,
-        description: schema.description || "",
+        description:
+          typeof schema.description === "string" ? schema.description : "",
         type,
-        required: required.includes(fieldName),
+        required: Array.isArray(required) && required.includes(fieldName),
       };
     }
   );

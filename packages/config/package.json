@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@xiaozhi-client/mcp-core": "workspace:*",
+    "@xiaozhi-client/shared-types": "workspace:*",
     "comment-json": "^4.2.5",
     "dayjs": "^1.11.13"
   },

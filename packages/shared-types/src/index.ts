@@ -24,6 +24,14 @@ export type {
   CustomMCPTool,
   CustomMCPToolWithStats,
   CustomMCPToolConfig,
+  ToolHandlerConfig,
+  BaseHandlerConfig,
+  MCPHandlerConfig,
+  ProxyHandlerConfig,
+  HttpHandlerConfig,
+  FunctionHandlerConfig,
+  ScriptHandlerConfig,
+  ChainHandlerConfig,
   JSONSchema,
 } from "./mcp";
 

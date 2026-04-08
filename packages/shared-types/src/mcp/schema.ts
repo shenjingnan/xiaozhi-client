@@ -5,19 +5,21 @@
 
 /**
  * JSON Schema 类型
- * 带类型守卫的严格 JSON Schema 类型定义
+ * 兼容多种定义方式的宽松类型
  */
-export interface JSONSchema {
-  type?: string | string[];
-  properties?: Record<string, JSONSchema>;
-  required?: string[];
-  items?: JSONSchema;
-  additionalProperties?: boolean | JSONSchema;
-  description?: string;
-  enum?: unknown[];
-  const?: unknown;
-  [key: string]: unknown;
-}
+export type JSONSchema =
+  | {
+      type?: string | string[];
+      properties?: Record<string, JSONSchema>;
+      required?: string[];
+      items?: JSONSchema;
+      additionalProperties?: boolean | JSONSchema;
+      description?: string;
+      enum?: unknown[];
+      const?: unknown;
+      [key: string]: unknown;
+    }
+  | Record<string, unknown>;
 
 /**
  * 检查值是否为有效的 JSON Schema

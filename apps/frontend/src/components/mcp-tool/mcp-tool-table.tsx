@@ -116,7 +116,10 @@ export function McpToolTable({
   // 格式化工具信息的辅助函数
   const formatTool = useCallback(
     (tool: CustomMCPToolWithStats, enabled: boolean): ToolRowData => {
-      const { serviceName, toolName } = (() => {
+      const getServiceInfo = (): {
+        serviceName: string;
+        toolName: string;
+      } => {
         if (!tool || !tool.handler) {
           return {
             serviceName: UNKNOWN_SERVICE_NAME,
@@ -125,13 +128,18 @@ export function McpToolTable({
         }
 
         if (tool.handler.type === "mcp") {
+          const handler = tool.handler as import("@xiaozhi-client/shared-types").MCPHandlerConfig;
           return {
             serviceName:
-              tool.handler.config?.serviceName || UNKNOWN_SERVICE_NAME,
-            toolName: tool.handler.config?.toolName || tool.name,
+              handler.config?.serviceName || UNKNOWN_SERVICE_NAME,
+            toolName: handler.config?.toolName || tool.name,
           };
         }
-        if (tool.handler.type === "proxy" && tool.handler.platform === "coze") {
+        if (
+          tool.handler.type === "proxy" &&
+          "platform" in tool.handler &&
+          tool.handler.platform === "coze"
+        ) {
           return {
             serviceName: "customMCP",
             toolName: tool.name,
@@ -141,7 +149,9 @@ export function McpToolTable({
           serviceName: CUSTOM_SERVICE_NAME,
           toolName: tool.name,
         };
-      })();
+      };
+
+      const { serviceName, toolName } = getServiceInfo();
 
       return {
         name: tool.name,
