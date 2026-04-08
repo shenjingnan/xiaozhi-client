@@ -11,3 +11,9 @@ export {
   inferTransportTypeFromUrl,
   inferTransportTypeFromConfig,
 } from "./validators.js";
+
+// 连接状态验证
+export {
+  validateConnectionState,
+  ConnectionStateValues,
+} from "./connection.js";

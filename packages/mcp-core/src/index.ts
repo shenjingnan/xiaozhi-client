@@ -68,6 +68,8 @@ export {
   validateToolCallParams,
   inferTransportTypeFromUrl,
   inferTransportTypeFromConfig,
+  validateConnectionState,
+  ConnectionStateValues,
 } from "./utils/index.js";
 
 // =========================
