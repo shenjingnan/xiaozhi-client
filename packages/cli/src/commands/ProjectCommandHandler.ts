@@ -4,7 +4,7 @@
 
 import path from "node:path";
 import chalk from "chalk";
-import ora from "ora";
+import ora, { type Ora } from "ora";
 import type { CommandOption } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
 import type {
@@ -12,6 +12,7 @@ import type {
   CommandOptions,
 } from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
+import type { TemplateManager } from "../interfaces/Service";
 
 /**
  * 项目管理命令处理器
@@ -73,7 +74,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
         // 使用模板创建项目
         await this.createFromTemplate(
           projectName,
-          options.template,
+          options.template as string,
           targetPath,
           spinner,
           templateManager
@@ -102,13 +103,14 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     projectName: string,
     templateName: string,
     targetPath: string,
-    spinner: any,
-    templateManager: any
+    spinner: Ora,
+    templateManager: TemplateManager
   ): Promise<void> {
     spinner.text = "检查模板...";
 
     // 获取可用模板列表
     const availableTemplates = await templateManager.getAvailableTemplates();
+    const templateNames = availableTemplates.map((t) => t.name);
 
     if (availableTemplates.length === 0) {
       spinner.fail("找不到可用模板");
@@ -128,7 +130,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
       // 尝试找到相似的模板
       const similarTemplate = this.findSimilarTemplate(
         actualTemplateName,
-        availableTemplates
+        templateNames
       );
 
       if (similarTemplate) {
@@ -142,11 +144,11 @@ export class ProjectCommandHandler extends BaseCommandHandler {
         if (confirmed) {
           actualTemplateName = similarTemplate;
         } else {
-          this.showAvailableTemplates(availableTemplates);
+          this.showAvailableTemplates(templateNames);
           return;
         }
       } else {
-        this.showAvailableTemplates(availableTemplates);
+        this.showAvailableTemplates(templateNames);
         return;
       }
     }
@@ -176,14 +178,14 @@ export class ProjectCommandHandler extends BaseCommandHandler {
   private async createBasicProject(
     projectName: string,
     targetPath: string,
-    spinner: any,
-    templateManager: any
+    spinner: Ora,
+    templateManager: TemplateManager
   ): Promise<void> {
     spinner.text = `创建基本项目 "${projectName}"...`;
 
     // 使用模板管理器创建基本项目
     await templateManager.createProject({
-      templateName: null, // 表示创建基本项目
+      templateName: undefined, // 表示创建基本项目
       targetPath,
       projectName,
     });
