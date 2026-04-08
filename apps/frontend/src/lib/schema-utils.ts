@@ -1,3 +1,34 @@
+/**
+ * JSON Schema 与 Zod Schema 转换工具模块
+ *
+ * 提供前端表单处理相关的工具函数：
+ * - 将 JSON Schema 转换为 Zod schema，用于表单验证
+ * - 根据 JSON Schema 生成默认值对象
+ * - 获取字段类型的默认值
+ *
+ * @module schema-utils
+ *
+ * @example
+ * ```typescript
+ * import { createZodSchemaFromJsonSchema, createDefaultValues } from '@/lib/schema-utils';
+ *
+ * const jsonSchema = {
+ *   type: 'object',
+ *   properties: {
+ *     name: { type: 'string' },
+ *     age: { type: 'number' }
+ *   },
+ *   required: ['name']
+ * };
+ *
+ * // 创建 Zod schema 用于表单验证
+ * const zodSchema = createZodSchemaFromJsonSchema(jsonSchema);
+ *
+ * // 生成表单默认值
+ * const defaults = createDefaultValues(jsonSchema);
+ * // defaults = { name: '' }
+ * ```
+ */
 import { z } from "zod";
 
 /**
