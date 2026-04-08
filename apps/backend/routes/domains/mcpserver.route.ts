@@ -7,8 +7,20 @@ import type { HandlerDependencies, RouteDefinition } from "@/routes/types.js";
 import type { Context } from "hono";
 
 /**
+ * 统一的错误响应函数
+ */
+const createErrorResponse = (code: string, message: string) => {
+  return {
+    error: {
+      code,
+      message,
+    },
+  };
+};
+
+/**
  * MCP 服务器处理器包装函数
- * 统一处理 MCP Server API Handler 的初始化检查
+ * 统一处理 MCP Server API Handler 的初始化检查和错误处理
  */
 const withMCPServerHandler = async (
   c: Context,
@@ -20,10 +32,23 @@ const withMCPServerHandler = async (
   const handler = dependencies.mcpHandler;
 
   if (!handler) {
-    return c.json({ error: "MCP Server API Handler not initialized" }, 503);
+    const errorResponse = createErrorResponse(
+      "MCP_HANDLER_NOT_AVAILABLE",
+      "MCP Server API Handler not initialized"
+    );
+    return c.json(errorResponse, 503);
   }
 
-  return await handlerFn(handler);
+  try {
+    return await handlerFn(handler);
+  } catch (error) {
+    console.error("MCP Server API Handler 错误:", error);
+    const errorResponse = createErrorResponse(
+      "MCP_HANDLER_ERROR",
+      error instanceof Error ? error.message : "MCP 服务器处理失败"
+    );
+    return c.json(errorResponse, 500);
+  }
 };
 
 export const mcpserverRoutes: RouteDefinition[] = [
