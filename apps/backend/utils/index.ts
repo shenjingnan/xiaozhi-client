@@ -16,3 +16,8 @@ export {
   type DeviceInfoFromHeaders,
   type ExtractedDeviceInfo,
 } from "./esp32-utils.js";
+// Prompt 工具（用于 LLM 服务和配置处理器）
+export { resolvePrompt } from "./prompt-utils.js";
+// Tool 排序工具（用于 MCP 工具管理）
+export { sortTools, toolSorters } from "./toolSorters.js";
+export type { ToolSortField } from "./toolSorters.js";
