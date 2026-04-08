@@ -25,7 +25,8 @@
     "sourceMap": true,
     "removeComments": false,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["node"]
   },
   "include": ["apps/backend/**/*", "packages/**/*", "mcps/**/*"],
   "exclude": ["node_modules", "dist", "scripts/**/*", "templates/**/*"],
