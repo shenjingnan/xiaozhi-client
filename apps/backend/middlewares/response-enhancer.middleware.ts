@@ -5,6 +5,7 @@
 
 import type { PaginationInfo } from "@/types/api.response.js";
 import type { MiddlewareHandler } from "hono";
+import type { ContentfulStatusCode, StatusCode } from "hono/utils/http-status";
 
 /**
  * 扩展 Hono Context 接口
@@ -107,7 +108,7 @@ export const responseEnhancerMiddleware: MiddlewareHandler = async (
   next
 ) => {
   // 成功响应方法
-  c.success = <T>(data?: T, message?: string, status = 200) => {
+  c.success = <T>(data?: T, message?: string, status: number = 200) => {
     const response: {
       success: true;
       data?: T;
@@ -122,11 +123,12 @@ export const responseEnhancerMiddleware: MiddlewareHandler = async (
       response.data = data;
     }
 
-    return c.json(response, status as never);
+    // 类型断言：确保 status 是 ContentfulStatusCode（JSON 响应不支持 204 等无内容状态码）
+    return c.json(response, status as ContentfulStatusCode);
   };
 
   // 失败响应方法
-  c.fail = (code: string, message: string, details?: unknown, status = 400) => {
+  c.fail = (code: string, message: string, details?: unknown, status: number = 400) => {
     const response: {
       success: false;
       error: {
@@ -147,7 +149,8 @@ export const responseEnhancerMiddleware: MiddlewareHandler = async (
       response.error.details = details;
     }
 
-    return c.json(response, status as never);
+    // 类型断言：确保 status 是 ContentfulStatusCode（JSON 响应不支持 204 等无内容状态码）
+    return c.json(response, status as ContentfulStatusCode);
   };
 
   // 分页响应方法
