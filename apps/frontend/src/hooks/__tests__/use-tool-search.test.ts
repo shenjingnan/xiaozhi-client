@@ -13,7 +13,6 @@ describe("useToolSearch", () => {
       enabled: true,
       usageCount: 10,
       lastUsedTime: "2024-01-01T00:00:00Z",
-      inputSchema: null,
     },
     {
       name: "tool2",
@@ -23,7 +22,6 @@ describe("useToolSearch", () => {
       enabled: false,
       usageCount: 5,
       lastUsedTime: "2024-01-02T00:00:00Z",
-      inputSchema: null,
     },
     {
       name: "tool3",
@@ -33,7 +31,6 @@ describe("useToolSearch", () => {
       enabled: true,
       usageCount: 3,
       lastUsedTime: "2024-01-03T00:00:00Z",
-      inputSchema: null,
     },
   ];
 
@@ -176,7 +173,6 @@ describe("useToolSearch", () => {
           enabled: true,
           usageCount: 0,
           lastUsedTime: "",
-          inputSchema: null,
         },
       ];
 
@@ -206,7 +202,6 @@ describe("useToolSearch", () => {
           enabled: true,
           usageCount: 0,
           lastUsedTime: "",
-          inputSchema: null,
         },
         {
           name: "tool2",
@@ -216,7 +211,6 @@ describe("useToolSearch", () => {
           enabled: true,
           usageCount: 0,
           lastUsedTime: "",
-          inputSchema: null,
         },
       ] as ToolRowData[];
 
