@@ -5,6 +5,7 @@
 import path from "node:path";
 import chalk from "chalk";
 import ora from "ora";
+import type { Ora } from "ora";
 import type { CommandOption } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
 import type {
@@ -12,6 +13,7 @@ import type {
   CommandOptions,
 } from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
+import type { TemplateInfo, TemplateManager } from "../interfaces/Service";
 
 /**
  * 项目管理命令处理器
@@ -73,7 +75,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
         // 使用模板创建项目
         await this.createFromTemplate(
           projectName,
-          options.template,
+          String(options.template),
           targetPath,
           spinner,
           templateManager
@@ -102,8 +104,8 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     projectName: string,
     templateName: string,
     targetPath: string,
-    spinner: any,
-    templateManager: any
+    spinner: Ora,
+    templateManager: TemplateManager
   ): Promise<void> {
     spinner.text = "检查模板...";
 
@@ -176,14 +178,14 @@ export class ProjectCommandHandler extends BaseCommandHandler {
   private async createBasicProject(
     projectName: string,
     targetPath: string,
-    spinner: any,
-    templateManager: any
+    spinner: Ora,
+    templateManager: TemplateManager
   ): Promise<void> {
     spinner.text = `创建基本项目 "${projectName}"...`;
 
     // 使用模板管理器创建基本项目
     await templateManager.createProject({
-      templateName: null, // 表示创建基本项目
+      templateName: undefined, // 表示创建基本项目
       targetPath,
       projectName,
     });
@@ -205,10 +207,10 @@ export class ProjectCommandHandler extends BaseCommandHandler {
   /**
    * 显示可用模板
    */
-  private showAvailableTemplates(templates: string[]): void {
+  private showAvailableTemplates(templates: TemplateInfo[]): void {
     console.log(chalk.yellow("可用的模板:"));
     for (const template of templates) {
-      console.log(chalk.gray(`  - ${template}`));
+      console.log(chalk.gray(`  - ${template.name}`));
     }
   }
 
@@ -217,7 +219,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
    */
   private findSimilarTemplate(
     input: string,
-    templates: string[]
+    templates: TemplateInfo[]
   ): string | null {
     const formatUtils = this.getService<any>("formatUtils");
 
@@ -227,11 +229,11 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     for (const template of templates) {
       const similarity = formatUtils.calculateSimilarity(
         input.toLowerCase(),
-        template.toLowerCase()
+        template.name.toLowerCase()
       );
       if (similarity > bestSimilarity && similarity > 0.6) {
         bestSimilarity = similarity;
-        bestMatch = template;
+        bestMatch = template.name;
       }
     }
 
