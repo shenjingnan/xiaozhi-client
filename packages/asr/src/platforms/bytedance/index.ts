@@ -12,6 +12,46 @@ import {
 } from "@/platforms/bytedance/controllers/index.js";
 import { BYTEDANCE_V2_DEFAULT_CLUSTER } from "@/platforms/bytedance/schemas";
 
+/**
+ * buildByteDanceConfig 方法的返回类型
+ * 这是一个配置对象，将被 ASR 客户端的 parseByteDanceConfig 进一步校验
+ */
+type ByteDanceConfigOption =
+  | { v2: ByteDanceV2PartialConfig }
+  | { v3: ByteDanceV3PartialConfig };
+
+/**
+ * V2 部分配置（用于构建 ASR 客户端配置）
+ */
+interface ByteDanceV2PartialConfig {
+  app: {
+    appid: string;
+    token: string;
+    cluster: string;
+  };
+  user: {
+    uid: string;
+  };
+  audio: {
+    format: string;
+  };
+}
+
+/**
+ * V3 部分配置（用于构建 ASR 客户端配置）
+ */
+interface ByteDanceV3PartialConfig {
+  appKey: string;
+  accessKey: string;
+  resourceId: string;
+  user: {
+    uid: string;
+  };
+  audio: {
+    format: string;
+  };
+}
+
 // 重新导出控制器，供外部使用
 export {
   ByteDanceV2Controller,
@@ -100,8 +140,7 @@ export class ByteDancePlatform implements ASRPlatform {
   /**
    * 构建 ByteDance 配置
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private buildByteDanceConfig(config: PlatformConfig): any {
+  private buildByteDanceConfig(config: PlatformConfig): ByteDanceConfigOption {
     const version = this.getVersion(config);
     const cfg = config as {
       app?: { appid?: string; token?: string; cluster?: string };
@@ -128,15 +167,22 @@ export class ByteDancePlatform implements ASRPlatform {
       auth?: { method?: string; secret?: string };
     };
 
+    // 提供默认值以匹配 zod schema 的要求
+    const user: { uid: string } = cfg.user?.uid
+      ? { uid: cfg.user.uid }
+      : { uid: "default_user" };
+    const audio: { format: string } = cfg.audio?.format
+      ? { format: cfg.audio.format }
+      : { format: "wav" };
+
     if (version === "v3") {
       return {
         v3: {
           appKey: cfg.appKey || cfg.app?.appid || "",
           accessKey: cfg.accessKey || cfg.app?.token || "",
           resourceId: cfg.resourceId || "",
-          user: cfg.user,
-          audio: cfg.audio,
-          request: cfg.request,
+          user,
+          audio,
         },
       };
     }
@@ -148,9 +194,8 @@ export class ByteDancePlatform implements ASRPlatform {
           token: cfg.app?.token || "",
           cluster: cfg.app?.cluster || BYTEDANCE_V2_DEFAULT_CLUSTER,
         },
-        user: cfg.user,
-        audio: cfg.audio,
-        request: cfg.request,
+        user,
+        audio,
       },
     };
   }
