@@ -98,6 +98,12 @@ export interface EventBusEvents {
     newStatus: string;
     timestamp: number;
   };
+  "service:spawn:error": {
+    command: string;
+    args: string[];
+    error: string;
+    timestamp: number;
+  };
 
   // WebSocket 相关事件
   "websocket:client:connected": { clientId: string; timestamp: number };
