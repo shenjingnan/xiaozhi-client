@@ -538,4 +538,150 @@ describe("InternalMCPManagerAdapter", () => {
       expect(tools[1].serviceName).toBe("service2");
     });
   });
+
+  describe("JSON Schema 验证", () => {
+    it("应该接受有效的 JSON Schema", async () => {
+      const validSchema = {
+        type: "object" as const,
+        properties: {
+          param1: { type: "string" },
+          param2: { type: "number" },
+        },
+        required: ["param1"],
+      };
+
+      mockMCPManager.listTools.mockReturnValue([
+        {
+          serverName: "test-service",
+          name: "tool1",
+          description: "测试工具",
+          inputSchema: validSchema,
+        },
+      ]);
+
+      const adapter = new InternalMCPManagerAdapter({
+        mcpServers: {
+          "test-service": { command: "node", args: ["server.js"] },
+        },
+      });
+
+      await adapter.initialize();
+
+      const tools = adapter.getAllTools();
+      expect(tools).toHaveLength(1);
+      expect(tools[0].inputSchema).toEqual(validSchema);
+    });
+
+    it("应该为无效的 Schema 使用默认值", async () => {
+      const invalidSchema = { notAType: "invalid" };
+
+      mockMCPManager.listTools.mockReturnValue([
+        {
+          serverName: "test-service",
+          name: "tool1",
+          description: "测试工具",
+          inputSchema: invalidSchema,
+        },
+      ]);
+
+      const adapter = new InternalMCPManagerAdapter({
+        mcpServers: {
+          "test-service": { command: "node", args: ["server.js"] },
+        },
+      });
+
+      await adapter.initialize();
+
+      const tools = adapter.getAllTools();
+      expect(tools).toHaveLength(1);
+      // 应该使用默认的空对象 schema
+      expect(tools[0].inputSchema).toEqual({
+        type: "object",
+        properties: {},
+        required: [],
+        additionalProperties: true,
+      });
+    });
+
+    it("应该处理 null inputSchema", async () => {
+      mockMCPManager.listTools.mockReturnValue([
+        {
+          serverName: "test-service",
+          name: "tool1",
+          description: "测试工具",
+          inputSchema: null,
+        },
+      ]);
+
+      const adapter = new InternalMCPManagerAdapter({
+        mcpServers: {
+          "test-service": { command: "node", args: ["server.js"] },
+        },
+      });
+
+      await adapter.initialize();
+
+      const tools = adapter.getAllTools();
+      expect(tools).toHaveLength(1);
+      expect(tools[0].inputSchema).toEqual({
+        type: "object",
+        properties: {},
+        required: [],
+        additionalProperties: true,
+      });
+    });
+
+    it("应该处理非对象 inputSchema", async () => {
+      mockMCPManager.listTools.mockReturnValue([
+        {
+          serverName: "test-service",
+          name: "tool1",
+          description: "测试工具",
+          inputSchema: "not-an-object",
+        },
+      ]);
+
+      const adapter = new InternalMCPManagerAdapter({
+        mcpServers: {
+          "test-service": { command: "node", args: ["server.js"] },
+        },
+      });
+
+      await adapter.initialize();
+
+      const tools = adapter.getAllTools();
+      expect(tools).toHaveLength(1);
+      expect(tools[0].inputSchema).toEqual({
+        type: "object",
+        properties: {},
+        required: [],
+        additionalProperties: true,
+      });
+    });
+
+    it("应该接受包含 type 字段的最小 Schema", async () => {
+      const minimalSchema = { type: "string" };
+
+      mockMCPManager.listTools.mockReturnValue([
+        {
+          serverName: "test-service",
+          name: "tool1",
+          description: "测试工具",
+          inputSchema: minimalSchema,
+        },
+      ]);
+
+      const adapter = new InternalMCPManagerAdapter({
+        mcpServers: {
+          "test-service": { command: "node", args: ["server.js"] },
+        },
+      });
+
+      await adapter.initialize();
+
+      const tools = adapter.getAllTools();
+      expect(tools).toHaveLength(1);
+      expect(tools[0].inputSchema).toEqual(minimalSchema);
+    });
+  });
 });

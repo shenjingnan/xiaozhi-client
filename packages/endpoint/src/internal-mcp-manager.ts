@@ -5,7 +5,7 @@
  */
 
 import { MCPManager } from "@xiaozhi-client/mcp-core";
-import type { EnhancedToolInfo, ToolCallResult } from "./types.js";
+import type { EnhancedToolInfo, ToolCallResult, JSONSchema } from "./types.js";
 import type { IMCPServiceManager } from "./types.js";
 import type { EndpointConfig } from "./types.js";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
@@ -102,10 +102,13 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
     const mcpTools = this.mcpManager.listTools();
 
     for (const mcpTool of mcpTools) {
+      // 验证并规范化 inputSchema，确保类型安全
+      const inputSchema = this.validateAndNormalizeSchema(mcpTool.inputSchema);
+
       const enhancedTool: EnhancedToolInfo = {
         name: `${mcpTool.serverName}__${mcpTool.name}`,
         description: mcpTool.description,
-        inputSchema: mcpTool.inputSchema as any,
+        inputSchema,
         serviceName: mcpTool.serverName,
         originalName: mcpTool.name,
         enabled: true,
@@ -114,6 +117,36 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
       };
       this.tools.set(enhancedTool.name, enhancedTool);
     }
+  }
+
+  /**
+   * 验证并规范化 JSON Schema
+   * 如果 schema 无效，返回默认的空对象 schema
+   */
+  private validateAndNormalizeSchema(schema: unknown): JSONSchema {
+    if (this.isValidJSONSchema(schema)) {
+      return schema;
+    }
+
+    // 返回默认的空对象 schema
+    return {
+      type: "object",
+      properties: {},
+      required: [],
+      additionalProperties: true,
+    };
+  }
+
+  /**
+   * 类型守卫：检查对象是否为有效的 JSON Schema
+   */
+  private isValidJSONSchema(obj: unknown): obj is JSONSchema {
+    return (
+      typeof obj === "object" &&
+      obj !== null &&
+      "type" in obj &&
+      typeof (obj as { type: unknown }).type === "string"
+    );
   }
 
   /**
