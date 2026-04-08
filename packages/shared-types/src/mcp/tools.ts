@@ -29,25 +29,32 @@ export interface TimeoutResponse {
 /**
  * 验证是否为工具调用结果
  */
-export function isToolCallResult(response: any): response is ToolCallResult {
+export function isToolCallResult(response: unknown): response is ToolCallResult {
+  if (!response || typeof response !== "object") {
+    return false;
+  }
+  const obj = response as Record<string, unknown>;
   return (
-    response &&
-    Array.isArray(response.content) &&
-    response.content.length > 0 &&
-    response.content[0].type === "text" &&
-    typeof response.content[0].text === "string"
+    Array.isArray(obj.content) &&
+    obj.content.length > 0 &&
+    typeof obj.content[0] === "object" &&
+    obj.content[0] !== null &&
+    (obj.content[0] as Record<string, unknown>).type === "text" &&
+    typeof (obj.content[0] as Record<string, unknown>).text === "string"
   );
 }
 
 /**
  * 验证是否为超时响应
  */
-export function isTimeoutResponse(response: any): response is TimeoutResponse {
+export function isTimeoutResponse(response: unknown): response is TimeoutResponse {
+  if (!response || typeof response !== "object") {
+    return false;
+  }
+  const obj = response as Record<string, unknown>;
   return (
-    response &&
-    typeof response === "object" &&
-    response.isTimeout === true &&
-    typeof response.timeoutMs === "number" &&
-    typeof response.message === "string"
+    obj.isTimeout === true &&
+    typeof obj.timeoutMs === "number" &&
+    typeof obj.message === "string"
   );
 }
