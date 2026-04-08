@@ -39,7 +39,7 @@
  *   - {@link DEFAULT_CONFIG} - 后端默认配置
  *
  * - **其他导出**：
- *   - 从 coze.js 导出的所有类型
+ *   - 从 shared-types/coze 重新导出的扣子相关类型
  *   - 从 timeout.js 导出的所有类型和函数
  *   - 从 hono.context.js 导出的所有类型和函数
  *
@@ -83,7 +83,22 @@ export {
   isExtendedMCPToolsCache,
   DEFAULT_CONFIG,
 } from "./mcp.js";
-export * from "./coze.js";
+// 扣子相关类型从 shared-types 包重新导出，保持向后兼容
+export type {
+  CozeWorkspace,
+  CozeWorkspacesData,
+  CozeWorkflowCreator,
+  CozeWorkflow,
+  WorkflowParameter,
+  WorkflowParameterConfig,
+  CozeWorkflowsData,
+  CozeWorkflowsParams,
+  CozeWorkspacesResponse,
+  CozeWorkflowsResponse,
+  CozeApiError,
+  CozePlatformConfig,
+  CozeApiServiceConfig,
+} from "@xiaozhi-client/shared-types";
 export * from "./timeout.js";
 export * from "./hono.context.js";
 export * from "./esp32.js";
