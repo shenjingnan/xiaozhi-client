@@ -13,9 +13,17 @@
 import type { ChildProcess } from "node:child_process";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import type { WebServer } from "@/WebServer";
 import consola from "consola";
 import { RETRY_CONSTANTS } from "../Constants";
+
+/**
+ * WebServer 类型声明
+ * 用于类型注解，实际实现由 backend 包提供
+ */
+interface WebServer {
+  start(): Promise<void>;
+  stop(): Promise<void>;
+}
 import { ProcessError, ServiceError } from "../errors/index";
 import type {
   DaemonManager as IDaemonManager,

@@ -69,7 +69,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
         return;
       }
 
-      if (options.template) {
+      if (options.template && typeof options.template === "string") {
         // 使用模板创建项目
         await this.createFromTemplate(
           projectName,
