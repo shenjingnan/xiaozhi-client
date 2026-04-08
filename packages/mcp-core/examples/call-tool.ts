@@ -26,6 +26,11 @@
  */
 
 import { MCPConnection } from "@xiaozhi-client/mcp-core";
+import {
+  createDefaultCallbacks,
+  printToolsWithSchema,
+  printToolResult,
+} from "./utils/connection-helpers";
 
 /**
  * 主函数
@@ -33,7 +38,7 @@ import { MCPConnection } from "@xiaozhi-client/mcp-core";
 async function main(): Promise<void> {
   console.log("=== MCP 工具调用示例 ===\n");
 
-  // 1. 创建连接实例
+  // 创建连接实例
   const serviceName = "calculator";
   const connection = new MCPConnection(
     serviceName,
@@ -42,73 +47,21 @@ async function main(): Promise<void> {
       command: "npx",
       args: ["-y", "@xiaozhi-client/calculator-mcp"],
     },
-    {
-      // 连接成功回调
-      onConnected: (data) => {
-        console.log(`✅ 服务 ${data.serviceName} 已连接`);
-        console.log(`   发现 ${data.tools.length} 个工具`);
-        console.log();
-      },
-
-      // 连接失败回调
-      onConnectionFailed: (data) => {
-        console.error(`❌ 服务 ${data.serviceName} 连接失败`);
-        console.error(`   错误: ${data.error.message}`);
-      },
-
-      // 断开连接回调
-      onDisconnected: (data) => {
-        console.log(`👋 服务 ${data.serviceName} 已断开`);
-        console.log(`   原因: ${data.reason || "正常关闭"}`);
-      },
-    }
+    createDefaultCallbacks(),
   );
 
   try {
-    // 2. 建立连接
+    // 建立连接
     console.log("正在连接到服务...");
     console.log("(首次运行可能需要下载 MCP 服务包，请耐心等待...)");
     console.log();
 
     await connection.connect();
 
-    // 3. 获取工具列表
-    const tools = connection.getTools();
-    console.log("可用工具:");
-    for (const tool of tools) {
-      console.log(`  - ${tool.name}`);
-      if (tool.description) {
-        console.log(`    描述: ${tool.description}`);
-      }
+    // 获取工具列表（包含详细参数结构）
+    printToolsWithSchema(connection.getTools());
 
-      // 展示工具的输入参数结构
-      if (tool.inputSchema) {
-        console.log("    参数结构:");
-        const schema = tool.inputSchema as {
-          type: string;
-          properties?: Record<string, { description?: string; type: string }>;
-          required?: string[];
-        };
-        if (schema.properties) {
-          for (const [paramName, paramInfo] of Object.entries(
-            schema.properties
-          )) {
-            const required = schema.required?.includes(paramName)
-              ? "必填"
-              : "可选";
-            console.log(
-              `      - ${paramName} (${required}, ${paramInfo.type})`
-            );
-            if (paramInfo.description) {
-              console.log(`        ${paramInfo.description}`);
-            }
-          }
-        }
-      }
-    }
-    console.log();
-
-    // 4. 调用工具 - 简单参数
+    // 调用工具 - 简单参数
     console.log("--- 调用工具 1：简单参数 ---");
     console.log("工具: calculator");
     console.log("参数: { expression: '1 + 1' }");
@@ -121,7 +74,7 @@ async function main(): Promise<void> {
     printToolResult(result1);
     console.log();
 
-    // 5. 调用工具 - 复杂表达式
+    // 调用工具 - 复杂表达式
     console.log("--- 调用工具 2：复杂表达式 ---");
     console.log("工具: calculator");
     console.log("参数: { expression: '12 * 3 + 4' }");
@@ -134,7 +87,7 @@ async function main(): Promise<void> {
     printToolResult(result2);
     console.log();
 
-    // 6. 调用工具 - 多次调用同一个工具
+    // 调用工具 - 多次调用同一个工具
     console.log("--- 调用工具 3：多次调用 ---");
     console.log("连续调用 3 次，计算不同的表达式:");
 
@@ -147,7 +100,7 @@ async function main(): Promise<void> {
     }
     console.log();
 
-    // 7. 错误处理示例 - 无效的参数
+    // 错误处理示例 - 无效的参数
     console.log("--- 错误处理示例 1：无效参数 ---");
     console.log("尝试传递无效参数:");
     console.log("参数: { expression: 'invalid syntax ###' }");
@@ -166,7 +119,7 @@ async function main(): Promise<void> {
     }
     console.log();
 
-    // 8. 错误处理示例 - 不存在的工具
+    // 错误处理示例 - 不存在的工具
     console.log("--- 错误处理示例 2：不存在的工具 ---");
     console.log("尝试调用不存在的工具:");
     console.log("工具: non_existent_tool");
@@ -186,40 +139,11 @@ async function main(): Promise<void> {
       console.error(`  ${error.message}`);
     }
   } finally {
-    // 9. 断开连接
+    // 断开连接
     console.log("正在断开连接...");
     await connection.disconnect();
     console.log();
     console.log("=== 示例结束 ===");
-  }
-}
-
-/**
- * 打印工具调用结果
- */
-function printToolResult(result: {
-  content: Array<{ type: string; text: string }>;
-  isError?: boolean;
-}): void {
-  // 检查是否有错误标志
-  if (result.isError) {
-    console.log("  状态: 错误");
-  }
-
-  // 打印所有内容
-  if (result.content && result.content.length > 0) {
-    for (const item of result.content) {
-      console.log(`  类型: ${item.type}`);
-      if (item.type === "text") {
-        console.log(`  内容: ${item.text}`);
-      } else if (item.type === "image") {
-        console.log("  内容: [图片数据]");
-      } else {
-        console.log(`  内容: ${JSON.stringify(item)}`);
-      }
-    }
-  } else {
-    console.log("  内容: [空]");
   }
 }
 
