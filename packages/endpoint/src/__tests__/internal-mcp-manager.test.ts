@@ -39,6 +39,7 @@ describe("InternalMCPManagerAdapter", () => {
         content: [{ type: "text", text: "Success" }],
       }),
       on: vi.fn(),
+      off: vi.fn(),
     };
 
     MCPManagerMock.mockImplementation(() => mockMCPManager);
