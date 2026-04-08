@@ -5,6 +5,12 @@
 
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import { type ApiClient, apiClient } from "./api";
+import type {
+  FullStatus,
+  RestartStatus,
+  ServiceHealth,
+  ServiceStatus,
+} from "./api";
 import {
   type ConnectionState,
   type WebSocketManager,
@@ -70,7 +76,7 @@ export class NetworkService {
   /**
    * 获取状态 (HTTP)
    */
-  async getStatus(): Promise<any> {
+  async getStatus(): Promise<FullStatus> {
     return this.apiClient.getStatus();
   }
 
@@ -105,14 +111,14 @@ export class NetworkService {
   /**
    * 获取服务状态 (HTTP)
    */
-  async getServiceStatus(): Promise<any> {
+  async getServiceStatus(): Promise<ServiceStatus> {
     return this.apiClient.getServiceStatus();
   }
 
   /**
    * 获取服务健康状态 (HTTP)
    */
-  async getServiceHealth(): Promise<any> {
+  async getServiceHealth(): Promise<ServiceHealth> {
     return this.apiClient.getServiceHealth();
   }
 
@@ -168,7 +174,7 @@ export class NetworkService {
   /**
    * 获取重启状态 (HTTP)
    */
-  async getRestartStatus(): Promise<any> {
+  async getRestartStatus(): Promise<RestartStatus | null> {
     return this.apiClient.getRestartStatus();
   }
 
@@ -274,7 +280,7 @@ export class NetworkService {
    */
   async getFullAppState(): Promise<{
     config: AppConfig;
-    status: any;
+    status: FullStatus;
     webSocketConnected: boolean;
   }> {
     const [config, status] = await Promise.all([
