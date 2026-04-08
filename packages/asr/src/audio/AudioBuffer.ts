@@ -69,6 +69,9 @@ export class AudioBuffer {
   /** 数据块队列 */
   private readonly chunks: Buffer[] = [];
 
+  /** 读取索引（用于避免 shift() 的 O(n) 性能开销） */
+  private readIndex = 0;
+
   /** 当前缓冲区大小（字节） */
   private currentSize = 0;
 
@@ -80,6 +83,9 @@ export class AudioBuffer {
 
   /** 最大缓冲区大小（字节） */
   private readonly maxBufferSize: number;
+
+  /** 清理阈值（每消费多少个块后清理一次数组） */
+  private readonly cleanupThreshold = 100;
 
   constructor(options: AudioBufferOptions = {}) {
     this.maxBufferSize = options.maxBufferSize ?? 10 * 1024 * 1024; // 默认 10MB
@@ -109,13 +115,28 @@ export class AudioBuffer {
   /**
    * 取出最早的数据块
    *
+   * 使用读取索引策略避免 Array.shift() 的 O(n) 性能开销。
+   * 消费时只累加索引，定期清理已消费的数据块。
+   *
    * @returns 最早的数据块，如果缓冲区为空则返回 undefined
    */
   shift(): Buffer | undefined {
-    const chunk = this.chunks.shift();
-    if (chunk) {
-      this.currentSize -= chunk.length;
+    // 使用读取索引获取数据块，避免 O(n) 的 shift() 操作
+    if (this.readIndex >= this.chunks.length) {
+      return undefined;
     }
+
+    const chunk = this.chunks[this.readIndex];
+    this.readIndex++;
+    this.currentSize -= chunk.length;
+
+    // 定期清理已消费的数据块，释放内存
+    // 每消费 cleanupThreshold 个块后，清理数组前面的已消费部分
+    if (this.readIndex >= this.cleanupThreshold) {
+      this.chunks.splice(0, this.readIndex);
+      this.readIndex = 0;
+    }
+
     return chunk;
   }
 
@@ -125,7 +146,7 @@ export class AudioBuffer {
    * @returns 最早的数据块，如果缓冲区为空则返回 undefined
    */
   peek(): Buffer | undefined {
-    return this.chunks[0];
+    return this.chunks[this.readIndex];
   }
 
   /**
@@ -135,7 +156,8 @@ export class AudioBuffer {
    * 否则等待直到有数据被推入或缓冲区结束。
    */
   async waitForData(): Promise<void> {
-    if (this.chunks.length > 0 || this.ended) {
+    // 检查是否有未消费的数据块（考虑读取索引）
+    if (this.readIndex < this.chunks.length || this.ended) {
       return;
     }
 
@@ -158,7 +180,7 @@ export class AudioBuffer {
    * 检查缓冲区是否为空
    */
   isEmpty(): boolean {
-    return this.chunks.length === 0;
+    return this.readIndex >= this.chunks.length;
   }
 
   /**
@@ -186,7 +208,7 @@ export class AudioBuffer {
    * 获取缓冲的数据块数量
    */
   length(): number {
-    return this.chunks.length;
+    return this.chunks.length - this.readIndex;
   }
 
   /**
@@ -195,7 +217,7 @@ export class AudioBuffer {
   getState(): AudioBufferState {
     return {
       currentSize: this.currentSize,
-      chunkCount: this.chunks.length,
+      chunkCount: this.chunks.length - this.readIndex,
       ended: this.ended,
       full: this.isFull(),
     };
@@ -206,6 +228,7 @@ export class AudioBuffer {
    */
   clear(): void {
     this.chunks.length = 0;
+    this.readIndex = 0;
     this.currentSize = 0;
     this.notifyWaiters();
   }
