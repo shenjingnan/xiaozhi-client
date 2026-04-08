@@ -112,8 +112,11 @@ describe("Daemon 模式集成测试", () => {
       const mockChild = {
         pid: 12345,
         unref: vi.fn(),
+        on: vi.fn(),
         stdout: null,
-        stderr: null,
+        stderr: {
+          on: vi.fn(),
+        },
       };
       mockSpawn.mockReturnValue(mockChild as any);
 
@@ -135,7 +138,7 @@ describe("Daemon 模式集成测试", () => {
         ["/test/WebServerLauncher.js"],
         {
           detached: true,
-          stdio: ["ignore", "ignore", "ignore"],
+          stdio: ["ignore", "pipe", "pipe"],
           env: expect.objectContaining({
             XIAOZHI_CONFIG_DIR: "/test/config",
             XIAOZHI_DAEMON: "true",
@@ -160,6 +163,10 @@ describe("Daemon 模式集成测试", () => {
       const mockChild = {
         pid: 12346,
         unref: vi.fn(),
+        on: vi.fn(),
+        stderr: {
+          on: vi.fn(),
+        },
       };
       mockSpawn.mockReturnValue(mockChild as any);
 
@@ -178,7 +185,7 @@ describe("Daemon 模式集成测试", () => {
         ["/test/WebServerLauncher.js"],
         {
           detached: true,
-          stdio: ["ignore", "ignore", "ignore"],
+          stdio: ["ignore", "pipe", "pipe"],
           env: expect.objectContaining({
             XIAOZHI_CONFIG_DIR: "/test/config",
             XIAOZHI_DAEMON: "true",
@@ -200,6 +207,10 @@ describe("Daemon 模式集成测试", () => {
       const mockChild = {
         pid: 54321,
         unref: vi.fn(),
+        on: vi.fn(),
+        stderr: {
+          on: vi.fn(),
+        },
       };
       mockSpawn.mockReturnValue(mockChild as any);
 
@@ -219,7 +230,7 @@ describe("Daemon 模式集成测试", () => {
         ["/test/cli.js", "start", "--server", "4000"],
         {
           detached: true,
-          stdio: ["ignore", "ignore", "ignore"],
+          stdio: ["ignore", "pipe", "pipe"],
           env: expect.objectContaining({
             XIAOZHI_CONFIG_DIR: "/test/config",
             XIAOZHI_DAEMON: "true",
@@ -288,8 +299,11 @@ describe("Daemon 模式集成测试", () => {
       const mockChild = {
         pid: 99999,
         unref: vi.fn(),
+        on: vi.fn(),
         stdout: { pipe: vi.fn() },
-        stderr: { pipe: vi.fn() },
+        stderr: {
+          on: vi.fn(),
+        },
       };
       mockSpawn.mockReturnValue(mockChild as any);
 
@@ -303,16 +317,15 @@ describe("Daemon 模式集成测试", () => {
         "process.exit unexpectedly called"
       );
 
-      // Verify stdio is completely ignored (no piping)
-      expect(mockChild.stdout.pipe).not.toHaveBeenCalled();
-      expect(mockChild.stderr.pipe).not.toHaveBeenCalled();
+      // Verify stdio is set to pipe for stdout and stderr (to capture errors)
+      expect(mockChild.stderr.on).toHaveBeenCalled();
 
       // Verify process is detached and unreferenced
       const spawnCall = mockSpawn.mock.calls[0];
       expect(spawnCall[2]).toEqual(
         expect.objectContaining({
           detached: true,
-          stdio: ["ignore", "ignore", "ignore"],
+          stdio: ["ignore", "pipe", "pipe"],
         })
       );
       expect(mockChild.unref).toHaveBeenCalled();
