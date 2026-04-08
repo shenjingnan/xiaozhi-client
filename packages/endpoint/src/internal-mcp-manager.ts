@@ -18,6 +18,11 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
   private mcpManager: MCPManager;
   private tools: Map<string, EnhancedToolInfo> = new Map();
   private isInitialized = false;
+  /** 存储事件监听器引用，用于清理时移除 */
+  private eventListeners: Array<{
+    event: string;
+    listener: (...args: unknown[]) => void;
+  }> = [];
 
   constructor(private config: EndpointConfig) {
     this.mcpManager = new MCPManager();
@@ -31,15 +36,24 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
     }
 
     // 设置事件监听
-    this.mcpManager.on("connected", (data) => {
+    const connectedHandler = (data: unknown) => {
       console.info(
-        `MCP 服务 ${data.serverName} 已连接，工具数: ${data.tools.length}`
+        `MCP 服务 ${(data as any).serverName} 已连接，工具数: ${(data as any).tools.length}`
       );
-    });
+    };
 
-    this.mcpManager.on("error", (data) => {
-      console.error(`MCP 服务 ${data.serverName} 出错:`, data.error);
-    });
+    const errorHandler = (data: unknown) => {
+      console.error(`MCP 服务 ${(data as any).serverName} 出错:`, (data as any).error);
+    };
+
+    this.mcpManager.on("connected", connectedHandler);
+    this.mcpManager.on("error", errorHandler);
+
+    // 保存监听器引用以便后续清理
+    this.eventListeners.push(
+      { event: "connected", listener: connectedHandler },
+      { event: "error", listener: errorHandler }
+    );
   }
 
   /**
@@ -88,6 +102,12 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
    * 清理资源
    */
   async cleanup(): Promise<void> {
+    // 移除事件监听器以防止内存泄漏
+    for (const { event, listener } of this.eventListeners) {
+      this.mcpManager.off(event, listener);
+    }
+    this.eventListeners = [];
+
     await this.mcpManager.disconnect();
     this.tools.clear();
     this.isInitialized = false;
