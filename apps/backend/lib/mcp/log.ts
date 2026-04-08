@@ -6,6 +6,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { logger } from "@/Logger.js";
+import { MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
 import { PathUtils } from "@/utils/path-utils.js";
 import pino from "pino";
 import type { Logger as PinoLogger } from "pino";
@@ -255,7 +256,10 @@ export class ToolCallLogService {
   private checkLogFile(): void {
     const logFilePath = this.getLogFilePath();
     if (!fs.existsSync(logFilePath)) {
-      throw new Error("工具调用日志文件不存在");
+      throw MCPError.systemError(
+        MCPErrorCode.INTERNAL_ERROR,
+        "工具调用日志文件不存在"
+      );
     }
   }
 
@@ -297,7 +301,10 @@ export class ToolCallLogService {
       return records;
     } catch (error) {
       logger.error("读取日志文件失败", { error });
-      throw new Error("无法读取工具调用日志文件");
+      throw MCPError.systemError(
+        MCPErrorCode.INTERNAL_ERROR,
+        "无法读取工具调用日志文件"
+      );
     }
   }
 

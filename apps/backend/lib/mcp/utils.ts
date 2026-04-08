@@ -6,6 +6,7 @@
  * - 工具调用参数验证
  */
 
+import { MCPError, MCPErrorCode } from "@/errors/mcp-errors.js";
 import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
 import { MCPTransportType, ToolCallError, ToolCallErrorCode } from "./types.js";
 import type {
@@ -95,8 +96,10 @@ export function inferTransportTypeFromConfig(
     };
   }
 
-  throw new Error(
-    `无法为服务 ${serviceName} 推断传输类型。请显式指定 type 字段，或提供 command/url 配置`
+  throw MCPError.configError(
+    MCPErrorCode.INVALID_CONFIG,
+    `无法为服务 ${serviceName} 推断传输类型。请显式指定 type 字段，或提供 command/url 配置`,
+    { serverName: serviceName }
   );
 }
 
