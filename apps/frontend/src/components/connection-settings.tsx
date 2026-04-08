@@ -1,3 +1,13 @@
+/**
+ * ConnectionSettings 组件 - WebSocket 连接状态和配置管理
+ *
+ * 功能：
+ * - 显示 WebSocket 服务器连接状态
+ * - 显示当前服务器地址
+ * - 支持手动配置 WebSocket 服务器地址
+ * - 提供高级设置选项
+ */
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle2, Settings } from "lucide-react";
