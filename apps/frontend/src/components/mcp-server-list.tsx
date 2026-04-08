@@ -37,6 +37,7 @@ import type {
   CustomMCPToolWithStats,
   JSONSchema,
   MCPServerConfig,
+  MCPToolConfig,
   WorkflowParameter,
 } from "@xiaozhi-client/shared-types";
 import { CoffeeIcon } from "lucide-react";
@@ -170,9 +171,10 @@ export function McpServerList({
           ([serverName, value]) => {
             return Object.entries(value?.tools || {}).map(
               ([toolName, tool]) => ({
+                name: toolName,
                 serverName,
                 toolName,
-                ...(tool as any),
+                ...(tool as MCPToolConfig),
               })
             );
           }
