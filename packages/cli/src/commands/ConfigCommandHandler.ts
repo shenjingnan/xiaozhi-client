@@ -113,7 +113,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
   /**
    * 确保配置文件存在，如果不存在则显示提示并返回 false
    */
-  private async ensureConfigExists(spinner: ora.Ora): Promise<boolean> {
+  private async ensureConfigExists(spinner: ReturnType<typeof ora>): Promise<boolean> {
     const configManager = this.getService<any>("configManager");
 
     if (!configManager.configExists()) {
