@@ -1,3 +1,16 @@
+/**
+ * Coze 工作流集成组件
+ *
+ * 负责管理 Coze AI 工作流的集成，包括：
+ * - 工作流列表的查询和显示
+ * - 工作流参数的配置和编辑
+ * - 工作流的添加和删除
+ * - 工作流状态的实时更新
+ * - 工作空间的切换和管理
+ * - 分页浏览工作流列表
+ * - 网络状态监控和错误处理
+ */
+
 import { WorkflowParameterConfigDialog } from "@/components/common/workflow-parameter-config-dialog";
 import {
   AlertDialog,
