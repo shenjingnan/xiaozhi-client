@@ -15,9 +15,10 @@ export interface IDIContainer {
 }
 
 /**
- * 配置验证结果
+ * 配置文件验证结果接口
+ * 用于 CLI 配置文件验证，返回简单的验证结果
  */
-export interface ValidationResult {
+export interface ConfigFileValidationResult {
   /** 是否有效 */
   valid: boolean;
   /** 错误信息 */
