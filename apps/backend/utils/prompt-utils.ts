@@ -16,6 +16,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
+import { logger } from "@/Logger.js";
 import { configManager } from "@xiaozhi-client/config";
 
 // 默认系统提示词
@@ -73,7 +74,7 @@ function resolvePromptFromPath(promptPath: string): string | null {
 
     // 检查文件是否存在
     if (!existsSync(resolvedPath)) {
-      console.warn(
+      logger.warn(
         `[prompt-utils] 提示词文件不存在: ${resolvedPath}，将使用默认提示词`
       );
       return null;
@@ -84,16 +85,16 @@ function resolvePromptFromPath(promptPath: string): string | null {
 
     // 检查文件内容是否为空
     if (!content) {
-      console.warn(
+      logger.warn(
         `[prompt-utils] 提示词文件内容为空: ${resolvedPath}，将使用默认提示词`
       );
       return null;
     }
 
-    console.info(`[prompt-utils] 成功从文件加载提示词: ${resolvedPath}`);
+    logger.info(`[prompt-utils] 成功从文件加载提示词: ${resolvedPath}`);
     return content;
   } catch (error) {
-    console.error(
+    logger.error(
       `[prompt-utils] 读取提示词文件失败: ${promptPath}`,
       error instanceof Error ? error.message : String(error)
     );
