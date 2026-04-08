@@ -5,7 +5,11 @@
  */
 
 import { MCPManager } from "@xiaozhi-client/mcp-core";
-import type { EnhancedToolInfo, ToolCallResult } from "./types.js";
+import type {
+  EnhancedToolInfo,
+  ToolCallResult,
+  JSONSchema,
+} from "./types.js";
 import type { IMCPServiceManager } from "./types.js";
 import type { EndpointConfig } from "./types.js";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
@@ -105,7 +109,7 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
       const enhancedTool: EnhancedToolInfo = {
         name: `${mcpTool.serverName}__${mcpTool.name}`,
         description: mcpTool.description,
-        inputSchema: mcpTool.inputSchema as any,
+        inputSchema: mcpTool.inputSchema as unknown as JSONSchema,
         serviceName: mcpTool.serverName,
         originalName: mcpTool.name,
         enabled: true,
