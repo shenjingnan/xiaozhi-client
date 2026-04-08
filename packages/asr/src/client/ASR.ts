@@ -1,5 +1,5 @@
 /**
- * ByteDance Streaming ASR WebSocket Client
+ * 字节跳动流式 ASR WebSocket 客户端
  */
 
 import { Buffer } from "node:buffer";
@@ -32,7 +32,7 @@ import { v4 as uuidv4 } from "uuid";
 import WebSocket from "ws";
 
 /**
- * Streaming ASR WebSocket Client
+ * 流式 ASR WebSocket 客户端
  */
 export class ASR extends EventEmitter {
   // ByteDance 控制器
@@ -277,7 +277,7 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Set audio path
+   * 设置音频路径
    */
   setAudioPath(audioPath: string, format?: AudioFormat): void {
     this.audioPath = audioPath;
@@ -287,14 +287,14 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Set format
+   * 设置音频格式
    */
   setFormat(format: AudioFormat): void {
     this.format = format;
   }
 
   /**
-   * Construct ASR request
+   * 构建 ASR 请求
    */
   private constructRequest(reqid: string): ASRRequestConfig {
     if (!this.v2RequestBuilder) {
@@ -304,7 +304,7 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Get authentication headers
+   * 获取认证请求头
    */
   private getAuthHeaders(requestData?: Buffer): Record<string, string> {
     // V3 使用不同的认证方式
@@ -321,7 +321,7 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Get V3 authentication headers
+   * 获取 V3 认证请求头
    * V3 使用 appKey 和 accessKey 进行认证
    */
   private getV3AuthHeaders(): Record<string, string> {
@@ -333,14 +333,14 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Get API version
+   * 获取 API 版本
    */
   getApiVersion(): "v2" | "v3" {
     return this.apiVersion;
   }
 
   /**
-   * Handle server message
+   * 处理服务器消息
    */
   private handleMessage(data: Buffer): void {
     const result = parseResponse(data);
@@ -402,7 +402,7 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Send message through WebSocket
+   * 通过 WebSocket 发送消息
    */
   private async sendMessage(message: Buffer): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -419,7 +419,7 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Slice audio data into chunks
+   * 将音频数据分片
    */
   private *sliceData(
     data: Buffer,
@@ -437,7 +437,7 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Process audio data
+   * 处理音频数据
    */
   private async processAudioData(wavData: Buffer): Promise<ASRResult> {
     const reqid = uuidv4();
@@ -507,7 +507,7 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Receive message from server
+   * 从服务器接收消息
    */
   private receiveMessage(): Promise<ASRResult> {
     return new Promise((resolve, reject) => {
@@ -538,7 +538,7 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Calculate segment size based on audio info
+   * 根据音频信息计算分片大小
    */
   private calculateSegmentSize(wavData: Buffer): number {
     // Read WAV header to get audio parameters
@@ -552,7 +552,7 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Close WebSocket connection
+   * 关闭 WebSocket 连接
    */
   close(): void {
     if (this.ws) {
@@ -569,7 +569,7 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Execute ASR request
+   * 执行 ASR 请求
    */
   async execute(): Promise<ASRResult> {
     // Check required parameters
@@ -606,7 +606,7 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Process Opus data for OGG format
+   * 处理 OGG 格式的 Opus 数据
    */
   private async processOpusData(opusData: Buffer): Promise<ASRResult> {
     const reqid = uuidv4();
@@ -673,29 +673,29 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Check if connected
+   * 检查是否已连接
    */
   isConnected(): boolean {
     return this.connected;
   }
 
   /**
-   * Check if in streaming mode
+   * 检查是否处于流式模式
    */
   isInStreamingMode(): boolean {
     return this.isStreaming;
   }
 
   /**
-   * Check if audio has ended
+   * 检查音频是否已结束
    */
   isAudioEnded(): boolean {
     return this.audioEnded;
   }
 
   /**
-   * Connect to WebSocket server and send initial configuration request
-   * This method establishes the connection and prepares for streaming audio data
+   * 连接到 WebSocket 服务器并发送初始配置请求
+   * 此方法建立连接并为流式音频数据传输做准备
    */
   async connect(): Promise<void> {
     // Validate required parameters
@@ -730,7 +730,7 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Internal connect method (private)
+   * 内部连接方法（私有）
    */
   private async _connect(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -770,8 +770,8 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Send a single audio frame to the server
-   * @param frame - Opus audio frame data (decoded from OGG by the caller)
+   * 向服务器发送单个音频帧
+   * @param frame - Opus 音频帧数据（由调用者从 OGG 解码）
    */
   async sendFrame(frame: Buffer): Promise<void> {
     if (!this.isStreaming) {
@@ -801,8 +801,8 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Mark audio as complete and wait for final result
-   * @returns The final ASR result
+   * 标记音频结束并等待最终识别结果
+   * @returns 最终的 ASR 识别结果
    */
   async end(): Promise<ASRResult> {
     if (!this.isStreaming) {
@@ -845,7 +845,7 @@ export class ASR extends EventEmitter {
 }
 
 /**
- * Execute ASR with one audio file
+ * 执行单个音频文件的 ASR 识别
  */
 export async function executeOne(
   audioPath: string,
