@@ -1,6 +1,31 @@
 import { z } from "zod";
 
 /**
+ * Schema 工具函数模块
+ *
+ * 提供 JSON Schema 和 Zod schema 之间的转换功能，用于前端表单验证和数据处理：
+ * - 根据 JSON Schema 动态生成 Zod schema
+ * - 获取字段的默认值
+ * - 生成默认值对象
+ *
+ * @module schema-utils
+ *
+ * @example
+ * ```typescript
+ * import { createZodSchemaFromJsonSchema, getDefaultValueForSchema, createDefaultValues } from '@/lib/schema-utils';
+ *
+ * // 从 MCP 工具的 inputSchema 创建 Zod schema
+ * const zodSchema = createZodSchemaFromJsonSchema(tool.inputSchema);
+ *
+ * // 获取字段的默认值用于表单初始化
+ * const defaults = getDefaultValueForSchema(tool.inputSchema);
+ *
+ * // 生成完整的默认值对象
+ * const defaultValues = createDefaultValues(tool.inputSchema);
+ * ```
+ */
+
+/**
  * 根据 JSON Schema 动态生成 Zod schema
  */
 export function createZodSchemaFromJsonSchema(jsonSchema: any): z.ZodTypeAny {
