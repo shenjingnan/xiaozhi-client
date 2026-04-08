@@ -14,7 +14,7 @@
 import { EventEmitter } from "node:events";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
-import type { ClientInfo } from "@/services/status.service.js";
+import type { ClientInfo } from "@/types/service-types.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 /**
