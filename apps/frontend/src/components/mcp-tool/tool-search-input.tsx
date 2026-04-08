@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Search, X } from "lucide-react";
 import * as React from "react";
 
-interface ToolSearchInputProps {
+export interface ToolSearchInputProps {
   /** 搜索框的值 */
   value: string;
   /** 值变化回调 */
