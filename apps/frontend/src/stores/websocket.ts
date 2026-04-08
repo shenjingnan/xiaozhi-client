@@ -66,6 +66,9 @@ interface WebSocketState {
   // 连接时间戳
   connectedAt: number | null;
   disconnectedAt: number | null;
+
+  // WebSocket 事件监听器取消订阅函数数组
+  listeners: (() => void)[];
 }
 
 /**
@@ -93,6 +96,7 @@ interface WebSocketActions {
   // 工具方法
   reset: () => void;
   initialize: () => void;
+  cleanup: () => void;
   getConnectionInfo: () => {
     state: ConnectionState;
     url: string;
@@ -132,6 +136,9 @@ const initialState: WebSocketState = {
   // 连接时间戳
   connectedAt: null,
   disconnectedAt: null,
+
+  // WebSocket 事件监听器取消订阅函数数组
+  listeners: [],
 };
 
 /**
@@ -258,6 +265,8 @@ export const useWebSocketStore = create<WebSocketStore>()(
 
       reset: () => {
         console.log("[WebSocketStore] 重置状态");
+        // 清理事件监听器
+        get().cleanup();
         set(initialState, false, "reset");
       },
 
@@ -266,33 +275,64 @@ export const useWebSocketStore = create<WebSocketStore>()(
       initialize: () => {
         console.log("[WebSocketStore] 初始化 WebSocket Store");
 
-        // 设置 WebSocket 事件监听
-        webSocketManager.subscribe("connection:connecting", () => {
-          get().setConnectionState(ConnectionState.CONNECTING);
-        });
+        // 清理旧的监听器（如果存在）
+        const currentListeners = get().listeners;
+        if (currentListeners.length > 0) {
+          console.warn(
+            "[WebSocketStore] 检测到未清理的监听器，自动清理",
+            currentListeners.length,
+            "个监听器"
+          );
+          for (const unsubscribe of currentListeners) {
+            unsubscribe();
+          }
+        }
 
-        webSocketManager.subscribe("connection:connected", () => {
-          get().setConnectionState(ConnectionState.CONNECTED);
-        });
+        // 收集所有取消订阅函数
+        const listeners: (() => void)[] = [];
 
-        webSocketManager.subscribe("connection:disconnected", () => {
-          get().setConnectionState(ConnectionState.DISCONNECTED);
-        });
+        // 设置 WebSocket 事件监听，并保存取消订阅函数
+        listeners.push(
+          webSocketManager.subscribe("connection:connecting", () => {
+            get().setConnectionState(ConnectionState.CONNECTING);
+          })
+        );
 
-        webSocketManager.subscribe("connection:reconnecting", () => {
-          get().setConnectionState(ConnectionState.RECONNECTING);
-          const stats = webSocketManager.getConnectionStats();
-          get().setConnectionStats(stats);
-        });
+        listeners.push(
+          webSocketManager.subscribe("connection:connected", () => {
+            get().setConnectionState(ConnectionState.CONNECTED);
+          })
+        );
 
-        webSocketManager.subscribe("connection:error", ({ error }) => {
-          get().setLastError(error);
-        });
+        listeners.push(
+          webSocketManager.subscribe("connection:disconnected", () => {
+            get().setConnectionState(ConnectionState.DISCONNECTED);
+          })
+        );
 
-        webSocketManager.subscribe("system:heartbeat", () => {
-          const stats = webSocketManager.getConnectionStats();
-          get().setConnectionStats(stats);
-        });
+        listeners.push(
+          webSocketManager.subscribe("connection:reconnecting", () => {
+            get().setConnectionState(ConnectionState.RECONNECTING);
+            const stats = webSocketManager.getConnectionStats();
+            get().setConnectionStats(stats);
+          })
+        );
+
+        listeners.push(
+          webSocketManager.subscribe("connection:error", ({ error }) => {
+            get().setLastError(error);
+          })
+        );
+
+        listeners.push(
+          webSocketManager.subscribe("system:heartbeat", () => {
+            const stats = webSocketManager.getConnectionStats();
+            get().setConnectionStats(stats);
+          })
+        );
+
+        // 保存监听器引用
+        set({ listeners }, false, "initialize");
 
         // 初始化连接状态
         const initialStats = webSocketManager.getConnectionStats();
@@ -300,6 +340,26 @@ export const useWebSocketStore = create<WebSocketStore>()(
         get().setWsUrl(webSocketManager.getUrl());
 
         console.log("[WebSocketStore] WebSocket Store 初始化完成");
+      },
+
+      cleanup: () => {
+        console.log("[WebSocketStore] 清理 WebSocket 事件监听器");
+
+        const listeners = get().listeners;
+        for (const unsubscribe of listeners) {
+          try {
+            unsubscribe();
+          } catch (error) {
+            console.error("[WebSocketStore] 清理监听器时出错:", error);
+          }
+        }
+
+        set({ listeners: [] }, false, "cleanup");
+        console.log(
+          "[WebSocketStore] 已清理",
+          listeners.length,
+          "个事件监听器"
+        );
       },
 
       // ==================== 向后兼容方法 ====================

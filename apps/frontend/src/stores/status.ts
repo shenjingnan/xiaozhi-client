@@ -116,6 +116,9 @@ interface StatusState {
 
   // 状态来源追踪
   lastSource: "http" | "websocket" | "polling" | "initial" | null;
+
+  // WebSocket 事件监听器取消订阅函数数组
+  listeners: (() => void)[];
 }
 
 /**
@@ -160,6 +163,7 @@ interface StatusActions {
   // 工具方法
   reset: () => void;
   initialize: () => Promise<void>;
+  cleanup: () => void;
 }
 
 /**
@@ -198,6 +202,9 @@ const initialState: StatusState = {
     startTime: null,
   },
   lastSource: null,
+
+  // WebSocket 事件监听器取消订阅函数数组
+  listeners: [],
 };
 
 /**
@@ -681,6 +688,9 @@ export const useStatusStore = create<StatusStore>()(
         get().stopPolling();
         get().stopRestartPolling();
 
+        // 清理事件监听器
+        get().cleanup();
+
         // 重置状态
         set(initialState, false, "reset");
       },
@@ -692,16 +702,39 @@ export const useStatusStore = create<StatusStore>()(
           setLoading({ isLoading: true });
           console.log("[StatusStore] 初始化状态 Store");
 
-          // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:statusUpdate", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 状态更新");
-            get().setClientStatus(status, "websocket");
-          });
+          // 清理旧的监听器（如果存在）
+          const currentListeners = get().listeners;
+          if (currentListeners.length > 0) {
+            console.warn(
+              "[StatusStore] 检测到未清理的监听器，自动清理",
+              currentListeners.length,
+              "个监听器"
+            );
+            for (const unsubscribe of currentListeners) {
+              unsubscribe();
+            }
+          }
 
-          webSocketManager.subscribe("data:restartStatus", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 重启状态更新");
-            get().setRestartStatus(status, "websocket");
-          });
+          // 收集所有取消订阅函数
+          const listeners: (() => void)[] = [];
+
+          // 设置 WebSocket 事件监听，并保存取消订阅函数
+          listeners.push(
+            webSocketManager.subscribe("data:statusUpdate", (status) => {
+              console.log("[StatusStore] 收到 WebSocket 状态更新");
+              get().setClientStatus(status, "websocket");
+            })
+          );
+
+          listeners.push(
+            webSocketManager.subscribe("data:restartStatus", (status) => {
+              console.log("[StatusStore] 收到 WebSocket 重启状态更新");
+              get().setRestartStatus(status, "websocket");
+            })
+          );
+
+          // 保存监听器引用
+          set({ listeners }, false, "initialize");
 
           // 获取初始状态
           await refreshStatus();
@@ -716,6 +749,22 @@ export const useStatusStore = create<StatusStore>()(
         } finally {
           setLoading({ isLoading: false });
         }
+      },
+
+      cleanup: () => {
+        console.log("[StatusStore] 清理 WebSocket 事件监听器");
+
+        const listeners = get().listeners;
+        for (const unsubscribe of listeners) {
+          try {
+            unsubscribe();
+          } catch (error) {
+            console.error("[StatusStore] 清理监听器时出错:", error);
+          }
+        }
+
+        set({ listeners: [] }, false, "cleanup");
+        console.log("[StatusStore] 已清理", listeners.length, "个事件监听器");
       },
     }),
     {

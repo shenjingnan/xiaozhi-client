@@ -51,6 +51,9 @@ interface ConfigState {
   mcpServerStatuses: MCPServerStatus[];
   mcpServerStatusLoading: boolean;
   mcpServerStatusLastUpdate: number | null;
+
+  // WebSocket 事件监听器取消订阅函数数组
+  listeners: (() => void)[];
 }
 
 /**
@@ -81,6 +84,7 @@ interface ConfigActions {
   // 工具方法
   reset: () => void;
   initialize: () => Promise<void>;
+  cleanup: () => void;
 
   // MCP 服务器状态管理
   setMcpServerStatuses: (statuses: MCPServerStatus[]) => void;
@@ -110,6 +114,9 @@ const initialState: ConfigState = {
   mcpServerStatuses: [],
   mcpServerStatusLoading: false,
   mcpServerStatusLastUpdate: null,
+
+  // WebSocket 事件监听器取消订阅函数数组
+  listeners: [],
 };
 
 /**
@@ -316,6 +323,8 @@ export const useConfigStore = create<ConfigStore>()(
 
       reset: () => {
         console.log("[ConfigStore] 重置状态");
+        // 清理事件监听器
+        get().cleanup();
         set(initialState, false, "reset");
       },
 
@@ -326,11 +335,32 @@ export const useConfigStore = create<ConfigStore>()(
           setLoading({ isLoading: true });
           console.log("[ConfigStore] 初始化配置 Store");
 
-          // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:configUpdate", (config) => {
-            console.log("[ConfigStore] 收到 WebSocket 配置更新");
-            get().setConfig(config, "websocket");
-          });
+          // 清理旧的监听器（如果存在）
+          const currentListeners = get().listeners;
+          if (currentListeners.length > 0) {
+            console.warn(
+              "[ConfigStore] 检测到未清理的监听器，自动清理",
+              currentListeners.length,
+              "个监听器"
+            );
+            for (const unsubscribe of currentListeners) {
+              unsubscribe();
+            }
+          }
+
+          // 收集所有取消订阅函数
+          const listeners: (() => void)[] = [];
+
+          // 设置 WebSocket 事件监听，并保存取消订阅函数
+          listeners.push(
+            webSocketManager.subscribe("data:configUpdate", (config) => {
+              console.log("[ConfigStore] 收到 WebSocket 配置更新");
+              get().setConfig(config, "websocket");
+            })
+          );
+
+          // 保存监听器引用
+          set({ listeners }, false, "initialize");
 
           // 获取初始配置
           await refreshConfig();
@@ -342,6 +372,22 @@ export const useConfigStore = create<ConfigStore>()(
         } finally {
           setLoading({ isLoading: false });
         }
+      },
+
+      cleanup: () => {
+        console.log("[ConfigStore] 清理 WebSocket 事件监听器");
+
+        const listeners = get().listeners;
+        for (const unsubscribe of listeners) {
+          try {
+            unsubscribe();
+          } catch (error) {
+            console.error("[ConfigStore] 清理监听器时出错:", error);
+          }
+        }
+
+        set({ listeners: [] }, false, "cleanup");
+        console.log("[ConfigStore] 已清理", listeners.length, "个事件监听器");
       },
 
       // ==================== MCP 服务器状态管理 ====================
