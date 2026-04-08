@@ -566,6 +566,8 @@ export class ASR extends EventEmitter {
     this.reqid = "";
     // 重置 VAD 触发记录
     this.triggeredVADSequences.clear();
+    // 清理所有事件监听器，防止内存泄漏
+    this.removeAllListeners();
   }
 
   /**
