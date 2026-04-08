@@ -33,12 +33,12 @@ export { ConnectionState } from "./message";
 // 工具相关类型
 export type {
   ToolCallResponse,
-  TimeoutResponse,
+  ToolTimeoutResponse,
 } from "./tools";
 
 export {
   isToolCallResult,
-  isTimeoutResponse,
+  isToolTimeoutResponse,
 } from "./tools";
 
 // 传输层相关类型
