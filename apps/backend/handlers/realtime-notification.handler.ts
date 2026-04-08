@@ -15,6 +15,15 @@ import type { StatusService } from "@/services/status.service.js";
 import { sendWebSocketError } from "@/utils/websocket-helper.js";
 import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
+import type WebSocket from "ws";
+
+/**
+ * WebSocket 兼容类型
+ * 支持 ws 库的 WebSocket 类型和测试 Mock 类型
+ */
+type WebSocketLike =
+  | WebSocket
+  | { send: (data: string) => void; readyState: number };
 
 /**
  * WebSocket 消息接口
