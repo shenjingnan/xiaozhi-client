@@ -104,7 +104,7 @@ export interface FunctionToolData {
  */
 export interface AddCustomToolRequest {
   /** 工具类型 */
-  type: ToolType;
+  type: "mcp" | "coze" | "http" | "function";
   /** 工具数据（根据类型不同而不同） */
   data: MCPToolData | CozeWorkflowData | HttpApiToolData | FunctionToolData;
 }

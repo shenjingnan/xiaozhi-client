@@ -28,7 +28,12 @@ export type {
 } from "./mcp";
 
 // 工具API相关类型
-export type { ToolType, MCPToolData } from "./api";
+export type {
+  MCPToolData,
+  AddCustomToolRequest,
+} from "./api";
+
+export { ToolType } from "./api";
 
 // 配置相关类型
 export type {
