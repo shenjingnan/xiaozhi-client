@@ -316,6 +316,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         const mockChild = {
           pid: 1234,
           unref: vi.fn(),
+          on: vi.fn(),
         };
         mockSpawn.mockReturnValue(mockChild as any);
 
@@ -366,6 +367,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         const mockChild = {
           pid: 1234,
           unref: vi.fn(),
+          on: vi.fn(),
         };
         mockSpawn.mockReturnValue(mockChild as any);
 
@@ -402,6 +404,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         const mockChild = {
           pid: 5678,
           unref: vi.fn(),
+          on: vi.fn(),
         };
         mockSpawn.mockReturnValue(mockChild as any);
 
@@ -486,6 +489,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         const mockChild = {
           pid: undefined,
           unref: vi.fn(),
+          on: vi.fn(),
         };
         mockSpawn.mockReturnValue(mockChild as any);
 
@@ -514,6 +518,7 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         const mockChild = {
           pid: 1234,
           unref: vi.fn(),
+          on: vi.fn(),
         };
         mockSpawn.mockReturnValue(mockChild as any);
 
