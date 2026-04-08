@@ -11,7 +11,7 @@
         "cwd": "packages/cli"
       },
       "outputs": ["{workspaceRoot}/dist/cli"],
-      "dependsOn": ["backend:build", "config:build"]
+      "dependsOn": ["config:build"]
     },
     "test": {
       "executor": "nx:run-commands",
@@ -59,8 +59,7 @@
       "options": {
         "command": "tsup --watch",
         "cwd": "packages/cli"
-      },
-      "dependsOn": ["backend:build"]
+      }
     },
     "nx-release-publish": {
       "executor": "nx:run-commands",
@@ -71,5 +70,5 @@
     }
   },
   "tags": ["type:lib", "scope:cli"],
-  "implicitDependencies": ["backend", "shared-types"]
+  "implicitDependencies": ["shared-types"]
 }
