@@ -170,6 +170,12 @@ export class WebServer {
   // 事件监听器清理函数数组
   private eventListenerUnsubscribers: Array<() => void> = [];
 
+  // endpointManager 事件监听器引用（用于 destroy 时移除）
+  private endpointManagerListeners: Map<
+    string,
+    (event: { endpoint: string }) => void
+  > = new Map();
+
   constructor(port?: number) {
     // 端口配置
     try {
@@ -381,19 +387,23 @@ export class WebServer {
         await this.endpointManager.connect();
 
         // 设置端点添加事件监听器
-        this.endpointManager.on(
+        const endpointAddedHandler = (event: { endpoint: string }) => {
+          this.logger.debug(`端点已添加: ${event.endpoint}`);
+        };
+        this.endpointManager.on("endpointAdded", endpointAddedHandler);
+        this.endpointManagerListeners.set(
           "endpointAdded",
-          (event: { endpoint: string }) => {
-            this.logger.debug(`端点已添加: ${event.endpoint}`);
-          }
+          endpointAddedHandler
         );
 
         // 设置端点移除事件监听器
-        this.endpointManager.on(
+        const endpointRemovedHandler = (event: { endpoint: string }) => {
+          this.logger.debug(`端点已移除: ${event.endpoint}`);
+        };
+        this.endpointManager.on("endpointRemoved", endpointRemovedHandler);
+        this.endpointManagerListeners.set(
           "endpointRemoved",
-          (event: { endpoint: string }) => {
-            this.logger.debug(`端点已移除: ${event.endpoint}`);
-          }
+          endpointRemovedHandler
         );
 
         this.logger.debug(
@@ -1086,6 +1096,16 @@ export class WebServer {
     }
     this.eventListenerUnsubscribers = [];
     this.logger.debug("已移除所有事件总线监听器");
+
+    // 移除 endpointManager 事件监听器，防止内存泄漏
+    for (const [event, listener] of this.endpointManagerListeners) {
+      this.endpointManager?.removeListener(
+        event,
+        listener as (...args: unknown[]) => void
+      );
+    }
+    this.endpointManagerListeners.clear();
+    this.logger.debug("已移除所有 endpointManager 监听器");
 
     // 销毁服务层
     this.statusService.destroy();
