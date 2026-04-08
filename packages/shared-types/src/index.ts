@@ -25,10 +25,34 @@ export type {
   CustomMCPToolWithStats,
   CustomMCPToolConfig,
   JSONSchema,
+  ToolHandlerConfig,
+  MCPHandlerConfig,
+  ProxyHandlerConfig,
+  HttpHandlerConfig,
+  FunctionHandlerConfig,
 } from "./mcp";
 
 // 工具API相关类型
-export type { ToolType, MCPToolData } from "./api";
+export type {
+  MCPToolData,
+  CozeWorkflowData,
+  HttpApiToolData,
+  FunctionToolData,
+  AddCustomToolRequest,
+  AddToolResponse,
+  ToolMetadata,
+  ToolConfigOptions,
+  ExtendedCustomMCPTool,
+  ToolValidationErrorDetail,
+} from "./api";
+
+export {
+  ToolType,
+} from "./api";
+
+// 导出 ToolValidationError（从 api 导入时名称为 ApiToolValidationError）
+import { ApiToolValidationError } from "./api";
+export { ApiToolValidationError as ToolValidationError };
 
 // 配置相关类型
 export type {
