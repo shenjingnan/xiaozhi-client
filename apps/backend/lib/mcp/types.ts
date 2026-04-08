@@ -31,6 +31,12 @@ export enum MCPTransportType {
   HTTP = "http",
 }
 
+/**
+ * 传输类型输入值（枚举或字符串字面量）
+ * 与 @xiaozhi-client/mcp-core 保持一致
+ */
+export type MCPTransportTypeInput = MCPTransportType | "stdio" | "sse" | "http";
+
 // =========================
 // 2. 配置接口类型
 // =========================
@@ -55,9 +61,12 @@ export interface ModelScopeSSEOptions {
  *
  * 注意：符合 @modelcontextprotocol 官方标准，不包含 name 字段
  * name 应该作为服务标识符独立管理，不是配置的一部分
+ *
+ * @description
+ * 与 @xiaozhi-client/mcp-core 的 MCPServiceConfig 保持一致
  */
 export interface MCPServiceConfig {
-  type?: MCPTransportType; // 现在是可选的，支持自动推断
+  type?: MCPTransportTypeInput; // 支持枚举或字符串字面量，与 mcp-core 保持一致
   // stdio 配置
   command?: string;
   args?: string[];
