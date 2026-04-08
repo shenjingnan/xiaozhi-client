@@ -95,6 +95,11 @@ interface ConfigActions {
 export interface ConfigStore extends ConfigState, ConfigActions {}
 
 /**
+ * WebSocket 事件取消订阅函数引用
+ */
+let unsubscribeConfigUpdate: (() => void) | null = null;
+
+/**
  * 初始状态
  */
 const initialState: ConfigState = {
@@ -316,6 +321,14 @@ export const useConfigStore = create<ConfigStore>()(
 
       reset: () => {
         console.log("[ConfigStore] 重置状态");
+
+        // 取消 WebSocket 事件订阅
+        if (unsubscribeConfigUpdate) {
+          unsubscribeConfigUpdate();
+          unsubscribeConfigUpdate = null;
+        }
+
+        // 重置状态
         set(initialState, false, "reset");
       },
 
@@ -327,10 +340,13 @@ export const useConfigStore = create<ConfigStore>()(
           console.log("[ConfigStore] 初始化配置 Store");
 
           // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:configUpdate", (config) => {
-            console.log("[ConfigStore] 收到 WebSocket 配置更新");
-            get().setConfig(config, "websocket");
-          });
+          unsubscribeConfigUpdate = webSocketManager.subscribe(
+            "data:configUpdate",
+            (config) => {
+              console.log("[ConfigStore] 收到 WebSocket 配置更新");
+              get().setConfig(config, "websocket");
+            }
+          );
 
           // 获取初始配置
           await refreshConfig();

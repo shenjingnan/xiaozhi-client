@@ -108,6 +108,16 @@ interface WebSocketActions {
 export interface WebSocketStore extends WebSocketState, WebSocketActions {}
 
 /**
+ * WebSocket 事件取消订阅函数引用
+ */
+let unsubscribeConnecting: (() => void) | null = null;
+let unsubscribeConnected: (() => void) | null = null;
+let unsubscribeDisconnected: (() => void) | null = null;
+let unsubscribeReconnecting: (() => void) | null = null;
+let unsubscribeConnectionError: (() => void) | null = null;
+let unsubscribeHeartbeat: (() => void) | null = null;
+
+/**
  * 初始状态（简化版）
  */
 const initialState: WebSocketState = {
@@ -258,6 +268,34 @@ export const useWebSocketStore = create<WebSocketStore>()(
 
       reset: () => {
         console.log("[WebSocketStore] 重置状态");
+
+        // 取消 WebSocket 事件订阅
+        if (unsubscribeConnecting) {
+          unsubscribeConnecting();
+          unsubscribeConnecting = null;
+        }
+        if (unsubscribeConnected) {
+          unsubscribeConnected();
+          unsubscribeConnected = null;
+        }
+        if (unsubscribeDisconnected) {
+          unsubscribeDisconnected();
+          unsubscribeDisconnected = null;
+        }
+        if (unsubscribeReconnecting) {
+          unsubscribeReconnecting();
+          unsubscribeReconnecting = null;
+        }
+        if (unsubscribeConnectionError) {
+          unsubscribeConnectionError();
+          unsubscribeConnectionError = null;
+        }
+        if (unsubscribeHeartbeat) {
+          unsubscribeHeartbeat();
+          unsubscribeHeartbeat = null;
+        }
+
+        // 重置状态
         set(initialState, false, "reset");
       },
 
@@ -267,32 +305,50 @@ export const useWebSocketStore = create<WebSocketStore>()(
         console.log("[WebSocketStore] 初始化 WebSocket Store");
 
         // 设置 WebSocket 事件监听
-        webSocketManager.subscribe("connection:connecting", () => {
-          get().setConnectionState(ConnectionState.CONNECTING);
-        });
+        unsubscribeConnecting = webSocketManager.subscribe(
+          "connection:connecting",
+          () => {
+            get().setConnectionState(ConnectionState.CONNECTING);
+          }
+        );
 
-        webSocketManager.subscribe("connection:connected", () => {
-          get().setConnectionState(ConnectionState.CONNECTED);
-        });
+        unsubscribeConnected = webSocketManager.subscribe(
+          "connection:connected",
+          () => {
+            get().setConnectionState(ConnectionState.CONNECTED);
+          }
+        );
 
-        webSocketManager.subscribe("connection:disconnected", () => {
-          get().setConnectionState(ConnectionState.DISCONNECTED);
-        });
+        unsubscribeDisconnected = webSocketManager.subscribe(
+          "connection:disconnected",
+          () => {
+            get().setConnectionState(ConnectionState.DISCONNECTED);
+          }
+        );
 
-        webSocketManager.subscribe("connection:reconnecting", () => {
-          get().setConnectionState(ConnectionState.RECONNECTING);
-          const stats = webSocketManager.getConnectionStats();
-          get().setConnectionStats(stats);
-        });
+        unsubscribeReconnecting = webSocketManager.subscribe(
+          "connection:reconnecting",
+          () => {
+            get().setConnectionState(ConnectionState.RECONNECTING);
+            const stats = webSocketManager.getConnectionStats();
+            get().setConnectionStats(stats);
+          }
+        );
 
-        webSocketManager.subscribe("connection:error", ({ error }) => {
-          get().setLastError(error);
-        });
+        unsubscribeConnectionError = webSocketManager.subscribe(
+          "connection:error",
+          ({ error }) => {
+            get().setLastError(error);
+          }
+        );
 
-        webSocketManager.subscribe("system:heartbeat", () => {
-          const stats = webSocketManager.getConnectionStats();
-          get().setConnectionStats(stats);
-        });
+        unsubscribeHeartbeat = webSocketManager.subscribe(
+          "system:heartbeat",
+          () => {
+            const stats = webSocketManager.getConnectionStats();
+            get().setConnectionStats(stats);
+          }
+        );
 
         // 初始化连接状态
         const initialStats = webSocketManager.getConnectionStats();

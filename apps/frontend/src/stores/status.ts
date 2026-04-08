@@ -211,6 +211,12 @@ let pollingTimer: NodeJS.Timeout | null = null;
 let restartPollingTimer: NodeJS.Timeout | null = null;
 
 /**
+ * WebSocket 事件取消订阅函数引用
+ */
+let unsubscribeStatusUpdate: (() => void) | null = null;
+let unsubscribeRestartStatus: (() => void) | null = null;
+
+/**
  * 创建状态 Store
  */
 export const useStatusStore = create<StatusStore>()(
@@ -681,6 +687,16 @@ export const useStatusStore = create<StatusStore>()(
         get().stopPolling();
         get().stopRestartPolling();
 
+        // 取消 WebSocket 事件订阅
+        if (unsubscribeStatusUpdate) {
+          unsubscribeStatusUpdate();
+          unsubscribeStatusUpdate = null;
+        }
+        if (unsubscribeRestartStatus) {
+          unsubscribeRestartStatus();
+          unsubscribeRestartStatus = null;
+        }
+
         // 重置状态
         set(initialState, false, "reset");
       },
@@ -693,15 +709,21 @@ export const useStatusStore = create<StatusStore>()(
           console.log("[StatusStore] 初始化状态 Store");
 
           // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:statusUpdate", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 状态更新");
-            get().setClientStatus(status, "websocket");
-          });
+          unsubscribeStatusUpdate = webSocketManager.subscribe(
+            "data:statusUpdate",
+            (status) => {
+              console.log("[StatusStore] 收到 WebSocket 状态更新");
+              get().setClientStatus(status, "websocket");
+            }
+          );
 
-          webSocketManager.subscribe("data:restartStatus", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 重启状态更新");
-            get().setRestartStatus(status, "websocket");
-          });
+          unsubscribeRestartStatus = webSocketManager.subscribe(
+            "data:restartStatus",
+            (status) => {
+              console.log("[StatusStore] 收到 WebSocket 重启状态更新");
+              get().setRestartStatus(status, "websocket");
+            }
+          );
 
           // 获取初始状态
           await refreshStatus();
