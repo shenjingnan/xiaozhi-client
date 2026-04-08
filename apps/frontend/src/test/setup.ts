@@ -28,6 +28,53 @@ Object.defineProperty(document, "execCommand", {
   writable: true,
 });
 
+/**
+ * 清理测试后的 DOM 元素和样式
+ * 移除 Radix UI 对话框、焦点保护器和其他测试残留元素
+ */
+function cleanupDOM(): void {
+  try {
+    const elementsToRemove = document.querySelectorAll("*");
+    for (const el of elementsToRemove) {
+      if (
+        el.getAttribute("role") === "dialog" ||
+        el.hasAttribute("data-radix-focus-guard") ||
+        el.hasAttribute("aria-hidden") ||
+        el.getAttribute("data-state") === "open" ||
+        (el.classList.contains("fixed") && el.classList.contains("inset-0"))
+      ) {
+        el.remove();
+      }
+      // 重置可能导致问题的属性和样式
+      if (el.hasAttribute("data-scroll-locked")) {
+        el.removeAttribute("data-scroll-locked");
+      }
+      if (el.hasAttribute("data-aria-hidden")) {
+        el.removeAttribute("data-aria-hidden");
+      }
+      if (el.hasAttribute("aria-hidden")) {
+        el.removeAttribute("aria-hidden");
+      }
+      if (el instanceof HTMLElement) {
+        if (el.style.pointerEvents === "none") {
+          el.style.pointerEvents = "auto";
+        }
+        if (el.style.position === "fixed") {
+          el.style.position = "";
+        }
+        if (el.style.opacity === "0") {
+          el.style.opacity = "";
+        }
+        if (el.style.visibility === "hidden") {
+          el.style.visibility = "visible";
+        }
+      }
+    }
+  } catch (e) {
+    // 忽略清理过程中的错误
+  }
+}
+
 // Global test setup and cleanup
 beforeEach(() => {
   // Clean up clipboard before each test to avoid conflicts with userEvent.setup()
@@ -160,115 +207,37 @@ beforeEach(() => {
     ?.setAttribute("data-testid", "test-modal-root");
 
   // Aggressively clean up any radix dialogs, portals, or focus guards
-  try {
-    const elementsToRemove = document.querySelectorAll("*");
-    for (const el of elementsToRemove) {
-      if (
-        el.getAttribute("role") === "dialog" ||
-        el.hasAttribute("data-radix-focus-guard") ||
-        el.hasAttribute("aria-hidden") ||
-        el.getAttribute("data-state") === "open" ||
-        (el.classList.contains("fixed") && el.classList.contains("inset-0"))
-      ) {
-        el.remove();
-      }
-      // 重置可能导致问题的属性和样式
-      if (el.hasAttribute("data-scroll-locked")) {
-        el.removeAttribute("data-scroll-locked");
-      }
-      if (el.hasAttribute("data-aria-hidden")) {
-        el.removeAttribute("data-aria-hidden");
-      }
-      if (el.hasAttribute("aria-hidden")) {
-        el.removeAttribute("aria-hidden");
-      }
-      if (el instanceof HTMLElement) {
-        if (el.style.pointerEvents === "none") {
-          el.style.pointerEvents = "auto";
-        }
-        if (el.style.position === "fixed") {
-          el.style.position = "";
-        }
-        if (el.style.opacity === "0") {
-          el.style.opacity = "";
-        }
-        if (el.style.visibility === "hidden") {
-          el.style.visibility = "visible";
-        }
-      }
-    }
-  } catch (e) {
-    // Ignore errors during cleanup
-  }
+  cleanupDOM();
 });
 
 afterEach(() => {
   // Clean up all dynamically created elements after each test
-  try {
-    const elementsToRemove = document.querySelectorAll("*");
-    for (const el of elementsToRemove) {
-      if (
-        el.getAttribute("role") === "dialog" ||
-        el.hasAttribute("data-radix-focus-guard") ||
-        el.hasAttribute("aria-hidden") ||
-        el.getAttribute("data-state") === "open" ||
-        (el.classList.contains("fixed") && el.classList.contains("inset-0"))
-      ) {
-        el.remove();
-      }
-      // 重置可能导致问题的属性和样式
-      if (el.hasAttribute("data-scroll-locked")) {
-        el.removeAttribute("data-scroll-locked");
-      }
-      if (el.hasAttribute("data-aria-hidden")) {
-        el.removeAttribute("data-aria-hidden");
-      }
-      if (el.hasAttribute("aria-hidden")) {
-        el.removeAttribute("aria-hidden");
-      }
-      if (el instanceof HTMLElement) {
-        if (el.style.pointerEvents === "none") {
-          el.style.pointerEvents = "auto";
-        }
-        if (el.style.position === "fixed") {
-          el.style.position = "";
-        }
-        if (el.style.opacity === "0") {
-          el.style.opacity = "";
-        }
-        if (el.style.visibility === "hidden") {
-          el.style.visibility = "visible";
-        }
-      }
-    }
+  cleanupDOM();
 
-    // Reset body state after each test
-    if (document.body?.attributes) {
-      while (document.body.attributes.length > 0) {
-        document.body.removeAttribute(document.body.attributes[0].name);
-      }
-      document.body.style.cssText = "";
-      document.body.style.pointerEvents = "auto";
-      document.body.style.position = "";
-      document.body.style.overflow = "";
-      document.body.style.visibility = "visible";
-      document.body.style.display = "block";
+  // Reset body state after each test
+  if (document.body?.attributes) {
+    while (document.body.attributes.length > 0) {
+      document.body.removeAttribute(document.body.attributes[0].name);
     }
+    document.body.style.cssText = "";
+    document.body.style.pointerEvents = "auto";
+    document.body.style.position = "";
+    document.body.style.overflow = "";
+    document.body.style.visibility = "visible";
+    document.body.style.display = "block";
+  }
 
-    // 清理动态添加的样式
-    const dynamicStyles = document.querySelectorAll("style");
-    for (const style of dynamicStyles) {
-      if (style.textContent?.includes("pointer-events: auto !important")) {
-        style.remove();
-      }
+  // 清理动态添加的样式
+  const dynamicStyles = document.querySelectorAll("style");
+  for (const style of dynamicStyles) {
+    if (style.textContent?.includes("pointer-events: auto !important")) {
+      style.remove();
     }
+  }
 
-    // 强制重置 body 的 pointer-events
-    if (document.body.style) {
-      document.body.style.pointerEvents = "auto";
-    }
-  } catch (e) {
-    // Ignore errors during cleanup
+  // 强制重置 body 的 pointer-events
+  if (document.body.style) {
+    document.body.style.pointerEvents = "auto";
   }
 });
 
