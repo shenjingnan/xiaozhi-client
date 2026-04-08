@@ -22,7 +22,7 @@
 
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
-import type { EventBus } from "@/services/event-bus.service.js";
+import type { EventBus, EventBusEvents } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { ClientInfo, RestartStatus } from "@/services/status.service.js";
 import type { AppConfig } from "@xiaozhi-client/config";
@@ -68,6 +68,14 @@ export interface NotificationMessage {
 }
 
 /**
+ * 事件监听器类型
+ */
+type EventListener = {
+  eventName: keyof EventBusEvents;
+  listener: (...args: any[]) => void;
+};
+
+/**
  * 通知服务 - 统一的通知管理服务
  */
 export class NotificationService {
@@ -76,6 +84,10 @@ export class NotificationService {
   private clients: Map<string, WebSocketClient> = new Map();
   private messageQueue: Map<string, NotificationMessage[]> = new Map();
   private maxQueueSize = 100;
+  /**
+   * 保存事件监听器引用，用于销毁时移除
+   */
+  private eventListeners: EventListener[] = [];
 
   constructor() {
     this.logger = logger;
@@ -88,54 +100,124 @@ export class NotificationService {
    */
   private setupEventListeners(): void {
     // 监听配置更新事件
-    this.eventBus.onEvent("config:updated", (data) => {
+    const configUpdatedListener = (data: EventBusEvents["config:updated"]) => {
       // 获取最新的配置
       const config = configManager.getConfig();
       this.broadcastConfigUpdate(config);
+    };
+    this.eventBus.onEvent("config:updated", configUpdatedListener);
+    this.eventListeners.push({
+      eventName: "config:updated",
+      listener: configUpdatedListener,
     });
 
     // 监听状态更新事件
-    this.eventBus.onEvent("status:updated", (data) => {
+    const statusUpdatedListener = (data: EventBusEvents["status:updated"]) => {
       this.broadcastStatusUpdate(data.status);
+    };
+    this.eventBus.onEvent("status:updated", statusUpdatedListener);
+    this.eventListeners.push({
+      eventName: "status:updated",
+      listener: statusUpdatedListener,
     });
 
     // 监听重启状态事件
-    this.eventBus.onEvent("service:restart:started", (data) => {
+    const restartStartedListener = (
+      data: EventBusEvents["service:restart:started"]
+    ) => {
       this.broadcastRestartStatus("restarting", undefined, data.timestamp);
+    };
+    this.eventBus.onEvent("service:restart:started", restartStartedListener);
+    this.eventListeners.push({
+      eventName: "service:restart:started",
+      listener: restartStartedListener,
     });
 
-    this.eventBus.onEvent("service:restart:completed", (data) => {
+    const restartCompletedListener = (
+      data: EventBusEvents["service:restart:completed"]
+    ) => {
       this.broadcastRestartStatus("completed", undefined, data.timestamp);
+    };
+    this.eventBus.onEvent(
+      "service:restart:completed",
+      restartCompletedListener
+    );
+    this.eventListeners.push({
+      eventName: "service:restart:completed",
+      listener: restartCompletedListener,
     });
 
-    this.eventBus.onEvent("service:restart:failed", (data) => {
+    const restartFailedListener = (
+      data: EventBusEvents["service:restart:failed"]
+    ) => {
       this.broadcastRestartStatus("failed", data.error.message, data.timestamp);
+    };
+    this.eventBus.onEvent("service:restart:failed", restartFailedListener);
+    this.eventListeners.push({
+      eventName: "service:restart:failed",
+      listener: restartFailedListener,
     });
 
     // 监听 NPM 安装事件
-    this.eventBus.onEvent("npm:install:started", (data) => {
+    const npmInstallStartedListener = (
+      data: EventBusEvents["npm:install:started"]
+    ) => {
       this.broadcast("npm:install:started", data);
+    };
+    this.eventBus.onEvent("npm:install:started", npmInstallStartedListener);
+    this.eventListeners.push({
+      eventName: "npm:install:started",
+      listener: npmInstallStartedListener,
     });
 
-    this.eventBus.onEvent("npm:install:log", (data) => {
+    const npmInstallLogListener = (data: EventBusEvents["npm:install:log"]) => {
       this.broadcast("npm:install:log", data);
+    };
+    this.eventBus.onEvent("npm:install:log", npmInstallLogListener);
+    this.eventListeners.push({
+      eventName: "npm:install:log",
+      listener: npmInstallLogListener,
     });
 
-    this.eventBus.onEvent("npm:install:completed", (data) => {
+    const npmInstallCompletedListener = (
+      data: EventBusEvents["npm:install:completed"]
+    ) => {
       this.broadcast("npm:install:completed", data);
+    };
+    this.eventBus.onEvent("npm:install:completed", npmInstallCompletedListener);
+    this.eventListeners.push({
+      eventName: "npm:install:completed",
+      listener: npmInstallCompletedListener,
     });
 
-    this.eventBus.onEvent("npm:install:failed", (data) => {
+    const npmInstallFailedListener = (
+      data: EventBusEvents["npm:install:failed"]
+    ) => {
       this.broadcast("npm:install:failed", data);
+    };
+    this.eventBus.onEvent("npm:install:failed", npmInstallFailedListener);
+    this.eventListeners.push({
+      eventName: "npm:install:failed",
+      listener: npmInstallFailedListener,
     });
 
     // 监听通知广播事件
-    this.eventBus.onEvent("notification:broadcast", (data) => {
+    const notificationBroadcastListener = (
+      data: EventBusEvents["notification:broadcast"]
+    ) => {
       if (data.target) {
         this.sendToClient(data.target, data.type, data.data);
       } else {
         this.broadcast(data.type, data.data);
       }
+    };
+    this.eventBus.onEvent(
+      "notification:broadcast",
+      notificationBroadcastListener
+    );
+    this.eventListeners.push({
+      eventName: "notification:broadcast",
+      listener: notificationBroadcastListener,
     });
   }
 
@@ -388,6 +470,13 @@ export class NotificationService {
    */
   destroy(): void {
     this.logger.debug("销毁通知服务");
+
+    // 移除所有事件监听器，防止内存泄漏
+    for (const { eventName, listener } of this.eventListeners) {
+      this.eventBus.offEvent(eventName, listener);
+    }
+    this.eventListeners = [];
+
     this.clients.clear();
     this.messageQueue.clear();
   }
