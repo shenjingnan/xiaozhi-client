@@ -7,6 +7,7 @@ import chalk from "chalk";
 import Table from "cli-table3";
 import consola from "consola";
 import ora from "ora";
+import { SERVICE_CONSTANTS } from "../Constants.js";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
 import type {
@@ -40,10 +41,15 @@ export class McpCommandHandler extends BaseCommandHandler {
 
     // 获取 Web 服务器的端口
     try {
-      const webPort = configManager.getWebUIPort() ?? 9999;
+      const webPort =
+        configManager.getWebUIPort() ?? SERVICE_CONSTANTS.DEFAULT_WEB_UI_PORT;
       this.baseUrl = `http://localhost:${webPort}`;
-    } catch {
-      this.baseUrl = "http://localhost:9999";
+    } catch (error) {
+      consola.warn(
+        `无法读取 Web UI 端口配置，使用默认端口: ${SERVICE_CONSTANTS.DEFAULT_WEB_UI_PORT}`,
+        error
+      );
+      this.baseUrl = `http://localhost:${SERVICE_CONSTANTS.DEFAULT_WEB_UI_PORT}`;
     }
   }
 
