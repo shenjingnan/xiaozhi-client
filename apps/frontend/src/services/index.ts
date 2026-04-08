@@ -19,6 +19,7 @@ export class NetworkService {
   private apiClient: ApiClient;
   private webSocketManager: WebSocketManager;
   private initialized = false;
+  private reconnectTimer: NodeJS.Timeout | null = null;
 
   constructor() {
     this.apiClient = apiClient;
@@ -47,6 +48,13 @@ export class NetworkService {
    */
   destroy(): void {
     console.log("[NetworkService] 销毁网络服务");
+
+    // 清理重连定时器
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
     this.webSocketManager.disconnect();
     this.initialized = false;
   }
@@ -254,8 +262,17 @@ export class NetworkService {
    * 重新连接 WebSocket
    */
   reconnectWebSocket(): void {
+    // 清除现有定时器
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
     this.webSocketManager.disconnect();
-    setTimeout(() => {
+
+    // 保存定时器引用
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
       this.webSocketManager.connect();
     }, 1000);
   }
