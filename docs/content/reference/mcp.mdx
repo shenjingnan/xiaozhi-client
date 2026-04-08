@@ -1,0 +1,302 @@
+---
+title: "MCP 模块 API - Xiaozhi Client"
+description: "MCP (Model Context Protocol) 模块的 API 参考文档"
+---
+
+# MCP 模块 API
+
+## 概述
+
+MCP (Model Context Protocol) 模块是 xiaozhi-client 的核心组件，负责管理 MCP 服务器的连接、工具调用和消息通信。该模块提供了完整的 MCP 协议实现，支持 STDIO、SSE 和 StreamableHTTP 三种传输协议。
+
+## 核心组件
+
+### MCPServiceManager
+
+MCP 服务管理器，负责管理多个 MCP 服务器的连接。
+
+**文件位置**: `apps/backend/lib/mcp/manager.ts`
+
+#### 主要方法
+
+##### `addServer(name: string, config: MCPServiceConfig): void`
+
+添加 MCP 服务器到管理器。
+
+**参数**:
+- `name` (string): 服务器名称
+- `config` (MCPServiceConfig): 服务器配置
+
+**示例**:
+```typescript
+manager.addServer("calculator", {
+  command: "node",
+  args: ["./calculator.js"]
+});
+```
+
+##### `removeServer(name: string): Promise<void>`
+
+移除指定的 MCP 服务器。
+
+**参数**:
+- `name` (string): 要移除的服务器名称
+
+##### `connect(): Promise<void>`
+
+连接所有已添加的 MCP 服务器。
+
+##### `disconnect(): Promise<void>`
+
+断开所有 MCP 服务器连接。
+
+##### `getAllTools(filter?: ToolStatusFilter): EnhancedToolInfo[]`
+
+获取所有可用工具列表。
+
+**参数**:
+- `filter` (可选): 工具状态过滤器 ("enabled" | "disabled" | "all")
+
+**返回**: 工具信息数组
+
+##### `callTool(toolName: string, args: Record<string, unknown>): Promise<ToolCallResult>`
+
+调用指定的 MCP 工具。
+
+**参数**:
+- `toolName`: 工具名称
+- `args`: 工具参数
+
+**返回**: 工具调用结果
+
+##### `getStatus(): ManagerStatus`
+
+获取管理器状态信息。
+
+### MCPService
+
+MCP 服务类，负责管理单个 MCP 服务的连接。
+
+**文件位置**: `apps/backend/lib/mcp/connection.ts`
+
+#### 主要方法
+
+##### `connect(): Promise<void>`
+
+连接到 MCP 服务。
+
+##### `disconnect(): Promise<void>`
+
+断开连接。
+
+##### `callTool(name: string, arguments_: Record<string, unknown>): Promise<ToolCallResult>`
+
+调用工具。
+
+##### `getTools(): Tool[]`
+
+获取工具列表。
+
+##### `getConfig(): InternalMCPServiceConfig`
+
+获取服务配置。
+
+##### `getStatus(): MCPServiceStatus`
+
+获取服务状态。
+
+##### `isConnected(): boolean`
+
+检查是否已连接。
+
+## 类型定义
+
+### MCPServiceConfig
+
+MCP 服务器配置接口。
+
+**文件位置**: `apps/backend/lib/mcp/types.ts`
+
+```typescript
+interface MCPServiceConfig {
+  // 传输类型（可选，支持自动推断）
+  type?: MCPTransportType;
+
+  // STDIO 配置
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+
+  // 网络配置
+  url?: string;
+
+  // 认证配置
+  apiKey?: string;
+  headers?: Record<string, string>;
+
+  // ModelScope SSE 自定义选项
+  customSSEOptions?: ModelScopeSSEOptions;
+}
+```
+
+### MCPTransportType
+
+通信方式枚举。
+
+```typescript
+enum MCPTransportType {
+  STDIO = "stdio",
+  SSE = "sse",
+  HTTP = "http",
+}
+```
+
+### ConnectionState
+
+连接状态枚举。
+
+```typescript
+enum ConnectionState {
+  DISCONNECTED = "disconnected",
+  CONNECTING = "connecting",
+  CONNECTED = "connected",
+  RECONNECTING = "reconnecting",
+  FAILED = "failed",
+  ERROR = "error",
+}
+```
+
+### EnhancedToolInfo
+
+增强的工具信息接口。
+
+```typescript
+interface EnhancedToolInfo {
+  name: string;              // 工具唯一标识符
+  description: string;        // 工具描述
+  inputSchema: JSONSchema;    // 输入参数的 JSON Schema
+  serviceName: string;        // 所属服务名称
+  originalName: string;       // 原始工具名称
+  enabled: boolean;          // 是否启用
+  usageCount: number;        // 使用次数
+  lastUsedTime: string;      // 最后使用时间
+}
+```
+
+### ToolCallResult
+
+工具调用结果接口。
+
+```typescript
+interface ToolCallResult {
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
+  isError?: boolean;
+}
+```
+
+## 工具调用错误码
+
+### ToolCallErrorCode
+
+工具调用错误码枚举。
+
+```typescript
+enum ToolCallErrorCode {
+  INVALID_PARAMS = -32602,      // 无效参数
+  TOOL_NOT_FOUND = -32601,      // 工具不存在
+  SERVICE_UNAVAILABLE = -32001, // 服务不可用
+  TIMEOUT = -32002,             // 调用超时
+  TOOL_EXECUTION_ERROR = -32000,// 工具执行错误
+}
+```
+
+## 使用示例
+
+### 基本使用
+
+```typescript
+import { MCPServiceManager } from "@/lib/mcp/manager.js";
+
+// 创建管理器实例
+const manager = new MCPServiceManager();
+
+// 添加服务器
+manager.addServer("calculator", {
+  command: "npx",
+  args: ["-y", "@xiaozhi-client/calculator-mcp"]
+});
+
+// 连接所有服务器
+await manager.connect();
+
+// 获取所有工具
+const tools = manager.getAllTools();
+console.log("可用工具:", tools);
+
+// 调用工具
+const result = await manager.callTool("calculator__add", {
+  a: 10,
+  b: 20
+});
+console.log("结果:", result);
+```
+
+### 使用自定义环境变量
+
+```typescript
+manager.addServer("my-service", {
+  command: "node",
+  args: ["./server.js"],
+  env: {
+    API_KEY: "your-api-key",
+    DEBUG: "true"
+  }
+});
+```
+
+### SSE 传输方式
+
+```typescript
+manager.addServer("sse-service", {
+  type: MCPTransportType.SSE,
+  url: "https://api.example.com/mcp",
+  headers: {
+    "Authorization": "Bearer token"
+  }
+});
+```
+
+### 监听连接事件
+
+```typescript
+import { getEventBus } from "@/services/event-bus.service.js";
+import { MCP_SERVICE_EVENTS } from "@/constants/index.js";
+
+const eventBus = getEventBus();
+
+eventBus.onEvent(MCP_SERVICE_EVENTS.CONNECTED, (data) => {
+  console.log("服务已连接:", data.serviceName);
+  console.log("可用工具:", data.tools);
+});
+
+eventBus.onEvent(MCP_SERVICE_EVENTS.DISCONNECTED, (data) => {
+  console.log("服务已断开:", data.serviceName);
+});
+```
+
+## 注意事项
+
+1. **传输类型自动推断**: 如果不指定 `type`，系统会根据配置自动推断传输类型
+2. **工具名称格式**: 工具名称格式为 `{serviceName}__{originalName}`
+3. **连接管理**: 使用 `connect()` 和 `disconnect()` 方法管理连接生命周期
+4. **错误处理**: 工具调用可能会抛出 `ToolCallError` 异常，建议使用 try-catch 处理
+5. **资源清理**: 使用完毕后应调用 `disconnect()` 清理资源
+
+## 相关模块
+
+- [事件总线](./event-bus) - MCP 模块使用事件总线发射连接状态变更
+- [端点管理](./endpoint) - Endpoint 模块内部使用 MCP 模块管理工具
+- [配置管理](./config) - MCP 服务器配置可以从配置文件读取

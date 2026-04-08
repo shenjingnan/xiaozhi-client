@@ -1,0 +1,530 @@
+---
+title: "事件总线 API - Xiaozhi Client"
+description: "事件总线模块的 API 参考文档"
+---
+
+# 事件总线 API
+
+## 概述
+
+事件总线提供统一的事件发布订阅机制，用于解耦各个模块之间的通信。支持配置更新、状态变更、接入点状态、服务重启、MCP 服务、工具调用等多种事件类型。
+
+**文件位置**: `apps/backend/services/event-bus.service.ts`
+
+## 核心组件
+
+### EventBus
+
+事件总线类，基于 Node.js EventEmitter 实现。
+
+#### 构造函数
+
+```typescript
+constructor()
+```
+
+自动创建单例，测试环境下监听器限制为 200，生产环境为 50。
+
+#### 主要方法
+
+##### `emitEvent<K extends keyof EventBusEvents>(eventName: K, data: EventBusEvents[K]): boolean`
+
+发射事件（类型安全）。
+
+**参数**:
+- `eventName`: 事件名称（支持类型提示）
+- `data`: 事件数据（类型安全）
+
+**返回**: boolean - 是否有监听器处理了事件
+
+**示例**:
+```typescript
+eventBus.emitEvent("config:updated", {
+  type: "endpoint",
+  timestamp: new Date()
+});
+```
+
+##### `onEvent<K extends keyof EventBusEvents>(eventName: K, listener: (data: EventBusEvents[K]) => void): this`
+
+监听事件（类型安全）。
+
+**参数**:
+- `eventName`: 事件名称
+- `listener`: 事件监听器函数
+
+**示例**:
+```typescript
+eventBus.onEvent("config:updated", (data) => {
+  console.log("配置已更新:", data.type);
+});
+```
+
+##### `onceEvent<K extends keyof EventBusEvents>(eventName: K, listener: (data: EventBusEvents[K]) => void): this`
+
+一次性监听事件（触发后自动移除）。
+
+**参数**:
+- `eventName`: 事件名称
+- `listener`: 事件监听器函数
+
+##### `offEvent<K extends keyof EventBusEvents>(eventName: K, listener: (data: EventBusEvents[K]) => void): this`
+
+移除事件监听器（类型安全）。
+
+**参数**:
+- `eventName`: 事件名称
+- `listener`: 要移除的监听器函数
+
+##### `getStatus()`
+
+获取事件总线状态。
+
+**返回**:
+```typescript
+{
+  totalEvents: number;
+  totalListeners: number;
+  eventStats: Record<string, { count: number; lastEmitted: Date }>;
+  listenerStats: Record<string, number>;
+}
+```
+
+##### `getEventStats()`
+
+获取事件统计信息。
+
+##### `getListenerStats()`
+
+获取监听器统计信息。
+
+##### `clearEventStats()`
+
+清理事件统计。
+
+##### `destroy()`
+
+销毁事件总线，移除所有监听器。
+
+## 单例访问
+
+### getEventBus()
+
+获取事件总线单例实例。
+
+```typescript
+import { getEventBus } from "@/services/event-bus.service.js";
+
+const eventBus = getEventBus();
+```
+
+### destroyEventBus()
+
+销毁事件总线单例。
+
+```typescript
+import { destroyEventBus } from "@/services/event-bus.service.js";
+
+destroyEventBus();
+```
+
+## 事件类型
+
+### 配置相关事件
+
+#### `config:updated`
+
+配置已更新事件。
+
+```typescript
+interface ConfigUpdatedEvent {
+  type: string;
+  serviceName?: string;
+  platformName?: string;
+  timestamp: Date;
+}
+```
+
+#### `config:error`
+
+配置错误事件。
+
+```typescript
+interface ConfigErrorEvent {
+  error: Error;
+  operation: string;
+}
+```
+
+### 状态相关事件
+
+#### `status:updated`
+
+状态已更新事件。
+
+```typescript
+interface StatusUpdatedEvent {
+  status: any;
+  source: string;
+}
+```
+
+#### `status:error`
+
+状态错误事件。
+
+```typescript
+interface StatusErrorEvent {
+  error: Error;
+  operation: string;
+}
+```
+
+### 接入点状态事件
+
+#### `endpoint:status:changed`
+
+接入点状态变更事件。
+
+```typescript
+interface EndpointStatusChangedEvent {
+  endpoint: string;
+  connected: boolean;
+  operation: "connect" | "disconnect" | "reconnect" | "add" | "remove";
+  success: boolean;
+  message?: string;
+  timestamp: number;
+  source: string;
+}
+```
+
+#### `endpoint:reconnect:completed`
+
+接入点重连完成事件。
+
+```typescript
+interface EndpointReconnectCompletedEvent {
+  trigger: "mcp_server_added" | "mcp_server_batch_added" | "manual" | "other";
+  serverName?: string;
+  endpointCount: number;
+  timestamp: number;
+}
+```
+
+#### `endpoint:reconnect:failed`
+
+接入点重连失败事件。
+
+```typescript
+interface EndpointReconnectFailedEvent {
+  trigger: "mcp_server_added" | "mcp_server_batch_added" | "manual" | "other";
+  serverName?: string;
+  error: string;
+  timestamp: number;
+}
+```
+
+### 服务相关事件
+
+#### `service:restart:requested`
+
+服务重启请求事件。
+
+```typescript
+interface ServiceRestartRequestedEvent {
+  serviceName: string;
+  reason?: string;
+  delay: number;
+  attempt: number;
+  timestamp: number;
+  source?: string;
+}
+```
+
+#### `service:restart:started`
+
+服务重启开始事件。
+
+```typescript
+interface ServiceRestartStartedEvent {
+  serviceName: string;
+  reason?: string;
+  attempt: number;
+  timestamp: number;
+}
+```
+
+#### `service:restart:completed`
+
+服务重启完成事件。
+
+```typescript
+interface ServiceRestartCompletedEvent {
+  serviceName: string;
+  reason?: string;
+  attempt: number;
+  timestamp: number;
+}
+```
+
+#### `service:restart:failed`
+
+服务重启失败事件。
+
+```typescript
+interface ServiceRestartFailedEvent {
+  serviceName: string;
+  error: Error;
+  attempt: number;
+  timestamp: number;
+}
+```
+
+#### `service:health:changed`
+
+服务健康状态变更事件。
+
+```typescript
+interface ServiceHealthChangedEvent {
+  serviceName: string;
+  oldStatus: string;
+  newStatus: string;
+  timestamp: number;
+}
+```
+
+### WebSocket 相关事件
+
+#### `websocket:client:connected`
+
+WebSocket 客户端连接事件。
+
+```typescript
+interface WebSocketClientConnectedEvent {
+  clientId: string;
+  timestamp: number;
+}
+```
+
+#### `websocket:client:disconnected`
+
+WebSocket 客户端断开事件。
+
+```typescript
+interface WebSocketClientDisconnectedEvent {
+  clientId: string;
+  timestamp: number;
+}
+```
+
+#### `websocket:message:received`
+
+WebSocket 消息接收事件。
+
+```typescript
+interface WebSocketMessageReceivedEvent {
+  type: string;
+  data: any;
+  clientId: string;
+}
+```
+
+### MCP 服务相关事件
+
+#### `mcp:service:connected`
+
+MCP 服务已连接事件。
+
+```typescript
+interface MCPServiceConnectedEvent {
+  serviceName: string;
+  tools: Tool[];
+  connectionTime: Date;
+}
+```
+
+#### `mcp:service:disconnected`
+
+MCP 服务已断开事件。
+
+```typescript
+interface MCPServiceDisconnectedEvent {
+  serviceName: string;
+  reason?: string;
+  disconnectionTime: Date;
+}
+```
+
+#### `mcp:service:connection:failed`
+
+MCP 服务连接失败事件。
+
+```typescript
+interface MCPServiceConnectionFailedEvent {
+  serviceName: string;
+  error: Error;
+  attempt: number;
+}
+```
+
+#### `mcp:server:added`
+
+MCP 服务器已添加事件。
+
+```typescript
+interface MCPServerAddedEvent {
+  serverName: string;
+  config: any;
+  tools: string[];
+  timestamp: Date;
+}
+```
+
+#### `mcp:server:removed`
+
+MCP 服务器已移除事件。
+
+```typescript
+interface MCPServerRemovedEvent {
+  serverName: string;
+  affectedTools: string[];
+  timestamp: Date;
+}
+```
+
+#### `mcp:server:status_changed`
+
+MCP 服务器状态变更事件。
+
+```typescript
+interface MCPServerStatusChangedEvent {
+  serverName: string;
+  oldStatus: "connected" | "disconnected" | "connecting" | "error";
+  newStatus: "connected" | "disconnected" | "connecting" | "error";
+  timestamp: Date;
+  reason?: string;
+}
+```
+
+### NPM 安装相关事件
+
+#### `npm:install:started`
+
+NPM 安装开始事件。
+
+#### `npm:install:log`
+
+NPM 安装日志事件。
+
+#### `npm:install:completed`
+
+NPM 安装完成事件。
+
+#### `npm:install:failed`
+
+NPM 安装失败事件。
+
+## 使用示例
+
+### 基本使用
+
+```typescript
+import { getEventBus } from "@/services/event-bus.service.js";
+
+const eventBus = getEventBus();
+
+// 监听配置更新
+eventBus.onEvent("config:updated", (data) => {
+  console.log("配置已更新:", data.type);
+});
+
+// 发射配置更新事件
+eventBus.emitEvent("config:updated", {
+  type: "endpoint",
+  timestamp: new Date()
+});
+```
+
+### 监听 MCP 服务事件
+
+```typescript
+import { getEventBus } from "@/services/event-bus.service.js";
+
+const eventBus = getEventBus();
+
+// 监听服务连接
+eventBus.onEvent("mcp:service:connected", (data) => {
+  console.log("服务已连接:", data.serviceName);
+  console.log("可用工具:", data.tools);
+});
+
+// 监听服务断开
+eventBus.onEvent("mcp:service:disconnected", (data) => {
+  console.log("服务已断开:", data.serviceName, data.reason);
+});
+
+// 监听服务连接失败
+eventBus.onEvent("mcp:service:connection:failed", (data) => {
+  console.error("服务连接失败:", data.serviceName, data.error);
+});
+```
+
+### 一次性监听
+
+```typescript
+// 只监听一次
+eventBus.onceEvent("service:restart:completed", (data) => {
+  console.log("服务重启完成:", data.serviceName);
+  // 监听器会在触发后自动移除
+});
+```
+
+### 移除监听器
+
+```typescript
+// 定义监听器函数
+const handler = (data: any) => {
+  console.log("处理事件:", data);
+};
+
+// 添加监听器
+eventBus.onEvent("config:updated", handler);
+
+// 移除监听器
+eventBus.offEvent("config:updated", handler);
+```
+
+### 获取统计信息
+
+```typescript
+// 获取事件总线状态
+const status = eventBus.getStatus();
+console.log("总事件数:", status.totalEvents);
+console.log("总监听器数:", status.totalListeners);
+console.log("事件统计:", status.eventStats);
+console.log("监听器统计:", status.listenerStats);
+```
+
+### 清理资源
+
+```typescript
+// 清理事件统计
+eventBus.clearEventStats();
+
+// 销毁事件总线（通常在应用关闭时）
+eventBus.destroy();
+```
+
+## 注意事项
+
+1. **类型安全**: 所有事件名称和数据都是类型安全的，TypeScript 会提供完整的类型提示
+2. **监听器限制**: 测试环境下监听器限制为 200，生产环境为 50
+3. **错误处理**: 监听器抛出的错误会被捕获并发射到 `error` 事件
+4. **内存泄漏**: 使用完毕后应及时移除监听器，避免内存泄漏
+5. **单例模式**: 使用 `getEventBus()` 获取全局单例，不要创建多个实例
+
+## 相关模块
+
+- [MCP 模块](./mcp) - MCP 模块使用事件总线发射连接状态变更
+- [端点管理](./endpoint) - 端点状态变更通过事件总线通知
+- [配置管理](./config) - 配置更新通过事件总线通知其他模块
