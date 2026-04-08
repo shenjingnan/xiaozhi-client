@@ -25,10 +25,30 @@ export type {
   CustomMCPToolWithStats,
   CustomMCPToolConfig,
   JSONSchema,
+  ToolHandlerConfig,
+  MCPHandlerConfig,
+  ProxyHandlerConfig,
+  HttpHandlerConfig,
+  FunctionHandlerConfig,
 } from "./mcp";
 
 // 工具API相关类型
-export type { ToolType, MCPToolData } from "./api";
+export type {
+  MCPToolData,
+  CozeWorkflowData,
+  HttpApiToolData,
+  FunctionToolData,
+  AddCustomToolRequest,
+  ToolValidationErrorDetail,
+  AddToolResponse,
+  ToolMetadata,
+  ToolConfigOptions,
+  ExtendedCustomMCPTool,
+} from "./api";
+
+// 导出枚举（同时作为类型和值）
+// 从 toolApi 直接导入，避免通过 api 中转造成的命名冲突
+export { ToolType, ToolValidationError } from "./api/toolApi";
 
 // 配置相关类型
 export type {
