@@ -3,7 +3,7 @@
  * 整合 HTTP API 客户端和 WebSocket 管理器
  */
 
-import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
+import type { AppConfig, ClientStatus, ConnectionConfig } from "@xiaozhi-client/shared-types";
 import { type ApiClient, apiClient } from "./api";
 import {
   type ConnectionState,
@@ -140,7 +140,7 @@ export class NetworkService {
   /**
    * 获取连接配置 (HTTP)
    */
-  async getConnectionConfig(): Promise<any> {
+  async getConnectionConfig(): Promise<ConnectionConfig> {
     return this.apiClient.getConnectionConfig();
   }
 
