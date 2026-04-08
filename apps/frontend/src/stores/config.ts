@@ -51,6 +51,9 @@ interface ConfigState {
   mcpServerStatuses: MCPServerStatus[];
   mcpServerStatusLoading: boolean;
   mcpServerStatusLastUpdate: number | null;
+
+  // WebSocket 取消订阅函数（内部使用）
+  _unsubscribe: (() => void) | null;
 }
 
 /**
@@ -110,6 +113,7 @@ const initialState: ConfigState = {
   mcpServerStatuses: [],
   mcpServerStatusLoading: false,
   mcpServerStatusLastUpdate: null,
+  _unsubscribe: null,
 };
 
 /**
@@ -316,6 +320,14 @@ export const useConfigStore = create<ConfigStore>()(
 
       reset: () => {
         console.log("[ConfigStore] 重置状态");
+
+        // 清理 WebSocket 订阅
+        const { _unsubscribe } = get();
+        if (_unsubscribe) {
+          console.log("[ConfigStore] 清理 WebSocket 订阅");
+          _unsubscribe();
+        }
+
         set(initialState, false, "reset");
       },
 
@@ -327,10 +339,16 @@ export const useConfigStore = create<ConfigStore>()(
           console.log("[ConfigStore] 初始化配置 Store");
 
           // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:configUpdate", (config) => {
-            console.log("[ConfigStore] 收到 WebSocket 配置更新");
-            get().setConfig(config, "websocket");
-          });
+          const unsubscribe = webSocketManager.subscribe(
+            "data:configUpdate",
+            (config) => {
+              console.log("[ConfigStore] 收到 WebSocket 配置更新");
+              get().setConfig(config, "websocket");
+            }
+          );
+
+          // 保存取消订阅函数
+          set({ _unsubscribe: unsubscribe }, false, "initialize");
 
           // 获取初始配置
           await refreshConfig();

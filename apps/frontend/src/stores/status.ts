@@ -116,6 +116,9 @@ interface StatusState {
 
   // 状态来源追踪
   lastSource: "http" | "websocket" | "polling" | "initial" | null;
+
+  // WebSocket 取消订阅函数数组（内部使用）
+  _unsubscribes: (() => void)[];
 }
 
 /**
@@ -198,6 +201,7 @@ const initialState: StatusState = {
     startTime: null,
   },
   lastSource: null,
+  _unsubscribes: [],
 };
 
 /**
@@ -681,6 +685,17 @@ export const useStatusStore = create<StatusStore>()(
         get().stopPolling();
         get().stopRestartPolling();
 
+        // 清理 WebSocket 订阅
+        const { _unsubscribes } = get();
+        if (_unsubscribes.length > 0) {
+          console.log(
+            `[StatusStore] 清理 ${_unsubscribes.length} 个 WebSocket 订阅`
+          );
+          for (const unsubscribe of _unsubscribes) {
+            unsubscribe();
+          }
+        }
+
         // 重置状态
         set(initialState, false, "reset");
       },
@@ -692,16 +707,29 @@ export const useStatusStore = create<StatusStore>()(
           setLoading({ isLoading: true });
           console.log("[StatusStore] 初始化状态 Store");
 
-          // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:statusUpdate", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 状态更新");
-            get().setClientStatus(status, "websocket");
-          });
+          // 设置 WebSocket 事件监听并保存取消订阅函数
+          const unsubscribes: (() => void)[] = [];
 
-          webSocketManager.subscribe("data:restartStatus", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 重启状态更新");
-            get().setRestartStatus(status, "websocket");
-          });
+          const unsubscribe1 = webSocketManager.subscribe(
+            "data:statusUpdate",
+            (status) => {
+              console.log("[StatusStore] 收到 WebSocket 状态更新");
+              get().setClientStatus(status, "websocket");
+            }
+          );
+          unsubscribes.push(unsubscribe1);
+
+          const unsubscribe2 = webSocketManager.subscribe(
+            "data:restartStatus",
+            (status) => {
+              console.log("[StatusStore] 收到 WebSocket 重启状态更新");
+              get().setRestartStatus(status, "websocket");
+            }
+          );
+          unsubscribes.push(unsubscribe2);
+
+          // 保存取消订阅函数
+          set({ _unsubscribes: unsubscribes }, false, "initialize");
 
           // 获取初始状态
           await refreshStatus();
