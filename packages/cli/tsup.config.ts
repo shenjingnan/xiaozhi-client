@@ -4,7 +4,15 @@ import { defineConfig } from "tsup";
 
 // 读取根目录 package.json 获取版本号
 const rootPkgPath = resolve("../../package.json");
-const pkg = JSON.parse(readFileSync(rootPkgPath, "utf-8"));
+let pkg: { version: string; name: string };
+try {
+  pkg = JSON.parse(readFileSync(rootPkgPath, "utf-8"));
+} catch (error) {
+  throw new Error(
+    `无法解析根目录 package.json 文件: ${rootPkgPath}\n` +
+      `错误: ${error instanceof Error ? error.message : String(error)}`
+  );
+}
 
 export default defineConfig({
   entry: {
@@ -102,8 +110,16 @@ export default defineConfig({
     const cliPkgPath = resolve("../../packages/cli/package.json");
     const rootPkgPath = resolve("../../package.json");
 
-    const cliPkg = JSON.parse(readFileSync(cliPkgPath, "utf-8"));
-    const rootPkg = JSON.parse(readFileSync(rootPkgPath, "utf-8"));
+    let cliPkg: { version: string };
+    let rootPkg: { version: string };
+    try {
+      cliPkg = JSON.parse(readFileSync(cliPkgPath, "utf-8"));
+      rootPkg = JSON.parse(readFileSync(rootPkgPath, "utf-8"));
+    } catch (error) {
+      throw new Error(
+        `无法解析 package.json 文件\nCLI: ${cliPkgPath}\nRoot: ${rootPkgPath}\n错误: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
 
     if (cliPkg.version !== rootPkg.version) {
       rootPkg.version = cliPkg.version;
