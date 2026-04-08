@@ -96,7 +96,7 @@ export function McpToolTable({
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Coze 工具确认对话框状态
   const [cozeToolToRemove, setCozeToolToRemove] = useState<string | null>(null);
@@ -345,8 +345,20 @@ export function McpToolTable({
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <div className="text-red-500 text-sm">{error}</div>
-            <Button variant="outline" size="sm" onClick={handleRefresh}>
-              重试
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  刷新中...
+                </>
+              ) : (
+                "重试"
+              )}
             </Button>
           </div>
         ) : filteredTools.length === 0 ? (
