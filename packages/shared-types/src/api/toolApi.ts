@@ -5,6 +5,7 @@
 
 import type { WorkflowParameterConfig, CozeWorkflow } from "../coze";
 import type { CustomMCPToolWithStats } from "../mcp";
+import type { ErrorDetail } from "./errors";
 
 /**
  * 工具类型枚举
@@ -140,7 +141,7 @@ export interface ToolValidationErrorDetail {
   /** 错误消息 */
   message: string;
   /** 错误详情 */
-  details?: any;
+  details?: ErrorDetail;
   /** 建议的解决方案 */
   suggestions?: string[];
 }
