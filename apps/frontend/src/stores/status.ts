@@ -116,6 +116,9 @@ interface StatusState {
 
   // 状态来源追踪
   lastSource: "http" | "websocket" | "polling" | "initial" | null;
+
+  // WebSocket 订阅清理函数
+  unsubscribers: WebSocketUnsubscribers;
 }
 
 /**
@@ -163,6 +166,14 @@ interface StatusActions {
 }
 
 /**
+ * WebSocket 订阅清理函数接口
+ */
+interface WebSocketUnsubscribers {
+  unsubscribeStatusUpdate?: () => void;
+  unsubscribeRestartStatus?: () => void;
+}
+
+/**
  * 完整的状态 Store 接口
  */
 export interface StatusStore extends StatusState, StatusActions {}
@@ -198,6 +209,10 @@ const initialState: StatusState = {
     startTime: null,
   },
   lastSource: null,
+  unsubscribers: {
+    unsubscribeStatusUpdate: undefined,
+    unsubscribeRestartStatus: undefined,
+  },
 };
 
 /**
@@ -681,6 +696,15 @@ export const useStatusStore = create<StatusStore>()(
         get().stopPolling();
         get().stopRestartPolling();
 
+        // 取消 WebSocket 订阅
+        const { unsubscribers } = get();
+        if (unsubscribers.unsubscribeStatusUpdate) {
+          unsubscribers.unsubscribeStatusUpdate();
+        }
+        if (unsubscribers.unsubscribeRestartStatus) {
+          unsubscribers.unsubscribeRestartStatus();
+        }
+
         // 重置状态
         set(initialState, false, "reset");
       },
@@ -692,16 +716,35 @@ export const useStatusStore = create<StatusStore>()(
           setLoading({ isLoading: true });
           console.log("[StatusStore] 初始化状态 Store");
 
-          // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:statusUpdate", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 状态更新");
-            get().setClientStatus(status, "websocket");
-          });
+          // 设置 WebSocket 事件监听，保存取消订阅函数
+          const unsubscribeStatus = webSocketManager.subscribe(
+            "data:statusUpdate",
+            (status) => {
+              console.log("[StatusStore] 收到 WebSocket 状态更新");
+              get().setClientStatus(status, "websocket");
+            }
+          );
 
-          webSocketManager.subscribe("data:restartStatus", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 重启状态更新");
-            get().setRestartStatus(status, "websocket");
-          });
+          const unsubscribeRestart = webSocketManager.subscribe(
+            "data:restartStatus",
+            (status) => {
+              console.log("[StatusStore] 收到 WebSocket 重启状态更新");
+              get().setRestartStatus(status, "websocket");
+            }
+          );
+
+          // 保存取消订阅函数
+          set(
+            (state) => ({
+              unsubscribers: {
+                ...state.unsubscribers,
+                unsubscribeStatusUpdate: unsubscribeStatus,
+                unsubscribeRestartStatus: unsubscribeRestart,
+              },
+            }),
+            false,
+            "initialize"
+          );
 
           // 获取初始状态
           await refreshStatus();
