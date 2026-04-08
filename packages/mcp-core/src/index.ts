@@ -13,6 +13,7 @@ export type {
   // 配置相关
   MCPServiceConfig,
   ModelScopeSSEOptions,
+  InternalMCPServiceConfig,
   UnifiedServerConfig,
   // 状态相关
   MCPServiceStatus,
@@ -26,6 +27,7 @@ export type {
   ToolCallParams,
   ValidatedToolCallParams,
   ToolCallValidationOptions,
+  ToolStatusFilter,
   CustomMCPTool,
   JSONSchema,
   // 传输相关
