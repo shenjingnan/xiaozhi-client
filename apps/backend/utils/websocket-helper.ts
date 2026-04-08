@@ -15,6 +15,7 @@ import type { Logger } from "@/Logger.js";
  * 描述具有 send 方法的 WebSocket 对象
  */
 export interface WebSocketLike {
+  readyState: number;
   send(data: string): void;
 }
 
