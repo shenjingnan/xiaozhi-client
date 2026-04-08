@@ -68,22 +68,31 @@ export class CozeApiClient {
       },
     };
 
-    const response = await fetch(url, { ...defaultOptions, ...options });
+    try {
+      const response = await fetch(url, { ...defaultOptions, ...options });
 
-    if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
 
-      try {
-        const errorData: ApiErrorResponse = await response.json();
-        errorMessage = errorData.error?.message || errorMessage;
-      } catch {
-        // 如果无法解析错误响应，使用默认错误消息
+        try {
+          const errorData: ApiErrorResponse = await response.json();
+          errorMessage = errorData.error?.message || errorMessage;
+        } catch {
+          // 如果无法解析错误响应，使用默认错误消息
+        }
+
+        throw new Error(errorMessage);
       }
 
-      throw new Error(errorMessage);
+      return response.json();
+    } catch (error) {
+      // 处理网络错误或 fetch 抛出的其他异常
+      if (error instanceof TypeError) {
+        throw new Error(`网络请求失败: ${url} - ${error.message}`);
+      }
+      // 重新抛出其他错误（包括我们手动抛出的 HTTP 错误）
+      throw error;
     }
-
-    return response.json();
   }
 
   /**
