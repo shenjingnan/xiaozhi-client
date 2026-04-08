@@ -16,6 +16,7 @@ import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
 import type { ClientInfo } from "@/services/status.service.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
 
 /**
  * 事件类型定义
@@ -126,7 +127,7 @@ export interface EventBusEvents {
   };
   "mcp:server:added": {
     serverName: string;
-    config: any;
+    config: MCPServerConfig;
     tools: string[];
     timestamp: Date;
   };
