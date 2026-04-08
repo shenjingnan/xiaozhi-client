@@ -2,15 +2,10 @@
  * 应用配置相关类型定义
  */
 
-// 连接配置接口
-export interface ConnectionConfig {
-  heartbeatInterval?: number;
-  heartbeatTimeout?: number;
-  reconnectInterval?: number;
-  maxReconnectAttempts?: number;
-  connectionTimeout?: number;
-  autoReconnect?: boolean;
-}
+// 从 connection.ts 导入 ConnectionConfig，避免重复定义并保持文档一致性
+import type { ConnectionConfig } from "./connection";
+// 重新导出 ConnectionConfig 供外部使用
+export { ConnectionConfig };
 
 /**
  * 本地 MCP 服务器配置
