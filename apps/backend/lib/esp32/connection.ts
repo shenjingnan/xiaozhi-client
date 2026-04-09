@@ -12,6 +12,7 @@ import {
   parseBinaryProtocol2,
   parseBinaryProtocol3,
 } from "@/lib/esp32/audio-protocol.js";
+import type { ASRService } from "@/services/asr.service.js";
 import {
   type ESP32ConnectionState,
   ESP32ErrorCode,
@@ -34,6 +35,8 @@ interface ESP32ConnectionConfig {
   onError: (error: Error) => void;
   /** 心跳超时时间（毫秒），默认30秒 */
   heartbeatTimeoutMs?: number;
+  /** ASR 服务获取函数（用于获取最新的实例） */
+  getASRService: () => ASRService;
 }
 
 /**
@@ -68,6 +71,9 @@ export class ESP32Connection {
   /** 是否已完成Hello握手 */
   private helloCompleted = false;
 
+  /** ASR 服务获取函数（用于获取最新的实例） */
+  private getASRService: () => ASRService;
+
   /**
    * 构造函数
    * @param deviceId - 设备ID
@@ -86,6 +92,7 @@ export class ESP32Connection {
     this.ws = ws;
     this.lastActivity = new Date();
     this.sessionId = this.generateSessionId();
+    this.getASRService = config.getASRService;
 
     this.heartbeatTimeoutMs = config.heartbeatTimeoutMs ?? 30_000;
 
@@ -94,6 +101,7 @@ export class ESP32Connection {
       onClose: config.onClose,
       onError: config.onError,
       heartbeatTimeoutMs: this.heartbeatTimeoutMs,
+      getASRService: config.getASRService,
     };
 
     this.setupWebSocket();
@@ -279,6 +287,14 @@ export class ESP32Connection {
     logger.info(`[HELLO] 准备发送ServerHello响应: sessionId=${this.sessionId}`);
     await this.send(serverHello);
     logger.info("[HELLO] ServerHello响应已发送");
+
+    // 在 Hello 阶段只准备 ASR 服务（不建立连接）
+    // 连接会在 start 阶段建立，以支持多次语音交互
+    const asrService = this.getASRService();
+    if (asrService) {
+      logger.info(`[HELLO] 准备 ASR 服务: deviceId=${this.deviceId}`);
+      await asrService.prepare(this.deviceId);
+    }
 
     this.helloCompleted = true;
     this.state = "connected";

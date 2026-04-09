@@ -52,20 +52,19 @@ export class ESP32Service {
 
     // 初始化语音服务
     this.llmService = new LLMService();
-    this.asrService = new ASRService();
+    this.asrService = this.createASRService();
     this.ttsService = this.createTTSService();
     this.setupTTSGetConnection();
   }
 
   /**
    * 创建 ASR 服务实例
-   * @param deviceId - 设备 ID（通过闭包绑定到回调中）
    * @returns ASR 服务实例
    */
-  private createASRService(deviceId: string): ASRService {
+  private createASRService(): ASRService {
     return new ASRService({
       events: {
-        onResult: async (text, isFinal) => {
+        onResult: async (deviceId, text, isFinal) => {
           // 如果是最终结果，触发 LLM 和 TTS
           if (isFinal && text) {
             const connection = this.connections.get(deviceId);
@@ -107,7 +106,7 @@ export class ESP32Service {
             this.recreateASRService();
           }
         },
-        onError: (error) => {
+        onError: (deviceId, error) => {
           logger.error(`[ESP32Service] ASR 错误: deviceId=${deviceId}`, error);
         },
       },
@@ -116,16 +115,14 @@ export class ESP32Service {
 
   /**
    * 重建 ASR 服务实例
-   * 销毁当前实例并创建新的空实例
-   * 下次 detect 时会通过 createASRService(deviceId) 创建绑定设备的实例
+   * 销毁当前实例并创建新实例，确保每次识别都从干净的状态开始
    */
   private recreateASRService(): void {
     logger.info("[ESP32Service] 重建 ASR 服务实例");
     if (this.asrService) {
       this.asrService.destroy();
     }
-    // 创建不绑定设备的空实例，等下次 detect 时再绑定
-    this.asrService = new ASRService();
+    this.asrService = this.createASRService();
     logger.info("[ESP32Service] ASR 服务实例已重建");
   }
 
@@ -164,6 +161,14 @@ export class ESP32Service {
     logger.info("[ESP32Service] 重建 LLM 服务实例");
     this.llmService = new LLMService();
     logger.info("[ESP32Service] LLM 服务实例已重建");
+  }
+
+  /**
+   * 获取 ASR 服务实例
+   * @returns ASR 服务实例
+   */
+  getASRService(): ASRService {
+    return this.asrService;
   }
 
   /**
@@ -318,6 +323,8 @@ export class ESP32Service {
           error
         );
       },
+      // 使用 getter 函数获取最新的 ASR 服务实例
+      getASRService: () => this.asrService,
     });
 
     this.connections.set(deviceId, connection);
@@ -345,7 +352,8 @@ export class ESP32Service {
     // 根据消息类型处理
     switch (message.type) {
       case "hello":
-        // Hello 握手由 ESP32Connection 处理
+        // ASR 初始化现在在 ESP32Connection.handleHello() 中处理
+        // 这里不再需要重复调用
         break;
       case "listen":
         // Listen消息处理（唤醒词检测和监听状态）
@@ -389,15 +397,13 @@ export class ESP32Service {
 
     switch (state) {
       case "detect":
-        // 检测到唤醒词，创建绑定设备的 ASR 实例并启动会话
+        // 检测到唤醒词，初始化 ASR
         if (text) {
           logger.info(
             `[ESP32Service] 处理唤醒词检测: deviceId=${deviceId}, word="${text}"`
           );
-          // 销毁旧实例，创建绑定当前设备的新实例
-          this.asrService.destroy();
-          this.asrService = this.createASRService(deviceId);
-          await this.asrService.start();
+          // 初始化 ASR 服务
+          await this.asrService.init(deviceId);
         } else {
           logger.warn(
             `[ESP32Service] 唤醒词消息缺少必要字段: text="${text}", mode=${mode}`
@@ -405,14 +411,18 @@ export class ESP32Service {
         }
         break;
       case "start":
-        // 连接已在 detect 阶段建立，无需额外操作
         logger.info(
           `[ESP32Service] 收到start消息: message=${JSON.stringify(message)}`
         );
+        // 开始监听，建立 ASR 连接
+        // 注意：硬件端会在发送 start 消息后立刻发送音频数据
+        // 所以这里需要尽快建立连接，音频数据会在缓冲区中等待
+        await this.asrService.connect(deviceId);
         if (mode === "manual" || mode === "realtime") {
           logger.info(
             `[ESP32Service] 开始手动/实时监听会话: deviceId=${deviceId}, mode=${mode}`
           );
+          // 开始会话
           const sessionId = `session_${deviceId}_${Date.now()}`;
           logger.info(
             `[ESP32Service] 语音会话已开始: deviceId=${deviceId}, sessionId=${sessionId}`
@@ -424,9 +434,9 @@ export class ESP32Service {
         }
         break;
       case "stop":
-        // 停止监听，结束当前会话
+        // 停止监听，中断当前会话
         logger.info(`[ESP32Service] 停止监听，中断会话: deviceId=${deviceId}`);
-        await this.asrService.end();
+        await this.asrService.end(deviceId);
         break;
       default:
         logger.warn(`[ESP32Service] 未知的监听状态: ${state}`);
@@ -472,7 +482,7 @@ export class ESP32Service {
     }
 
     // 交给 ASR 服务处理
-    await this.asrService.handleAudioData(audioData);
+    await this.asrService.handleAudioData(deviceId, audioData);
   }
 
   /**

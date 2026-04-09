@@ -1,6 +1,6 @@
 /**
  * ASR 服务接口
- * 定义单会话语音识别服务的方法和事件
+ * 定义语音识别服务的方法和事件
  */
 
 /**
@@ -9,16 +9,24 @@
 export interface ASRServiceEvents {
   /**
    * 识别结果回调
+   * @param deviceId - 设备 ID
    * @param text - 识别文本
    * @param isFinal - 是否为最终结果
    */
-  onResult?: (text: string, isFinal: boolean) => void;
+  onResult?: (deviceId: string, text: string, isFinal: boolean) => void;
 
   /**
    * 错误回调
+   * @param deviceId - 设备 ID
    * @param error - 错误对象
    */
-  onError?: (error: Error) => void;
+  onError?: (deviceId: string, error: Error) => void;
+
+  /**
+   * 连接关闭回调
+   * @param deviceId - 设备 ID
+   */
+  onClose?: (deviceId: string) => void;
 }
 
 /**
@@ -33,31 +41,58 @@ export interface ASRServiceOptions {
 
 /**
  * ASR 服务接口
- * 单会话模式：每个实例只管理一次语音识别
+ * 定义语音识别所需的方法
  */
 export interface IASRService {
   /**
-   * 启动 ASR 识别会话
-   * 建立 ASR 连接并开始处理音频流
+   * 准备 ASR 服务
+   * 只准备配置和缓冲区，不建立连接
+   * 用于在连接建立前缓存音频数据
+   * @param deviceId - 设备 ID
    */
-  start(): Promise<void>;
+  prepare(deviceId: string): Promise<void>;
+
+  /**
+   * 建立 ASR 连接
+   * 建立 WebSocket 连接并开始处理音频流
+   * @param deviceId - 设备 ID
+   */
+  connect(deviceId: string): Promise<void>;
+
+  /**
+   * 初始化 ASR 语音识别服务（已弃用，请使用 prepare + connect）
+   * 如果已存在 ASR 客户端且已连接，则跳过初始化
+   * @param deviceId - 设备 ID
+   * @deprecated 使用 prepare() + connect() 替代
+   */
+  init(deviceId: string): Promise<void>;
 
   /**
    * 处理音频数据
-   * 将 Opus 音频数据推入流中，由 ASR 引擎消费
+   * 将音频数据推入队列，由 listen() 异步生成器消费
+   * 如果连接未建立，数据会被缓存直到连接建立
+   * @param deviceId - 设备 ID
    * @param audioData - 裸 Opus 音频数据
    */
-  handleAudioData(audioData: Uint8Array): Promise<void>;
+  handleAudioData(deviceId: string, audioData: Uint8Array): Promise<void>;
 
   /**
-   * 结束 ASR 识别会话
-   * 结束音频流并等待识别完成
+   * 结束 ASR 语音识别
+   * 标记音频结束，由 listen() 任务自动处理关闭
+   * @param deviceId - 设备 ID
    */
-  end(): Promise<void>;
+  end(deviceId: string): Promise<void>;
+
+  /**
+   * 重置 ASR 服务状态
+   * 清理资源但保留配置，准备下一次语音交互
+   * @param deviceId - 设备 ID
+   */
+  reset(deviceId: string): Promise<void>;
 
   /**
    * 销毁服务
-   * 清理所有资源
+   * 清理所有设备资源
    */
   destroy(): void;
 }
