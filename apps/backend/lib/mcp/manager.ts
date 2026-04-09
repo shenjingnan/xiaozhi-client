@@ -115,13 +115,25 @@ export class MCPServiceManager extends EventEmitter {
     // 初始化事件监听器引用
     this.eventListeners = {
       serviceConnected: async (data) => {
-        await this.handleServiceConnected(data);
+        try {
+          await this.handleServiceConnected(data);
+        } catch (error) {
+          logger.error("[MCPManager] 处理服务连接成功事件失败:", error);
+        }
       },
       serviceDisconnected: async (data) => {
-        await this.handleServiceDisconnected(data);
+        try {
+          await this.handleServiceDisconnected(data);
+        } catch (error) {
+          logger.error("[MCPManager] 处理服务断开事件失败:", error);
+        }
       },
       serviceConnectionFailed: async (data) => {
-        await this.handleServiceConnectionFailed(data);
+        try {
+          await this.handleServiceConnectionFailed(data);
+        } catch (error) {
+          logger.error("[MCPManager] 处理服务连接失败事件失败:", error);
+        }
       },
     };
 
