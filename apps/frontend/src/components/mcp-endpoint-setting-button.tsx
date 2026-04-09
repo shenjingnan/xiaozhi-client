@@ -1,3 +1,28 @@
+/**
+ * MCP 端点设置按钮组件
+ *
+ * 提供 MCP 端点的添加、编辑、删除和连接状态管理功能。
+ * 主要功能包括：
+ * - 端点列表展示和管理
+ * - 端点添加和删除对话框
+ * - 端点连接状态实时显示
+ * - 端点配置编辑和验证
+ * - WebSocket 实时状态同步
+ *
+ * @module McpEndpointSettingButton
+ *
+ * @requires @/stores/config - 配置状态管理（useConfig, useConfigActions, useMcpEndpoint）
+ * @requires @/services/api - API 客户端（端点增删改查、连接/断开操作）
+ * @requires @/services/websocket - WebSocket 连接管理（实时状态订阅）
+ *
+ * @example
+ * ```tsx
+ * import { McpEndpointSettingButton } from "@/components/mcp-endpoint-setting-button";
+ *
+ * // 在页面中使用
+ * <McpEndpointSettingButton />
+ * ```
+ */
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
