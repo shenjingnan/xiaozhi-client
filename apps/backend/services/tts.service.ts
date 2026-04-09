@@ -250,7 +250,7 @@ export class TTSService implements ITTSService {
     this.isProcessingBuffer.set(deviceId, true);
 
     try {
-      while (buffer.length > 0) {
+      for (const opusPacket of buffer) {
         // 首次收到 Opus 包时发送 start 消息
         if (!this.ttsStarted.get(deviceId)) {
           await connection.send({
@@ -261,9 +261,6 @@ export class TTSService implements ITTSService {
           this.ttsStarted.set(deviceId, true);
           logger.info(`[TTSService] 发送 TTS start 消息: deviceId=${deviceId}`);
         }
-
-        // 从缓冲区取出第一个包
-        const opusPacket = buffer.shift()!;
 
         // 计算时间戳和时长
         const timestamp = this.cumulativeTimestamps.get(deviceId) || 0;
@@ -284,6 +281,8 @@ export class TTSService implements ITTSService {
         // 流控：等待硬件处理
         await new Promise((resolve) => setTimeout(resolve, duration * 0.8));
       }
+      // 清空缓冲区
+      buffer.splice(0, buffer.length);
     } finally {
       this.isProcessingBuffer.set(deviceId, false);
     }
@@ -451,10 +450,10 @@ export class TTSService implements ITTSService {
         if (isProcessing || packetQueue.length === 0) return;
 
         isProcessing = true;
-        while (packetQueue.length > 0) {
-          const packet = packetQueue.shift()!;
+        for (const packet of packetQueue) {
           await processPacket(packet);
         }
+        packetQueue.splice(0, packetQueue.length);
         isProcessing = false;
       };
 
