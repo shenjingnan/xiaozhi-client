@@ -1,0 +1,553 @@
+---
+title: "配置文件参考 - Xiaozhi Client"
+description: "xiaozhi.config.json 配置文件的完整参考文档。"
+---
+
+# 配置文件参考
+
+`xiaozhi.config.json` 是 xiaozhi-client 的核心配置文件，用于配置小智接入点、MCP 服务器、连接参数等所有运行参数。
+
+## 配置文件位置和格式
+
+### 默认位置
+
+配置文件默认位于项目根目录，文件名为 `xiaozhi.config.json`。
+
+### 支持的格式
+
+- **JSON** - 标准 JSON 格式
+- **JSON5** - 支持注释、尾随逗号等扩展特性
+- **JSONC** - 支持 JSON 注释格式
+
+## 配置文件示例
+
+### 最小配置示例
+
+```json
+{
+  "mcpEndpoint": "wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN",
+  "mcpServers": {}
+}
+```
+
+### 完整配置示例
+
+```json
+{
+  "mcpEndpoint": "wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN",
+  "mcpServers": {
+    "calculator": {
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/calculator-mcp"]
+    },
+    "datetime": {
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/datetime-mcp"]
+    }
+  },
+  "connection": {
+    "heartbeatInterval": 30000,
+    "heartbeatTimeout": 10000,
+    "reconnectInterval": 5000
+  },
+  "webUI": {
+    "port": 9999,
+    "autoRestart": true
+  },
+  "asr": {
+    "appid": "YOUR_APP_ID",
+    "accessToken": "YOUR_ACCESS_TOKEN",
+    "cluster": "volcengine_streaming_common",
+    "wsUrl": "wss://openspeech.bytedance.com/api/v1/asr"
+  },
+  "tts": {
+    "appid": "YOUR_APP_ID",
+    "accessToken": "YOUR_ACCESS_TOKEN",
+    "voice_type": "zh_female_xiaohe_uranus_bigtts",
+    "encoding": "wav",
+    "cluster": "volcano_tts"
+  },
+  "llm": {
+    "model": "gpt-4",
+    "apiKey": "YOUR_API_KEY",
+    "baseURL": "https://api.openai.com/v1",
+    "prompt": "./prompts/default.md"
+  },
+  "toolCallLog": {
+    "maxRecords": 100,
+    "logFilePath": "./logs/tool-calls.log"
+  },
+  "modelscope": {
+    "apiKey": "YOUR_MODELSCOPE_API_KEY"
+  },
+  "platforms": {
+    "coze": {
+      "token": "YOUR_COZE_TOKEN"
+    }
+  }
+}
+```
+
+## 核心配置（必填）
+
+### mcpEndpoint
+
+**类型**: `string | string[]`
+**必填**: 是
+
+小智接入点地址，可以是单个地址或多个地址的数组。每个地址应包含完整的 WebSocket URL 和认证 token。
+
+**示例**:
+
+```json
+// 单个接入点
+{
+  "mcpEndpoint": "wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN"
+}
+
+// 多个接入点
+{
+  "mcpEndpoint": [
+    "wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN_1",
+    "wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN_2"
+  ]
+}
+```
+
+### mcpServers
+
+**类型**: `Record<string, MCPServerConfig>`
+**必填**: 是
+
+MCP 服务器配置对象，键为服务器名称，值为服务器配置。支持三种传输类型：
+
+#### 本地 MCP 服务器 (stdio)
+
+```json
+{
+  "mcpServers": {
+    "my-local-server": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/dir"],
+      "env": {
+        "CUSTOM_ENV": "value"
+      }
+    }
+  }
+}
+```
+
+| 字段    | 类型     | 必填 | 说明                     |
+| ------- | -------- | ---- | ------------------------ |
+| command | `string` | 是   | 启动命令                 |
+| args    | `string[]` | 是   | 命令参数数组             |
+| env     | `Record<string, string>` | 否   | 环境变量配置             |
+
+#### SSE MCP 服务器
+
+```json
+{
+  "mcpServers": {
+    "my-sse-server": {
+      "type": "sse",
+      "url": "https://example.com/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    }
+  }
+}
+```
+
+| 字段    | 类型     | 必填 | 说明               |
+| ------- | -------- | ---- | ------------------ |
+| type    | `"sse"`  | 是   | 类型标识           |
+| url     | `string` | 是   | SSE 服务端点地址   |
+| headers | `Record<string, string>` | 否   | HTTP 请求头        |
+
+#### HTTP MCP 服务器
+
+```json
+{
+  "mcpServers": {
+    "my-http-server": {
+      "type": "http",
+      "url": "https://example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    }
+  }
+}
+```
+
+| 字段    | 类型     | 必填 | 说明               |
+| ------- | -------- | ---- | ------------------ |
+| type    | `"http" | "streamable-http"` | 否   | 类型标识，默认为 `http` |
+| url     | `string` | 是   | HTTP 服务端点地址  |
+| headers | `Record<string, string>` | 否   | HTTP 请求头        |
+
+## 常用可选配置
+
+### connection
+
+**类型**: `ConnectionConfig`
+**必填**: 否
+
+连接参数配置，控制心跳检测和重连行为。
+
+```json
+{
+  "connection": {
+    "heartbeatInterval": 30000,
+    "heartbeatTimeout": 10000,
+    "reconnectInterval": 5000
+  }
+}
+```
+
+| 字段               | 类型     | 默认值 | 说明                           |
+| ------------------ | -------- | ------ | ------------------------------ |
+| heartbeatInterval  | `number` | 30000  | 心跳检测间隔（毫秒）           |
+| heartbeatTimeout   | `number` | 10000  | 心跳超时时间（毫秒）           |
+| reconnectInterval  | `number` | 5000   | 重连间隔（毫秒）               |
+
+### webUI
+
+**类型**: `WebUIConfig`
+**必填**: 否
+
+Web UI 配置参数。
+
+```json
+{
+  "webUI": {
+    "port": 9999,
+    "autoRestart": true
+  }
+}
+```
+
+| 字段        | 类型      | 默认值 | 说明                                       |
+| ----------- | --------- | ------ | ------------------------------------------ |
+| port        | `number`  | 9999   | Web UI 端口号                              |
+| autoRestart | `boolean` | true   | 配置更新后是否自动重启服务                 |
+
+### toolCallLog
+
+**类型**: `ToolCallLogConfig`
+**必填**: 否
+
+工具调用日志配置。
+
+```json
+{
+  "toolCallLog": {
+    "maxRecords": 100,
+    "logFilePath": "./logs/tool-calls.log"
+  }
+}
+```
+
+| 字段        | 类型     | 默认值 | 说明                     |
+| ----------- | -------- | ------ | ------------------------ |
+| maxRecords  | `number` | 100    | 最大日志记录条数         |
+| logFilePath | `string` | -      | 自定义日志文件路径       |
+
+## 高级配置
+
+### mcpServerConfig
+
+**类型**: `Record<string, MCPServerToolsConfig>`
+**必填**: 否
+
+MCP 服务器工具可见性配置，用于控制每个服务器的工具是否启用。
+
+```json
+{
+  "mcpServerConfig": {
+    "calculator": {
+      "tools": {
+        "add": {
+          "enable": true,
+          "description": "加法运算"
+        },
+        "subtract": {
+          "enable": false
+        }
+      }
+    }
+  }
+}
+```
+
+每个工具配置包含：
+
+| 字段         | 类型     | 必填 | 说明                       |
+| ------------ | -------- | ---- | -------------------------- |
+| enable       | `boolean` | 是   | 是否启用该工具             |
+| description  | `string` | 否   | 工具描述（覆盖默认描述）   |
+| usageCount   | `number` | 否   | 工具使用次数统计           |
+| lastUsedTime | `string` | 否   | 最后使用时间（ISO 8601）   |
+
+### customMCP
+
+**类型**: `CustomMCPConfig`
+**必填**: 否
+
+自定义 MCP 工具配置，支持多种处理器类型。
+
+```json
+{
+  "customMCP": {
+    "tools": [
+      {
+        "name": "my-custom-tool",
+        "description": "自定义工具描述",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "param1": { "type": "string" }
+          },
+          "required": ["param1"]
+        },
+        "handler": {
+          "type": "http",
+          "url": "https://api.example.com/tool",
+          "method": "POST"
+        }
+      }
+    ]
+  }
+}
+```
+
+#### 处理器类型
+
+customMCP 支持以下处理器类型：
+
+| 类型       | 说明                             |
+| ---------- | -------------------------------- |
+| `proxy`    | 代理到其他平台（Coze、OpenAI 等）|
+| `http`     | HTTP 请求处理器                  |
+| `function` | 本地函数处理器                   |
+| `script`   | 脚本执行处理器                   |
+| `chain`    | 链式调用处理器                   |
+| `mcp`      | MCP 工具包装处理器               |
+
+详细配置参见 [自定义 MCP 工具](/usage/custom-mcp) 文档。
+
+### platforms
+
+**类型**: `PlatformsConfig`
+**必填**: 否
+
+平台配置，用于集成外部平台服务。
+
+```json
+{
+  "platforms": {
+    "coze": {
+      "token": "YOUR_COZE_API_TOKEN"
+    },
+    "openai": {
+      "token": "YOUR_OPENAI_API_KEY"
+    }
+  }
+}
+```
+
+### modelscope
+
+**类型**: `ModelScopeConfig`
+**必填**: 否
+
+ModelScope API 配置。
+
+```json
+{
+  "modelscope": {
+    "apiKey": "YOUR_MODELSCOPE_API_KEY"
+  }
+}
+```
+
+| 字段   | 类型     | 必填 | 说明                |
+| ------ | -------- | ---- | ------------------- |
+| apiKey | `string` | 否   | ModelScope API 密钥 |
+
+### tts
+
+**类型**: `TTSConfig`
+**必填**: 否
+
+语音合成（TTS）配置。
+
+```json
+{
+  "tts": {
+    "appid": "YOUR_APP_ID",
+    "accessToken": "YOUR_ACCESS_TOKEN",
+    "voice_type": "zh_female_xiaohe_uranus_bigtts",
+    "encoding": "wav",
+    "cluster": "volcano_tts",
+    "endpoint": "wss://openspeech.bytedance.com/api/v1/tts"
+  }
+}
+```
+
+| 字段        | 类型     | 必填 | 说明               |
+| ----------- | -------- | ---- | ------------------ |
+| appid       | `string` | 否   | 应用 ID            |
+| accessToken | `string` | 否   | 访问令牌           |
+| voice_type  | `string` | 否   | 声音类型           |
+| encoding    | `string` | 否   | 编码格式（默认 wav）|
+| cluster     | `string` | 否   | 集群类型           |
+| endpoint    | `string` | 否   | WebSocket 端点     |
+
+### asr
+
+**类型**: `ASRConfig`
+**必填**: 否
+
+语音识别（ASR）配置。
+
+```json
+{
+  "asr": {
+    "appid": "YOUR_APP_ID",
+    "accessToken": "YOUR_ACCESS_TOKEN",
+    "cluster": "volcengine_streaming_common",
+    "wsUrl": "wss://openspeech.bytedance.com/api/v1/asr"
+  }
+}
+```
+
+| 字段        | 类型     | 必填 | 说明                           |
+| ----------- | -------- | ---- | ------------------------------ |
+| appid       | `string` | 否   | 应用 ID                        |
+| accessToken | `string` | 否   | 访问令牌                       |
+| cluster     | `string` | 否   | 集群类型（默认 volcengine_streaming_common） |
+| wsUrl       | `string` | 否   | WebSocket 端点                 |
+
+### llm
+
+**类型**: `LLMConfig`
+**必填**: 否
+
+大语言模型（LLM）配置。
+
+```json
+{
+  "llm": {
+    "model": "gpt-4",
+    "apiKey": "YOUR_API_KEY",
+    "baseURL": "https://api.openai.com/v1",
+    "prompt": "./prompts/default.md"
+  }
+}
+```
+
+| 字段    | 类型     | 必填 | 说明                                   |
+| ------- | -------- | ---- | -------------------------------------- |
+| model   | `string` | 是   | 模型名称                               |
+| apiKey  | `string` | 是   | API 密钥                               |
+| baseURL | `string` | 是   | API 基础地址                           |
+| prompt  | `string` | 否   | 自定义系统提示词（支持纯字符串或文件路径）|
+
+## 配置验证和调试
+
+### 配置验证
+
+使用以下命令验证配置文件：
+
+```bash
+xiaozhi status
+```
+
+该命令会检查配置文件是否存在语法错误。
+
+### 常见配置错误
+
+#### 1. mcpEndpoint 格式错误
+
+```json
+// 错误：缺少 token 参数
+{
+  "mcpEndpoint": "wss://api.xiaozhi.me/mcp/"
+}
+
+// 正确：包含完整 token
+{
+  "mcpEndpoint": "wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN"
+}
+```
+
+#### 2. MCP 服务器命令路径错误
+
+```json
+// 错误：相对路径可能导致找不到命令
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "./my-server"
+    }
+  }
+}
+
+// 正确：使用绝对路径或 npx
+{
+  "mcpServers": {
+    "my-server": {
+      "command": "npx",
+      "args": ["-y", "my-mcp-server"]
+    }
+  }
+}
+```
+
+#### 3. JSON 格式错误
+
+```json
+// 错误：缺少引号或逗号
+{
+  mcpEndpoint: "wss://..."  // 缺少引号
+}
+
+// 正确：标准 JSON 格式
+{
+  "mcpEndpoint": "wss://..."
+}
+```
+
+### 配置更新事件
+
+配置管理器会在配置更新时触发事件，可通过监听事件获取最新配置：
+
+```typescript
+import { configManager } from '@xiaozhi-client/config';
+
+configManager.on('config:updated', (payload) => {
+  console.log('配置已更新:', payload);
+  const latestConfig = configManager.getConfig();
+});
+```
+
+事件类型包括：
+
+| 类型            | 说明                     |
+| --------------- | ------------------------ |
+| `endpoint`      | 接入点配置更新           |
+| `customMCP`     | 自定义 MCP 工具更新      |
+| `config`        | 通用配置更新             |
+| `serverTools`   | MCP 服务器工具配置更新   |
+| `connection`    | 连接参数更新             |
+| `modelscope`    | ModelScope 配置更新      |
+| `webui`         | Web UI 配置更新          |
+| `platform`      | 平台配置更新             |
+
+## 相关文档
+
+- [快速开始](/getting-started) - 项目入门指南
+- [自定义 MCP 工具](/usage/custom-mcp) - customMCP 详细配置
+- [平台集成](/usage/platforms) - platforms 配置详情
