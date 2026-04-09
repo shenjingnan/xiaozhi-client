@@ -6,6 +6,11 @@
  * - NotificationService: 通知服务，处理系统通知和消息推送
  * - EventBus / getEventBus: 事件总线服务，提供发布-订阅模式的事件处理机制
  * - CustomMCPHandler: 自定义 MCP 处理器（重新导出，保持向后兼容性）
+ * - ToolValidator: 工具验证服务
+ * - ToolSchemaGenerator: 工具 Schema 生成服务
+ * - ToolErrorHandler: 工具错误处理服务
+ * - CozeWorkflowConverter: Coze Workflow 转换服务
+ * - ToolPreCheckService: 工具预检查服务
  *
  * @example
  * ```typescript
@@ -27,6 +32,9 @@ export * from "./notification.service.js";
 export * from "./event-bus.service.js";
 export * from "./device-registry.service.js";
 export * from "./esp32.service.js";
+
+// 工具服务模块
+export * from "./tool/index.js";
 
 // CustomMCPHandler 重新导出 - 保持向后兼容性
 export { CustomMCPHandler } from "@/lib/mcp/custom.js";
