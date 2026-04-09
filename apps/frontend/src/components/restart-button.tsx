@@ -1,3 +1,8 @@
+/**
+ * 重启按钮组件
+ *
+ * 用于触发服务重启操作，显示重启状态和进度
+ */
 import { Button } from "@/components/ui/button";
 import { useRestartPollingStatus, useStatusStore } from "@/stores/status";
 import clsx from "clsx";

@@ -1,3 +1,8 @@
+/**
+ * 网站头部组件
+ *
+ * 显示页面标题、版本信息和社交链接（GitHub、QQ）
+ */
 import { GithubIcon, QQIcon } from "@/components/icons";
 import { VersionDisplay } from "./version-display";
 
