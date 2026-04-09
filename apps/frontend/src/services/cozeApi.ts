@@ -3,6 +3,7 @@
  * 负责与后端扣子 API 的通信
  */
 
+import { cozeLogger } from "@/services/logger";
 import type {
   CozeWorkflowsParams,
   CozeWorkflowsResult,
@@ -100,7 +101,7 @@ export class CozeApiClient {
 
       return response.data;
     } catch (error) {
-      console.error("获取工作空间列表失败:", error);
+      cozeLogger.error("获取工作空间列表失败", { error });
       throw error;
     }
   }
@@ -133,7 +134,7 @@ export class CozeApiClient {
 
       return response.data;
     } catch (error) {
-      console.error("获取工作流列表失败:", error);
+      cozeLogger.error("获取工作流列表失败", { error });
       throw error;
     }
   }
@@ -154,7 +155,7 @@ export class CozeApiClient {
         throw new Error(response.message || "清除缓存失败");
       }
     } catch (error) {
-      console.error("清除缓存失败:", error);
+      cozeLogger.error("清除缓存失败", { error });
       throw error;
     }
   }
@@ -174,7 +175,7 @@ export class CozeApiClient {
 
       return response.data;
     } catch (error) {
-      console.error("获取缓存统计失败:", error);
+      cozeLogger.error("获取缓存统计失败", { error });
       throw error;
     }
   }

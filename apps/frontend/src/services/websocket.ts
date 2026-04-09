@@ -8,6 +8,7 @@
  */
 
 import { WEBSOCKET_RECONNECT_DELAY } from "@/constants/timeouts";
+import { wsLogger } from "@/services/logger";
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 
 /**
@@ -198,7 +199,7 @@ class EventBus {
         try {
           listener(data);
         } catch (error) {
-          console.error(`[EventBus] 事件监听器执行失败 (${event}):`, error);
+          wsLogger.error("事件监听器执行失败", { event, error });
         }
       }
     }
@@ -268,7 +269,7 @@ export class WebSocketManager {
     WebSocketManager.isCreating = true;
     try {
       WebSocketManager.instance = new WebSocketManager(config);
-      console.log("[WebSocketManager] 单例实例已创建");
+      wsLogger.info("单例实例已创建");
       return WebSocketManager.instance;
     } finally {
       WebSocketManager.isCreating = false;
@@ -283,7 +284,7 @@ export class WebSocketManager {
       WebSocketManager.instance.disconnect();
       WebSocketManager.instance.eventBus.clear();
       WebSocketManager.instance = null;
-      console.log("[WebSocketManager] 单例实例已重置");
+      wsLogger.info("单例实例已重置");
     }
   }
 
@@ -317,7 +318,7 @@ export class WebSocketManager {
     }
 
     this.state = ConnectionState.CONNECTING;
-    console.log(`[WebSocket] 连接到: ${this.url}`);
+    wsLogger.info("连接到", { url: this.url });
 
     // 发布连接中事件
     this.eventBus.emit("connection:connecting", undefined);
@@ -326,7 +327,7 @@ export class WebSocketManager {
       this.ws = new WebSocket(this.url);
       this.setupEventHandlers();
     } catch (error) {
-      console.error("[WebSocket] 连接失败:", error);
+      wsLogger.error("连接失败", { error });
       this.handleConnectionError(error as Error);
     }
   }
@@ -335,7 +336,7 @@ export class WebSocketManager {
    * 断开 WebSocket 连接
    */
   disconnect(): void {
-    console.log("[WebSocket] 主动断开连接");
+    wsLogger.info("主动断开连接");
 
     this.clearTimers();
     this.state = ConnectionState.DISCONNECTED;
@@ -412,7 +413,7 @@ export class WebSocketManager {
    */
   send(message: unknown): boolean {
     if (!this.isConnected()) {
-      console.warn("[WebSocket] 连接未建立，无法发送消息");
+      wsLogger.warn("连接未建立，无法发送消息");
       return false;
     }
 
@@ -422,7 +423,7 @@ export class WebSocketManager {
       this.ws!.send(messageStr);
       return true;
     } catch (error) {
-      console.error("[WebSocket] 发送消息失败:", error);
+      wsLogger.error("发送消息失败", { error });
       this.eventBus.emit("connection:error", {
         error: error as Error,
         context: "send_message",
@@ -459,7 +460,7 @@ export class WebSocketManager {
     if (!this.ws) return;
 
     this.ws.onopen = () => {
-      console.log("[WebSocket] 连接已建立");
+      wsLogger.info("连接已建立");
       this.state = ConnectionState.CONNECTED;
       this.reconnectAttempts = 0;
       this.startHeartbeat();
@@ -473,17 +474,17 @@ export class WebSocketManager {
         const message: WebSocketMessage = JSON.parse(event.data);
         this.handleMessage(message);
       } catch (error) {
-        console.error("[WebSocket] 消息解析失败:", error);
+        wsLogger.error("消息解析失败", { error });
       }
     };
 
     this.ws.onclose = (event) => {
-      console.log(`[WebSocket] 连接已关闭 (code: ${event.code})`);
+      wsLogger.info("连接已关闭", { code: event.code });
       this.handleConnectionClose();
     };
 
     this.ws.onerror = (error) => {
-      console.error("[WebSocket] 连接错误:", error);
+      wsLogger.error("连接错误", { error });
       this.handleConnectionError(new Error("WebSocket 连接错误"));
     };
   }
@@ -492,7 +493,7 @@ export class WebSocketManager {
    * 处理 WebSocket 消息
    */
   private handleMessage(message: WebSocketMessage): void {
-    console.log("[WebSocket] 收到消息:", message.type);
+    wsLogger.info("收到消息", { type: message.type });
 
     // 发布原始消息事件
     this.eventBus.emit("system:message", message);
@@ -579,7 +580,7 @@ export class WebSocketManager {
 
         case "error": {
           const error = new Error(message.error?.message || "服务器错误");
-          console.error("[WebSocket] 服务器错误:", message.error);
+          wsLogger.error("服务器错误", { error: message.error });
           this.eventBus.emit("system:error", { error, message });
           this.eventBus.emit("connection:error", {
             error,
@@ -589,10 +590,10 @@ export class WebSocketManager {
         }
 
         default:
-          console.log("[WebSocket] 未处理的消息类型:", message.type);
+          wsLogger.debug("未处理的消息类型", { type: message.type });
       }
     } catch (error) {
-      console.error("[WebSocket] 消息处理失败:", error);
+      wsLogger.error("消息处理失败", { error });
       this.eventBus.emit("system:error", {
         error: error as Error,
         message,
@@ -614,7 +615,7 @@ export class WebSocketManager {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.scheduleReconnect();
     } else {
-      console.error("[WebSocket] 达到最大重连次数，停止重连");
+      wsLogger.error("达到最大重连次数，停止重连");
       this.eventBus.emit("connection:error", {
         error: new Error("达到最大重连次数"),
         context: "max_reconnect_attempts",
@@ -639,7 +640,7 @@ export class WebSocketManager {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.scheduleReconnect();
     } else {
-      console.error("[WebSocket] 达到最大重连次数，停止重连");
+      wsLogger.error("达到最大重连次数，停止重连");
     }
   }
 
@@ -650,9 +651,11 @@ export class WebSocketManager {
     this.reconnectAttempts++;
     this.state = ConnectionState.RECONNECTING;
 
-    console.log(
-      `[WebSocket] 安排重连 (${this.reconnectAttempts}/${this.maxReconnectAttempts}) 在 ${this.reconnectInterval}ms 后`
-    );
+    wsLogger.info("安排重连", {
+      attempt: this.reconnectAttempts,
+      maxAttempts: this.maxReconnectAttempts,
+      interval: this.reconnectInterval,
+    });
 
     // 发布重连事件
     this.eventBus.emit("connection:reconnecting", {
@@ -679,7 +682,7 @@ export class WebSocketManager {
         // 检查心跳超时
         const now = Date.now();
         if (now - this.lastHeartbeat > this.heartbeatTimeout) {
-          console.warn("[WebSocket] 心跳超时，重新连接");
+          wsLogger.warn("心跳超时，重新连接");
           this.disconnect();
           this.connect();
         }
