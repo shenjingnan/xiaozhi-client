@@ -406,7 +406,7 @@ export class MCPHandler {
    * 获取服务状态信息
    */
   private getServiceStatus(serverName: string): MCPServerStatus {
-    const config = this.configManager.getConfig();
+    const config = this.configManager.getConfigReadOnly();
     const serverConfig = config.mcpServers[serverName];
 
     if (!serverConfig) {
@@ -739,8 +739,8 @@ export class MCPHandler {
    */
   async listMCPServers(c: Context<AppContext>): Promise<Response> {
     try {
-      // 1. 获取所有配置的 MCP 服务
-      const config = this.configManager.getConfig();
+      // 1. 获取所有配置的 MCP 服务（使用只读引用，避免深拷贝开销）
+      const config = this.configManager.getConfigReadOnly();
       const mcpServers = config.mcpServers || {};
 
       // 2. 构建服务列表
@@ -1106,7 +1106,7 @@ export namespace MCPServerConfigValidator {
     name: string,
     configManager: ConfigManager
   ): boolean {
-    const config = configManager.getConfig();
+    const config = configManager.getConfigReadOnly();
     return config.mcpServers && name in config.mcpServers;
   }
 }

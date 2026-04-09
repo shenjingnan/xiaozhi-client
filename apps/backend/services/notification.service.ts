@@ -89,8 +89,8 @@ export class NotificationService {
   private setupEventListeners(): void {
     // 监听配置更新事件
     this.eventBus.onEvent("config:updated", (data) => {
-      // 获取最新的配置
-      const config = configManager.getConfig();
+      // 获取最新的配置（使用只读引用，避免深拷贝开销）
+      const config = configManager.getConfigReadOnly();
       this.broadcastConfigUpdate(config);
     });
 

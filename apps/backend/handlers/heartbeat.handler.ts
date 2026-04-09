@@ -84,7 +84,7 @@ export class HeartbeatHandler {
    */
   private async sendLatestConfig(ws: any, clientId: string): Promise<void> {
     try {
-      const latestConfig = configManager.getConfig();
+      const latestConfig = configManager.getConfigReadOnly();
       const message = {
         type: "configUpdate",
         data: latestConfig,

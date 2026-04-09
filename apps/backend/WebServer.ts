@@ -308,7 +308,7 @@ export class WebServer {
     // 确保 mcpServerConfig 与 mcpServers 保持同步
     configManager.cleanupInvalidServerToolsConfig();
 
-    const config = configManager.getConfig();
+    const config = configManager.getConfigReadOnly();
 
     return {
       mcpEndpoint: config.mcpEndpoint,

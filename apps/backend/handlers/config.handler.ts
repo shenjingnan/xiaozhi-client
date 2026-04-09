@@ -31,7 +31,7 @@ export class ConfigApiHandler extends BaseHandler {
     const logger = c.get("logger");
     try {
       logger.debug("处理获取配置请求");
-      const config = configManager.getConfig();
+      const config = configManager.getConfigReadOnly();
       logger.debug("获取配置成功");
       return c.success(config);
     } catch (error) {
@@ -180,7 +180,7 @@ export class ConfigApiHandler extends BaseHandler {
     try {
       c.get("logger").info("处理重新加载配置请求");
       configManager.reloadConfig();
-      const config = configManager.getConfig();
+      const config = configManager.getConfigReadOnly();
       c.get("logger").info("重新加载配置成功");
       return c.success(config, "配置重新加载成功");
     } catch (error) {

@@ -93,7 +93,7 @@ export class CustomMCPHandler {
    * 获取 CozeApiService 实例
    */
   private getCozeApiService(): CozeApiService {
-    const token = configManager.getConfig().platforms?.coze?.token;
+    const token = configManager.getConfigReadOnly().platforms?.coze?.token;
 
     if (!token) {
       throw new Error("Coze Token 配置不存在");

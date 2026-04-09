@@ -117,7 +117,7 @@ export class RealtimeNotificationHandler {
     this.logDeprecationWarning("WebSocket getConfig", "GET /api/config");
 
     try {
-      const config = configManager.getConfig();
+      const config = configManager.getConfigReadOnly();
       this.logger.debug("WebSocket: getConfig 请求处理成功", { clientId });
       ws.send(JSON.stringify({ type: "config", data: config }));
     } catch (error) {
@@ -258,8 +258,8 @@ export class RealtimeNotificationHandler {
     try {
       this.logger.debug("发送初始数据给客户端", { clientId });
 
-      // 发送当前配置
-      const config = configManager.getConfig();
+      // 发送当前配置（使用只读引用，避免深拷贝开销）
+      const config = configManager.getConfigReadOnly();
       ws.send(JSON.stringify({ type: "configUpdate", data: config }));
 
       // 发送当前状态

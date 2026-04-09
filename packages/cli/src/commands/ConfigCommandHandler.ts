@@ -139,7 +139,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
       }
 
       const configManager = this.getService<any>("configManager");
-      const config = configManager.getConfig();
+      const config = configManager.getConfigReadOnly();
 
       switch (key) {
         case "mcpEndpoint": {
