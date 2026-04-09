@@ -3,10 +3,10 @@
  * 统一管理所有 MCP 相关的类型定义
  */
 
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import type { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 // =========================
 // 1. 基础传输类型
@@ -43,7 +43,49 @@ export type MCPTransportTypeString = "stdio" | "sse" | "http";
 export type MCPTransportTypeInput = MCPTransportType | MCPTransportTypeString;
 
 // =========================
-// 1.1 事件回调接口
+// 1.1 日志接口
+// =========================
+
+/**
+ * MCP 日志接口
+ * 定义 MCPConnection 所需的最低日志功能
+ *
+ * @description
+ * 此接口允许注入任何符合规范的日志实现（如 Pino、console 等），
+ * 保持 packages/mcp-core 的独立性和向后兼容性。
+ */
+export interface MCPLogger {
+  /** 信息级别日志 */
+  info(message: string, ...args: unknown[]): void;
+  /** 调试级别日志 */
+  debug(message: string, ...args: unknown[]): void;
+  /** 警告级别日志 */
+  warn(message: string, ...args: unknown[]): void;
+  /** 错误级别日志 */
+  error(message: string, ...args: unknown[]): void;
+}
+
+/**
+ * 创建基于 console 的默认日志实现
+ * 用于向后兼容，当未提供 logger 时使用
+ *
+ * @returns 符合 MCPLogger 接口的 console 实现
+ */
+export function createConsoleLogger(): MCPLogger {
+  return {
+    info: (message: string, ...args: unknown[]) =>
+      console.info(message, ...args),
+    debug: (message: string, ...args: unknown[]) =>
+      console.debug(message, ...args),
+    warn: (message: string, ...args: unknown[]) =>
+      console.warn(message, ...args),
+    error: (message: string, ...args: unknown[]) =>
+      console.error(message, ...args),
+  };
+}
+
+// =========================
+// 1.2 事件回调接口
 // =========================
 
 /**

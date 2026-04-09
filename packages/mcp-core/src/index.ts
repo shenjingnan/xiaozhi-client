@@ -32,6 +32,8 @@ export type {
   MCPServerTransport,
   // 事件相关
   MCPServiceEventCallbacks,
+  // 日志相关
+  MCPLogger,
 } from "./types.js";
 
 // =========================
@@ -42,6 +44,7 @@ export {
   MCPTransportType,
   ConnectionState,
   ToolCallErrorCode,
+  createConsoleLogger,
 } from "./types.js";
 
 // =========================
