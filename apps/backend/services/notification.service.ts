@@ -25,6 +25,7 @@ import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { ClientInfo, RestartStatus } from "@/services/status.service.js";
+import { CircularBuffer } from "@/utils/circular-buffer.js";
 import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 
@@ -74,7 +75,9 @@ export class NotificationService {
   private logger: Logger;
   private eventBus: EventBus;
   private clients: Map<string, WebSocketClient> = new Map();
-  private messageQueue: Map<string, NotificationMessage[]> = new Map();
+  /** 每个客户端的消息队列，使用环形缓冲区实现 O(1) 操作 */
+  private messageQueue: Map<string, CircularBuffer<NotificationMessage>> =
+    new Map();
   private maxQueueSize = 100;
 
   constructor() {
@@ -266,28 +269,33 @@ export class NotificationService {
 
   /**
    * 将消息加入队列
+   * 使用环形缓冲区实现 O(1) 的队列操作
    */
   private queueMessage(clientId: string, message: NotificationMessage): void {
     if (!this.messageQueue.has(clientId)) {
-      this.messageQueue.set(clientId, []);
+      this.messageQueue.set(
+        clientId,
+        new CircularBuffer<NotificationMessage>(this.maxQueueSize)
+      );
     }
 
     const queue = this.messageQueue.get(clientId)!;
-    queue.push(message);
 
-    // 限制队列大小
-    if (queue.length > this.maxQueueSize) {
-      queue.shift(); // 移除最旧的消息
-      this.logger.warn(`客户端 ${clientId} 消息队列已满，移除最旧消息`);
+    // 环形缓冲区已满时自动覆盖最旧消息，无需手动移除
+    if (queue.isFull()) {
+      this.logger.warn(`客户端 ${clientId} 消息队列已满，自动覆盖最旧消息`);
     }
+
+    queue.push(message);
   }
 
   /**
    * 发送排队的消息
+   * 使用环形缓冲区的迭代器遍历所有消息
    */
   private sendQueuedMessages(clientId: string): void {
     const queue = this.messageQueue.get(clientId);
-    if (!queue || queue.length === 0) {
+    if (!queue || queue.isEmpty()) {
       return;
     }
 
@@ -296,8 +304,9 @@ export class NotificationService {
       return;
     }
 
-    this.logger.debug(`发送 ${queue.length} 条排队消息给客户端 ${clientId}`);
+    this.logger.debug(`发送 ${queue.getSize()} 条排队消息给客户端 ${clientId}`);
 
+    // 使用迭代器遍历队列中的所有消息
     for (const message of queue) {
       this.sendMessageToClient(client, message, clientId);
     }
@@ -350,7 +359,7 @@ export class NotificationService {
     ).length;
 
     const queuedMessages = Array.from(this.messageQueue.values()).reduce(
-      (total, queue) => total + queue.length,
+      (total, queue) => total + queue.getSize(),
       0
     );
 

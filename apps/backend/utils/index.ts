@@ -16,3 +16,5 @@ export {
   type DeviceInfoFromHeaders,
   type ExtractedDeviceInfo,
 } from "./esp32-utils.js";
+// 高性能环形缓冲区
+export { CircularBuffer } from "./circular-buffer.js";

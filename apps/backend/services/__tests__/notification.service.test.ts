@@ -484,8 +484,9 @@ describe("NotificationService", () => {
       // Register client and check that only the last maxQueueSize messages are sent
       notificationService.registerClient("offline-client", mockWebSocket);
       expect(mockWebSocket.send).toHaveBeenCalledTimes(maxQueueSize);
+      // 使用环形缓冲区时，队列满时自动覆盖最旧消息
       expect(mockLogger.warn).toHaveBeenCalledWith(
-        "客户端 offline-client 消息队列已满，移除最旧消息"
+        "客户端 offline-client 消息队列已满，自动覆盖最旧消息"
       );
     });
 
