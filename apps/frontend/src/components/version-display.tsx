@@ -9,6 +9,7 @@
  * - 支持版本切换
  */
 
+import { CopyButton } from "@/components/common/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,8 +20,8 @@ import {
 } from "@/components/ui/tooltip";
 import type { VersionInfo } from "@/services/api";
 import { apiClient } from "@/services/api";
-import { CopyIcon, InfoIcon, RocketIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { InfoIcon, RocketIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import { VersionUpgradeDialog } from "./version-upgrade-dialog";
 
 interface VersionDisplayProps {
@@ -41,8 +42,6 @@ export function VersionDisplay({ className }: VersionDisplayProps) {
   const [loading, setLoading] = useState(true);
   const [checkingUpdate, setCheckingUpdate] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const fetchVersion = async () => {
@@ -60,14 +59,6 @@ export function VersionDisplay({ className }: VersionDisplayProps) {
     };
 
     fetchVersion();
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (copiedTimerRef.current) {
-        clearTimeout(copiedTimerRef.current);
-      }
-    };
   }, []);
 
   useEffect(() => {
@@ -95,21 +86,6 @@ export function VersionDisplay({ className }: VersionDisplayProps) {
       checkForUpdates();
     }
   }, [versionInfo]);
-
-  const handleCopyVersion = async () => {
-    if (versionInfo?.version) {
-      try {
-        await navigator.clipboard.writeText(versionInfo.version);
-        setCopied(true);
-        if (copiedTimerRef.current) {
-          clearTimeout(copiedTimerRef.current);
-        }
-        copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error("复制版本号失败:", err);
-      }
-    }
-  };
 
   if (loading) {
     return (
@@ -164,14 +140,15 @@ export function VersionDisplay({ className }: VersionDisplayProps) {
         </div>
       </div>
       <div className="pt-1 border-t">
-        <button
-          type="button"
-          onClick={handleCopyVersion}
-          className="text-xs text-primary hover:underline flex items-center gap-1"
-        >
-          <CopyIcon className="h-3 w-3" />
-          {copied ? "已复制!" : "复制版本号"}
-        </button>
+        <CopyButton
+          content={versionInfo.version}
+          variant="link"
+          size="sm"
+          showText
+          copyLabel="复制版本号"
+          copiedLabel="已复制!"
+          className="text-xs p-0 h-auto"
+        />
       </div>
     </div>
   );

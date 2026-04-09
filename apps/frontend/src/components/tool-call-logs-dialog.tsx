@@ -13,6 +13,7 @@
 
 "use client";
 
+import { CopyButton } from "@/components/common/copy-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -47,16 +48,14 @@ import type {
 } from "@xiaozhi-client/shared-types";
 import {
   CheckCircle,
-  CheckIcon,
   Code,
-  CopyIcon,
   FileText,
   Loader2,
   RefreshCw,
   RotateCwIcon,
   XCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function ToolCallLogsDialog() {
   const [open, setOpen] = useState(false);
@@ -323,62 +322,6 @@ export function ToolCallLogsDialog() {
   );
 }
 
-// 复制按钮组件
-interface CopyButtonProps {
-  size?: "sm" | "default" | "lg";
-  copyContent: string;
-  className?: string;
-}
-
-function CopyButton({
-  size = "sm",
-  copyContent,
-  className = "",
-}: CopyButtonProps) {
-  const [copied, setCopied] = useState(false);
-  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(copyContent);
-      setCopied(true);
-
-      // 清除之前的定时器
-      if (copiedTimerRef.current) {
-        clearTimeout(copiedTimerRef.current);
-      }
-
-      // 保存定时器引用，3秒后自动恢复状态
-      copiedTimerRef.current = setTimeout(() => {
-        setCopied(false);
-      }, 3000);
-    } catch (error) {
-      console.error("复制失败:", error);
-    }
-  };
-
-  // 组件卸载时清理定时器
-  useEffect(() => {
-    return () => {
-      if (copiedTimerRef.current) {
-        clearTimeout(copiedTimerRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <Button
-      variant="ghost"
-      size={size}
-      className={`${className} ${
-        copied ? "text-green-600 hover:text-green-700" : ""
-      }`}
-      onClick={handleCopy}
-    >
-      {copied ? <CheckIcon /> : <CopyIcon />}
-    </Button>
-  );
-}
 
 // 详情展示组件
 interface CallLogDetailProps {
@@ -417,7 +360,7 @@ function CallLogDetail({ log }: CallLogDetailProps) {
                       {formatJson(log.arguments)}
                     </pre>
                     <CopyButton
-                      copyContent={formatJson(log.arguments) || ""}
+                      content={formatJson(log.arguments) || ""}
                       className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
                     />
                   </div>
@@ -442,7 +385,7 @@ function CallLogDetail({ log }: CallLogDetailProps) {
                         {formatJson(log.result)}
                       </pre>
                       <CopyButton
-                        copyContent={formatJson(log.result) || ""}
+                        content={formatJson(log.result) || ""}
                         className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
                       />
                     </div>
@@ -469,7 +412,7 @@ function CallLogDetail({ log }: CallLogDetailProps) {
                     </div>
                     {log.error && (
                       <CopyButton
-                        copyContent={log.error || ""}
+                        content={log.error || ""}
                         className="absolute top-2 right-2"
                       />
                     )}
@@ -488,7 +431,7 @@ function CallLogDetail({ log }: CallLogDetailProps) {
                     {formatRawData(log)}
                   </pre>
                   <CopyButton
-                    copyContent={formatRawData(log)}
+                    content={formatRawData(log)}
                     className="absolute top-2 right-2 hover:bg-slate-200 w-[30px] h-[30px]"
                   />
                 </div>
