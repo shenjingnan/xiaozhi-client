@@ -764,7 +764,18 @@ export class ASR extends EventEmitter {
       // Register global message handler for event-driven mode
       // In streaming mode, this enables result/vad_end events via on()
       this.ws.on("message", (data: Buffer) => {
-        this.handleMessage(data);
+        try {
+          this.handleMessage(data);
+        } catch (error) {
+          const err = error instanceof Error ? error : new Error(String(error));
+          this.emit("error", err);
+
+          // 记录错误日志
+          console.error(`ASR WebSocket 消息处理失败: ${err.message}`, {
+            dataLength: data.length,
+            error: err.stack,
+          });
+        }
       });
     });
   }
