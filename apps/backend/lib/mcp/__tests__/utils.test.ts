@@ -7,26 +7,25 @@ import {
   inferTransportTypeFromUrl,
 } from "../utils.js";
 
-// Mock console 方法
-let mockConsoleInfo: Mock;
-let mockConsoleWarn: Mock;
+// Mock logger 模块
+vi.mock("@/Logger.js", () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+  },
+}));
+
+// 导入 mock 后的 logger 以获取 mock 函数
+import { logger } from "@/Logger.js";
+
+// Mock logger 方法
+let mockLoggerInfo: Mock;
+let mockLoggerWarn: Mock;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockConsoleInfo = vi.fn();
-  mockConsoleWarn = vi.fn();
-
-  // Mock console 方法
-  const originalConsoleInfo = console.info;
-  const originalConsoleWarn = console.warn;
-  console.info = mockConsoleInfo;
-  console.warn = mockConsoleWarn;
-
-  // 恢复原始方法（在测试结束时）
-  return () => {
-    console.info = originalConsoleInfo;
-    console.warn = originalConsoleWarn;
-  };
+  mockLoggerInfo = logger.info as Mock;
+  mockLoggerWarn = logger.warn as Mock;
 });
 
 describe("MCP 传输类型推断工具", () => {
@@ -290,7 +289,7 @@ describe("MCP 传输类型推断工具", () => {
           serviceName,
         });
 
-        expect(mockConsoleInfo).toHaveBeenCalledWith(
+        expect(mockLoggerInfo).toHaveBeenCalledWith(
           `[MCP-${serviceName}] URL 路径 /api/v1/tools 不匹配特定规则，默认推断为 http 类型`
         );
       });
@@ -303,7 +302,7 @@ describe("MCP 传输类型推断工具", () => {
           serviceName,
         });
 
-        expect(mockConsoleWarn).toHaveBeenCalledWith(
+        expect(mockLoggerWarn).toHaveBeenCalledWith(
           `[MCP-${serviceName}] URL 解析失败，默认推断为 http 类型`,
           expect.any(Error)
         );
@@ -321,8 +320,8 @@ describe("MCP 传输类型推断工具", () => {
           serviceName: "test-service",
         });
 
-        expect(mockConsoleInfo).not.toHaveBeenCalled();
-        expect(mockConsoleWarn).not.toHaveBeenCalled();
+        expect(mockLoggerInfo).not.toHaveBeenCalled();
+        expect(mockLoggerWarn).not.toHaveBeenCalled();
       });
     });
   });
@@ -439,7 +438,7 @@ describe("MCP 传输类型推断工具", () => {
         inferTransportTypeFromConfig(config, "test-service");
 
         // 验证是否用正确的参数调用了日志记录
-        expect(mockConsoleWarn).toHaveBeenCalledWith(
+        expect(mockLoggerWarn).toHaveBeenCalledWith(
           "[MCP-test-service] URL 解析失败，默认推断为 http 类型",
           expect.any(Error)
         );
