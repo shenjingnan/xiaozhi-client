@@ -191,6 +191,13 @@ export class Endpoint {
 
   /**
    * 连接小智接入点
+   *
+   * 初始化 MCP 适配器并建立 WebSocket 连接。
+   * 如果连接正在进行中，会抛出错误提示等待。
+   *
+   * @returns Promise，连接成功时 resolve，失败时 reject
+   * @throws 连接超时（10000ms）或 WebSocket 错误时抛出异常
+   * @throws 连接正在进行中时抛出错误
    */
   public async connect(): Promise<void> {
     // 初始化 MCP 适配器
@@ -419,7 +426,17 @@ export class Endpoint {
   }
 
   /**
-   * 获取服务器状态
+   * 获取当前连接状态
+   *
+   * 返回包含连接状态、初始化状态、URL、可用工具数量、连接状态枚举和最后错误信息的完整状态对象。
+   *
+   * @returns 状态对象，包含以下字段：
+   *   - connected: 是否已连接
+   *   - initialized: 是否已初始化
+   *   - url: 接入点 URL
+   *   - availableTools: 可用工具数量
+   *   - connectionState: 连接状态枚举值（DISCONNECTED/CONNECTING/CONNECTED/FAILED）
+   *   - lastError: 最后一次错误信息，无错误时为 null
    */
   public getStatus(): EndpointConnectionStatus {
     const availableTools = this.mcpAdapter.getAllTools().length;
@@ -435,7 +452,11 @@ export class Endpoint {
   }
 
   /**
-   * 检查连接状态
+   * 检查是否已连接
+   *
+   * 快速检查 WebSocket 连接状态，用于判断是否可以进行通信。
+   *
+   * @returns true 表示已连接，false 表示未连接
    */
   public isConnected(): boolean {
     return this.connectionStatus;
@@ -455,7 +476,13 @@ export class Endpoint {
   }
 
   /**
-   * 重连小智接入点
+   * 重新连接到小智接入点
+   *
+   * 先断开当前连接，等待配置的重连延迟时间后重新建立连接。
+   * 重连延迟可通过构造函数的 reconnectDelay 参数配置，默认为 2000ms。
+   *
+   * @returns Promise，重连成功时 resolve
+   * @throws 连接失败时抛出异常
    */
   public async reconnect(): Promise<void> {
     console.info(`重连小智接入点: ${sliceEndpoint(this.endpointUrl)}`);
