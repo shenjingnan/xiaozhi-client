@@ -1,27 +1,29 @@
 /**
- * ESP32设备处理器
- * 处理ESP32设备相关的HTTP请求
+ * ESP32 设备处理器
+ * 处理 ESP32 设备相关的 HTTP 请求
+ *
+ * 作为薄适配层，将 Hono 请求委托给 ESP32DeviceManager 处理
  */
 
-import type { ESP32Service } from "@/services/esp32.service.js";
 import type { ESP32DeviceReport } from "@/types/esp32.js";
 import { ESP32ErrorCode } from "@/types/esp32.js";
 import type { AppContext } from "@/types/hono.context.js";
+import type { ESP32DeviceManager } from "@xiaozhi-client/esp32";
 import type { Context } from "hono";
 import { BaseHandler } from "./base.handler.js";
 
 /**
- * ESP32设备处理器
- * 仅处理硬件OTA/配置请求
+ * ESP32 设备处理器
+ * 仅处理硬件 OTA/配置请求
  *
- * 注意：设备采用自动激活模式，无需管理API
+ * 注意：设备采用自动激活模式，无需管理 API
  */
 export class ESP32Handler extends BaseHandler {
-  private esp32Service: ESP32Service;
+  private esp32Manager: ESP32DeviceManager;
 
-  constructor(esp32Service: ESP32Service) {
+  constructor(esp32Manager: ESP32DeviceManager) {
     super();
-    this.esp32Service = esp32Service;
+    this.esp32Manager = esp32Manager;
   }
 
   /**
@@ -81,8 +83,8 @@ export class ESP32Handler extends BaseHandler {
 
       logger.debug(`收到OTA请求: deviceId=${deviceId}, clientId=${clientId}`);
 
-      // 委托给服务层处理（支持从请求头获取设备型号，与 xiaozhi-esp32-server 保持一致）
-      const response = await this.esp32Service.handleOTARequest(
+      // 委托给设备管理器处理（支持从请求头获取设备型号，与 xiaozhi-esp32-server 保持一致）
+      const response = await this.esp32Manager.handleOTARequest(
         deviceId,
         clientId,
         report,

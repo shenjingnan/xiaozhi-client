@@ -54,8 +54,6 @@ import {
 } from "@/middlewares/index.js";
 import type { EventBus, EventBusEvents } from "@/services/index.js";
 import {
-  DeviceRegistryService,
-  ESP32Service,
   NotificationService,
   StatusService,
   destroyEventBus,
@@ -71,6 +69,10 @@ import { configManager } from "@xiaozhi-client/config";
 import type { MCPServerConfig } from "@xiaozhi-client/config";
 import { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { SimpleConnectionStatus } from "@xiaozhi-client/endpoint";
+import {
+  ESP32DeviceManager,
+  type IESP32ConfigProvider,
+} from "@xiaozhi-client/esp32";
 import type { Hono } from "hono";
 import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
@@ -135,8 +137,7 @@ export class WebServer {
   // 服务层
   private statusService: StatusService;
   private notificationService: NotificationService;
-  private deviceRegistryService: DeviceRegistryService;
-  private esp32Service: ESP32Service;
+  private esp32Manager: ESP32DeviceManager;
 
   // HTTP API 处理器
   private configApiHandler: ConfigApiHandler;
@@ -187,11 +188,20 @@ export class WebServer {
     // 初始化服务层
     this.statusService = new StatusService();
     this.notificationService = new NotificationService();
-    this.deviceRegistryService = new DeviceRegistryService();
-    // 创建 ESP32 服务
-    this.esp32Service = new ESP32Service(this.deviceRegistryService);
-    // 设置 TTS 服务的获取连接回调
-    this.esp32Service.setupTTSGetConnection();
+
+    // 创建基于 configManager 的配置提供者
+    const esp32ConfigProvider: IESP32ConfigProvider = {
+      getASRConfig: () => configManager.getASRConfig(),
+      getTTSConfig: () => configManager.getTTSConfig(),
+      getLLMConfig: () => configManager.getLLMConfig(),
+      isLLMConfigValid: () => configManager.isLLMConfigValid(),
+    };
+
+    // 创建 ESP32 设备管理器（使用新包）
+    this.esp32Manager = new ESP32DeviceManager({
+      logger,
+      configProvider: esp32ConfigProvider,
+    });
 
     // 初始化 HTTP API 处理器
     this.configApiHandler = new ConfigApiHandler();
@@ -205,7 +215,7 @@ export class WebServer {
     this.updateApiHandler = new UpdateApiHandler();
     this.cozeHandler = new CozeHandler();
     this.ttsApiHandler = new TTSApiHandler();
-    this.esp32Handler = new ESP32Handler(this.esp32Service);
+    this.esp32Handler = new ESP32Handler(this.esp32Manager);
 
     // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
 
@@ -694,8 +704,8 @@ export class WebServer {
       `[WS-ESP32] ESP32设备WebSocket连接: deviceId=${deviceId}, clientId=${clientId}`
     );
 
-    // 委托给ESP32Service处理
-    this.esp32Service
+    // 委托给 ESP32DeviceManager 处理
+    this.esp32Manager
       .handleWebSocketConnection(ws, deviceId, clientId, authToken)
       .then(() => {
         this.logger.info(
@@ -1090,9 +1100,8 @@ export class WebServer {
     // 销毁服务层
     this.statusService.destroy();
     this.notificationService.destroy();
-    this.deviceRegistryService.destroy();
-    // 异步销毁 ESP32 服务（fire and forget）
-    this.esp32Service.destroy();
+    // 异步销毁 ESP32 设备管理器（fire and forget）
+    this.esp32Manager.destroy();
 
     // 销毁事件总线
     destroyEventBus();

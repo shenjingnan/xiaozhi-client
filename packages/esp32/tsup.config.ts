@@ -1,0 +1,54 @@
+import { defineConfig } from "tsup";
+
+export default defineConfig({
+  entry: ["src/index.ts"],
+  format: ["esm"],
+  target: "node20",
+  outDir: "./dist",
+  clean: true,
+  sourcemap: true,
+  dts: {
+    entry: ["src/index.ts"],
+    compilerOptions: {
+      composite: false,
+    },
+  },
+  bundle: true,
+  splitting: false,
+  minify: false,
+  keepNames: true,
+  platform: "node",
+  esbuildOptions: (options) => {
+    // 在生产环境移除 console 和 debugger
+    if (process.env.NODE_ENV === "production") {
+      options.drop = ["console", "debugger"];
+    }
+    options.resolveExtensions = [".ts", ".js", ".json"];
+  },
+  external: [
+    // Node.js 内置模块
+    "ws",
+    "events",
+    "node:events",
+    "node:fs",
+    "node:path",
+    "node:url",
+    "node:child_process",
+    "node:stream",
+    "node:http",
+    "node:https",
+    "node:net",
+    "node:crypto",
+    // workspace 包（不打包）
+    "@xiaozhi-client/asr",
+    "@xiaozhi-client/shared-types",
+    // peerDependencies
+    "openai",
+    "prism-media",
+    "univoice",
+    "zod",
+  ],
+  outExtension() {
+    return { js: ".js" };
+  },
+});
