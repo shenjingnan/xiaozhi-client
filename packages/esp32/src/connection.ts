@@ -4,8 +4,7 @@
  */
 
 import { randomBytes } from "node:crypto";
-import type { ILogger, IDeviceConnection } from "./interfaces.js";
-import type { IASRService } from "./services/asr.interface.js";
+import type WebSocket from "ws";
 import {
   encodeBinaryProtocol2,
   isBinaryProtocol2,
@@ -13,6 +12,8 @@ import {
   parseBinaryProtocol2,
   parseBinaryProtocol3,
 } from "./audio-protocol.js";
+import type { IDeviceConnection, ILogger } from "./interfaces.js";
+import type { IASRService } from "./services/asr.interface.js";
 import type {
   ESP32ConnectionState,
   ESP32HelloMessage,
@@ -21,7 +22,6 @@ import type {
 } from "./types.js";
 import { ESP32ErrorCode } from "./types.js";
 import { camelToSnakeCase } from "./utils.js";
-import type WebSocket from "ws";
 
 /**
  * 连接配置
@@ -100,7 +100,7 @@ export class ESP32Connection implements IDeviceConnection {
     this.lastActivity = new Date();
     this.sessionId = this.generateSessionId();
     this.getASRService = config.getASRService;
-    this.logger = config.logger ?? console as unknown as ILogger;
+    this.logger = config.logger ?? (console as unknown as ILogger);
 
     this.heartbeatTimeoutMs = config.heartbeatTimeoutMs ?? 30_000;
 
@@ -181,7 +181,9 @@ export class ESP32Connection implements IDeviceConnection {
 
       // 检查是否已完成 Hello 握手
       if (!this.helloCompleted) {
-        this.logger.warn(`收到消息但未完成Hello握手: deviceId=${this.deviceId}`);
+        this.logger.warn(
+          `收到消息但未完成Hello握手: deviceId=${this.deviceId}`
+        );
         await this.sendError(
           ESP32ErrorCode.INVALID_MESSAGE_FORMAT,
           "必须先完成Hello握手"
@@ -236,7 +238,9 @@ export class ESP32Connection implements IDeviceConnection {
         }
 
         const version = data.readUInt16BE(0);
-        this.logger.info(`音频协议解析失败，作为原始数据处理, version=${version}`);
+        this.logger.info(
+          `音频协议解析失败，作为原始数据处理, version=${version}`
+        );
         // 处理为原始音频消息
         await this.config.onMessage({
           type: "audio",
@@ -286,7 +290,9 @@ export class ESP32Connection implements IDeviceConnection {
       },
     };
 
-    this.logger.info(`[HELLO] 准备发送ServerHello响应: sessionId=${this.sessionId}`);
+    this.logger.info(
+      `[HELLO] 准备发送ServerHello响应: sessionId=${this.sessionId}`
+    );
     await this.send(serverHello);
     this.logger.info("[HELLO] ServerHello响应已发送");
 

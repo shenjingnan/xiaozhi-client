@@ -4,10 +4,14 @@
  */
 
 import { Readable } from "node:stream";
-import type { ILogger, IDeviceConnection, IESP32ConfigProvider } from "../interfaces.js";
-import { noopLogger } from "../interfaces.js";
 import * as prism from "prism-media";
 import { createTTS } from "univoice";
+import type {
+  IDeviceConnection,
+  IESP32ConfigProvider,
+  ILogger,
+} from "../interfaces.js";
+import { noopLogger } from "../interfaces.js";
 import type { ITTSService, TTSServiceOptions } from "./tts.interface.js";
 
 /**
@@ -99,7 +103,11 @@ export class TTSService implements ITTSService {
 
       // 获取 TTS 配置
       const ttsConfig = this.configProvider?.getTTSConfig();
-      if (!ttsConfig?.appid || !ttsConfig?.accessToken || !ttsConfig?.voice_type) {
+      if (
+        !ttsConfig?.appid ||
+        !ttsConfig?.accessToken ||
+        !ttsConfig?.voice_type
+      ) {
         this.logger.error("[TTSService] TTS 配置不完整，请检查配置文件");
         return;
       }
@@ -143,7 +151,10 @@ export class TTSService implements ITTSService {
         this.logger.info(`[TTSService] TTS 数据接收完成: deviceId=${deviceId}`);
         demuxer.end();
       } catch (error) {
-        this.logger.error(`[TTSService] TTS 调用失败: deviceId=${deviceId}`, error);
+        this.logger.error(
+          `[TTSService] TTS 调用失败: deviceId=${deviceId}`,
+          error
+        );
         void this.sendStopAndCleanup(deviceId).catch((cleanupError) => {
           this.logger.error(
             `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
@@ -266,7 +277,9 @@ export class TTSService implements ITTSService {
             state: "start",
           });
           this.ttsStarted.set(deviceId, true);
-          this.logger.info(`[TTSService] 发送 TTS start 消息: deviceId=${deviceId}`);
+          this.logger.info(
+            `[TTSService] 发送 TTS start 消息: deviceId=${deviceId}`
+          );
         }
 
         // 从缓冲区取出第一个包

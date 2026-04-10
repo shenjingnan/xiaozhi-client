@@ -8,9 +8,14 @@
  * - ASR → LLM → TTS 语音交互流水线
  */
 
-import type { ILogger, IESP32ConfigProvider } from "./interfaces.js";
-import { noopLogger } from "./interfaces.js";
+import type WebSocket from "ws";
 import { ESP32Connection } from "./connection.js";
+import { DeviceRegistryService } from "./device-registry.js";
+import type { IESP32ConfigProvider, ILogger } from "./interfaces.js";
+import { noopLogger } from "./interfaces.js";
+import { ASRService } from "./services/asr.service.js";
+import { LLMService } from "./services/llm.service.js";
+import { TTSService } from "./services/tts.service.js";
 import type {
   ESP32DeviceReport,
   ESP32ListenMessage,
@@ -18,11 +23,6 @@ import type {
   ESP32WSMessage,
 } from "./types.js";
 import { camelToSnakeCase, extractDeviceInfo } from "./utils.js";
-import type WebSocket from "ws";
-import { ASRService } from "./services/asr.service.js";
-import { DeviceRegistryService } from "./device-registry.js";
-import { LLMService } from "./services/llm.service.js";
-import { TTSService } from "./services/tts.service.js";
 
 /**
  * ESP32 设备管理器配置选项
@@ -72,7 +72,10 @@ export class ESP32DeviceManager {
 
   /** 配置选项 */
   private options: Required<
-    Pick<ESP32DeviceManagerOptions, "firmwareVersion" | "firmwareUrl" | "forceUpdate">
+    Pick<
+      ESP32DeviceManagerOptions,
+      "firmwareVersion" | "firmwareUrl" | "forceUpdate"
+    >
   > & {
     buildWebSocketUrl: (host: string) => string;
     logger: ILogger;
@@ -89,8 +92,7 @@ export class ESP32DeviceManager {
       firmwareUrl: options.firmwareUrl ?? "",
       forceUpdate: options.forceUpdate ?? false,
       buildWebSocketUrl:
-        options.buildWebSocketUrl ??
-        ((host: string) => `ws://${host}/ws`),
+        options.buildWebSocketUrl ?? ((host: string) => `ws://${host}/ws`),
       logger: options.logger ?? noopLogger,
       configProvider: options.configProvider,
     };
@@ -159,7 +161,10 @@ export class ESP32DeviceManager {
           }
         },
         onError: (deviceId, error) => {
-          this.options.logger.error(`[ESP32DeviceManager] ASR 错误: deviceId=${deviceId}`, error);
+          this.options.logger.error(
+            `[ESP32DeviceManager] ASR 错误: deviceId=${deviceId}`,
+            error
+          );
         },
       },
       logger: this.options.logger,
@@ -215,7 +220,9 @@ export class ESP32DeviceManager {
    */
   private createLLMService(): LLMService | null {
     if (!this.options.configProvider) {
-      this.options.logger.warn("[ESP32DeviceManager] 未提供配置提供者，LLM 服务不可用");
+      this.options.logger.warn(
+        "[ESP32DeviceManager] 未提供配置提供者，LLM 服务不可用"
+      );
       return null;
     }
 
@@ -270,7 +277,9 @@ export class ESP32DeviceManager {
     headerInfo?: { deviceModel?: string; deviceVersion?: string },
     host?: string
   ): Promise<ESP32OTAResponse> {
-    this.options.logger.info(`收到OTA请求: deviceId=${deviceId}, clientId=${clientId}`);
+    this.options.logger.info(
+      `收到OTA请求: deviceId=${deviceId}, clientId=${clientId}`
+    );
 
     // 使用工具方法提取设备信息（支持多级回退机制）
     const { boardType, appVersion } = extractDeviceInfo(report, headerInfo);
@@ -280,7 +289,11 @@ export class ESP32DeviceManager {
 
     if (!device) {
       // 设备不存在，自动创建并激活
-      device = this.deviceRegistry.createDevice(deviceId, boardType, appVersion);
+      device = this.deviceRegistry.createDevice(
+        deviceId,
+        boardType,
+        appVersion
+      );
       this.options.logger.info(`新设备自动激活: deviceId=${deviceId}`);
     }
 
@@ -344,7 +357,9 @@ export class ESP32DeviceManager {
     // 验证设备是否存在
     const device = this.deviceRegistry.getDevice(deviceId);
     if (!device) {
-      this.options.logger.warn(`[ESP32DeviceManager] 设备未注册，拒绝连接: deviceId=${deviceId}`);
+      this.options.logger.warn(
+        `[ESP32DeviceManager] 设备未注册，拒绝连接: deviceId=${deviceId}`
+      );
       ws.close(1008, "Device not registered");
       return;
     }
@@ -410,7 +425,9 @@ export class ESP32DeviceManager {
     deviceId: string,
     message: ESP32WSMessage
   ): Promise<void> {
-    this.options.logger.debug(`收到设备消息: deviceId=${deviceId}, type=${message.type}`);
+    this.options.logger.debug(
+      `收到设备消息: deviceId=${deviceId}, type=${message.type}`
+    );
 
     // 更新设备最后活跃时间
     this.deviceRegistry.updateLastSeen(deviceId);
@@ -501,11 +518,15 @@ export class ESP32DeviceManager {
         break;
       case "stop":
         // 停止监听，中断当前会话
-        this.options.logger.info(`[ESP32DeviceManager] 停止监听，中断会话: deviceId=${deviceId}`);
+        this.options.logger.info(
+          `[ESP32DeviceManager] 停止监听，中断会话: deviceId=${deviceId}`
+        );
         await this.asrService.end(deviceId);
         break;
       default:
-        this.options.logger.warn(`[ESP32DeviceManager] 未知的监听状态: ${state}`);
+        this.options.logger.warn(
+          `[ESP32DeviceManager] 未知的监听状态: ${state}`
+        );
     }
   }
 
@@ -520,7 +541,9 @@ export class ESP32DeviceManager {
   ): Promise<void> {
     // 类型守卫：确保消息是音频消息
     if (message.type !== "audio") {
-      this.options.logger.warn(`handleAudioMessage 收到非音频消息: type=${message.type}`);
+      this.options.logger.warn(
+        `handleAudioMessage 收到非音频消息: type=${message.type}`
+      );
       return;
     }
 
@@ -556,7 +579,9 @@ export class ESP32DeviceManager {
    * @param clientId - 客户端 ID
    */
   private handleDeviceDisconnect(deviceId: string, clientId: string): void {
-    this.options.logger.info(`设备断开连接: deviceId=${deviceId}, clientId=${clientId}`);
+    this.options.logger.info(
+      `设备断开连接: deviceId=${deviceId}, clientId=${clientId}`
+    );
 
     this.connections.delete(deviceId);
     this.clientIdToDeviceId.delete(clientId);

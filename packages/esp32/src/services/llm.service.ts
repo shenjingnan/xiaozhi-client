@@ -3,9 +3,9 @@
  * 提供基于 OpenAI SDK 的大语言模型调用封装
  */
 
-import type { ILogger, IESP32ConfigProvider } from "../interfaces.js";
-import { noopLogger } from "../interfaces.js";
 import OpenAI from "openai";
+import type { IESP32ConfigProvider, ILogger } from "../interfaces.js";
+import { noopLogger } from "../interfaces.js";
 
 function removeThinkTags(content: string): string {
   // 移除 ... 及其内容
@@ -39,7 +39,8 @@ export class LLMService {
   constructor(options: LLMServiceOptions) {
     this.logger = options.logger ?? noopLogger;
     this.configProvider = options.configProvider;
-    this.resolvePromptFn = options.resolvePrompt ?? ((_promptConfig?: string) => "");
+    this.resolvePromptFn =
+      options.resolvePrompt ?? ((_promptConfig?: string) => "");
     this.initClient();
   }
 

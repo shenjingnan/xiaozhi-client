@@ -4,7 +4,7 @@
  */
 
 import { ASR, AudioFormat, AuthMethod, OpusDecoder } from "@xiaozhi-client/asr";
-import type { ILogger, IESP32ConfigProvider } from "../interfaces.js";
+import type { IESP32ConfigProvider, ILogger } from "../interfaces.js";
 import { noopLogger } from "../interfaces.js";
 import type {
   ASRServiceEvents,
@@ -74,7 +74,9 @@ export class ASRService implements IASRService {
 
     // 如果已经准备好，跳过
     if (state.prepared) {
-      this.logger.debug(`[ASRService] ASR 已准备好，跳过: deviceId=${deviceId}`);
+      this.logger.debug(
+        `[ASRService] ASR 已准备好，跳过: deviceId=${deviceId}`
+      );
       return;
     }
 
@@ -97,13 +99,17 @@ export class ASRService implements IASRService {
     // 如果已经连接或正在连接，等待连接完成
     const existingClient = this.asrClients.get(deviceId);
     if (existingClient?.isConnected()) {
-      this.logger.debug(`[ASRService] ASR 客户端已连接，跳过: deviceId=${deviceId}`);
+      this.logger.debug(
+        `[ASRService] ASR 客户端已连接，跳过: deviceId=${deviceId}`
+      );
       return;
     }
 
     // 如果正在连接，等待连接完成
     if (state.connecting && state.connectPromise) {
-      this.logger.debug(`[ASRService] ASR 正在连接，等待: deviceId=${deviceId}`);
+      this.logger.debug(
+        `[ASRService] ASR 正在连接，等待: deviceId=${deviceId}`
+      );
       await state.connectPromise;
       return;
     }
@@ -202,7 +208,9 @@ export class ASRService implements IASRService {
     const listenTask = this.startListenTask(deviceId, asrClient);
     this.listenTasks.set(deviceId, listenTask);
 
-    this.logger.info(`[ASRService] ASR 客户端已创建（V2）: deviceId=${deviceId}`);
+    this.logger.info(
+      `[ASRService] ASR 客户端已创建（V2）: deviceId=${deviceId}`
+    );
   }
 
   /**
@@ -237,13 +245,17 @@ export class ASRService implements IASRService {
 
     // 检查是否已准备好
     if (!state.prepared) {
-      this.logger.warn(`[ASRService] ASR 未准备好，自动准备: deviceId=${deviceId}`);
+      this.logger.warn(
+        `[ASRService] ASR 未准备好，自动准备: deviceId=${deviceId}`
+      );
       await this.prepare(deviceId);
     }
 
     // 检查是否已经结束
     if (this.audioEnded.get(deviceId)) {
-      this.logger.debug(`[ASRService] 音频已结束，忽略新数据: deviceId=${deviceId}`);
+      this.logger.debug(
+        `[ASRService] 音频已结束，忽略新数据: deviceId=${deviceId}`
+      );
       return;
     }
 
@@ -265,7 +277,10 @@ export class ASRService implements IASRService {
         `[ASRService] 已将 PCM 推入队列: deviceId=${deviceId}, pcmSize=${pcmData.length}, queueLength=${queue.length}`
       );
     } catch (error) {
-      this.logger.error(`[ASRService] PCM 解码失败: deviceId=${deviceId}`, error);
+      this.logger.error(
+        `[ASRService] PCM 解码失败: deviceId=${deviceId}`,
+        error
+      );
     }
   }
 
@@ -363,7 +378,10 @@ export class ASRService implements IASRService {
         `[ASRService] 音频缓冲区已重置，准备下一次识别: deviceId=${deviceId}`
       );
     } catch (error) {
-      this.logger.error(`[ASRService] listen 任务出错: deviceId=${deviceId}`, error);
+      this.logger.error(
+        `[ASRService] listen 任务出错: deviceId=${deviceId}`,
+        error
+      );
     }
   }
 
@@ -381,7 +399,9 @@ export class ASRService implements IASRService {
     if (listenTask) {
       try {
         await listenTask;
-        this.logger.info(`[ASRService] ASR listen 任务已结束: deviceId=${deviceId}`);
+        this.logger.info(
+          `[ASRService] ASR listen 任务已结束: deviceId=${deviceId}`
+        );
       } catch (error) {
         this.logger.error(
           `[ASRService] 等待 listen 任务失败: deviceId=${deviceId}`,
@@ -396,7 +416,10 @@ export class ASRService implements IASRService {
       try {
         await asrClient.close();
       } catch (error) {
-        this.logger.error(`[ASRService] ASR 关闭失败: deviceId=${deviceId}`, error);
+        this.logger.error(
+          `[ASRService] ASR 关闭失败: deviceId=${deviceId}`,
+          error
+        );
       }
     }
 
