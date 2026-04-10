@@ -49,6 +49,16 @@ export class TTSService implements ITTSService {
   /** 每个设备的连接引用（用于缓冲区处理） */
   private readonly deviceConnections = new Map<string, ESP32Connection>();
 
+  /** 每个设备的 demuxer 事件监听器引用（用于清理时移除） */
+  private readonly demuxerListeners = new Map<
+    string,
+    {
+      dataListener: (opusPacket: Buffer) => void;
+      endListener: () => void;
+      errorListener: (err: Error) => void;
+    }
+  >();
+
   /**
    * 构造函数
    * @param options - 配置选项
@@ -159,7 +169,7 @@ export class TTSService implements ITTSService {
     demuxer: prism.opus.OggDemuxer,
     connection: ESP32Connection
   ) {
-    demuxer.on("data", (opusPacket: Buffer) => {
+    const dataListener = (opusPacket: Buffer): void => {
       // 只负责将包推入缓冲区，不做异步操作
       const buffer = this.opusPacketBuffer.get(deviceId);
       if (buffer) {
@@ -173,14 +183,14 @@ export class TTSService implements ITTSService {
           error
         );
       });
-    });
+    };
 
-    demuxer.on("end", () => {
+    const endListener = (): void => {
       // 使用轮询机制等待缓冲区处理完成
       this.waitForBufferDrain(deviceId);
-    });
+    };
 
-    demuxer.on("error", (err: Error) => {
+    const errorListener = (err: Error): void => {
       logger.error(`[TTSService] Demuxer 错误: deviceId=${deviceId}`, err);
       // 使用 .catch() 捕获异步异常
       void this.sendStopAndCleanup(deviceId).catch((error) => {
@@ -189,6 +199,17 @@ export class TTSService implements ITTSService {
           error
         );
       });
+    };
+
+    demuxer.on("data", dataListener);
+    demuxer.on("end", endListener);
+    demuxer.on("error", errorListener);
+
+    // 保存监听器引用，用于清理时移除
+    this.demuxerListeners.set(deviceId, {
+      dataListener,
+      endListener,
+      errorListener,
     });
   }
 
@@ -339,6 +360,16 @@ export class TTSService implements ITTSService {
    * @param deviceId - 设备 ID
    */
   cleanup(deviceId: string): void {
+    // 移除 demuxer 事件监听器，防止内存泄漏
+    const listeners = this.demuxerListeners.get(deviceId);
+    const demuxer = this.audioDemuxers.get(deviceId);
+    if (listeners && demuxer) {
+      demuxer.off("data", listeners.dataListener);
+      demuxer.off("end", listeners.endListener);
+      demuxer.off("error", listeners.errorListener);
+      this.demuxerListeners.delete(deviceId);
+    }
+
     this.audioDemuxers.delete(deviceId);
     this.cumulativeTimestamps.delete(deviceId);
     this.packetIndices.delete(deviceId);
@@ -491,6 +522,17 @@ export class TTSService implements ITTSService {
    * 销毁服务
    */
   destroy(): void {
+    // 移除所有 demuxer 事件监听器，防止内存泄漏
+    for (const [deviceId, listeners] of this.demuxerListeners) {
+      const demuxer = this.audioDemuxers.get(deviceId);
+      if (demuxer) {
+        demuxer.off("data", listeners.dataListener);
+        demuxer.off("end", listeners.endListener);
+        demuxer.off("error", listeners.errorListener);
+      }
+    }
+    this.demuxerListeners.clear();
+
     this.ttsTriggered.clear();
     this.audioDemuxers.clear();
     this.cumulativeTimestamps.clear();
