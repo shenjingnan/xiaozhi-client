@@ -282,8 +282,15 @@ export class ServiceManagerImpl implements IServiceManager {
 
       // 处理退出信号
       const cleanup = async () => {
-        await server.stop();
-        process.exit(0);
+        try {
+          await server.stop();
+        } catch (error) {
+          consola.error(
+            `停止服务时出错: ${error instanceof Error ? error.message : String(error)}`
+          );
+        } finally {
+          process.exit(0);
+        }
       };
 
       process.once("SIGINT", cleanup);
@@ -341,9 +348,16 @@ export class ServiceManagerImpl implements IServiceManager {
 
     // 处理退出信号
     const cleanup = async () => {
-      await server.stop();
-      this.processManager.cleanupPidFile();
-      process.exit(0);
+      try {
+        await server.stop();
+      } catch (error) {
+        consola.error(
+          `停止服务时出错: ${error instanceof Error ? error.message : String(error)}`
+        );
+      } finally {
+        this.processManager.cleanupPidFile();
+        process.exit(0);
+      }
     };
 
     process.once("SIGINT", cleanup);
