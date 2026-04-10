@@ -121,7 +121,27 @@ export class ESP32Connection {
    */
   private setupWebSocket(): void {
     this.ws.on("message", async (data: Buffer) => {
-      await this.handleMessage(data);
+      try {
+        await this.handleMessage(data);
+      } catch (error) {
+        logger.error(`处理WebSocket消息失败: deviceId=${this.deviceId}`, error);
+
+        // 尝试发送错误消息给设备（如果连接仍然可用）
+        try {
+          await this.sendError(
+            ESP32ErrorCode.MESSAGE_PROCESSING_ERROR,
+            error instanceof Error ? error.message : "消息处理失败"
+          );
+        } catch (sendError) {
+          logger.error(
+            `发送错误消息失败: deviceId=${this.deviceId}`,
+            sendError
+          );
+          // 如果发送失败，关闭连接
+          this.state = "disconnected";
+          this.ws.close();
+        }
+      }
     });
 
     this.ws.on("close", () => {
