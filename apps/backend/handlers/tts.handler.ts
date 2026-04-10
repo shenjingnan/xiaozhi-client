@@ -4,9 +4,9 @@
  */
 
 import { TTS_VOICES, getVoiceScenes } from "@/constants/voices.js";
-import { mapClusterToResourceId } from "@/services/tts.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
+import { mapClusterToResourceId } from "@xiaozhi-client/esp32";
 import type { VoiceInfo, VoicesResponse } from "@xiaozhi-client/shared-types";
 import type { Context } from "hono";
 import { createTTS } from "univoice";
