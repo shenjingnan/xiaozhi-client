@@ -135,6 +135,16 @@ const initialState: WebSocketState = {
 };
 
 /**
+ * WebSocket 事件取消订阅函数
+ */
+let unsubscribeConnecting: (() => void) | null = null;
+let unsubscribeConnected: (() => void) | null = null;
+let unsubscribeDisconnected: (() => void) | null = null;
+let unsubscribeReconnecting: (() => void) | null = null;
+let unsubscribeError: (() => void) | null = null;
+let unsubscribeHeartbeat: (() => void) | null = null;
+
+/**
  * 创建 WebSocket Store（重构版）
  */
 export const useWebSocketStore = create<WebSocketStore>()(
@@ -258,6 +268,33 @@ export const useWebSocketStore = create<WebSocketStore>()(
 
       reset: () => {
         console.log("[WebSocketStore] 重置状态");
+
+        // 取消 WebSocket 事件订阅
+        if (unsubscribeConnecting) {
+          unsubscribeConnecting();
+          unsubscribeConnecting = null;
+        }
+        if (unsubscribeConnected) {
+          unsubscribeConnected();
+          unsubscribeConnected = null;
+        }
+        if (unsubscribeDisconnected) {
+          unsubscribeDisconnected();
+          unsubscribeDisconnected = null;
+        }
+        if (unsubscribeReconnecting) {
+          unsubscribeReconnecting();
+          unsubscribeReconnecting = null;
+        }
+        if (unsubscribeError) {
+          unsubscribeError();
+          unsubscribeError = null;
+        }
+        if (unsubscribeHeartbeat) {
+          unsubscribeHeartbeat();
+          unsubscribeHeartbeat = null;
+        }
+
         set(initialState, false, "reset");
       },
 
@@ -266,33 +303,51 @@ export const useWebSocketStore = create<WebSocketStore>()(
       initialize: () => {
         console.log("[WebSocketStore] 初始化 WebSocket Store");
 
-        // 设置 WebSocket 事件监听
-        webSocketManager.subscribe("connection:connecting", () => {
-          get().setConnectionState(ConnectionState.CONNECTING);
-        });
+        // 设置 WebSocket 事件监听，保存取消订阅函数
+        unsubscribeConnecting = webSocketManager.subscribe(
+          "connection:connecting",
+          () => {
+            get().setConnectionState(ConnectionState.CONNECTING);
+          }
+        );
 
-        webSocketManager.subscribe("connection:connected", () => {
-          get().setConnectionState(ConnectionState.CONNECTED);
-        });
+        unsubscribeConnected = webSocketManager.subscribe(
+          "connection:connected",
+          () => {
+            get().setConnectionState(ConnectionState.CONNECTED);
+          }
+        );
 
-        webSocketManager.subscribe("connection:disconnected", () => {
-          get().setConnectionState(ConnectionState.DISCONNECTED);
-        });
+        unsubscribeDisconnected = webSocketManager.subscribe(
+          "connection:disconnected",
+          () => {
+            get().setConnectionState(ConnectionState.DISCONNECTED);
+          }
+        );
 
-        webSocketManager.subscribe("connection:reconnecting", () => {
-          get().setConnectionState(ConnectionState.RECONNECTING);
-          const stats = webSocketManager.getConnectionStats();
-          get().setConnectionStats(stats);
-        });
+        unsubscribeReconnecting = webSocketManager.subscribe(
+          "connection:reconnecting",
+          () => {
+            get().setConnectionState(ConnectionState.RECONNECTING);
+            const stats = webSocketManager.getConnectionStats();
+            get().setConnectionStats(stats);
+          }
+        );
 
-        webSocketManager.subscribe("connection:error", ({ error }) => {
-          get().setLastError(error);
-        });
+        unsubscribeError = webSocketManager.subscribe(
+          "connection:error",
+          ({ error }) => {
+            get().setLastError(error);
+          }
+        );
 
-        webSocketManager.subscribe("system:heartbeat", () => {
-          const stats = webSocketManager.getConnectionStats();
-          get().setConnectionStats(stats);
-        });
+        unsubscribeHeartbeat = webSocketManager.subscribe(
+          "system:heartbeat",
+          () => {
+            const stats = webSocketManager.getConnectionStats();
+            get().setConnectionStats(stats);
+          }
+        );
 
         // 初始化连接状态
         const initialStats = webSocketManager.getConnectionStats();

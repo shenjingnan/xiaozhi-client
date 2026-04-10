@@ -211,6 +211,12 @@ let pollingTimer: NodeJS.Timeout | null = null;
 let restartPollingTimer: NodeJS.Timeout | null = null;
 
 /**
+ * WebSocket 事件取消订阅函数
+ */
+let statusUpdateUnsubscribe: (() => void) | null = null;
+let restartStatusUnsubscribe: (() => void) | null = null;
+
+/**
  * 创建状态 Store
  */
 export const useStatusStore = create<StatusStore>()(
@@ -677,6 +683,16 @@ export const useStatusStore = create<StatusStore>()(
       reset: () => {
         console.log("[StatusStore] 重置状态");
 
+        // 取消 WebSocket 事件订阅
+        if (statusUpdateUnsubscribe) {
+          statusUpdateUnsubscribe();
+          statusUpdateUnsubscribe = null;
+        }
+        if (restartStatusUnsubscribe) {
+          restartStatusUnsubscribe();
+          restartStatusUnsubscribe = null;
+        }
+
         // 停止所有轮询
         get().stopPolling();
         get().stopRestartPolling();
@@ -692,16 +708,22 @@ export const useStatusStore = create<StatusStore>()(
           setLoading({ isLoading: true });
           console.log("[StatusStore] 初始化状态 Store");
 
-          // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:statusUpdate", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 状态更新");
-            get().setClientStatus(status, "websocket");
-          });
+          // 设置 WebSocket 事件监听，保存取消订阅函数
+          statusUpdateUnsubscribe = webSocketManager.subscribe(
+            "data:statusUpdate",
+            (status) => {
+              console.log("[StatusStore] 收到 WebSocket 状态更新");
+              get().setClientStatus(status, "websocket");
+            }
+          );
 
-          webSocketManager.subscribe("data:restartStatus", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 重启状态更新");
-            get().setRestartStatus(status, "websocket");
-          });
+          restartStatusUnsubscribe = webSocketManager.subscribe(
+            "data:restartStatus",
+            (status) => {
+              console.log("[StatusStore] 收到 WebSocket 重启状态更新");
+              get().setRestartStatus(status, "websocket");
+            }
+          );
 
           // 获取初始状态
           await refreshStatus();
