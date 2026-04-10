@@ -9,6 +9,7 @@ vi.mock("../event-bus.service.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     onEvent: vi.fn(),
     emitEvent: vi.fn(),
+    offEvent: vi.fn(),
   }),
 }));
 
@@ -85,6 +86,7 @@ describe("NotificationService", () => {
     mockEventBus = {
       onEvent: vi.fn(),
       emitEvent: vi.fn(),
+      offEvent: vi.fn(),
     };
     const { getEventBus } = await import("../event-bus.service.js");
     (getEventBus as any).mockReturnValue(mockEventBus);

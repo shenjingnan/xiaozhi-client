@@ -76,6 +76,8 @@ export class NotificationService {
   private clients: Map<string, WebSocketClient> = new Map();
   private messageQueue: Map<string, NotificationMessage[]> = new Map();
   private maxQueueSize = 100;
+  // 事件监听器清理函数数组
+  private eventListenerUnsubscribers: Array<() => void> = [];
 
   constructor() {
     this.logger = logger;
@@ -88,54 +90,162 @@ export class NotificationService {
    */
   private setupEventListeners(): void {
     // 监听配置更新事件
-    this.eventBus.onEvent("config:updated", (data) => {
+    const configUpdatedListener = (data: {
+      type: string;
+      serviceName?: string;
+      platformName?: string;
+      timestamp: Date;
+    }) => {
       // 获取最新的配置
       const config = configManager.getConfig();
       this.broadcastConfigUpdate(config);
+    };
+    this.eventBus.onEvent("config:updated", configUpdatedListener);
+    this.eventListenerUnsubscribers.push(() => {
+      this.eventBus.offEvent("config:updated", configUpdatedListener);
     });
 
     // 监听状态更新事件
-    this.eventBus.onEvent("status:updated", (data) => {
+    const statusUpdatedListener = (data: {
+      status: import("@/services/status.service.js").ClientInfo;
+      source: string;
+    }) => {
       this.broadcastStatusUpdate(data.status);
+    };
+    this.eventBus.onEvent("status:updated", statusUpdatedListener);
+    this.eventListenerUnsubscribers.push(() => {
+      this.eventBus.offEvent("status:updated", statusUpdatedListener);
     });
 
     // 监听重启状态事件
-    this.eventBus.onEvent("service:restart:started", (data) => {
+    const restartStartedListener = (data: {
+      serviceName: string;
+      reason?: string;
+      attempt: number;
+      timestamp: number;
+    }) => {
       this.broadcastRestartStatus("restarting", undefined, data.timestamp);
+    };
+    this.eventBus.onEvent("service:restart:started", restartStartedListener);
+    this.eventListenerUnsubscribers.push(() => {
+      this.eventBus.offEvent("service:restart:started", restartStartedListener);
     });
 
-    this.eventBus.onEvent("service:restart:completed", (data) => {
+    const restartCompletedListener = (data: {
+      serviceName: string;
+      reason?: string;
+      attempt: number;
+      timestamp: number;
+    }) => {
       this.broadcastRestartStatus("completed", undefined, data.timestamp);
+    };
+    this.eventBus.onEvent(
+      "service:restart:completed",
+      restartCompletedListener
+    );
+    this.eventListenerUnsubscribers.push(() => {
+      this.eventBus.offEvent(
+        "service:restart:completed",
+        restartCompletedListener
+      );
     });
 
-    this.eventBus.onEvent("service:restart:failed", (data) => {
+    const restartFailedListener = (data: {
+      serviceName: string;
+      error: Error;
+      attempt: number;
+      timestamp: number;
+    }) => {
       this.broadcastRestartStatus("failed", data.error.message, data.timestamp);
+    };
+    this.eventBus.onEvent("service:restart:failed", restartFailedListener);
+    this.eventListenerUnsubscribers.push(() => {
+      this.eventBus.offEvent("service:restart:failed", restartFailedListener);
     });
 
     // 监听 NPM 安装事件
-    this.eventBus.onEvent("npm:install:started", (data) => {
+    const npmInstallStartedListener = (data: {
+      version: string;
+      installId: string;
+      timestamp: number;
+    }) => {
       this.broadcast("npm:install:started", data);
+    };
+    this.eventBus.onEvent("npm:install:started", npmInstallStartedListener);
+    this.eventListenerUnsubscribers.push(() => {
+      this.eventBus.offEvent("npm:install:started", npmInstallStartedListener);
     });
 
-    this.eventBus.onEvent("npm:install:log", (data) => {
+    const npmInstallLogListener = (data: {
+      version: string;
+      installId: string;
+      type: "stdout" | "stderr";
+      message: string;
+      timestamp: number;
+    }) => {
       this.broadcast("npm:install:log", data);
+    };
+    this.eventBus.onEvent("npm:install:log", npmInstallLogListener);
+    this.eventListenerUnsubscribers.push(() => {
+      this.eventBus.offEvent("npm:install:log", npmInstallLogListener);
     });
 
-    this.eventBus.onEvent("npm:install:completed", (data) => {
+    const npmInstallCompletedListener = (data: {
+      version: string;
+      installId: string;
+      success: boolean;
+      duration: number;
+      timestamp: number;
+    }) => {
       this.broadcast("npm:install:completed", data);
+    };
+    this.eventBus.onEvent("npm:install:completed", npmInstallCompletedListener);
+    this.eventListenerUnsubscribers.push(() => {
+      this.eventBus.offEvent(
+        "npm:install:completed",
+        npmInstallCompletedListener
+      );
     });
 
-    this.eventBus.onEvent("npm:install:failed", (data) => {
+    const npmInstallFailedListener = (data: {
+      version: string;
+      installId: string;
+      error: string;
+      duration: number;
+      timestamp: number;
+    }) => {
       this.broadcast("npm:install:failed", data);
+    };
+    this.eventBus.onEvent("npm:install:failed", npmInstallFailedListener);
+    this.eventListenerUnsubscribers.push(() => {
+      this.eventBus.offEvent("npm:install:failed", npmInstallFailedListener);
     });
 
     // 监听通知广播事件
-    this.eventBus.onEvent("notification:broadcast", (data) => {
+    const notificationBroadcastListener = (data: {
+      type: string;
+      data: unknown;
+      target?: string;
+    }) => {
       if (data.target) {
-        this.sendToClient(data.target, data.type, data.data);
+        this.sendToClient(
+          data.target,
+          data.type,
+          data.data as NotificationData
+        );
       } else {
-        this.broadcast(data.type, data.data);
+        this.broadcast(data.type, data.data as NotificationData);
       }
+    };
+    this.eventBus.onEvent(
+      "notification:broadcast",
+      notificationBroadcastListener
+    );
+    this.eventListenerUnsubscribers.push(() => {
+      this.eventBus.offEvent(
+        "notification:broadcast",
+        notificationBroadcastListener
+      );
     });
   }
 
@@ -388,6 +498,14 @@ export class NotificationService {
    */
   destroy(): void {
     this.logger.debug("销毁通知服务");
+
+    // 移除所有事件监听器，防止内存泄漏
+    for (const unsubscribe of this.eventListenerUnsubscribers) {
+      unsubscribe();
+    }
+    this.eventListenerUnsubscribers = [];
+    this.logger.debug("已移除所有事件总线监听器");
+
     this.clients.clear();
     this.messageQueue.clear();
   }
