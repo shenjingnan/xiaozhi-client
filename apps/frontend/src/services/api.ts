@@ -15,7 +15,9 @@ import type {
   MCPServerListResponse,
   MCPServerStatus,
   VoicesResponse,
+  WorkflowParameterConfig,
 } from "@xiaozhi-client/shared-types";
+import type { CozeWorkflow } from "@xiaozhi-client/shared-types";
 
 /**
  * CustomMCPTool 接口定义
@@ -90,6 +92,22 @@ interface RestartStatus {
   status: "restarting" | "completed" | "failed";
   error?: string;
   timestamp: number;
+}
+
+/**
+ * 新格式添加/更新自定义工具请求类型
+ * 支持多种工具类型：MCP 工具、Coze 工作流等
+ */
+interface NewFormatToolRequest {
+  type: "mcp" | "coze" | "http" | "function";
+  data: {
+    workflow?: Partial<CozeWorkflow>;
+    serviceName?: string;
+    toolName?: string;
+    customName?: string;
+    customDescription?: string;
+    parameterConfig?: WorkflowParameterConfig;
+  };
 }
 
 /**
@@ -549,37 +567,34 @@ export class ApiClient {
    * 支持新的类型化格式和向后兼容的旧格式
    */
   async addCustomTool(
-    workflow: any,
+    workflow: Partial<CozeWorkflow>,
     customName?: string,
     customDescription?: string,
-    parameterConfig?: any
-  ): Promise<any>;
+    parameterConfig?: WorkflowParameterConfig
+  ): Promise<CustomMCPToolWithStats>;
 
   /**
    * 添加自定义工具（新格式）
    * 支持多种工具类型：MCP 工具、Coze 工作流等
    */
-  async addCustomTool(request: {
-    type: "mcp" | "coze" | "http" | "function";
-    data: any;
-  }): Promise<any>;
+  async addCustomTool(
+    request: NewFormatToolRequest
+  ): Promise<CustomMCPToolWithStats>;
 
   async addCustomTool(
-    param1: any,
+    param1: NewFormatToolRequest | Partial<CozeWorkflow>,
     customName?: string,
     customDescription?: string,
-    parameterConfig?: any
-  ): Promise<any> {
+    parameterConfig?: WorkflowParameterConfig
+  ): Promise<CustomMCPToolWithStats> {
     // 判断是否为新格式调用
     if (typeof param1 === "object" && "type" in param1 && "data" in param1) {
       // 新格式：类型化请求
-      const response: ApiResponse<{ tool: any }> = await this.request(
-        "/api/tools/custom",
-        {
+      const response: ApiResponse<{ tool: CustomMCPToolWithStats }> =
+        await this.request("/api/tools/custom", {
           method: "POST",
           body: JSON.stringify(param1),
-        }
-      );
+        });
 
       if (!response.success || !response.data) {
         throw new Error(response.error?.message || "添加自定义工具失败");
@@ -588,9 +603,8 @@ export class ApiClient {
     }
     // 旧格式：向后兼容
     const workflow = param1;
-    const response: ApiResponse<{ tool: any }> = await this.request(
-      "/api/tools/custom",
-      {
+    const response: ApiResponse<{ tool: CustomMCPToolWithStats }> =
+      await this.request("/api/tools/custom", {
         method: "POST",
         body: JSON.stringify({
           workflow,
@@ -598,8 +612,7 @@ export class ApiClient {
           customDescription,
           parameterConfig,
         }),
-      }
-    );
+      });
 
     if (!response.success || !response.data) {
       throw new Error(response.error?.message || "添加自定义工具失败");
@@ -614,18 +627,13 @@ export class ApiClient {
    */
   async updateCustomTool(
     toolName: string,
-    updateRequest: {
-      type: "mcp" | "coze" | "http" | "function";
-      data: any;
-    }
-  ): Promise<any> {
-    const response: ApiResponse<{ tool: any }> = await this.request(
-      `/api/tools/custom/${encodeURIComponent(toolName)}`,
-      {
+    updateRequest: NewFormatToolRequest
+  ): Promise<CustomMCPToolWithStats> {
+    const response: ApiResponse<{ tool: CustomMCPToolWithStats }> =
+      await this.request(`/api/tools/custom/${encodeURIComponent(toolName)}`, {
         method: "PUT",
         body: JSON.stringify(updateRequest),
-      }
-    );
+      });
 
     if (!response.success || !response.data) {
       throw new Error(response.error?.message || "更新自定义工具失败");
