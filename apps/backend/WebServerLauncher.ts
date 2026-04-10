@@ -19,26 +19,33 @@ async function importModules() {
 
 async function main() {
   const args = process.argv.slice(2);
+  // 在 try 块外声明 logger，以便在错误处理中使用
+  let logger: typeof import("@/Logger.js").logger | undefined;
 
   try {
     // 动态导入模块
-    const { WebServer, configManager, logger } = await importModules();
+    const {
+      WebServer,
+      configManager,
+      logger: importedLogger,
+    } = await importModules();
+    logger = importedLogger;
 
     // 初始化日志
     if (process.env.XIAOZHI_CONFIG_DIR) {
-      logger.initLogFile(process.env.XIAOZHI_CONFIG_DIR);
-      logger.enableFileLogging(true);
+      logger!.initLogFile(process.env.XIAOZHI_CONFIG_DIR);
+      logger!.enableFileLogging(true);
     }
 
     // 启动 WebServer
     const webServer = new WebServer();
     await webServer.start();
 
-    logger.info("[WEBSERVER_STANDALONE] WebServer 启动成功");
+    logger!.info("[WEBSERVER_STANDALONE] WebServer 启动成功");
 
     // 处理退出信号
     const cleanup = async () => {
-      logger.info("[WEBSERVER_STANDALONE] 正在停止 WebServer...");
+      logger!.info("[WEBSERVER_STANDALONE] 正在停止 WebServer...");
       await webServer.stop();
       process.exit(0);
     };
@@ -46,7 +53,13 @@ async function main() {
     process.once("SIGINT", cleanup);
     process.once("SIGTERM", cleanup);
   } catch (error) {
-    console.error("WebServer 启动失败:", error);
+    // 使用 logger.error 替代 console.error，遵循项目日志规范
+    // 如果 logger 尚未初始化（导入失败），则使用 console.error 作为后备
+    if (logger) {
+      logger.error("WebServer 启动失败:", error);
+    } else {
+      console.error("WebServer 启动失败:", error);
+    }
     process.exit(1);
   }
 }
