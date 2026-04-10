@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(playwright-cli:*), Bash(pnpm dev:*), Bash(pnpm build:*), Bash(lsof:*), Bash(node:*), Bash(ls:*)
+allowed-tools: Bash(playwright-cli:*), Bash(pnpm dev:*), Bash(pnpm build:*), Bash(lsof:*), Bash(node:*), Bash(ls:*), Bash(mkdir:*), Bash(rm:*)
 description: 使用 Playwright 对 Web UI 进行端到端测试
 ---
 
@@ -32,15 +32,20 @@ description: 使用 Playwright 对 Web UI 进行端到端测试
    对每个测试用例，按以下流程执行：
 
    a. 读取 `test.md`，理解测试步骤
-   b. 检查该用例目录下是否有 `expected.png`
-   c. 确保浏览器已打开且在正确页面（如未打开则 `playwright-cli open`）
-   d. 按照 `test.md` 中的步骤逐步执行操作
-   e. 如果存在 `expected.png`：
-      - 在关键步骤后截图：`playwright-cli screenshot --filename=<用例名>-actual.png`
+   b. 准备截图目录：
+      - 在测试用例目录下创建 `steps/` 子目录（如不存在）：`mkdir -p <测试用例绝对路径>/steps`
+      - 清空 `steps/` 目录中已有的旧截图：`rm -f <测试用例绝对路径>/steps/*.png`
+      - 初始化截图计数器为 1
+   c. 检查该用例目录下是否有 `expected.png`
+   d. 确保浏览器已打开且在正确页面（如未打开则 `playwright-cli open`）
+   e. 按照 `test.md` 中的步骤逐步执行操作
+   f. 如果存在 `expected.png`：
+      - 在关键步骤后截图：`playwright-cli screenshot --filename=<测试用例绝对路径>/steps/<两位数编号>.png`
+      - 编号从 01 开始递增（01.png, 02.png, ...）
       - 使用视觉能力对比 `expected.png` 和实际截图，描述差异
       - 一致 → PASS，有明显差异 → FAIL 并说明差异
-   f. 如果不存在 `expected.png`：
-      - 执行完所有步骤后截图保存
+   g. 如果不存在 `expected.png`：
+      - 执行完所有步骤后截图：`playwright-cli screenshot --filename=<测试用例绝对路径>/steps/<两位数编号>.png`
       - 根据步骤是否顺利执行判定 PASS 或 FAIL
 
 3. **汇总报告**（多个用例时）：
@@ -62,7 +67,7 @@ description: 使用 Playwright 对 Web UI 进行端到端测试
 2. **打开页面**：`playwright-cli open http://localhost:9999`
 3. **获取快照**：`playwright-cli snapshot` 了解页面结构和元素引用
 4. **执行测试**：根据用户描述的场景进行交互操作（click、fill、type、select、press 等）
-5. **验证结果**：每步操作后通过 snapshot 验证页面状态，用 `screenshot --filename=<name>.png` 保存截图
+5. **验证结果**：每步操作后通过 snapshot 验证页面状态，用 `screenshot --filename=<name>.png` 保存截图（截图保存到当前工作目录）
 6. **清理收尾**：`playwright-cli close` 关闭浏览器，报告测试结果
 
 ## 使用示例
