@@ -1,3 +1,24 @@
+/**
+ * MCP 服务器设置按钮组件
+ *
+ * 负责：
+ * - 提供 MCP 服务器配置的编辑界面
+ * - 支持表单模式和 JSON 模式切换
+ * - 处理服务器配置的验证和保存
+ * - 集成表单验证和错误提示
+ * - 支持服务器名称修改和配置更新
+ *
+ * @module components/mcp-server-setting-button
+ * @example
+ * ```tsx
+ * import { McpServerSettingButton } from '@/components/mcp-server-setting-button';
+ *
+ * <McpServerSettingButton
+ *   mcpServer={serverConfig}
+ *   mcpServerName="my-server" />
+ * ```
+ */
+
 import { McpServerForm } from "@/components/mcp-server-form";
 import { Button } from "@/components/ui/button";
 import {
