@@ -1,3 +1,12 @@
+/**
+ * 连接设置组件
+ *
+ * 显示和管理 WebSocket 连接状态，包括：
+ * - 显示当前服务器地址和连接状态
+ * - 提供高级设置功能，允许手动配置服务器地址
+ * - 支持重置为自动检测模式
+ */
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle2, Settings } from "lucide-react";
