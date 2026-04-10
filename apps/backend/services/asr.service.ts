@@ -386,6 +386,9 @@ export class ASRService implements IASRService {
     const asrClient = this.asrClients.get(deviceId);
     if (asrClient) {
       try {
+        // 移除事件监听器，避免内存泄漏
+        asrClient.removeAllListeners("error");
+        asrClient.removeAllListeners("close");
         await asrClient.close();
       } catch (error) {
         logger.error(`[ASRService] ASR 关闭失败: deviceId=${deviceId}`, error);
@@ -432,6 +435,9 @@ export class ASRService implements IASRService {
   destroy(): void {
     // 清理 ASR 客户端
     for (const asrClient of this.asrClients.values()) {
+      // 移除事件监听器，避免内存泄漏
+      asrClient.removeAllListeners("error");
+      asrClient.removeAllListeners("close");
       asrClient.close();
     }
     this.asrClients.clear();
