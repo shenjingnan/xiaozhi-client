@@ -55,7 +55,7 @@
       "options": {
         "command": "pnpm --filter backend run check:type"
       },
-      "dependsOn": ["config:build", "endpoint:build", "version:build"]
+      "dependsOn": ["shared-types:build", "config:build", "endpoint:build", "version:build", "tts:build", "asr:build"]
     },
     "dev": {
       "executor": "nx:run-commands",
