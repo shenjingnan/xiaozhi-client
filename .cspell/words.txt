@@ -68,9 +68,12 @@ healthcheck
 HTTPMCP
 httpx
 IASR
+ICFG
+ICONN
+IESP
+ILOG
 IMCP
 IMEI
-IESP
 infile
 iostat
 iotop
@@ -116,6 +119,7 @@ numpy
 nums
 oneline
 openspeech
+OTAHANDLER
 peiqi
 phantomjs
 postbuild
@@ -181,6 +185,7 @@ vsize
 webui
 wenwanshanshan
 worktrees
+WSHANDLER
 wvae
 Xiaoxuan
 xiaoxue
