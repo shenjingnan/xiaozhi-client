@@ -113,6 +113,14 @@ export class CozeApiService {
   }
 
   /**
+   * 获取当前使用的 Token
+   * 用于检查 token 是否变化，决定是否需要重新创建实例
+   */
+  getToken(): string {
+    return this.token;
+  }
+
+  /**
    * 清除缓存
    * @param pattern 可选的模式字符串，清除所有以该模式开头的缓存键
    */
