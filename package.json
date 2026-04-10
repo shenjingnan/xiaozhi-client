@@ -60,6 +60,8 @@
     "@hono/node-server": "^1.19.10",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@xiaozhi-client/asr": "workspace:*",
+    "@xiaozhi-client/esp32": "workspace:*",
+    "@xiaozhi-client/shared-types": "workspace:*",
     "univoice": "^0.7.1",
     "@xiaozhi-client/config": "workspace:*",
     "@xiaozhi-client/endpoint": "workspace:*",
