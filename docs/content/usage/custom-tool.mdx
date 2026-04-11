@@ -1,0 +1,994 @@
+---
+title: "自定义 MCP 工具开发指南 - Xiaozhi Client"
+description: "了解如何开发自定义 MCP 工具，扩展 Xiaozhi Client 的能力。"
+---
+
+import { Callout, Steps, Tabs } from "nextra/components";
+
+# 自定义 MCP 工具开发指南
+
+Xiaozhi Client 支持自定义 MCP 工具，允许你扩展 AI 的能力边界。通过自定义工具，你可以：
+
+- 集成外部 API 服务
+- 执行本地脚本和函数
+- 代理第三方平台（扣子、OpenAI、Anthropic）
+- 组合多个工具形成链式调用
+
+## CustomMCPTool 结构说明
+
+每个自定义工具由以下核心字段组成：
+
+```typescript
+interface CustomMCPTool {
+  // 工具唯一标识符（必填）
+  name: string;
+
+  // 工具描述信息（必填）
+  description: string;
+
+  // 工具输入参数的 JSON Schema 定义（必填）
+  inputSchema: Record<string, unknown>;
+
+  // 处理器配置（必填）
+  handler: HandlerConfig;
+
+  // 使用统计信息（可选）
+  stats?: {
+    usageCount?: number;      // 工具使用次数
+    lastUsedTime?: string;    // 最后使用时间（ISO 8601格式）
+  };
+}
+```
+
+### 字段说明
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `name` | string | 是 | 工具唯一标识符，必须符合命名规范（见下文） |
+| `description` | string | 是 | 工具功能描述，AI 会根据此描述决定是否调用 |
+| `inputSchema` | object | 是 | JSON Schema 格式的参数定义 |
+| `handler` | HandlerConfig | 是 | 工具执行处理器配置 |
+| `stats` | object | 否 | 使用统计信息（由系统自动维护） |
+
+## HandlerConfig 处理器类型
+
+Xiaozhi Client 支持六种处理器类型，每种适用于不同的场景。
+
+### ProxyHandlerConfig - 代理处理器
+
+用于代理第三方平台（扣子、OpenAI、Anthropic）。
+
+```typescript
+interface ProxyHandlerConfig {
+  type: "proxy";
+  platform: "coze" | "openai" | "anthropic" | "custom";
+  config: {
+    // Coze 平台配置
+    workflow_id?: string;     // 扣子工作流 ID
+    bot_id?: string;          // 扣子机器人 ID
+    api_key?: string;         // API 密钥
+    base_url?: string;        // API 基础 URL
+
+    // 通用配置
+    timeout?: number;         // 超时时间（毫秒）
+    retry_count?: number;     // 重试次数
+    retry_delay?: number;     // 重试间隔（毫秒）
+    headers?: Record<string, string>;  // 自定义请求头
+    params?: Record<string, unknown>;  // 额外参数
+  };
+}
+```
+
+**适用场景**：
+- 集成扣子工作流
+- 调用 OpenAI API
+- 调用 Anthropic Claude API
+
+**示例：扣子工作流代理**
+
+```json
+{
+  "name": "coze_weather_query",
+  "description": "查询指定城市的天气信息",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "city": {
+        "type": "string",
+        "description": "城市名称"
+      }
+    },
+    "required": ["city"]
+  },
+  "handler": {
+    "type": "proxy",
+    "platform": "coze",
+    "config": {
+      "workflow_id": "738xxxxx",
+      "base_url": "https://api.coze.cn"
+    }
+  }
+}
+```
+
+<Callout type="info">
+扣子平台的 `token` 需要在 `xiaozhi.config.json` 的 `platforms.coze.token` 中配置，无需在每个工具中重复配置。
+</Callout>
+
+### HttpHandlerConfig - HTTP 处理器
+
+用于调用外部 HTTP API。
+
+```typescript
+interface HttpHandlerConfig {
+  type: "http";
+  url: string;                                    // API 地址（必填）
+  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";  // HTTP 方法
+  headers?: Record<string, string>;               // 请求头
+  timeout?: number;                               // 超时时间（毫秒）
+  retry_count?: number;                           // 重试次数
+  retry_delay?: number;                           // 重试间隔（毫秒）
+  auth?: {                                        // 认证配置
+    type: "bearer" | "basic" | "api_key";
+    token?: string;
+    username?: string;
+    password?: string;
+    api_key?: string;
+    api_key_header?: string;
+  };
+  body_template?: string;                         // 请求体模板（支持变量替换）
+  response_mapping?: {                            // 响应映射
+    success_path?: string;                        // JSONPath 表达式
+    error_path?: string;
+    data_path?: string;
+  };
+}
+```
+
+**适用场景**：
+- 调用外部 REST API
+- 集成第三方服务
+- 获取网络数据
+
+**示例：调用天气 API**
+
+```json
+{
+  "name": "weather_api",
+  "description": "获取指定城市的实时天气数据",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "city": {
+        "type": "string",
+        "description": "城市名称（中文或英文）"
+      },
+      "unit": {
+        "type": "string",
+        "enum": ["celsius", "fahrenheit"],
+        "default": "celsius",
+        "description": "温度单位"
+      }
+    },
+    "required": ["city"]
+  },
+  "handler": {
+    "type": "http",
+    "url": "https://api.weather.com/v1/current",
+    "method": "GET",
+    "timeout": 5000,
+    "auth": {
+      "type": "api_key",
+      "api_key": "your-api-key",
+      "api_key_header": "X-API-Key"
+    },
+    "response_mapping": {
+      "success_path": "$.data",
+      "error_path": "$.error.message"
+    }
+  }
+}
+```
+
+**示例：POST 请求（使用模板变量）**
+
+```json
+{
+  "name": "send_notification",
+  "description": "发送通知消息到指定用户",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "user_id": {
+        "type": "string",
+        "description": "用户 ID"
+      },
+      "message": {
+        "type": "string",
+        "description": "通知内容"
+      }
+    },
+    "required": ["user_id", "message"]
+  },
+  "handler": {
+    "type": "http",
+    "url": "https://api.notification.com/send",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body_template": "{\"user\": \"{{user_id}}\", \"content\": \"{{message}}\"}"
+  }
+}
+```
+
+### FunctionHandlerConfig - 函数处理器
+
+用于调用本地 JavaScript/TypeScript 函数。
+
+```typescript
+interface FunctionHandlerConfig {
+  type: "function";
+  module: string;                     // 模块路径（必填）
+  function: string;                   // 函数名称（必填）
+  timeout?: number;                   // 超时时间（毫秒）
+  context?: Record<string, unknown>;  // 函数执行上下文
+}
+```
+
+**适用场景**：
+- 执行本地计算逻辑
+- 处理数据转换
+- 调用本地库函数
+
+**示例：本地计算函数**
+
+```json
+{
+  "name": "calculate_statistics",
+  "description": "计算一组数值的统计信息（平均值、最大值、最小值）",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "numbers": {
+        "type": "array",
+        "items": { "type": "number" },
+        "description": "数值数组"
+      }
+    },
+    "required": ["numbers"]
+  },
+  "handler": {
+    "type": "function",
+    "module": "./lib/statistics.js",
+    "function": "calculateStats",
+    "timeout": 1000
+  }
+}
+```
+
+对应的模块文件：
+
+```javascript
+// lib/statistics.js
+export function calculateStats(args) {
+  const { numbers } = args;
+
+  if (!numbers || numbers.length === 0) {
+    return { error: "数组不能为空" };
+  }
+
+  const sum = numbers.reduce((a, b) => a + b, 0);
+  const avg = sum / numbers.length;
+  const max = Math.max(...numbers);
+  const min = Math.min(...numbers);
+
+  return {
+    average: avg,
+    maximum: max,
+    minimum: min,
+    count: numbers.length
+  };
+}
+```
+
+<Callout type="warning">
+函数模块的路径相对于项目根目录。函数接收的参数是包含所有 inputSchema 定义参数的对象。
+</Callout>
+
+### ScriptHandlerConfig - 脚本处理器
+
+用于执行外部脚本（Node.js、Python、Bash）。
+
+```typescript
+interface ScriptHandlerConfig {
+  type: "script";
+  script: string;                     // 脚本内容或文件路径（必填）
+  interpreter?: "node" | "python" | "bash";  // 解释器类型
+  timeout?: number;                   // 超时时间（毫秒）
+  env?: Record<string, string>;       // 环境变量
+}
+```
+
+**适用场景**：
+- 执行系统命令
+- 运行 Python 数据处理脚本
+- 执行 Shell 脚本
+
+**示例：Python 数据处理**
+
+```json
+{
+  "name": "data_processor",
+  "description": "处理 CSV 数据并生成分析报告",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "file_path": {
+        "type": "string",
+        "description": "CSV 文件路径"
+      },
+      "output_format": {
+        "type": "string",
+        "enum": ["json", "csv", "html"],
+        "default": "json"
+      }
+    },
+    "required": ["file_path"]
+  },
+  "handler": {
+    "type": "script",
+    "script": "./scripts/process_data.py",
+    "interpreter": "python",
+    "timeout": 30000,
+    "env": {
+      "PYTHONPATH": "/usr/local/lib/python3.10"
+    }
+  }
+}
+```
+
+**示例：内联脚本**
+
+```json
+{
+  "name": "system_info",
+  "description": "获取系统基本信息",
+  "inputSchema": {
+    "type": "object",
+    "properties": {}
+  },
+  "handler": {
+    "type": "script",
+    "script": "node -e \"console.log(JSON.stringify({platform: process.platform, arch: process.arch, version: process.version}))\"",
+    "interpreter": "bash"
+  }
+}
+```
+
+### ChainHandlerConfig - 链式处理器
+
+用于组合多个工具形成链式调用。
+
+```typescript
+interface ChainHandlerConfig {
+  type: "chain";
+  tools: string[];                    // 要链式调用的工具名称（必填）
+  mode: "sequential" | "parallel";    // 执行模式（必填）
+  error_handling: "stop" | "continue" | "retry";  // 错误处理策略（必填）
+}
+```
+
+**适用场景**：
+- 数据流水线处理
+- 组合多个 API 调用
+- 并行执行多个独立任务
+
+**示例：顺序链式调用**
+
+```json
+{
+  "name": "full_weather_report",
+  "description": "获取完整天气报告：先查询天气，再生成报告",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "city": {
+        "type": "string",
+        "description": "城市名称"
+      }
+    },
+    "required": ["city"]
+  },
+  "handler": {
+    "type": "chain",
+    "tools": ["weather_api", "generate_report"],
+    "mode": "sequential",
+    "error_handling": "stop"
+  }
+}
+```
+
+**执行流程**：
+1. 调用 `weather_api` 获取天气数据
+2. 将天气数据传递给 `generate_report` 生成报告
+3. 任一步骤失败则停止执行
+
+**示例：并行链式调用**
+
+```json
+{
+  "name": "multi_city_weather",
+  "description": "同时查询多个城市的天气",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "cities": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "城市名称列表"
+      }
+    },
+    "required": ["cities"]
+  },
+  "handler": {
+    "type": "chain",
+    "tools": ["weather_api"],
+    "mode": "parallel",
+    "error_handling": "continue"
+  }
+}
+```
+
+### MCPHandlerConfig - MCP 处理器
+
+用于同步其他 MCP 服务中的工具。
+
+```typescript
+interface MCPHandlerConfig {
+  type: "mcp";
+  config: {
+    serviceName: string;   // MCP 服务名称（必填）
+    toolName: string;      // 工具名称（必填）
+  };
+}
+```
+
+**适用场景**：
+- 重用已配置的 MCP 工具
+- 为工具创建别名或包装
+
+**示例：同步 MCP 工具**
+
+```json
+{
+  "name": "my_file_reader",
+  "description": "读取文件内容（包装 MCP 文件系统工具）",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "description": "文件路径"
+      }
+    },
+    "required": ["path"]
+  },
+  "handler": {
+    "type": "mcp",
+    "config": {
+      "serviceName": "filesystem",
+      "toolName": "read_file"
+    }
+  }
+}
+```
+
+## InputSchema 编写规范
+
+InputSchema 使用 JSON Schema 格式定义工具的输入参数。
+
+### 基础结构
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "参数名": {
+      "type": "参数类型",
+      "description": "参数描述"
+    }
+  },
+  "required": ["必填参数列表"]
+}
+```
+
+### 常用字段类型
+
+#### 字符串类型
+
+```json
+{
+  "type": "string",
+  "description": "字符串参数",
+  "minLength": 1,
+  "maxLength": 100,
+  "pattern": "^[a-zA-Z0-9]+$"
+}
+```
+
+#### 数值类型
+
+```json
+{
+  "type": "number",
+  "description": "数值参数",
+  "minimum": 0,
+  "maximum": 100,
+  "default": 50
+}
+```
+
+#### 整数类型
+
+```json
+{
+  "type": "integer",
+  "description": "整数参数",
+  "minimum": 1,
+  "maximum": 10
+}
+```
+
+#### 布尔类型
+
+```json
+{
+  "type": "boolean",
+  "description": "布尔参数",
+  "default": false
+}
+```
+
+#### 数组类型
+
+```json
+{
+  "type": "array",
+  "description": "数组参数",
+  "items": {
+    "type": "string"
+  },
+  "minItems": 1,
+  "maxItems": 10
+}
+```
+
+#### 对象类型（嵌套）
+
+```json
+{
+  "type": "object",
+  "description": "嵌套对象参数",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer" }
+  },
+  "required": ["name"]
+}
+```
+
+### 枚举类型
+
+使用 `enum` 定义可选值列表：
+
+```json
+{
+  "type": "string",
+  "enum": ["celsius", "fahrenheit", "kelvin"],
+  "default": "celsius",
+  "description": "温度单位"
+}
+```
+
+### 必填字段标记
+
+使用 `required` 数组标记必填参数：
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "city": { "type": "string" },
+    "unit": { "type": "string", "default": "celsius" }
+  },
+  "required": ["city"]
+}
+```
+
+<Callout type="info">
+只有 `required` 数组中的参数才是必填的。其他参数如果不提供，将使用 `default` 值或保持未定义。
+</Callout>
+
+### 参数验证规则
+
+JSON Schema 支持丰富的验证规则：
+
+| 规则 | 适用类型 | 说明 |
+| --- | --- | --- |
+| `minLength` / `maxLength` | string | 字符串长度限制 |
+| `pattern` | string | 正则表达式匹配 |
+| `minimum` / `maximum` | number/integer | 数值范围限制 |
+| `minItems` / `maxItems` | array | 数组长度限制 |
+| `enum` | any | 允许的值列表 |
+| `default` | any | 默认值 |
+
+### 完整示例
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "搜索关键词",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "limit": {
+      "type": "integer",
+      "description": "返回结果数量限制",
+      "minimum": 1,
+      "maximum": 50,
+      "default": 10
+    },
+    "sort": {
+      "type": "string",
+      "enum": ["relevance", "date", "popularity"],
+      "default": "relevance",
+      "description": "排序方式"
+    },
+    "filters": {
+      "type": "object",
+      "description": "搜索过滤器",
+      "properties": {
+        "category": { "type": "string" },
+        "date_range": {
+          "type": "object",
+          "properties": {
+            "start": { "type": "string", "format": "date" },
+            "end": { "type": "string", "format": "date" }
+          }
+        }
+      }
+    }
+  },
+  "required": ["query"]
+}
+```
+
+## 工具命名规范
+
+### 基本规则
+
+工具名称必须符合以下规范：
+
+1. **以字母开头**：名称必须以 `a-z` 或 `A-Z` 开头
+2. **只允许字母、数字、下划线**：不能包含空格、特殊字符或中文
+3. **建议使用小写**：保持命名一致性
+4. **使用下划线分隔**：多单词名称使用 `_` 连接
+
+### 推荐命名风格
+
+```text
+# 推荐：小写 + 下划线
+weather_query
+data_processor
+send_notification
+
+# 不推荐：混合风格
+WeatherQuery      # 大驼峰（不推荐）
+weather-query     # 连字符（无效）
+查询天气          # 中文（无效）
+```
+
+### 命名最佳实践
+
+1. **动词开头**：使用动词描述工具行为
+   - `get_weather` 而非 `weather`
+   - `send_message` 而非 `message`
+
+2. **具体描述**：避免过于泛化的名称
+   - `get_current_weather` 而非 `get_data`
+
+3. **避免冲突**：确保名称在项目中唯一
+   - 添加前缀区分：`my_weather_query`
+
+### 中文名称处理
+
+如果原始名称是中文，系统会自动转换为拼音或英文描述。建议手动指定英文工具名称：
+
+```json
+{
+  "name": "coze_weather_query",    // 英文名称（推荐）
+  "description": "查询指定城市的天气信息"  // 中文描述
+}
+```
+
+## 配置位置
+
+自定义工具配置在 `xiaozhi.config.json` 的 `customMCPTools` 字段中：
+
+```json
+{
+  "mcpEndpoint": "...",
+  "customMCPTools": [
+    {
+      "name": "weather_api",
+      "description": "获取天气数据",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "city": { "type": "string" }
+        },
+        "required": ["city"]
+      },
+      "handler": {
+        "type": "http",
+        "url": "https://api.weather.com/v1/current"
+      }
+    }
+  ]
+}
+```
+
+## 错误处理最佳实践
+
+### 超时设置
+
+根据工具执行时间合理设置超时：
+
+```json
+{
+  "handler": {
+    "type": "http",
+    "url": "...",
+    "timeout": 5000   // 5秒超时（快速 API）
+  }
+}
+```
+
+```json
+{
+  "handler": {
+    "type": "script",
+    "script": "...",
+    "timeout": 60000  // 60秒超时（耗时脚本）
+  }
+}
+```
+
+### 重试策略
+
+对于可能失败的操作，配置重试：
+
+```json
+{
+  "handler": {
+    "type": "http",
+    "url": "...",
+    "retry_count": 3,      // 最多重试3次
+    "retry_delay": 1000    // 每次间隔1秒
+  }
+}
+```
+
+### 链式调用错误处理
+
+根据业务需求选择错误处理策略：
+
+- `stop`：遇到错误立即停止（数据流水线推荐）
+- `continue`：继续执行其他工具（并行任务推荐）
+- `retry`：重试失败的工具
+
+## 调试技巧
+
+### 1. 检查配置有效性
+
+启动服务后，访问 Web UI 查看工具是否正确加载：
+
+```bash
+xiaozhi start
+# 访问 http://localhost:9999 查看 MCP 工具列表
+```
+
+### 2. 手动调用测试
+
+使用 API 直接调用工具进行测试：
+
+```bash
+curl -X POST http://localhost:9999/api/tools/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "serviceName": "customMCP",
+    "toolName": "weather_api",
+    "args": { "city": "北京" }
+  }'
+```
+
+### 3. 查看日志
+
+启动时添加调试日志：
+
+```bash
+xiaozhi start --verbose
+```
+
+### 4. 验证参数
+
+检查 inputSchema 是否正确验证参数：
+
+- 必填参数缺失时会返回错误
+- 类型不匹配时会返回错误
+- 值不在 enum 列表中时会返回错误
+
+## 完整示例
+
+### HTTP 工具：调用外部 API
+
+```json
+{
+  "name": "github_search",
+  "description": "在 GitHub 上搜索代码仓库",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "搜索关键词",
+        "minLength": 1
+      },
+      "language": {
+        "type": "string",
+        "enum": ["javascript", "typescript", "python", "go", "rust"],
+        "description": "编程语言筛选"
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100,
+        "default": 10,
+        "description": "返回结果数量"
+      }
+    },
+    "required": ["query"]
+  },
+  "handler": {
+    "type": "http",
+    "url": "https://api.github.com/search/repositories",
+    "method": "GET",
+    "headers": {
+      "Accept": "application/vnd.github.v3+json"
+    },
+    "timeout": 10000,
+    "response_mapping": {
+      "success_path": "$.items",
+      "data_path": "$.items[*].full_name"
+    }
+  }
+}
+```
+
+### Function 工具：本地数据处理
+
+工具配置：
+
+```json
+{
+  "name": "json_formatter",
+  "description": "格式化 JSON 数据，支持压缩和美化",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "json_string": {
+        "type": "string",
+        "description": "待格式化的 JSON 字符串"
+      },
+      "format": {
+        "type": "string",
+        "enum": ["pretty", "compact"],
+        "default": "pretty",
+        "description": "输出格式"
+      }
+    },
+    "required": ["json_string"]
+  },
+  "handler": {
+    "type": "function",
+    "module": "./lib/json-tools.js",
+    "function": "formatJson",
+    "timeout": 2000
+  }
+}
+```
+
+对应模块文件：
+
+```javascript
+// lib/json-tools.js
+export function formatJson(args) {
+  const { json_string, format = "pretty" } = args;
+
+  try {
+    const parsed = JSON.parse(json_string);
+
+    if (format === "pretty") {
+      return { result: JSON.stringify(parsed, null, 2) };
+    } else {
+      return { result: JSON.stringify(parsed) };
+    }
+  } catch (error) {
+    return {
+      error: "JSON 解析失败",
+      message: error.message
+    };
+  }
+}
+```
+
+### Chain 工具：数据流水线
+
+```json
+{
+  "name": "analyze_data_pipeline",
+  "description": "数据分析流水线：获取数据 -> 处理数据 -> 生成报告",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "source": {
+        "type": "string",
+        "description": "数据来源 URL"
+      },
+      "analysis_type": {
+        "type": "string",
+        "enum": ["basic", "advanced"],
+        "default": "basic"
+      }
+    },
+    "required": ["source"]
+  },
+  "handler": {
+    "type": "chain",
+    "tools": ["fetch_data", "process_data", "generate_report"],
+    "mode": "sequential",
+    "error_handling": "stop"
+  }
+}
+```
+
+## 进阶主题
+
+### Web UI 配置
+
+通过 Web UI（`http://localhost:9999`）可以：
+- 查看已配置的自定义工具
+- 添加新的自定义工具
+- 编辑工具配置
+- 删除工具
+
+### 动态配置更新
+
+修改配置文件后，系统会自动检测并重新加载工具配置，无需重启服务。
+
+### 工具权限控制
+
+自定义工具继承全局 MCP 工具的权限控制机制，可以：
+- 启用/禁用特定工具
+- 设置工具调用限制
+- 监控工具使用统计
+
+## 参考资料
+
+- [JSON Schema 规范](https://json-schema.org/learn/getting-started-step-by-step)
+- [扣子工作流集成指南](/usage/coze-workflow)
+- [MCP 协议介绍](https://modelcontextprotocol.io/)
