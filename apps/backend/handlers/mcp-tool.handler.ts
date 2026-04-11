@@ -59,6 +59,53 @@ export class MCPToolHandler {
   private static readonly ALPHANUMERIC_UNDERSCORE_REGEX = /^[a-zA-Z0-9_-]+$/;
   private static readonly IDENTIFIER_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
+  // 预缓存的中文到英文转换正则表达式，避免每次调用时重复创建
+  private static readonly CHINESE_TO_ENGLISH_REGEXES: [RegExp, string][] = (() => {
+    const chineseToEnglishMap: Record<string, string> = {
+      工作流: "workflow",
+      测试: "test",
+      数据: "data",
+      处理: "process",
+      分析: "analysis",
+      生成: "generate",
+      查询: "query",
+      搜索: "search",
+      转换: "convert",
+      计算: "calculate",
+      统计: "statistics",
+      报告: "report",
+      文档: "document",
+      图片: "image",
+      视频: "video",
+      音频: "audio",
+      文本: "text",
+      翻译: "translate",
+      识别: "recognize",
+      检测: "detect",
+      监控: "monitor",
+      管理: "manage",
+      配置: "config",
+      设置: "setting",
+      用户: "user",
+      系统: "system",
+      服务: "service",
+      接口: "api",
+      数据库: "database",
+      网络: "network",
+      安全: "security",
+      备份: "backup",
+      恢复: "restore",
+      同步: "sync",
+      导入: "import",
+      导出: "export",
+      上传: "upload",
+      下载: "download",
+    };
+    return Object.entries(chineseToEnglishMap).map(
+      ([chinese, english]) => [new RegExp(chinese, "g"), english] as [RegExp, string]
+    );
+  })();
+
   private logger: Logger;
   private ajv: Ajv;
   private static readonly TOOL_TYPE_VALUES = Object.values(ToolType);
@@ -1217,53 +1264,11 @@ export class MCPToolHandler {
    * 简单的中文到英文转换（可以扩展为更复杂的拼音转换）
    */
   private convertChineseToEnglish(text: string): string {
-    // 常见中文词汇的映射
-    const chineseToEnglishMap: Record<string, string> = {
-      工作流: "workflow",
-      测试: "test",
-      数据: "data",
-      处理: "process",
-      分析: "analysis",
-      生成: "generate",
-      查询: "query",
-      搜索: "search",
-      转换: "convert",
-      计算: "calculate",
-      统计: "statistics",
-      报告: "report",
-      文档: "document",
-      图片: "image",
-      视频: "video",
-      音频: "audio",
-      文本: "text",
-      翻译: "translate",
-      识别: "recognize",
-      检测: "detect",
-      监控: "monitor",
-      管理: "manage",
-      配置: "config",
-      设置: "setting",
-      用户: "user",
-      系统: "system",
-      服务: "service",
-      接口: "api",
-      数据库: "database",
-      网络: "network",
-      安全: "security",
-      备份: "backup",
-      恢复: "restore",
-      同步: "sync",
-      导入: "import",
-      导出: "export",
-      上传: "upload",
-      下载: "download",
-    };
-
     let result = text;
 
-    // 替换常见中文词汇
-    for (const [chinese, english] of Object.entries(chineseToEnglishMap)) {
-      result = result.replace(new RegExp(chinese, "g"), english);
+    // 使用预缓存的正则表达式替换常见中文词汇
+    for (const [regex, english] of MCPToolHandler.CHINESE_TO_ENGLISH_REGEXES) {
+      result = result.replace(regex, english);
     }
 
     // 如果还有中文字符，用拼音前缀替代
