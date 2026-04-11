@@ -467,10 +467,31 @@ export class TTSService implements ITTSService {
           void processQueue();
         })
         .on("end", () => {
-          // 等待所有包处理完成
+          // 等待所有包处理完成，带超时保护
+          const MAX_WAIT_TIME = 30000; // 30秒超时
+          const startTime = Date.now();
+          const checkInterval = 10; // 每 10ms 检查一次
+          let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
           const checkEnd = (): void => {
+            // 检查超时
+            if (Date.now() - startTime > MAX_WAIT_TIME) {
+              if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+              }
+              logger.warn(
+                `等待包处理超时，强制结束: 已处理 ${packetIndex} 个包，总时长 ${(totalDuration / 1000).toFixed(2)}s`
+              );
+              resolve({
+                packetCount: packetIndex,
+                totalDuration: totalDuration,
+              });
+              return;
+            }
+
             if (packetQueue.length > 0 || isProcessing) {
-              setTimeout(checkEnd, 10);
+              timeoutId = setTimeout(checkEnd, checkInterval);
             } else {
               logger.info(
                 `处理完成，共 ${packetIndex} 个包，总时长 ${(totalDuration / 1000).toFixed(2)}s`
