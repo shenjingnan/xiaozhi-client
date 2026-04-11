@@ -14,6 +14,11 @@ export type {
   MCPServiceConfig,
   ModelScopeSSEOptions,
   UnifiedServerConfig,
+  InternalMCPServiceConfig,
+  LegacyMCPServiceConfig,
+  HeartbeatConfig,
+  MCPTransportTypeInput,
+  MCPTransportTypeString,
   // 状态相关
   MCPServiceStatus,
   MCPServiceConnectionStatus,
@@ -28,6 +33,7 @@ export type {
   ToolCallValidationOptions,
   CustomMCPTool,
   JSONSchema,
+  ToolStatusFilter,
   // 传输相关
   MCPServerTransport,
   // 事件相关
