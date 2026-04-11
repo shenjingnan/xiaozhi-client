@@ -313,18 +313,18 @@ export class MCPMessageHandler {
    */
   private createErrorResponse(error: Error, id?: string | number): MCPResponse {
     // 根据错误类型确定错误代码
-    let errorCode = -32603; // Internal error
+    let errorCode = -32603; // 内部错误
 
     if (
       error.message.includes("未找到工具") ||
       error.message.includes("未知的方法")
     ) {
-      errorCode = -32601; // Method not found
+      errorCode = -32601; // 方法未找到
     } else if (
       error.message.includes("参数") ||
       error.message.includes("不能为空")
     ) {
-      errorCode = -32602; // Invalid params
+      errorCode = -32602; // 参数无效
     }
 
     return {
