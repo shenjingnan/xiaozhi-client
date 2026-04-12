@@ -2,7 +2,7 @@
  * 更新 API HTTP 路由处理器
  * 提供版本更新和 NPM 包安装相关的 RESTful API 接口
  */
-import { NPMManager } from "@/lib/npm";
+import type { NPMManager } from "@/lib/npm";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type { Context } from "hono";
@@ -22,9 +22,9 @@ export class UpdateApiHandler extends BaseHandler {
   private eventBus = getEventBus();
   private activeInstalls: Map<string, boolean> = new Map();
 
-  constructor() {
+  constructor(npmManager: NPMManager) {
     super();
-    this.npmManager = new NPMManager(this.eventBus);
+    this.npmManager = npmManager;
   }
 
   /**
