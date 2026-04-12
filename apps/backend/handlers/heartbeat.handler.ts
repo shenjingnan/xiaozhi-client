@@ -9,7 +9,7 @@ import { logger } from "@/Logger.js";
 import { HEARTBEAT_MONITORING } from "@/constants/index.js";
 import type { NotificationService } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
-import { sendWebSocketError } from "@/utils/websocket-helper.js";
+import { sendWebSocketError, type WebSocketLike } from "@/utils/websocket-helper.js";
 import { configManager } from "@xiaozhi-client/config";
 
 /**
@@ -46,7 +46,7 @@ export class HeartbeatHandler {
    * 处理客户端状态更新（心跳）
    */
   async handleClientStatus(
-    ws: any,
+    ws: WebSocketLike,
     message: HeartbeatMessage,
     clientId: string
   ): Promise<void> {
@@ -82,7 +82,7 @@ export class HeartbeatHandler {
   /**
    * 发送最新配置给客户端
    */
-  private async sendLatestConfig(ws: any, clientId: string): Promise<void> {
+  private async sendLatestConfig(ws: WebSocketLike, clientId: string): Promise<void> {
     try {
       const latestConfig = configManager.getConfig();
       const message = {
@@ -200,7 +200,7 @@ export class HeartbeatHandler {
   /**
    * 发送心跳响应
    */
-  sendHeartbeatResponse(ws: any, clientId: string): void {
+  sendHeartbeatResponse(ws: WebSocketLike, clientId: string): void {
     try {
       const response = {
         type: "heartbeatResponse",
@@ -220,13 +220,16 @@ export class HeartbeatHandler {
   /**
    * 验证心跳消息格式
    */
-  validateHeartbeatMessage(message: any): message is HeartbeatMessage {
+  validateHeartbeatMessage(message: unknown): message is HeartbeatMessage {
+    if (!message || typeof message !== "object") {
+      return false;
+    }
+    const msg = message as Record<string, unknown>;
     return (
-      message &&
-      typeof message === "object" &&
-      message.type === "clientStatus" &&
-      message.data &&
-      typeof message.data === "object"
+      msg.type === "clientStatus" &&
+      msg.data !== null &&
+      msg.data !== undefined &&
+      typeof msg.data === "object"
     );
   }
 }
