@@ -59,7 +59,11 @@ export namespace TypeFieldNormalizer {
     const originalType = (config as Record<string, unknown>).type;
 
     // 如果已经是标准格式，直接返回原始对象（无需拷贝）
-    if (originalType === "stdio" || originalType === "sse" || originalType === "http") {
+    if (
+      originalType === "stdio" ||
+      originalType === "sse" ||
+      originalType === "http"
+    ) {
       return config;
     }
 
@@ -67,7 +71,11 @@ export namespace TypeFieldNormalizer {
     const normalizedType = normalizeTypeValue(originalType as string);
 
     // 验证转换后的类型是否有效
-    if (normalizedType === "stdio" || normalizedType === "sse" || normalizedType === "http") {
+    if (
+      normalizedType === "stdio" ||
+      normalizedType === "sse" ||
+      normalizedType === "http"
+    ) {
       // 只在需要修改时创建浅拷贝，使用展开运算符只修改 type 字段
       return {
         ...config,
@@ -135,9 +143,7 @@ export namespace TypeFieldNormalizer {
 /**
  * 导出便捷函数
  */
-export function normalizeTypeField<T extends MCPBaseConfig>(
-  config: T
-): T;
+export function normalizeTypeField<T extends MCPBaseConfig>(config: T): T;
 export function normalizeTypeField(config: unknown): unknown;
 export function normalizeTypeField<T extends MCPBaseConfig>(
   config: T | unknown

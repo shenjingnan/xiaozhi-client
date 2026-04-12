@@ -9,29 +9,37 @@
  * @module validators
  */
 
-import { MCPTransportType, ToolCallError, ToolCallErrorCode } from "../types.js";
-import { TypeFieldNormalizer } from "./type-normalizer.js";
+import {
+  type MCPLogger,
+  MCPTransportType,
+  ToolCallError,
+  ToolCallErrorCode,
+  createConsoleLogger,
+} from "../types.js";
 import type {
   MCPServiceConfig,
   ToolCallParams,
   ToolCallValidationOptions,
   ValidatedToolCallParams,
 } from "../types.js";
+import { TypeFieldNormalizer } from "./type-normalizer.js";
 
 /**
  * 根据 URL 路径推断传输类型
  * 基于路径末尾推断，支持包含多个 / 的复杂路径
  *
  * @param url - 要推断的 URL
- * @param options - 可选配置项
+ * @param options - 可选配置项（包括 serviceName 和 logger）
  * @returns 推断出的传输类型
  */
 export function inferTransportTypeFromUrl(
   url: string,
   options?: {
     serviceName?: string;
+    logger?: MCPLogger;
   }
 ): MCPTransportType {
+  const logger = options?.logger ?? createConsoleLogger();
   try {
     const parsedUrl = new URL(url);
     const pathname = parsedUrl.pathname;
@@ -44,16 +52,16 @@ export function inferTransportTypeFromUrl(
       return MCPTransportType.HTTP;
     }
 
-    // 默认类型 - 使用 console 输出
+    // 默认类型 - 使用 logger 输出
     if (options?.serviceName) {
-      console.info(
+      logger.info(
         `[MCP-${options.serviceName}] URL 路径 ${pathname} 不匹配特定规则，默认推断为 http 类型`
       );
     }
     return MCPTransportType.HTTP;
   } catch (error) {
     if (options?.serviceName) {
-      console.warn(
+      logger.warn(
         `[MCP-${options.serviceName}] URL 解析失败，默认推断为 http 类型`,
         error
       );
@@ -67,11 +75,13 @@ export function inferTransportTypeFromUrl(
  *
  * @param config - MCP 服务配置
  * @param serviceName - 服务名称（用于日志输出）
+ * @param logger - 日志实现（可选，默认使用 console）
  * @returns 完整的配置对象，包含推断出的类型
  */
 export function inferTransportTypeFromConfig(
   config: MCPServiceConfig,
-  serviceName?: string
+  serviceName?: string,
+  logger?: MCPLogger
 ): MCPServiceConfig {
   // 如果已显式指定类型，先标准化然后返回
   if (config.type) {
@@ -91,6 +101,7 @@ export function inferTransportTypeFromConfig(
   if (config.url !== undefined && config.url !== null) {
     const inferredType = inferTransportTypeFromUrl(config.url, {
       serviceName,
+      logger,
     });
     return {
       ...config,
