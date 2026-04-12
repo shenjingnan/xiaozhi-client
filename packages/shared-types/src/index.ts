@@ -57,3 +57,10 @@ export { TimeoutError } from "./utils";
 
 // TTS 相关类型
 export type { VoiceInfo, VoicesResponse } from "./tts";
+
+// 服务相关类型
+export type {
+  ASRServiceEvents,
+  BaseASRServiceOptions,
+  IASRService,
+} from "./services";
