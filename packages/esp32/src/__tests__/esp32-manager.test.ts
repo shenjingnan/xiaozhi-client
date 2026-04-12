@@ -19,63 +19,73 @@ let mockCreateDevice = vi.fn().mockReturnValue({
 });
 
 vi.mock("../device-registry.js", () => ({
-  DeviceRegistryService: vi.fn().mockImplementation(() => ({
-    createDevice: (...args: unknown[]) => mockCreateDevice(...args),
-    getDevice: (...args: unknown[]) => mockGetDevice(...args),
-    updateDeviceStatus: vi.fn(),
-    updateLastSeen: vi.fn(),
-    destroy: vi.fn(),
-  })),
+  DeviceRegistryService: vi.fn().mockImplementation(function () {
+    return {
+      createDevice: (...args: unknown[]) => mockCreateDevice(...args),
+      getDevice: (...args: unknown[]) => mockGetDevice(...args),
+      updateDeviceStatus: vi.fn(),
+      updateLastSeen: vi.fn(),
+      destroy: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock("../connection.js", () => ({
-  ESP32Connection: vi.fn().mockImplementation(() => ({
-    getSessionId: () => "session-1",
-    getDeviceId: () => "device-1",
-    getClientId: () => "client-1",
-    getState: () => "connected" as const,
-    send: vi.fn().mockResolvedValue(undefined),
-    sendBinaryProtocol2: vi.fn().mockResolvedValue(undefined),
-    close: vi.fn().mockResolvedValue(undefined),
-    checkTimeout: () => false,
-    isHelloCompleted: () => true,
-  })),
+  ESP32Connection: vi.fn().mockImplementation(function () {
+    return {
+      getSessionId: () => "session-1",
+      getDeviceId: () => "device-1",
+      getClientId: () => "client-1",
+      getState: () => "connected" as const,
+      send: vi.fn().mockResolvedValue(undefined),
+      sendBinaryProtocol2: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn().mockResolvedValue(undefined),
+      checkTimeout: () => false,
+      isHelloCompleted: () => true,
+    };
+  }),
 }));
 
 vi.mock("../services/asr.service.js", () => ({
-  ASRService: vi.fn().mockImplementation(() => ({
-    prepare: vi.fn().mockResolvedValue(undefined),
-    connect: vi.fn().mockResolvedValue(undefined),
-    init: vi.fn().mockResolvedValue(undefined),
-    handleAudioData: vi.fn().mockResolvedValue(undefined),
-    end: vi.fn().mockResolvedValue(undefined),
-    reset: vi.fn().mockResolvedValue(undefined),
-    destroy: vi.fn(),
-  })),
+  ASRService: vi.fn().mockImplementation(function () {
+    return {
+      prepare: vi.fn().mockResolvedValue(undefined),
+      connect: vi.fn().mockResolvedValue(undefined),
+      init: vi.fn().mockResolvedValue(undefined),
+      handleAudioData: vi.fn().mockResolvedValue(undefined),
+      end: vi.fn().mockResolvedValue(undefined),
+      reset: vi.fn().mockResolvedValue(undefined),
+      destroy: vi.fn(),
+    };
+  }),
 }));
 
 vi.mock("../services/tts.service.js", () => ({
-  TTSService: vi.fn().mockImplementation(() => ({
-    speak: vi.fn().mockResolvedValue(undefined),
-    processAudioBuffer: vi.fn().mockResolvedValue({
-      packetCount: 0,
-      totalDuration: 0,
-    }),
-    cleanup: vi.fn(),
-    setGetConnection: vi.fn(),
-    destroy: vi.fn(),
-    getPacketDuration: () => 20,
-  })),
+  TTSService: vi.fn().mockImplementation(function () {
+    return {
+      speak: vi.fn().mockResolvedValue(undefined),
+      processAudioBuffer: vi.fn().mockResolvedValue({
+        packetCount: 0,
+        totalDuration: 0,
+      }),
+      cleanup: vi.fn(),
+      setGetConnection: vi.fn(),
+      destroy: vi.fn(),
+      getPacketDuration: () => 20,
+    };
+  }),
   mapClusterToResourceId: vi.fn((c?: string) =>
     c === "volcano_icl" ? "seed-tts-1.0" : "seed-tts-2.0"
   ),
 }));
 
 vi.mock("../services/llm.service.js", () => ({
-  LLMService: vi.fn().mockImplementation(() => ({
-    isAvailable: () => false,
-    chat: vi.fn().mockResolvedValue("默认回复"),
-  })),
+  LLMService: vi.fn().mockImplementation(function () {
+    return {
+      isAvailable: () => false,
+      chat: vi.fn().mockResolvedValue("默认回复"),
+    };
+  }),
 }));
 
 describe("ESP32DeviceManager", () => {
