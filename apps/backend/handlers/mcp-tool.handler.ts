@@ -1877,7 +1877,7 @@ export class MCPToolHandler {
   private generateInputSchemaFromConfig(
     parameterConfig: WorkflowParameterConfig
   ): JSONSchema {
-    const properties: Record<string, unknown> = {};
+    const properties: Record<string, object> = {};
     const required: string[] = [];
 
     for (const param of parameterConfig.parameters) {
