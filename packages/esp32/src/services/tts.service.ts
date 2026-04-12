@@ -297,8 +297,8 @@ export class TTSService implements ITTSService {
         this.packetIndices.set(deviceId, packetIndex);
         this.cumulativeTimestamps.set(deviceId, timestamp + duration);
 
-        // 流控：等待硬件处理
-        await new Promise((resolve) => setTimeout(resolve, duration * 0.8));
+        // 流控：按实时速率发送，避免发送过快导致硬件端缓冲区积压
+        await new Promise((resolve) => setTimeout(resolve, duration));
       }
     } finally {
       this.isProcessingBuffer.set(deviceId, false);

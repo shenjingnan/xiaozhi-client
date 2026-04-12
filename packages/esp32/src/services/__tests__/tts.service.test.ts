@@ -6,17 +6,57 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TTSService, mapClusterToResourceId } from "../tts.service.js";
 
-// Mock prism-media
+// Mock prism-media：支持事件发射和链式调用，用于测试 processAudioBuffer
+// 捕获所有创建的 demuxer 实例，支持手动触发事件模拟多包场景
+const demuxerInstances: Array<{
+  emit: (event: string, ...args: unknown[]) => void;
+}> = [];
+
 vi.mock("prism-media", () => {
   class MockOggDemuxer {
-    on = vi.fn();
-    write = vi.fn();
-    end = vi.fn();
+    private listeners: Record<string, Array<(...args: unknown[]) => void>> = {};
+
+    on(event: string, fn: (...args: unknown[]) => void): MockOggDemuxer {
+      if (!this.listeners[event]) {
+        this.listeners[event] = [];
+      }
+      this.listeners[event].push(fn);
+      return this;
+    }
+
+    once(event: string, fn: (...args: unknown[]) => void): MockOggDemuxer {
+      if (!this.listeners[event]) {
+        this.listeners[event] = [];
+      }
+      this.listeners[event].push(fn);
+      return this;
+    }
+
+    emit(event: string, ...args: unknown[]): void {
+      const handlers = this.listeners[event];
+      if (handlers) {
+        for (const fn of handlers) {
+          fn(...args);
+        }
+      }
+    }
+
+    write(_chunk: Buffer): boolean {
+      // 不自动发射 data 事件，由测试手动控制
+      return true;
+    }
+
+    end(): void {
+      // 不自动发射 end 事件，由测试手动控制
+    }
+
+    constructor() {
+      demuxerInstances.push(this);
+    }
   }
   return {
-    default: {
-      opus: { OggDemuxer: MockOggDemuxer },
-    },
+    default: { opus: { OggDemuxer: MockOggDemuxer } },
+    opus: { OggDemuxer: MockOggDemuxer },
   };
 });
 
@@ -51,15 +91,13 @@ describe("TTSService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    demuxerInstances.length = 0;
     service = new TTSService();
   });
 
   describe("构造 & 基础", () => {
     it("初始化所有 Map 为空", () => {
-      // 通过访问私有 Map 验证（通过 destroy 不报错来间接验证）
-      // 直接调用 cleanup 对不存在的设备不报错
       expect(() => service.cleanup("non-existent")).not.toThrow();
-      // destroy 正常执行
       expect(() => service.destroy()).not.toThrow();
     });
 
@@ -73,35 +111,23 @@ describe("TTSService", () => {
         deviceId === "d1" ? (mockConn as never) : undefined
       );
 
-      // speak 应该能获取到连接（但会因为配置不完整而返回）
-      // 这里只验证回调设置不会抛错
       expect(() => service.setGetConnection(() => undefined)).not.toThrow();
     });
   });
 
   describe("getPacketDuration", () => {
     it("config < 12 单帧 10ms", () => {
-      // config=0, c=0 (单帧)
       const packet = Buffer.from([0x00]); // config=0, c=0
       expect(service.getPacketDuration(packet)).toBe(10);
     });
 
     it("config < 16 单帧 20ms", () => {
-      // config=12, c=0 (单帧)
       const packet = Buffer.from([(12 << 3) | 0]); // config=12, c=0
       expect(service.getPacketDuration(packet)).toBe(20);
     });
 
     it("c=3 多帧从 data[1] 读取", () => {
-      // config=16, c=3 (多帧，帧数在 data[1])
       const packet = Buffer.from([(16 << 3) | 3, 5]); // config=16, c=3, frameCount=5
-      // config >= 16 时 frameSize = [2.5, 5, 10, 20][config & 0x03]
-      // config & 0x03 = 0, 所以 frameSize = 2.5... 但结果是整数运算
-      // 实际上 config=16, config&0x03=0, frameSize=[2.5,5,10,20][0]=2.5
-      // 但 JavaScript 中这是浮点数... 让我重新看代码
-      // frameSize = [2.5, 5, 10, 20][config & 0x03]
-      // frameCount = opusPacket[1] & 0x3f = 5
-      // result = 2.5 * 5 = 12.5
       const duration = service.getPacketDuration(packet);
       expect(duration).toBe(12.5);
     });
@@ -117,7 +143,6 @@ describe("TTSService", () => {
 
   describe("cleanup", () => {
     it("删除设备所有状态", async () => {
-      // 先触发 speak 来创建设备状态
       const mockConn = {
         send: vi.fn().mockResolvedValue(undefined),
         sendBinaryProtocol2: vi.fn().mockResolvedValue(undefined),
@@ -125,35 +150,24 @@ describe("TTSService", () => {
       };
       service.setGetConnection(() => mockConn as never);
 
-      // 由于 TTS 配置不完整，speak 会提前返回
-      // 我们需要手动测试 cleanup 的行为
-      // cleanup 删除除 ttsCompleted 外的所有状态
-
-      // 模拟：直接调用后验证不报错
       service.cleanup("device-1");
-      // 再次清理不报错
-      service.cleanup("device-1");
+      service.cleanup("device-1"); // 重复清理不报错
     });
   });
 
   describe("speak 前置条件", () => {
     it("进行中忽略", async () => {
-      // 设置一个假的 ttsTriggered 状态来模拟"进行中"
-      // 由于是私有 Map，我们通过 speak 的行为间接测试
       const mockConn = {
         send: vi.fn().mockResolvedValue(undefined),
         sendBinaryProtocol2: vi.fn().mockResolvedValue(undefined),
         getSessionId: () => "s1",
       };
 
-      // 第一次 speak 会因为无连接返回（ttsTriggered 未设置）
       service.setGetConnection(() => undefined);
       await service.speak("d1", "hello");
 
-      // 提供连接但配置不完整也会返回
       service.setGetConnection(() => mockConn as never);
       await service.speak("d1", "hello");
-      // 不应抛错
     });
 
     it("已完成忽略", async () => {
@@ -164,15 +178,14 @@ describe("TTSService", () => {
       };
       service.setGetConnection(() => mockConn as never);
 
-      // 多次调用 speak，后续的应该被忽略（因为 ttsCompleted 或 ttsTriggered）
       await service.speak("d1", "hello");
-      await service.speak("d1", "world"); // 应该被忽略
+      await service.speak("d1", "world");
     });
 
     it("无连接返回", async () => {
       service.setGetConnection(() => undefined);
       const result = service.speak("d1", "hello");
-      await result; // 不应抛错
+      await result;
     });
 
     it("配置不完整返回", async () => {
@@ -182,20 +195,304 @@ describe("TTSService", () => {
         getSessionId: () => "s1",
       };
       service.setGetConnection(() => mockConn as never);
-      // 无 configProvider，TTS 配置为 undefined
       const result = service.speak("d1", "hello");
-      await result; // 不应抛错，只是 warn 并返回
+      await result;
     });
   });
 
   describe("destroy", () => {
     it("清空所有内部 Map", () => {
-      // 创建一些状态后销毁
       service.destroy();
 
-      // 销毁后再操作不应报错
       expect(() => service.cleanup("any")).not.toThrow();
-      expect(() => service.destroy()).not.toThrow(); // 重复销毁安全
+      expect(() => service.destroy()).not.toThrow();
+    });
+  });
+
+  describe("processAudioBuffer", () => {
+    /** 构造一个模拟的 Opus 包（config=0, c=0, 单帧 10ms） */
+    const makeOpusPacket = (size = 4): Buffer => Buffer.alloc(size, 0x00);
+
+    /** 获取 processAudioBuffer 创建的最新 demuxer 实例 */
+    const getLastDemuxer = () => demuxerInstances[demuxerInstances.length - 1];
+
+    /** 辅助：调用 processAudioBuffer 并手动发射指定包序列 */
+    const processWithPackets = async (
+      packets: Buffer[],
+      callback: Parameters<TTSService["processAudioBuffer"]>[1]
+    ) => {
+      const audioBuffer = Buffer.alloc(1); // 占位数据，实际不使用
+      const promise = service.processAudioBuffer(audioBuffer, callback);
+
+      // 手动发射每个包的 data 事件
+      const demuxer = getLastDemuxer();
+      for (const packet of packets) {
+        demuxer.emit("data", packet);
+      }
+      demuxer.emit("end");
+
+      return promise;
+    };
+
+    it("正常处理并返回正确的统计信息", async () => {
+      const packets: Array<{ packet: Buffer; meta: unknown }> = [];
+      const opusPacket = makeOpusPacket();
+
+      const result = await processWithPackets([opusPacket], (packet, meta) => {
+        packets.push({ packet, meta });
+        return Promise.resolve();
+      });
+
+      expect(result.packetCount).toBe(1);
+      expect(result.totalDuration).toBe(10); // config=0, c=0 → 10ms
+      expect(packets).toHaveLength(1);
+    });
+
+    it("逐包调用 sendCallback 并携带正确的 metadata", async () => {
+      const metas: Array<{
+        index: number;
+        size: number;
+        duration: number;
+        timestamp: number;
+      }> = [];
+      const packet1 = makeOpusPacket(4); // config=0 → 10ms
+      const packet2 = Buffer.from([(12 << 3) | 0]); // config=12, c=0 → 20ms
+
+      await processWithPackets([packet1, packet2], (_packet, meta) => {
+        metas.push({ ...meta });
+        return Promise.resolve();
+      });
+
+      expect(metas).toHaveLength(2);
+
+      // 第一个包
+      expect(metas[0].index).toBe(0);
+      expect(metas[0].size).toBe(packet1.length);
+      expect(metas[0].duration).toBe(10);
+      expect(metas[0].timestamp).toBe(0);
+
+      // 第二个包
+      expect(metas[1].index).toBe(1);
+      expect(metas[1].size).toBe(packet2.length);
+      expect(metas[1].duration).toBe(20);
+      expect(metas[1].timestamp).toBe(10); // 累计时间戳 = 10
+    });
+
+    it("累计时间戳连续递增", async () => {
+      const timestamps: number[] = [];
+      // 三个包：10ms + 20ms + 10ms
+      const packets = [
+        makeOpusPacket(4), // 10ms
+        Buffer.from([(12 << 3) | 0]), // 20ms
+        makeOpusPacket(4), // 10ms
+      ];
+
+      await processWithPackets(packets, (_packet, meta) => {
+        timestamps.push(meta.timestamp);
+        return Promise.resolve();
+      });
+
+      expect(timestamps).toEqual([0, 10, 30]);
+    });
+
+    it("多包按顺序处理，index 递增", async () => {
+      const indices: number[] = [];
+      const packets = [makeOpusPacket(), makeOpusPacket(), makeOpusPacket()];
+
+      await processWithPackets(packets, (_packet, meta) => {
+        indices.push(meta.index);
+        return Promise.resolve();
+      });
+
+      expect(indices).toEqual([0, 1, 2]);
+    });
+
+    it("sendCallback 异常不中断后续包处理", async () => {
+      const callCount = { value: 0 };
+      const packets = [makeOpusPacket(), makeOpusPacket(), makeOpusPacket()];
+
+      await processWithPackets(packets, (_packet, meta) => {
+        callCount.value++;
+        if (meta.index === 1) {
+          throw new Error("模拟发送失败");
+        }
+        return Promise.resolve();
+      });
+
+      // 所有 3 个包都应该被尝试处理
+      expect(callCount.value).toBe(3);
+    });
+
+    it("无包时返回零值统计", async () => {
+      const audioBuffer = Buffer.alloc(1);
+      const promise = service.processAudioBuffer(audioBuffer, () =>
+        Promise.resolve()
+      );
+
+      // 直接发射 end，不发射任何 data
+      const demuxer = getLastDemuxer();
+      demuxer.emit("end");
+
+      const result = await promise;
+
+      expect(result.packetCount).toBe(0);
+      expect(result.totalDuration).toBe(0);
+    });
+  });
+
+  describe("speak 完整流程", () => {
+    /** 构造一个模拟的 Opus 包（config=0, c=0, 单帧 10ms） */
+    const makeOpusPacket = (size = 4): Buffer => Buffer.alloc(size, 0x00);
+
+    /** 创建有效的 TTS 配置提供者 */
+    function createValidConfigProvider() {
+      return {
+        getTTSConfig: () => ({
+          appid: "test-appid",
+          accessToken: "test-token",
+          voice_type: "zh_female_wanwanxiao_moon_bigtts",
+          cluster: "volcengine_streaming_common",
+        }),
+        getASRConfig: () => null,
+        getLLMConfig: () => null,
+        isLLMConfigValid: () => false,
+      };
+    }
+
+    /** 创建 mock 连接 */
+    function createMockConnection() {
+      return {
+        send: vi.fn().mockResolvedValue(undefined),
+        sendBinaryProtocol2: vi.fn().mockResolvedValue(undefined),
+        getSessionId: () => "test-session-id",
+      };
+    }
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      demuxerInstances.length = 0;
+    });
+
+    it("正常处理单个 Opus 包，覆盖 processBuffer 核心路径", async () => {
+      const mockConn = createMockConnection();
+
+      const service = new TTSService({
+        configProvider: createValidConfigProvider(),
+      });
+      service.setGetConnection(() => mockConn as never);
+
+      // 启用假定时器以加速流控 setTimeout
+      vi.useFakeTimers();
+
+      // 启动 speak（不等待完成，因为我们需要在它运行期间操作 demuxer）
+      const speakPromise = service.speak("device-1", "你好");
+
+      // speak 内部已同步创建了 demuxer 并注册了事件，取出它
+      const demuxer = demuxerInstances[demuxerInstances.length - 1];
+      expect(demuxer).toBeDefined();
+
+      // 手动注入一个 Opus 包，触发 data 事件 → processBuffer
+      const opusPacket = makeOpusPacket();
+      demuxer.emit("data", opusPacket);
+
+      // 推进假定时器，让流控 setTimeout resolve（duration=10ms）
+      await vi.advanceTimersByTimeAsync(20);
+
+      // 恢复真实定时器
+      vi.useRealTimers();
+
+      // 等待 speak 完成（TTS 流因 mock 会抛错被 catch，但 processBuffer 已执行完毕）
+      await speakPromise;
+
+      // === 断言：验证 processBuffer 核心路径被执行 ===
+
+      // 1. 发送了 start 消息
+      expect(mockConn.send).toHaveBeenCalledTimes(1);
+      expect(mockConn.send).toHaveBeenCalledWith({
+        type: "tts",
+        session_id: "test-session-id",
+        state: "start",
+      });
+
+      // 2. 发送了一个 Opus 包（行 293）
+      expect(mockConn.sendBinaryProtocol2).toHaveBeenCalledTimes(1);
+      expect(mockConn.sendBinaryProtocol2).toHaveBeenCalledWith(opusPacket, 0);
+    });
+
+    it("多个 Opus 包按顺序处理，时间戳连续递增", async () => {
+      const mockConn = createMockConnection();
+      const service = new TTSService({
+        configProvider: createValidConfigProvider(),
+      });
+      service.setGetConnection(() => mockConn as never);
+
+      vi.useFakeTimers();
+
+      const speakPromise = service.speak("device-1", "你好");
+      const demuxer = demuxerInstances[demuxerInstances.length - 1];
+
+      // 注入 3 个包：10ms + 20ms + 10ms
+      const packet1 = makeOpusPacket(); // 10ms
+      const packet2 = Buffer.from([(12 << 3) | 0]); // 20ms
+      const packet3 = makeOpusPacket(); // 10ms
+
+      demuxer.emit("data", packet1);
+      demuxer.emit("data", packet2);
+      demuxer.emit("data", packet3);
+
+      // 推进足够的时间让所有包处理完（总时长约 40ms + 余量）
+      await vi.advanceTimersByTimeAsync(100);
+
+      vi.useRealTimers();
+      await speakPromise;
+
+      // start 只发一次
+      expect(mockConn.send).toHaveBeenCalledTimes(1);
+
+      // 3 个包依次发送，时间戳递增
+      expect(mockConn.sendBinaryProtocol2).toHaveBeenCalledTimes(3);
+      expect(mockConn.sendBinaryProtocol2).toHaveBeenNthCalledWith(
+        1,
+        packet1,
+        0
+      );
+      expect(mockConn.sendBinaryProtocol2).toHaveBeenNthCalledWith(
+        2,
+        packet2,
+        10
+      );
+      expect(mockConn.sendBinaryProtocol2).toHaveBeenNthCalledWith(
+        3,
+        packet3,
+        30
+      );
+    });
+
+    it("processBuffer 异常时 finally 块正确重置 isProcessingBuffer", async () => {
+      const mockConn = createMockConnection();
+      // 让 sendBinaryProtocol2 抛出异常，测试 finally 块（行 304）
+      mockConn.sendBinaryProtocol2.mockRejectedValueOnce(new Error("发送失败"));
+
+      const service = new TTSService({
+        configProvider: createValidConfigProvider(),
+      });
+      service.setGetConnection(() => mockConn as never);
+
+      vi.useFakeTimers();
+
+      const speakPromise = service.speak("device-1", "你好");
+      const demuxer = demuxerInstances[demuxerInstances.length - 1];
+
+      demuxer.emit("data", makeOpusPacket());
+      await vi.advanceTimersByTimeAsync(20);
+
+      vi.useRealTimers();
+      await speakPromise;
+
+      // 即使 sendBinaryProtocol2 抛异常，finally 中 isProcessingBuffer 也被重置为 false
+      // 通过验证 speak 没有 hang（promise 已 resolve）来间接证明 finally 正常执行
+      expect(mockConn.send).toHaveBeenCalledTimes(1); // start 已发送
+      expect(mockConn.sendBinaryProtocol2).toHaveBeenCalledTimes(1); // 尝试发送了一次
     });
   });
 });
