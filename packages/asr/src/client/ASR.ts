@@ -556,6 +556,8 @@ export class ASR extends EventEmitter {
    */
   close(): void {
     if (this.ws) {
+      // 先移除所有事件监听器，避免关闭后触发事件
+      this.ws.removeAllListeners();
       this.ws.close();
       this.ws = null;
       this.connected = false;
@@ -756,12 +758,6 @@ export class ASR extends EventEmitter {
         reject(error);
       });
 
-      this.ws.on("close", () => {
-        this.connected = false;
-        this.emit("close");
-      });
-
-      // Register global message handler for event-driven mode
       // In streaming mode, this enables result/vad_end events via on()
       this.ws.on("message", (data: Buffer) => {
         this.handleMessage(data);
