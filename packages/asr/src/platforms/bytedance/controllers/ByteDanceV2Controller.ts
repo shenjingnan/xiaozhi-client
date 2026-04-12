@@ -37,8 +37,11 @@ export class ByteDanceV2Controller extends ByteDanceController {
     const MAX_PENDING_FRAMES = 10;
     let pendingFrames = 0;
 
-    // 监听识别结果事件
-    this.asr.on("result", (data) => {
+    // 监听连接关闭事件（需要在 finally 中清理）
+    let connectionClosed = false;
+
+    // 定义事件处理函数（保存引用以便移除）
+    const resultHandler = (data: unknown) => {
       const result = data as {
         code: number;
         sequence?: number;
@@ -81,23 +84,18 @@ export class ByteDanceV2Controller extends ByteDanceController {
         resolveNext = null;
         resolve();
       }
-    });
+    };
 
-    // 连接服务器（在事件监听器注册之后）
-    await this.asr.connect();
-
-    // 处理错误事件
-    this.asr.on("error", (error) => {
+    const errorHandler = (error: Error) => {
       if (!settled) {
         settled = true;
         // 关闭连接
         this.asr.close();
         throw error;
       }
-    });
+    };
 
-    // 处理音频结束事件
-    this.asr.on("audio_end", async () => {
+    const audioEndHandler = async () => {
       try {
         // 如果 end() 已经被调用过了，不需要再次调用
         if (endCalled) {
@@ -130,10 +128,30 @@ export class ByteDanceV2Controller extends ByteDanceController {
           throw error;
         }
       }
-    });
+    };
 
-    // 发送音频帧（并行版本）
+    const closeHandler = () => {
+      connectionClosed = true;
+      // 唤醒等待的消费者
+      if (resolveNext) {
+        const resolve = resolveNext;
+        resolveNext = null;
+        resolve();
+      }
+    };
+
+    // 注册事件监听器
+    this.asr.on("result", resultHandler);
+    this.asr.on("error", errorHandler);
+    this.asr.on("audio_end", audioEndHandler);
+    this.asr.on("close", closeHandler);
+
+    // 确保在生成器结束时移除所有监听器（防止内存泄漏）
     try {
+      // 连接服务器（在事件监听器注册之后）
+      await this.asr.connect();
+
+      // 发送音频帧（并行版本）
       // 将输入转换为异步可迭代对象
       const asyncIterable = this.toAsyncIterable(audioStream);
 
@@ -173,60 +191,50 @@ export class ByteDanceV2Controller extends ByteDanceController {
           yield resultQueue.shift()!;
         }
       }
-    } catch (error) {
-      settled = true;
-      this.asr.close();
-      throw error;
-    }
 
-    // 发送结束信号
-    endCalled = true;
+      // 发送结束信号
+      endCalled = true;
 
-    // 如果发送过程没有触发 audio_end（可能是短音频），手动调用 end
-    if (!this.asr.isAudioEnded()) {
-      try {
-        await this.asr.end();
-      } catch {
-        // 可能已经结束，忽略错误
-      }
-    }
-
-    // 监听连接关闭事件
-    let connectionClosed = false;
-    this.asr.on("close", () => {
-      connectionClosed = true;
-      // 唤醒等待的消费者
-      if (resolveNext) {
-        const resolve = resolveNext;
-        resolveNext = null;
-        resolve();
-      }
-    });
-
-    // 现在持续 yield 所有结果，使用 resolveNext 等待新结果
-    // 注意：并行发送时，发送完成不代表结果处理完成，需要等待连接关闭
-    while (true) {
-      // 如果队列中有结果，立即 yield
-      while (resultQueue.length > 0) {
-        yield resultQueue.shift()!;
+      // 如果发送过程没有触发 audio_end（可能是短音频），手动调用 end
+      if (!this.asr.isAudioEnded()) {
+        try {
+          await this.asr.end();
+        } catch {
+          // 可能已经结束，忽略错误
+        }
       }
 
-      // 如果连接已关闭，退出
-      if (connectionClosed) {
-        break;
+      // 现在持续 yield 所有结果，使用 resolveNext 等待新结果
+      // 注意：并行发送时，发送完成不代表结果处理完成，需要等待连接关闭
+      while (true) {
+        // 如果队列中有结果，立即 yield
+        while (resultQueue.length > 0) {
+          yield resultQueue.shift()!;
+        }
+
+        // 如果连接已关闭，退出
+        if (connectionClosed) {
+          break;
+        }
+
+        // 如果没有结果，等待新结果
+        await new Promise<void>((resolve) => {
+          resolveNext = resolve;
+        });
+
+        // 如果连接已关闭，退出
+        if (connectionClosed) {
+          break;
+        }
+
+        // 被唤醒后继续循环
       }
-
-      // 如果没有结果，等待新结果
-      await new Promise<void>((resolve) => {
-        resolveNext = resolve;
-      });
-
-      // 如果连接已关闭，退出
-      if (connectionClosed) {
-        break;
-      }
-
-      // 被唤醒后继续循环
+    } finally {
+      // 移除所有注册的事件监听器（防止内存泄漏）
+      this.asr.off("result", resultHandler);
+      this.asr.off("error", errorHandler);
+      this.asr.off("audio_end", audioEndHandler);
+      this.asr.off("close", closeHandler);
     }
   }
 
