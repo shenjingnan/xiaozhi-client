@@ -23,11 +23,21 @@ import type { MCPMessage } from "@/types/mcp.js";
 import type { Context } from "hono";
 
 /**
+ * MCP 消息处理器工厂函数类型
+ * 用于依赖注入，避免直接创建 MCPMessageHandler 实例
+ */
+type MCPMessageHandlerFactory = (
+  serviceManager: MCPServiceManager
+) => MCPMessageHandler;
+
+/**
  * MCP 路由处理器配置接口
  */
 interface MCPRouteHandlerConfig {
   maxMessageSize?: number;
   enableMetrics?: boolean;
+  /** MCP 消息处理器工厂函数（可选，用于依赖注入） */
+  mcpMessageHandlerFactory?: MCPMessageHandlerFactory;
 }
 
 /**
@@ -46,6 +56,8 @@ interface ConnectionMetrics {
 export class MCPRouteHandler {
   private logger: Logger;
   private mcpMessageHandler: MCPMessageHandler | null = null;
+  /** MCP 消息处理器工厂函数（用于依赖注入） */
+  private mcpMessageHandlerFactory: MCPMessageHandlerFactory;
   private config: {
     maxMessageSize: number;
     enableMetrics: boolean;
@@ -54,6 +66,9 @@ export class MCPRouteHandler {
 
   constructor(config: MCPRouteHandlerConfig = {}) {
     this.logger = logger;
+    // 默认工厂函数：直接创建 MCPMessageHandler 实例
+    this.mcpMessageHandlerFactory =
+      config.mcpMessageHandlerFactory ?? ((sm) => new MCPMessageHandler(sm));
     this.config = {
       maxMessageSize: config.maxMessageSize ?? MESSAGE_SIZE_LIMITS.DEFAULT,
       enableMetrics: config.enableMetrics ?? true,
@@ -98,6 +113,7 @@ export class MCPRouteHandler {
 
   /**
    * 初始化 MCP 消息处理器
+   * 使用注入的工厂函数创建 MCPMessageHandler 实例
    */
   private async initializeMessageHandler(c: Context): Promise<void> {
     if (this.mcpMessageHandler) {
@@ -106,7 +122,7 @@ export class MCPRouteHandler {
 
     try {
       const serviceManager = this.getMCPServiceManager(c);
-      this.mcpMessageHandler = new MCPMessageHandler(serviceManager);
+      this.mcpMessageHandler = this.mcpMessageHandlerFactory(serviceManager);
       this.logger.debug("MCP 消息处理器初始化成功");
     } catch (error) {
       this.logger.error("MCP 消息处理器初始化失败:", error);
