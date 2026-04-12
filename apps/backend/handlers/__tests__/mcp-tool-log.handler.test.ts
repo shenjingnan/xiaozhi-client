@@ -4,18 +4,21 @@
  */
 
 import { PAGINATION_CONSTANTS } from "@/constants/api.constants.js";
-import { describe, expect, it } from "vitest";
+import { ToolCallLogService } from "@/lib/mcp/log.js";
+import { describe, expect, it, vi } from "vitest";
 import { MCPToolLogHandler } from "../mcp-tool-log.handler.js";
 
 describe("MCPToolLogHandler - 基本功能测试", () => {
   it("应该能够创建处理器实例", () => {
-    const handler = new MCPToolLogHandler();
+    const toolCallLogService = new ToolCallLogService();
+    const handler = new MCPToolLogHandler(toolCallLogService);
     expect(handler).toBeDefined();
     expect(handler).toBeInstanceOf(MCPToolLogHandler);
   });
 
   it("应该能够解析和验证查询参数", () => {
-    const handler = new MCPToolLogHandler();
+    const toolCallLogService = new ToolCallLogService();
+    const handler = new MCPToolLogHandler(toolCallLogService);
     const parseAndValidateQueryParams = (
       handler as any
     ).parseAndValidateQueryParams.bind(handler);

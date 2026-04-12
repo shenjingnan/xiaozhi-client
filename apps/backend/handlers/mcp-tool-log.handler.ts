@@ -5,7 +5,7 @@
 
 import { PAGINATION_CONSTANTS } from "@/constants/api.constants.js";
 import type { ToolCallQuery } from "@/lib/mcp/log.js";
-import { ToolCallLogService } from "@/lib/mcp/log.js";
+import type { ToolCallLogService } from "@/lib/mcp/log.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type { Context } from "hono";
 import { z } from "zod";
@@ -85,9 +85,9 @@ const ToolCallQuerySchema = z
 export class MCPToolLogHandler extends BaseHandler {
   private toolCallLogService: ToolCallLogService;
 
-  constructor() {
+  constructor(toolCallLogService: ToolCallLogService) {
     super();
-    this.toolCallLogService = new ToolCallLogService();
+    this.toolCallLogService = toolCallLogService;
   }
 
   /**
