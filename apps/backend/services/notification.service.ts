@@ -68,13 +68,22 @@ export interface NotificationMessage {
 }
 
 /**
+ * 消息队列数据结构
+ * 使用 startIndex 实现O(1)的队列溢出处理，避免 Array.shift() 的 O(n) 性能开销
+ */
+interface MessageQueueData {
+  messages: NotificationMessage[];
+  startIndex: number;
+}
+
+/**
  * 通知服务 - 统一的通知管理服务
  */
 export class NotificationService {
   private logger: Logger;
   private eventBus: EventBus;
   private clients: Map<string, WebSocketClient> = new Map();
-  private messageQueue: Map<string, NotificationMessage[]> = new Map();
+  private messageQueue: Map<string, MessageQueueData> = new Map();
   private maxQueueSize = 100;
 
   constructor() {
@@ -266,18 +275,22 @@ export class NotificationService {
 
   /**
    * 将消息加入队列
+   * 使用索引追踪实现 O(1) 的队列溢出处理，避免 Array.shift() 的 O(n) 性能开销
    */
   private queueMessage(clientId: string, message: NotificationMessage): void {
     if (!this.messageQueue.has(clientId)) {
-      this.messageQueue.set(clientId, []);
+      this.messageQueue.set(clientId, {
+        messages: [],
+        startIndex: 0,
+      });
     }
 
-    const queue = this.messageQueue.get(clientId)!;
-    queue.push(message);
+    const queueData = this.messageQueue.get(clientId)!;
+    queueData.messages.push(message);
 
-    // 限制队列大小
-    if (queue.length > this.maxQueueSize) {
-      queue.shift(); // 移除最旧的消息
+    // 限制队列大小 - O(1) 操作：仅增加索引，不实际删除元素
+    if (queueData.messages.length - queueData.startIndex > this.maxQueueSize) {
+      queueData.startIndex++;
       this.logger.warn(`客户端 ${clientId} 消息队列已满，移除最旧消息`);
     }
   }
@@ -286,8 +299,8 @@ export class NotificationService {
    * 发送排队的消息
    */
   private sendQueuedMessages(clientId: string): void {
-    const queue = this.messageQueue.get(clientId);
-    if (!queue || queue.length === 0) {
+    const queueData = this.messageQueue.get(clientId);
+    if (!queueData || queueData.messages.length === queueData.startIndex) {
       return;
     }
 
@@ -296,10 +309,12 @@ export class NotificationService {
       return;
     }
 
-    this.logger.debug(`发送 ${queue.length} 条排队消息给客户端 ${clientId}`);
+    const messageCount = queueData.messages.length - queueData.startIndex;
+    this.logger.debug(`发送 ${messageCount} 条排队消息给客户端 ${clientId}`);
 
-    for (const message of queue) {
-      this.sendMessageToClient(client, message, clientId);
+    // 只发送有效范围内的消息（从 startIndex 开始）
+    for (let i = queueData.startIndex; i < queueData.messages.length; i++) {
+      this.sendMessageToClient(client, queueData.messages[i], clientId);
     }
 
     // 清空队列
@@ -350,7 +365,8 @@ export class NotificationService {
     ).length;
 
     const queuedMessages = Array.from(this.messageQueue.values()).reduce(
-      (total, queue) => total + queue.length,
+      (total, queueData) =>
+        total + (queueData.messages.length - queueData.startIndex),
       0
     );
 

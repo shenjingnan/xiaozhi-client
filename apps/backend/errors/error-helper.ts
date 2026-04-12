@@ -95,6 +95,9 @@ export interface ErrorStatistics {
 const errorHistory: Map<string, MCPError[]> = new Map();
 const MAX_ERROR_HISTORY = 100;
 
+// 错误历史索引追踪，避免 Array.shift() 的 O(n) 性能开销
+const errorHistoryStartIndex: Map<string, number> = new Map();
+
 function getLogger(): Logger {
   return logger;
 }
@@ -244,18 +247,21 @@ export function formatUserFriendlyMessage(error: MCPError): string {
 
 /**
  * 记录错误历史
+ * 使用索引追踪实现 O(1) 的历史记录限制，避免 Array.shift() 的 O(n) 性能开销
  */
 function recordError(serviceName: string, error: MCPError): void {
   if (!errorHistory.has(serviceName)) {
     errorHistory.set(serviceName, []);
+    errorHistoryStartIndex.set(serviceName, 0);
   }
 
   const errors = errorHistory.get(serviceName)!;
+  const startIndex = errorHistoryStartIndex.get(serviceName)!;
   errors.push(error);
 
-  // 限制历史记录数量
-  if (errors.length > MAX_ERROR_HISTORY) {
-    errors.shift();
+  // 限制历史记录数量 - O(1) 操作：仅增加索引，不实际删除元素
+  if (errors.length - startIndex > MAX_ERROR_HISTORY) {
+    errorHistoryStartIndex.set(serviceName, startIndex + 1);
   }
 
   getLogger().debug(
@@ -268,18 +274,20 @@ function recordError(serviceName: string, error: MCPError): void {
  */
 export function getErrorStatistics(serviceName: string): ErrorStatistics {
   const errors = errorHistory.get(serviceName) || [];
+  const startIndex = errorHistoryStartIndex.get(serviceName) || 0;
+  const validErrors = errors.slice(startIndex);
   const now = Date.now();
   const oneHourAgo = now - 60 * 60 * 1000;
 
   // 计算过去1小时的错误
-  const recentErrors = errors.filter(
+  const recentErrors = validErrors.filter(
     (error) => error.timestamp.getTime() > oneHourAgo
   );
 
   const errorsByCategory = new Map<ErrorCategory, number>();
   const errorsByCode = new Map<string, number>();
 
-  for (const error of errors) {
+  for (const error of validErrors) {
     errorsByCategory.set(
       error.category,
       (errorsByCategory.get(error.category) || 0) + 1
@@ -289,10 +297,11 @@ export function getErrorStatistics(serviceName: string): ErrorStatistics {
 
   return {
     serviceName,
-    totalErrors: errors.length,
+    totalErrors: validErrors.length,
     errorsByCategory,
     errorsByCode,
-    lastError: errors[errors.length - 1],
+    lastError:
+      validErrors.length > 0 ? validErrors[validErrors.length - 1] : undefined,
     errorRate: recentErrors.length, // 过去1小时的错误数量
   };
 }
@@ -316,9 +325,11 @@ export function getAllErrorStatistics(): Map<string, ErrorStatistics> {
 export function clearErrorHistory(serviceName?: string): void {
   if (serviceName) {
     errorHistory.delete(serviceName);
+    errorHistoryStartIndex.delete(serviceName);
     getLogger().info(`[ErrorHandler] 已清理服务 ${serviceName} 的错误历史`);
   } else {
     errorHistory.clear();
+    errorHistoryStartIndex.clear();
     getLogger().info("[ErrorHandler] 已清理所有错误历史");
   }
 }
