@@ -1,50 +1,10 @@
 /**
- * 通用 API 响应类型定义
+ * API 通用类型定义
+ * 注意：ApiResponse、ApiSuccessResponse、ApiErrorResponse 已移除
+ * 实际使用的 API 响应类型请参考：
+ * - 前端：packages/shared-types/src/frontend/api.ts
+ * - 后端：apps/backend/types/api.response.ts
  */
-
-/**
- * 通用 API 响应接口
- */
-export interface ApiResponse<T = any> {
-  /** 响应状态码，0表示成功 */
-  code: number;
-  /** 响应数据 */
-  data: T;
-  /** 响应消息 */
-  message: string;
-  /** 请求时间戳 */
-  timestamp: number;
-}
-
-/**
- * 成功响应接口
- */
-export interface ApiSuccessResponse<T = any> {
-  /** 响应状态码，固定为0 */
-  code: 0;
-  /** 响应数据 */
-  data: T;
-  /** 响应消息 */
-  message: string;
-  /** 请求时间戳 */
-  timestamp: number;
-}
-
-/**
- * 错误响应接口
- */
-export interface ApiErrorResponse {
-  /** 响应状态码，非0值 */
-  code: number;
-  /** 错误数据 */
-  data: null;
-  /** 错误消息 */
-  message: string;
-  /** 错误详情 */
-  error?: string;
-  /** 请求时间戳 */
-  timestamp: number;
-}
 
 /**
  * 分页请求参数

@@ -2,14 +2,8 @@
  * API 相关类型导出
  */
 
-// 通用 API 响应类型
-export type {
-  ApiResponse,
-  ApiSuccessResponse,
-  ApiErrorResponse,
-  PaginationParams,
-  PaginatedResponse,
-} from "./common";
+// 分页相关类型（保留用于未来扩展）
+export type { PaginationParams, PaginatedResponse } from "./common";
 
 // 工具 API 相关类型
 export type {
