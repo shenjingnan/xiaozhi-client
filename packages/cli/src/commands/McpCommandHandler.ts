@@ -16,7 +16,7 @@ import type {
   ListOptions,
 } from "../interfaces/CommandTypes";
 import { isLocalMCPServerConfig } from "../interfaces/CommandTypes";
-import { ProcessManagerImpl } from "../services/ProcessManager";
+import type { ProcessManager } from "../interfaces/Service";
 
 // 工具调用结果接口
 interface ToolCallResult {
@@ -31,12 +31,10 @@ interface ToolCallResult {
  * MCP管理命令处理器
  */
 export class McpCommandHandler extends BaseCommandHandler {
-  private processManager: ProcessManagerImpl;
   private baseUrl: string;
 
   constructor(...args: ConstructorParameters<typeof BaseCommandHandler>) {
     super(...args);
-    this.processManager = new ProcessManagerImpl();
 
     // 获取 Web 服务器的端口
     try {
@@ -45,6 +43,13 @@ export class McpCommandHandler extends BaseCommandHandler {
     } catch {
       this.baseUrl = "http://localhost:9999";
     }
+  }
+
+  /**
+   * 获取进程管理器实例（通过依赖注入容器）
+   */
+  private get processManager(): ProcessManager {
+    return this.getService<ProcessManager>("processManager");
   }
 
   /**

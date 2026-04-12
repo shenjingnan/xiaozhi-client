@@ -138,16 +138,14 @@ vi.mock("@xiaozhi-client/config", () => ({
   },
 }));
 
-// Mock ProcessManager
+// Mock ProcessManager for DI container
 const mockGetServiceStatus = vi
   .fn()
   .mockReturnValue({ running: false, pid: null });
 
-vi.mock("../../services/ProcessManager.js", () => ({
-  ProcessManagerImpl: vi.fn().mockImplementation(() => ({
-    getServiceStatus: mockGetServiceStatus,
-  })),
-}));
+const mockProcessManager = {
+  getServiceStatus: mockGetServiceStatus,
+};
 
 // Mock fetch for HTTP API calls
 global.fetch = vi.fn();
@@ -173,7 +171,12 @@ describe("McpCommandHandler", () => {
   };
 
   const mockContainer: IDIContainer = {
-    get: vi.fn(),
+    get: vi.fn((key: string) => {
+      if (key === "processManager") {
+        return mockProcessManager;
+      }
+      return undefined;
+    }),
     has: vi.fn(),
     register: vi.fn(),
   };
