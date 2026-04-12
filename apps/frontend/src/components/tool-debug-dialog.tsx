@@ -41,6 +41,7 @@ import {
   createZodSchemaFromJsonSchema,
 } from "@/lib/schema-utils";
 import { apiClient } from "@/services/api";
+import type { JSONSchema } from "@xiaozhi-client/shared-types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
@@ -57,7 +58,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm, type UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -75,11 +76,11 @@ import { z } from "zod";
  */
 interface ArrayFieldProps {
   name: string;
-  schema: any;
-  form: any;
+  schema: JSONSchema;
+  form: UseFormReturn;
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
 }
 
@@ -96,27 +97,31 @@ const ArrayField = memo(function ArrayField({
 
   const addItem = () => {
     const itemSchema = schema.items;
-    let newItem: any;
+    let newItem: unknown;
 
-    switch (itemSchema.type) {
-      case "string":
-        newItem = itemSchema.enum ? itemSchema.enum[0] : "";
-        break;
-      case "number":
-      case "integer":
-        newItem = 0;
-        break;
-      case "boolean":
-        newItem = false;
-        break;
-      case "array":
-        newItem = [];
-        break;
-      case "object":
-        newItem = {};
-        break;
-      default:
-        newItem = "";
+    if (!itemSchema) {
+      newItem = "";
+    } else {
+      switch (itemSchema.type) {
+        case "string":
+          newItem = itemSchema.enum ? itemSchema.enum[0] : "";
+          break;
+        case "number":
+        case "integer":
+          newItem = 0;
+          break;
+        case "boolean":
+          newItem = false;
+          break;
+        case "array":
+          newItem = [];
+          break;
+        case "object":
+          newItem = {};
+          break;
+        default:
+          newItem = "";
+      }
     }
 
     append(newItem);
@@ -177,14 +182,14 @@ const ArrayField = memo(function ArrayField({
                         ) {
                           return (
                             <div className="ml-6 border-l-2 border-muted pl-4">
-                              {renderFormField(
+                              {schema.items && renderFormField(
                                 `${name}.${index}`,
                                 schema.items
                               )}
                             </div>
                           );
                         }
-                        return renderFormField(
+                        return schema.items && renderFormField(
                           `${name}.${index}`,
                           schema.items
                         );
@@ -215,11 +220,11 @@ const ArrayField = memo(function ArrayField({
  */
 interface ObjectFieldProps {
   name: string;
-  schema: any;
-  form: any;
+  schema: JSONSchema;
+  form: UseFormReturn;
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
   getTypeBadge: (type: string) => string;
 }
@@ -243,7 +248,7 @@ const ObjectField = memo(function ObjectField({
     <div className="space-y-4">
       <span className="text-sm font-medium">对象字段</span>
       {Object.entries(schema.properties).map(
-        ([fieldName, fieldSchema]: [string, any]) => (
+        ([fieldName, fieldSchema]: [string, JSONSchema]) => (
           <div
             key={`${name}-${fieldName}`}
             className="ml-6 border-l-2 border-muted pl-4"
@@ -262,9 +267,9 @@ const ObjectField = memo(function ObjectField({
                     </FormLabel>
                     <Badge
                       variant="secondary"
-                      className={`text-xs ${getTypeBadge(fieldSchema.type)}`}
+                      className={`text-xs ${getTypeBadge(Array.isArray(fieldSchema.type) ? fieldSchema.type[0] ?? "unknown" : fieldSchema.type ?? "unknown")}`}
                     >
-                      {fieldSchema.type}
+                      {Array.isArray(fieldSchema.type) ? fieldSchema.type.join("|") : fieldSchema.type ?? "unknown"}
                     </Badge>
                     {fieldSchema.description && (
                       <Tooltip>
@@ -339,10 +344,10 @@ const NoParamsMessage = memo(function NoParamsMessage() {
  */
 interface FormRendererProps {
   tool: ToolDebugDialogProps["tool"];
-  form: any;
+  form: UseFormReturn;
   renderFormField: (
     fieldName: string,
-    fieldSchema: any
+    fieldSchema: JSONSchema
   ) => React.ReactElement | null;
 }
 
@@ -351,7 +356,9 @@ const FormRenderer = memo(function FormRenderer({
   form,
   renderFormField,
 }: FormRendererProps) {
-  if (!tool?.inputSchema?.properties) {
+  const inputSchema = tool?.inputSchema;
+
+  if (!inputSchema?.properties) {
     return (
       <div className="text-center py-8">
         <Code className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -364,17 +371,17 @@ const FormRenderer = memo(function FormRenderer({
     <Form {...form}>
       <ScrollArea className="h-full">
         <div className="space-y-4 p-2">
-          {Object.entries(tool.inputSchema.properties).map(
-            ([fieldName, fieldSchema]: [string, any]) => (
+          {Object.entries(inputSchema.properties).map(
+            ([fieldName, fieldSchema]: [string, JSONSchema]) => (
               <FormField
-                key={`${tool.name}-${fieldName}`} // 添加工具名称作为前缀，确保 key 的唯一性和稳定性
+                key={`${tool?.name ?? "unknown"}-${fieldName}`} // 添加工具名称作为前缀，确保 key 的唯一性和稳定性
                 control={form.control}
                 name={fieldName as any}
                 render={() => (
                   <FormItem>
                     <div className="flex items-center gap-2">
                       <FormLabel>
-                        {tool.inputSchema.required?.includes(fieldName) && (
+                        {inputSchema.required?.includes(fieldName) && (
                           <span className="text-red-500 mr-1">*</span>
                         )}
                         {fieldName}
@@ -432,7 +439,7 @@ interface ToolDebugDialogProps {
     serverName: string;
     toolName: string;
     description?: string;
-    inputSchema?: any;
+    inputSchema?: JSONSchema;
   } | null;
 }
 
@@ -663,7 +670,7 @@ export function ToolDebugDialog({
       return colors[type] || "bg-gray-100 text-gray-800";
     };
 
-    return (fieldName: string, fieldSchema: any): React.ReactElement | null => {
+    return (fieldName: string, fieldSchema: JSONSchema): React.ReactElement | null => {
       switch (fieldSchema.type) {
         case "string":
           if (fieldSchema.enum) {
@@ -679,7 +686,7 @@ export function ToolDebugDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {fieldSchema.enum.map((option: string) => (
+                      {(fieldSchema.enum as string[]).map((option) => (
                         <SelectItem key={option} value={option}>
                           {option}
                         </SelectItem>
