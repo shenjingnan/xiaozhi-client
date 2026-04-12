@@ -3,33 +3,26 @@
  * 测试 ASRService 的语音识别生命周期管理
  */
 
+import { createASR } from "univoice";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ASRService } from "../asr.service.js";
 
-// Mock @xiaozhi-client/asr
-const mockASRClose = vi.fn().mockResolvedValue(undefined);
-const mockASRIsConnected = vi.fn().mockReturnValue(false);
-const mockOn = vi.fn();
+// Mock @xiaozhi-client/asr（仅保留 OpusDecoder 用于 Opus→PCM 解码）
+vi.mock("@xiaozhi-client/asr", () => ({
+  OpusDecoder: {
+    toPcm: vi.fn().mockResolvedValue(Buffer.from([0x01, 0x02, 0x03])),
+  },
+}));
+
+// Mock univoice（ASR 引擎替换为 univoice）
 const mockListenGenerator = (async function* () {
   // 默认不产生任何结果（空生成器）
 })();
 
-vi.mock("@xiaozhi-client/asr", () => ({
-  ASR: vi.fn().mockImplementation(() => ({
-    close: mockASRClose,
-    isConnected: mockASRIsConnected,
-    on: mockOn,
-    bytedance: {
-      v2: {
-        listen: vi.fn().mockReturnValue(mockListenGenerator),
-      },
-    },
+vi.mock("univoice", () => ({
+  createASR: vi.fn().mockImplementation(() => ({
+    listen: vi.fn().mockReturnValue(mockListenGenerator),
   })),
-  AudioFormat: { RAW: "raw" },
-  AuthMethod: { TOKEN: "token" },
-  OpusDecoder: {
-    toPcm: vi.fn().mockResolvedValue(Buffer.from([0x01, 0x02, 0x03])),
-  },
 }));
 
 describe("ASRService", () => {
@@ -56,8 +49,6 @@ describe("ASRService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockASRClose.mockResolvedValue(undefined);
-    mockASRIsConnected.mockReturnValue(false);
     service = new ASRService({
       events: mockEvents,
       configProvider: createValidConfigProvider(),
@@ -80,14 +71,15 @@ describe("ASRService", () => {
 
   describe("connect", () => {
     it("已连接跳过", async () => {
-      mockASRIsConnected.mockReturnValue(true);
-
-      // 先手动创建一个客户端（模拟已连接状态）
-      // 实际上 connect 内部会检查 isConnected，如果返回 true 则跳过
+      // 新实现使用 connected 属性而非 isConnected() 方法
+      // 先 connect 创建客户端（标记 connected=true）
+      await service.prepare("device-1");
       await service.connect("device-1");
 
-      // 由于 mockASRClient 不存在，connect 会尝试创建新的
-      // 但我们验证不会抛错即可
+      // 再次 connect 应该跳过（因为已连接）
+      await service.connect("device-1");
+
+      // 不应抛错，第二次 connect 被跳过
     });
 
     it("正在连接等待完成", async () => {
@@ -202,7 +194,7 @@ describe("ASRService", () => {
   });
 
   describe("destroy", () => {
-    it("清理所有资源并 close 所有客户端", () => {
+    it("清理所有资源并标记客户端断开", () => {
       // 先准备一些设备
       service.prepare("device-1");
       service.prepare("device-2");
@@ -211,6 +203,135 @@ describe("ASRService", () => {
 
       // destroy 后操作不应报错（虽然设备状态已清除）
       expect(() => service.destroy()).not.toThrow(); // 重复销毁安全
+    });
+  });
+
+  describe("VAD 端点检测", () => {
+    it("VAD端点(confidence=1)应触发onResult(isFinal=true)并停止listen", async () => {
+      // 构造模拟生成器：先产生中间结果，再产生VAD端点
+      const mockVadGenerator = (async function* () {
+        yield { text: "你好", isFinal: false, confidence: 0.9 };
+        // VAD 端点：segment.confidence === 1
+        yield {
+          text: "你好世界",
+          isFinal: false,
+          segment: {
+            id: 1,
+            start: 0,
+            end: 1200,
+            text: "你好世界",
+            confidence: 1,
+          },
+        };
+      })();
+
+      vi.mocked(createASR).mockImplementation(
+        () =>
+          ({
+            listen: vi.fn().mockReturnValue(mockVadGenerator),
+          }) as ReturnType<typeof createASR>
+      );
+
+      await service.prepare("device-vad");
+      await service.connect("device-vad");
+
+      // 等待 listen 任务完成
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // 验证 onResult 被调用了两次（中间结果 + VAD端点）
+      expect(mockEvents.onResult).toHaveBeenCalledTimes(2);
+
+      // 第一次：中间结果，isFinal=false
+      expect(mockEvents.onResult).toHaveBeenCalledWith(
+        "device-vad",
+        "你好",
+        false
+      );
+
+      // 第二次：VAD端点，应以 isFinal=true 触发
+      expect(mockEvents.onResult).toHaveBeenCalledWith(
+        "device-vad",
+        "你好世界",
+        true
+      );
+    });
+
+    it("非definite segment(confidence<1)不应触发终止", async () => {
+      const mockNonDefiniteGenerator = (async function* () {
+        yield {
+          text: "测试",
+          isFinal: false,
+          segment: {
+            id: 1,
+            start: 0,
+            end: 500,
+            text: "测试",
+            confidence: 0.8,
+          },
+        };
+        // 生成器继续运行（不应break）
+        yield { text: "测试继续", isFinal: false };
+        yield { text: "测试完成", isFinal: true }; // 最终由isFinal终止
+      })();
+
+      vi.mocked(createASR).mockImplementation(
+        () =>
+          ({
+            listen: vi.fn().mockReturnValue(mockNonDefiniteGenerator),
+          }) as ReturnType<typeof createASR>
+      );
+
+      await service.prepare("device-non-definite");
+      await service.connect("device-non-definite");
+
+      // 等待 listen 任务完成
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // 应该收到全部3次结果（非definite segment不中断流）
+      expect(mockEvents.onResult).toHaveBeenCalledTimes(3);
+      expect(mockEvents.onResult).toHaveBeenLastCalledWith(
+        "device-non-definite",
+        "测试完成",
+        true
+      );
+    });
+
+    it("无segment信息的chunk正常处理不受影响", async () => {
+      const mockNoSegmentGenerator = (async function* () {
+        yield { text: "第一条", isFinal: false };
+        yield { text: "第二条", isFinal: false };
+        yield { text: "最终", isFinal: true };
+      })();
+
+      vi.mocked(createASR).mockImplementation(
+        () =>
+          ({
+            listen: vi.fn().mockReturnValue(mockNoSegmentGenerator),
+          }) as ReturnType<typeof createASR>
+      );
+
+      await service.prepare("device-no-segment");
+      await service.connect("device-no-segment");
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // 无 segment 时行为与改造前一致，3次正常回调
+      expect(mockEvents.onResult).toHaveBeenCalledTimes(3);
+      expect(mockEvents.onResult).toHaveBeenCalledWith(
+        "device-no-segment",
+        "第一条",
+        false
+      );
+      expect(mockEvents.onResult).toHaveBeenCalledWith(
+        "device-no-segment",
+        "第二条",
+        false
+      );
+      expect(mockEvents.onResult).toHaveBeenCalledWith(
+        "device-no-segment",
+        "最终",
+        true
+      );
     });
   });
 });
