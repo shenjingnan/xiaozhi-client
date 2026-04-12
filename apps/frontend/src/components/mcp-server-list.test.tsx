@@ -311,8 +311,8 @@ describe("McpServerList 组件", () => {
     vi.mocked(apiModule.apiClient.removeCustomTool).mockResolvedValue(
       undefined
     );
-    vi.mocked(apiModule.apiClient.addCustomTool).mockResolvedValue({});
-    vi.mocked(apiModule.apiClient.updateCustomTool).mockResolvedValue({});
+    vi.mocked(apiModule.apiClient.addCustomTool).mockResolvedValue({ name: "test-tool" });
+    vi.mocked(apiModule.apiClient.updateCustomTool).mockResolvedValue({ name: "test-tool" });
   });
 
   it("应该正确渲染 MCP 服务器列表", async () => {
