@@ -27,7 +27,8 @@ const createMockMCPServiceManager = (): Partial<MCPServiceManager> => ({
   startService: vi.fn(),
   stopService: vi.fn(),
   removeServiceConfig: vi.fn(),
-  // MCPServiceManager 的其他模拟方法将在后续里程碑中添加
+  getService: vi.fn().mockReturnValue(undefined),
+  hasService: vi.fn().mockReturnValue(false),
 });
 
 const createMockEventBus = (): Partial<EventBus> => ({
@@ -260,9 +261,7 @@ describe("addMCPServer", () => {
       isConnected: vi.fn().mockReturnValue(true),
       getTools: vi.fn().mockReturnValue([{ name: "tool1" }, { name: "tool2" }]),
     };
-    (mockMCPServiceManager as any).services = new Map([
-      ["new-service", mockService],
-    ]);
+    mockMCPServiceManager.getService = vi.fn().mockReturnValue(mockService);
 
     // 修复 mock 配置 - 确保初始配置不包含新服务，但 updateMcpServer 后包含
     const currentConfig = {
@@ -430,9 +429,7 @@ describe("addMCPServer", () => {
       isConnected: vi.fn().mockReturnValue(false),
       getTools: vi.fn().mockReturnValue([]),
     };
-    (mockMCPServiceManager as any).services = new Map([
-      ["disconnected-service", mockService],
-    ]);
+    mockMCPServiceManager.getService = vi.fn().mockReturnValue(mockService);
 
     const response = await handler.addMCPServer(mockContext as Context);
 
@@ -547,9 +544,7 @@ describe("removeMCPServer", () => {
       isConnected: vi.fn().mockReturnValue(true),
       getTools: vi.fn().mockReturnValue([{ name: "tool1" }, { name: "tool2" }]),
     };
-    (mockMCPServiceManager as any).services = new Map([
-      [serverName, mockService],
-    ]);
+    mockMCPServiceManager.getService = vi.fn().mockReturnValue(mockService);
 
     const response = await handler.removeMCPServer(mockContext as Context);
 
@@ -619,9 +614,7 @@ describe("removeMCPServer", () => {
       isConnected: vi.fn().mockReturnValue(true),
       getTools: vi.fn().mockReturnValue([{ name: "tool1" }]),
     };
-    (mockMCPServiceManager as any).services = new Map([
-      [serverName, mockService],
-    ]);
+    mockMCPServiceManager.getService = vi.fn().mockReturnValue(mockService);
 
     // 模拟服务停止失败
     mockMCPServiceManager.stopService = vi
@@ -654,9 +647,7 @@ describe("removeMCPServer", () => {
       isConnected: vi.fn().mockReturnValue(true),
       getTools: vi.fn().mockReturnValue([{ name: "tool1" }]),
     };
-    (mockMCPServiceManager as any).services = new Map([
-      [serverName, mockService],
-    ]);
+    mockMCPServiceManager.getService = vi.fn().mockReturnValue(mockService);
 
     // 修改配置管理器让它认为这个服务存在
     const originalGetConfig = mockConfigManager.getConfig;
@@ -705,9 +696,7 @@ describe("removeMCPServer", () => {
       isConnected: vi.fn().mockReturnValue(false),
       getTools: vi.fn().mockReturnValue([]),
     };
-    (mockMCPServiceManager as any).services = new Map([
-      [serverName, mockService],
-    ]);
+    mockMCPServiceManager.getService = vi.fn().mockReturnValue(mockService);
 
     const response = await handler.removeMCPServer(mockContext as Context);
 
@@ -960,9 +949,7 @@ describe("getMCPServerStatus", () => {
       isConnected: vi.fn().mockReturnValue(true),
       getTools: vi.fn().mockReturnValue([{ name: "tool1" }, { name: "tool2" }]),
     };
-    (mockMCPServiceManager as any).services = new Map([
-      [serverName, mockService],
-    ]);
+    mockMCPServiceManager.getService = vi.fn().mockReturnValue(mockService);
 
     const response = await handler.getMCPServerStatus(mockContext as Context);
 
@@ -984,9 +971,7 @@ describe("getMCPServerStatus", () => {
       isConnected: vi.fn().mockReturnValue(false),
       getTools: vi.fn().mockReturnValue([]),
     };
-    (mockMCPServiceManager as any).services = new Map([
-      [serverName, mockService],
-    ]);
+    mockMCPServiceManager.getService = vi.fn().mockReturnValue(mockService);
 
     const response = await handler.getMCPServerStatus(mockContext as Context);
 
@@ -1125,10 +1110,11 @@ describe("listMCPServers", () => {
       getTools: vi.fn().mockReturnValue([]),
     };
     // service3 不在 services Map 中（未启动）
-    (mockMCPServiceManager as any).services = new Map([
-      ["service1", mockService1],
-      ["service2", mockService2],
-    ]);
+    mockMCPServiceManager.getService = vi.fn().mockImplementation((name: string) => {
+      if (name === "service1") return mockService1;
+      if (name === "service2") return mockService2;
+      return undefined; // service3 未启动
+    });
 
     const response = await handler.listMCPServers(mockContext as Context);
 
@@ -1316,9 +1302,7 @@ describe("addMCPServer with type field normalization", () => {
       isConnected: vi.fn().mockReturnValue(true),
       getTools: vi.fn().mockReturnValue([{ name: "tool1" }]),
     };
-    (mockMCPServiceManager as any).services = new Map([
-      ["test-service", mockService],
-    ]);
+    mockMCPServiceManager.getService = vi.fn().mockReturnValue(mockService);
 
     const currentConfig = { mcpServers: {} };
     mockConfigManager.getConfig = vi.fn().mockReturnValue(currentConfig);
@@ -1356,9 +1340,7 @@ describe("addMCPServer with type field normalization", () => {
       isConnected: vi.fn().mockReturnValue(true),
       getTools: vi.fn().mockReturnValue([{ name: "tool1" }]),
     };
-    (mockMCPServiceManager as any).services = new Map([
-      ["test-service", mockService],
-    ]);
+    mockMCPServiceManager.getService = vi.fn().mockReturnValue(mockService);
 
     const currentConfig = { mcpServers: {} };
     mockConfigManager.getConfig = vi.fn().mockReturnValue(currentConfig);
@@ -1396,9 +1378,7 @@ describe("addMCPServer with type field normalization", () => {
       isConnected: vi.fn().mockReturnValue(true),
       getTools: vi.fn().mockReturnValue([{ name: "tool1" }]),
     };
-    (mockMCPServiceManager as any).services = new Map([
-      ["test-service", mockService],
-    ]);
+    mockMCPServiceManager.getService = vi.fn().mockReturnValue(mockService);
 
     const currentConfig = { mcpServers: {} };
     mockConfigManager.getConfig = vi.fn().mockReturnValue(currentConfig);
