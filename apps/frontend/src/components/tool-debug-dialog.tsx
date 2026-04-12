@@ -12,22 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import {
   Form,
-  FormControl,
   FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -36,6 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useToolShortcut } from "@/hooks/use-tool-shortcut";
 import {
   createDefaultValues,
   createZodSchemaFromJsonSchema,
@@ -57,9 +49,13 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import {
+  createFormFieldRenderer,
+  getTypeBadgeColor,
+} from "./form-field-renderer";
 
 /**
  * 数组字段渲染器组件
@@ -221,7 +217,6 @@ interface ObjectFieldProps {
     fieldName: string,
     fieldSchema: any
   ) => React.ReactElement | null;
-  getTypeBadge: (type: string) => string;
 }
 
 const ObjectField = memo(function ObjectField({
@@ -229,7 +224,6 @@ const ObjectField = memo(function ObjectField({
   schema,
   form,
   renderFormField,
-  getTypeBadge,
 }: ObjectFieldProps) {
   if (!schema.properties || Object.keys(schema.properties).length === 0) {
     return (
@@ -262,7 +256,7 @@ const ObjectField = memo(function ObjectField({
                     </FormLabel>
                     <Badge
                       variant="secondary"
-                      className={`text-xs ${getTypeBadge(fieldSchema.type)}`}
+                      className={`text-xs ${getTypeBadgeColor(fieldSchema.type)}`}
                     >
                       {fieldSchema.type}
                     </Badge>
@@ -648,149 +642,11 @@ export function ToolDebugDialog({
     }
   }, [inputMode, tool?.inputSchema, defaultValues, form]);
 
-  // 渲染表单字段的辅助函数 - 使用 useMemo 优化性能
-  const renderFormField = useMemo(() => {
-    const getTypeBadge = (type: string) => {
-      const colors: Record<string, string> = {
-        string: "bg-blue-100 text-blue-800",
-        number: "bg-green-100 text-green-800",
-        integer: "bg-green-100 text-green-800",
-        boolean: "bg-purple-100 text-purple-800",
-        array: "bg-orange-100 text-orange-800",
-        object: "bg-gray-100 text-gray-800",
-      };
-
-      return colors[type] || "bg-gray-100 text-gray-800";
-    };
-
-    return (fieldName: string, fieldSchema: any): React.ReactElement | null => {
-      switch (fieldSchema.type) {
-        case "string":
-          if (fieldSchema.enum) {
-            return (
-              <Controller
-                name={fieldName as any}
-                control={form.control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={`选择${fieldName}`} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {fieldSchema.enum.map((option: string) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            );
-          }
-          return (
-            <Controller
-              name={fieldName as any}
-              control={form.control}
-              render={({ field }) => (
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder={`输入${fieldName}`}
-                    type={
-                      fieldSchema.format === "password" ? "password" : "text"
-                    }
-                  />
-                </FormControl>
-              )}
-            />
-          );
-
-        case "number":
-        case "integer":
-          return (
-            <Controller
-              name={fieldName as any}
-              control={form.control}
-              render={({ field }) => (
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="number"
-                    placeholder={`输入${fieldName}`}
-                    step={fieldSchema.type === "integer" ? "1" : "0.1"}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      field.onChange(value === "" ? "" : Number(value));
-                    }}
-                  />
-                </FormControl>
-              )}
-            />
-          );
-
-        case "boolean":
-          return (
-            <Controller
-              name={fieldName as any}
-              control={form.control}
-              render={({ field }) => (
-                <Select
-                  value={field.value?.toString()}
-                  onValueChange={(value) => field.onChange(value === "true")}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={`选择${fieldName}`} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="true">true</SelectItem>
-                    <SelectItem value="false">false</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          );
-
-        case "array":
-          return (
-            <ArrayField
-              name={fieldName}
-              schema={fieldSchema}
-              form={form}
-              renderFormField={renderFormField}
-            />
-          );
-
-        case "object":
-          return (
-            <ObjectField
-              name={fieldName}
-              schema={fieldSchema}
-              form={form}
-              renderFormField={renderFormField}
-              getTypeBadge={getTypeBadge}
-            />
-          );
-
-        default:
-          return (
-            <Controller
-              name={fieldName as any}
-              control={form.control}
-              render={({ field }) => (
-                <FormControl>
-                  <Input {...field} placeholder={`输入${fieldName}`} />
-                </FormControl>
-              )}
-            />
-          );
-      }
-    };
-  }, [form]);
+  // 渲染表单字段 - 使用提取的渲染器创建函数
+  const renderFormField = useMemo(
+    () => createFormFieldRenderer(form, ArrayField, ObjectField),
+    [form]
+  );
 
   // 格式化结果显示
   const formatResult = useCallback((data: any) => {
@@ -808,52 +664,16 @@ export function ToolDebugDialog({
     return isMac ? "⌘+Enter" : "Ctrl+Enter";
   }, []);
 
-  // 处理键盘事件
-  const handleKeyDown = useCallback(
-    async (event: KeyboardEvent) => {
-      // 检查是否是 Command+Enter (Mac) 或 Ctrl+Enter (Windows/Linux)
-      const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
-      const isShortcutKey = isMac
-        ? event.metaKey && event.key === "Enter"
-        : event.ctrlKey && event.key === "Enter";
-
-      if (isShortcutKey && open && !loading) {
-        // 阻止默认行为
-        event.preventDefault();
-
-        // 检查是否无参数工具，或者是有参数工具且JSON模式时验证格式
-        const hasNoParams =
-          !tool?.inputSchema?.properties ||
-          Object.keys(tool.inputSchema.properties).length === 0;
-        if (!hasNoParams && inputMode === "json" && !validateJSON(jsonInput)) {
-          toast.error("输入参数不是有效的JSON格式");
-          return;
-        }
-
-        // 调用工具
-        await handleCallTool();
-      }
-    },
-    [
-      open,
-      loading,
-      inputMode,
-      jsonInput,
-      validateJSON,
-      handleCallTool,
-      tool?.inputSchema?.properties,
-    ]
-  );
-
-  // 添加键盘事件监听器
-  useEffect(() => {
-    if (open) {
-      window.addEventListener("keydown", handleKeyDown);
-      return () => {
-        window.removeEventListener("keydown", handleKeyDown);
-      };
-    }
-  }, [open, handleKeyDown]);
+  // 使用快捷键 Hook 处理 Cmd/Ctrl+Enter
+  useToolShortcut({
+    open,
+    loading,
+    tool,
+    inputMode,
+    jsonInput,
+    validateJSON,
+    handleCallTool,
+  });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
