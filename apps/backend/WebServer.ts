@@ -122,6 +122,23 @@ interface XiaozhiConnectionStatusResponse {
 }
 
 /**
+ * WebServer 依赖注入接口
+ * 用于支持测试时 mock 和生产环境使用不同实现
+ */
+export interface WebServerDependencies {
+  /** 状态服务实例 */
+  statusService?: StatusService;
+  /** 通知服务实例 */
+  notificationService?: NotificationService;
+  /** ESP32 设备管理器实例 */
+  esp32Manager?: ESP32DeviceManager;
+  /** MCP 服务管理器实例（可选，通常在 start() 时创建） */
+  mcpServiceManager?: MCPServiceManager;
+  /** 端点管理器实例（可选，通常在 start() 时创建） */
+  endpointManager?: EndpointManager;
+}
+
+/**
  * WebServer - 主控制器，协调各个服务和处理器
  */
 export class WebServer {
@@ -171,7 +188,7 @@ export class WebServer {
   // 事件监听器清理函数数组
   private eventListenerUnsubscribers: Array<() => void> = [];
 
-  constructor(port?: number) {
+  constructor(port?: number, dependencies?: WebServerDependencies) {
     // 端口配置
     try {
       this.port =
@@ -185,9 +202,10 @@ export class WebServer {
     // 初始化事件总线
     this.eventBus = getEventBus();
 
-    // 初始化服务层
-    this.statusService = new StatusService();
-    this.notificationService = new NotificationService();
+    // 初始化服务层（支持依赖注入，保持向后兼容）
+    this.statusService = dependencies?.statusService ?? new StatusService();
+    this.notificationService =
+      dependencies?.notificationService ?? new NotificationService();
 
     // 创建基于 configManager 的配置提供者
     const esp32ConfigProvider: IESP32ConfigProvider = {
@@ -197,11 +215,19 @@ export class WebServer {
       isLLMConfigValid: () => configManager.isLLMConfigValid(),
     };
 
-    // 创建 ESP32 设备管理器（使用新包）
-    this.esp32Manager = new ESP32DeviceManager({
-      logger,
-      configProvider: esp32ConfigProvider,
-    });
+    // 创建 ESP32 设备管理器（支持依赖注入）
+    this.esp32Manager =
+      dependencies?.esp32Manager ??
+      new ESP32DeviceManager({
+        logger,
+        configProvider: esp32ConfigProvider,
+      });
+
+    // MCP 服务管理器（可选注入，通常在 start() 时创建）
+    this.mcpServiceManager = dependencies?.mcpServiceManager ?? null;
+
+    // 端点管理器（可选注入，通常在 start() 时创建）
+    this.endpointManager = dependencies?.endpointManager ?? null;
 
     // 初始化 HTTP API 处理器
     this.configApiHandler = new ConfigApiHandler();
@@ -244,19 +270,24 @@ export class WebServer {
 
   /**
    * 初始化所有连接（配置驱动）
+   *
+   * 支持依赖注入：
+   * - 如果通过构造函数注入了 mcpServiceManager，将使用注入的实例
+   * - 如果未注入，将创建新实例
+   * - 注入的实例应该是已启动的就绪状态
    */
   private async initializeConnections(): Promise<void> {
     try {
       this.logger.debug("开始初始化连接...");
 
-      // 2. 初始化 MCP 服务管理器（WebServer 直接管理）
+      // 初始化 MCP 服务管理器（支持依赖注入）
       if (!this.mcpServiceManager) {
         this.logger.debug("创建新的 MCPServiceManager 实例");
         this.mcpServiceManager = new MCPServiceManager();
         // 启动服务管理器，确保它可以正常工作
         await this.mcpServiceManager.start();
       } else {
-        this.logger.debug("使用现有的 MCPServiceManager 实例，跳过创建");
+        this.logger.debug("使用注入的 MCPServiceManager 实例，跳过创建和启动");
       }
 
       // 1. 读取配置
@@ -349,6 +380,11 @@ export class WebServer {
 
   /**
    * 初始化小智接入点连接（使用新 API）
+   *
+   * 支持依赖注入：
+   * - 如果通过构造函数注入了 endpointManager，将使用注入的实例
+   * - 如果未注入，将创建新实例
+   * - 无论是否注入，都会设置 mcpServiceManager 关联
    */
   private async initializeXiaozhiConnection(
     mcpEndpoint: string | string[]
@@ -365,16 +401,18 @@ export class WebServer {
     );
 
     try {
-      // 创建连接管理器实例（总是创建）
+      // 创建连接管理器实例（支持依赖注入）
       if (!this.endpointManager) {
         this.endpointManager = new EndpointManager({
           defaultReconnectDelay: 2000,
         });
-        // ✅ 传入 mcpServiceManager 实例
-        this.endpointManager.setMcpManager(this.mcpServiceManager!);
         this.logger.debug("✅ 新建连接管理器实例");
       }
 
+      // ✅ 传入 mcpServiceManager 实例（无论是否注入）
+      if (this.mcpServiceManager) {
+        this.endpointManager.setMcpManager(this.mcpServiceManager);
+      }
       this.logger.debug("✅ 连接管理器设置完成");
 
       // 2. 只有在有有效端点时才创建并添加端点
