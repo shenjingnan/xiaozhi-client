@@ -97,6 +97,7 @@ mcps
 mcpserver
 meilinvyou
 menuconfig
+metas
 mizai
 modelcontextprotocol
 modelscope
@@ -183,6 +184,7 @@ Vivi
 volc
 volcengine
 vsize
+wanwanxiao
 webui
 wenwanshanshan
 worktrees
@@ -202,4 +204,3 @@ yxxx
 zh_female_xiaohe_uranus_bigtts
 ZHIPU
 zread
-metas
