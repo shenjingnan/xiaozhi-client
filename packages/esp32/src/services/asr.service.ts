@@ -3,8 +3,7 @@
  * 处理语音识别功能
  */
 
-import { OpusDecoder } from "@xiaozhi-client/asr";
-import { createASR } from "univoice";
+import { createASR, decodeOpusStream } from "univoice";
 import type { BaseASR } from "univoice";
 // 触发 ASR 提供商自动注册（doubao/qwen/glm/xfyun 等）
 import "univoice/asr/providers";
@@ -28,6 +27,77 @@ interface DeviceASRState {
   connecting: boolean;
   /** 连接 Promise（用于等待连接完成） */
   connectPromise?: Promise<void>;
+}
+
+/**
+ * 可写的 AsyncIterable 队列
+ * 将外部逐包推送转化为 AsyncIterable<Buffer>，支持静音超时自动结束
+ */
+class OpusPacketQueue {
+  private readonly chunks: Buffer[] = [];
+  private ended = false;
+  private lastEnqueueTime = Date.now();
+  private silenceTimeoutMs: number;
+
+  constructor(silenceTimeoutMs: number) {
+    this.silenceTimeoutMs = silenceTimeoutMs;
+  }
+
+  /** 入队一个 Opus 数据包 */
+  enqueue(data: Buffer): void {
+    this.chunks.push(data);
+    this.lastEnqueueTime = Date.now();
+  }
+
+  /** 标记流结束 */
+  signalEnd(): void {
+    this.ended = true;
+  }
+
+  /** 重置队列状态（用于 reset 场景） */
+  reset(): void {
+    this.chunks.length = 0;
+    this.ended = false;
+    this.lastEnqueueTime = Date.now();
+  }
+
+  /** 实现 AsyncIterable 协议 */
+  [Symbol.asyncIterator](): AsyncIterator<Buffer> {
+    const queue = this;
+    return {
+      async next(): Promise<IteratorResult<Buffer>> {
+        // 有缓存数据，立即返回
+        if (queue.chunks.length > 0) {
+          return { value: queue.chunks.shift()!, done: false };
+        }
+        // 已结束
+        if (queue.ended) {
+          return { value: undefined!, done: true };
+        }
+        // 等待新数据或静音超时
+        await new Promise<void>((resolve) => {
+          const checkSilence = (): void => {
+            const elapsed = Date.now() - queue.lastEnqueueTime;
+            if (elapsed >= queue.silenceTimeoutMs) {
+              queue.ended = true;
+              resolve();
+              return;
+            }
+            setTimeout(
+              checkSilence,
+              Math.min(50, queue.silenceTimeoutMs - elapsed)
+            );
+          };
+          checkSilence();
+        });
+        // 超时后再次检查是否有数据（enqueue 可能在超时检查期间到达）
+        if (queue.chunks.length > 0) {
+          return { value: queue.chunks.shift()!, done: false };
+        }
+        return { value: undefined!, done: true };
+      },
+    };
+  }
 }
 
 /**
@@ -61,8 +131,8 @@ export class ASRService implements IASRService {
   /** 每个设备的 ASR 客户端（用于语音识别） */
   private readonly asrClients = new Map<string, ASRClientInstance>();
 
-  /** 每个设备的音频数据队列（用于 V2 listen API） */
-  private readonly audioQueues = new Map<string, Buffer[]>();
+  /** 每个设备的 Opus 包队列（用于 V2 listen API） */
+  private readonly opusQueues = new Map<string, OpusPacketQueue>();
 
   /** 每个设备的是否已结束音频输入 */
   private readonly audioEnded = new Map<string, boolean>();
@@ -103,8 +173,11 @@ export class ASRService implements IASRService {
       return;
     }
 
-    // 初始化音频队列
-    this.audioQueues.set(deviceId, []);
+    // 初始化 Opus 包队列
+    this.opusQueues.set(
+      deviceId,
+      new OpusPacketQueue(ASRService.SILENCE_TIMEOUT_MS)
+    );
     this.audioEnded.set(deviceId, false);
     state.prepared = true;
 
@@ -274,27 +347,12 @@ export class ASRService implements IASRService {
       return;
     }
 
-    // 解码 Opus 为 PCM 并推入队列
-    try {
-      // 使用 OpusDecoder 解码
-      const pcmData = await OpusDecoder.toPcm(audioBuffer);
-
-      // 获取或创建队列
-      let queue = this.audioQueues.get(deviceId);
-      if (!queue) {
-        queue = [];
-        this.audioQueues.set(deviceId, queue);
-      }
-
-      // 推入队列
-      queue.push(pcmData);
+    // 将 Opus 原始数据推入队列（解码由 decodeOpusStream 统一处理）
+    const queue = this.opusQueues.get(deviceId);
+    if (queue) {
+      queue.enqueue(audioBuffer);
       this.logger.debug(
-        `[ASRService] 已将 PCM 推入队列: deviceId=${deviceId}, pcmSize=${pcmData.length}, queueLength=${queue.length}`
-      );
-    } catch (error) {
-      this.logger.error(
-        `[ASRService] PCM 解码失败: deviceId=${deviceId}`,
-        error
+        `[ASRService] 已将 Opus 包推入队列: deviceId=${deviceId}, size=${audioBuffer.length}`
       );
     }
   }
@@ -345,52 +403,22 @@ export class ASRService implements IASRService {
   private static readonly SILENCE_TIMEOUT_MS = 1500;
 
   /**
-   * 创建异步生成器，从队列中读取 PCM 数据
-   * 支持静音超时：当超过 SILENCE_TIMEOUT_MS 无新数据时自动结束音频流
-   * 这对 univoice 的 ASR 至关重要，因为它需要在音频流结束后发送结束标记
-   * 服务端收到结束标记后才会发出 isLastPackage=true（isFinal=true）
+   * 创建 PCM 音频流
+   * 将 Opus 包队列通过 decodeOpusStream 解码为 PCM 流
    * @param deviceId - 设备 ID
-   * @returns 异步生成器
+   * @returns 异步可迭代对象（PCM 音频流）
    */
-  private async *createAudioStream(
-    deviceId: string
-  ): AsyncGenerator<Buffer, void, unknown> {
-    const queue = this.audioQueues.get(deviceId) || [];
-
-    while (true) {
-      // 等待队列中有数据（带超时检测）
-      let lastDataTime = Date.now();
-
-      while (queue.length === 0) {
-        // 检查是否已通过 end() 手动标记结束
-        if (this.audioEnded.get(deviceId)) {
-          this.logger.debug(`[ASRService] 音频流结束: deviceId=${deviceId}`);
-          return;
-        }
-
-        // 静音超时检测：超过阈值无新数据则自动结束音频流
-        const elapsed = Date.now() - lastDataTime;
-        if (elapsed >= ASRService.SILENCE_TIMEOUT_MS) {
-          this.logger.info(
-            `[ASRService] 静音超时（${elapsed}ms），自动结束音频流: deviceId=${deviceId}`
-          );
-          return;
-        }
-
-        // 短暂等待后重试
-        await new Promise((resolve) =>
-          setTimeout(
-            resolve,
-            Math.min(50, ASRService.SILENCE_TIMEOUT_MS - elapsed)
-          )
-        );
-      }
-
-      // 从队列取出数据，更新最后数据时间
-      lastDataTime = Date.now();
-      const pcmData = queue.shift()!;
-      yield pcmData;
+  private createAudioStream(deviceId: string): AsyncIterable<Buffer> {
+    const opusQueue = this.opusQueues.get(deviceId);
+    if (!opusQueue) {
+      throw new Error(`[ASRService] Opus 队列不存在: deviceId=${deviceId}`);
     }
+
+    // 使用 univoice 的 decodeOpusStream 将 Opus 包流解码为 PCM 流
+    return decodeOpusStream(opusQueue, {
+      sampleRate: 16000,
+      channels: 1,
+    });
   }
 
   /**
@@ -464,7 +492,10 @@ export class ASRService implements IASRService {
       this.asrClients.delete(deviceId);
 
       // 重置音频缓冲区状态，准备下一次识别
-      this.audioQueues.set(deviceId, []);
+      const queue = this.opusQueues.get(deviceId);
+      if (queue) {
+        queue.reset();
+      }
       this.audioEnded.set(deviceId, false);
       this.logger.info(
         `[ASRService] 音频缓冲区已重置，准备下一次识别: deviceId=${deviceId}`
@@ -498,6 +529,12 @@ export class ASRService implements IASRService {
     // 标记音频已结束
     this.audioEnded.set(deviceId, true);
 
+    // 通知 Opus 包队列结束，使 decodeOpusStream 正常终止
+    const opusQueue = this.opusQueues.get(deviceId);
+    if (opusQueue) {
+      opusQueue.signalEnd();
+    }
+
     // 等待 listen 任务完成
     const listenTask = this.listenTasks.get(deviceId);
     if (listenTask) {
@@ -530,7 +567,7 @@ export class ASRService implements IASRService {
 
     // 清理资源
     this.asrClients.delete(deviceId);
-    this.audioQueues.delete(deviceId);
+    this.opusQueues.delete(deviceId);
     this.audioEnded.delete(deviceId);
     this.listenTasks.delete(deviceId);
 
@@ -569,11 +606,15 @@ export class ASRService implements IASRService {
     // 清理 ASR 客户端
     for (const wrapper of this.asrClients.values()) {
       wrapper.connected = false;
-      // listen 任务会因为 audioQueues/audioEnded 清理而自然退出
+      // listen 任务会因为 opusQueues/audioEnded 清理而自然退出
     }
     this.asrClients.clear();
+    // 通知所有 Opus 队列结束
+    for (const queue of this.opusQueues.values()) {
+      queue.signalEnd();
+    }
     // 清理 V2 API 相关状态
-    this.audioQueues.clear();
+    this.opusQueues.clear();
     this.audioEnded.clear();
     this.listenTasks.clear();
     this.deviceStates.clear();
