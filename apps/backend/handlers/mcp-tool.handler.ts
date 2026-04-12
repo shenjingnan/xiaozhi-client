@@ -20,7 +20,7 @@ import type {
 } from "@/types/toolApi.js";
 import { ToolType } from "@/types/toolApi.js";
 import type { CustomMCPToolWithStats, JSONSchema } from "@/types/toolApi.js";
-import { type ToolSortField, sortTools } from "@/utils/toolSorters";
+import { type ToolSortField, sortTools } from "@/utils/toolSorters.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
 import Ajv from "ajv";

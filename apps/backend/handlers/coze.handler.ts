@@ -4,7 +4,7 @@
  */
 
 import { CozeApiService } from "@/lib/coze";
-import type { CozeWorkflowsParams } from "@/types/coze";
+import type { CozeWorkflowsParams } from "@/types/coze.js";
 import type { AppContext } from "@/types/hono.context.js";
 import { configManager } from "@xiaozhi-client/config";
 import type { Context } from "hono";
