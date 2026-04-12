@@ -26,6 +26,7 @@ import {
   formToJson,
   jsonToFormData,
 } from "@/utils/mcpFormConverter";
+import { createLogger } from "@/utils/logger";
 import { validateMCPConfig } from "@/utils/mcpValidation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "lucide-react";
@@ -33,6 +34,8 @@ import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
+
+const logger = createLogger("AddMcpServerButton");
 
 // 高级模式的 JSON 表单 schema
 const jsonFormSchema = z.object({
@@ -135,7 +138,7 @@ export function AddMcpServerButton() {
         form.reset();
         setOpen(false);
       } catch (error) {
-        console.error("更新配置失败:", error);
+        logger.error("更新配置失败:", error);
         toast.error(error instanceof Error ? error.message : "更新配置失败");
       } finally {
         setIsLoading(false);
@@ -193,7 +196,7 @@ export function AddMcpServerButton() {
         advancedForm.reset();
         setOpen(false);
       } catch (error) {
-        console.error("更新配置失败:", error);
+        logger.error("更新配置失败:", error);
         toast.error(error instanceof Error ? error.message : "更新配置失败");
       } finally {
         setIsLoading(false);

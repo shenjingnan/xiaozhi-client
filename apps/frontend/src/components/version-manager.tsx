@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { apiClient } from "@/services/api";
+import { createLogger } from "@/utils/logger";
 import {
   AlertCircle,
   Calendar,
@@ -30,6 +31,8 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { InstallLogDialog } from "./install-log-dialog";
 import { VersionDisplay } from "./version-display";
+
+const logger = createLogger("VersionManager");
 
 interface VersionInfo {
   name: string;
@@ -65,12 +68,12 @@ export function VersionManager() {
       setError(null);
       const versionInfo = await apiClient.getVersion();
       setCurrentVersion(versionInfo);
-      console.log("[VersionManager] 当前版本信息:", versionInfo);
+      logger.info("[VersionManager] 当前版本信息:", versionInfo);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "获取版本信息失败";
       setError(errorMessage);
-      console.error("[VersionManager] 获取版本信息失败:", err);
+      logger.error("[VersionManager] 获取版本信息失败:", err);
     }
   }, []);
 
@@ -84,7 +87,7 @@ export function VersionManager() {
 
       // 这里可以调用检查更新的 API
       // 暂时模拟一个检查更新的过程
-      console.log("[VersionManager] 检查更新...");
+      logger.info("[VersionManager] 检查更新...");
 
       // 模拟 API 调用延迟
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -100,11 +103,11 @@ export function VersionManager() {
       };
 
       setUpdateInfo(mockUpdateInfo);
-      console.log("[VersionManager] 更新检查结果:", mockUpdateInfo);
+      logger.info("[VersionManager] 更新检查结果:", mockUpdateInfo);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "检查更新失败";
       setError(errorMessage);
-      console.error("[VersionManager] 检查更新失败:", err);
+      logger.error("[VersionManager] 检查更新失败:", err);
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +115,7 @@ export function VersionManager() {
 
   // 开始更新
   const startUpdate = (version: string) => {
-    console.log("[VersionManager] 开始更新到版本:", version);
+    logger.info("[VersionManager] 开始更新到版本:", version);
     setTargetVersion(version);
     setShowInstallDialog(true);
   };

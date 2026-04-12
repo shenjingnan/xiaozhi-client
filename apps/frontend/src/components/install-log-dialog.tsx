@@ -21,6 +21,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNPMInstall } from "@/hooks/useNPMInstall";
+import { createLogger } from "@/utils/logger";
 import {
   CheckCircleIcon,
   ChevronDownIcon,
@@ -31,6 +32,8 @@ import {
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
+const logger = createLogger("InstallLogDialog");
 
 // 单个正则表达式匹配所有 ANSI 颜色转义序列，避免每次渲染时创建多个正则表达式
 const ANSI_PATTERN = /\[(0|31|32|33|34|35|36|37|90|91|92|93|94|95|96|97)m/g;
@@ -60,10 +63,10 @@ export function InstallLogDialog({
   // 对话框打开时开始安装
   useEffect(() => {
     if (isOpen && version) {
-      console.log("[InstallLogDialog] 对话框打开，开始安装版本:", version);
+      logger.info("[InstallLogDialog] 对话框打开，开始安装版本:", version);
       clearStatus();
       startInstall(version).catch((error) => {
-        console.error("[InstallLogDialog] 启动安装失败:", error);
+        logger.error("[InstallLogDialog] 启动安装失败:", error);
       });
     }
   }, [isOpen, version, startInstall, clearStatus]);

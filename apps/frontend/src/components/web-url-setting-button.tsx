@@ -23,12 +23,15 @@ import {
   useWebSocketConnected,
   useWebSocketPortChangeStatus,
 } from "@/stores/websocket";
+import { createLogger } from "@/utils/logger";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SettingsIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
+
+const logger = createLogger("WebUrlSettingButton");
 
 const formSchema = z.object({
   port: z
@@ -101,7 +104,7 @@ export function WebUrlSettingButton() {
       return;
     }
 
-    console.log(
+    logger.info(
       `[WebUrlSettingButton] 开始端口切换: ${currentPort} -> ${newPort}`
     );
     setIsLoading(true);
@@ -124,7 +127,7 @@ export function WebUrlSettingButton() {
       );
       setOpen(false);
     } catch (error) {
-      console.error("端口切换失败:", error);
+      logger.error("端口切换失败:", error);
       const errorMessage =
         error instanceof Error ? error.message : "端口切换失败";
       toast.error(`端口切换失败: ${errorMessage}`);

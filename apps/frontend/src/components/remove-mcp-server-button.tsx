@@ -20,9 +20,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { apiClient } from "@/services/api";
+import { createLogger } from "@/utils/logger";
 import { TrashIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
+const logger = createLogger("RemoveMcpServerButton");
 
 export function RemoveMcpServerButton({
   mcpServerName,
@@ -53,7 +56,7 @@ export function RemoveMcpServerButton({
         await onRemoveSuccess();
       }
     } catch (error) {
-      console.error("删除 MCP 服务失败:", error);
+      logger.error("删除 MCP 服务失败:", error);
       toast.error(
         `删除 MCP 服务失败: ${error instanceof Error ? error.message : "未知错误"}`
       );
