@@ -62,7 +62,7 @@
     "@xiaozhi-client/asr": "workspace:*",
     "@xiaozhi-client/esp32": "workspace:*",
     "@xiaozhi-client/shared-types": "workspace:*",
-    "univoice": "^0.7.1",
+    "univoice": "^0.10.0",
     "@xiaozhi-client/config": "workspace:*",
     "@xiaozhi-client/endpoint": "workspace:*",
     "@xiaozhi-client/mcp-core": "workspace:*",

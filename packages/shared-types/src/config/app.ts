@@ -126,6 +126,10 @@ export interface ASRConfig {
   cluster?: string;
   /** WebSocket 端点 */
   wsUrl?: string;
+  /** VAD 端点检测窗口大小(ms)，启用服务端 VAD 判停
+   *  设为 0 或不传则禁用服务端 VAD，回退到客户端静音超时
+   *  推荐值: 800，最小值: 200 */
+  vadEndWindowSize?: number;
 }
 
 /**
