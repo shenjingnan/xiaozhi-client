@@ -332,6 +332,27 @@ export class ConfigManager {
 
   /**
    * 注册事件监听器
+   * 用于监听配置变更事件，实现配置更新的响应机制
+   *
+   * @param eventName - 事件名称，支持的事件类型：
+   *   - `'config:updated'` - 配置更新事件，携带更新类型和时间戳
+   *   - `'config:error'` - 配置错误事件，携带错误对象和操作类型
+   * @param callback - 事件回调函数，接收事件数据对象
+   *
+   * @example
+   * ```typescript
+   * configManager.on('config:updated', (payload) => {
+   *   // payload 结构：{ type: 'endpoint' | 'customMCP' | 'config' | ..., timestamp: Date }
+   *   console.log('配置已更新:', payload.type);
+   *   // 如需获取最新配置对象，在回调中调用 getConfig()
+   *   const latestConfig = configManager.getConfig();
+   * });
+   *
+   * configManager.on('config:error', (payload) => {
+   *   // payload 结构：{ error: Error, operation: string }
+   *   console.error('配置错误:', payload.error.message);
+   * });
+   * ```
    */
   public on(eventName: string, callback: (data: unknown) => void): void {
     if (!this.eventCallbacks.has(eventName)) {
@@ -401,6 +422,15 @@ export class ConfigManager {
 
   /**
    * 获取配置管理器单例实例
+   * ConfigManager 采用单例模式，确保全局只有一个配置管理实例
+   *
+   * @returns ConfigManager 单例实例
+   *
+   * @example
+   * ```typescript
+   * const configManager = ConfigManager.getInstance();
+   * const config = configManager.getConfig();
+   * ```
    */
   public static getInstance(): ConfigManager {
     if (!ConfigManager.instance) {
@@ -411,11 +441,19 @@ export class ConfigManager {
 
   /**
    * 检查配置文件是否存在
-   *
-   * 按优先级检查配置文件是否存在：
+   * 按优先级检查配置文件是否存在，查找优先级：
    * 1. 环境变量 XIAOZHI_CONFIG_DIR 指定的目录
    * 2. 当前工作目录
    * 3. 用户家目录/.xiaozhi-client/
+   *
+   * @returns 如果配置文件存在返回 true，否则返回 false
+   *
+   * @example
+   * ```typescript
+   * if (!configManager.configExists()) {
+   *   console.log('配置文件不存在，请先运行 xiaozhi init');
+   * }
+   * ```
    */
   public configExists(): boolean {
     return ConfigResolver.resolveConfigPath() !== null;
@@ -423,8 +461,24 @@ export class ConfigManager {
 
   /**
    * 初始化配置文件
-   * 从 config.default.json 复制到 config.json
-   * @param format 配置文件格式，默认为 json
+   * 从默认配置模板复制到指定目录，支持 JSON、JSON5、JSONC 格式
+   *
+   * @param format - 配置文件格式，默认为 'json'。可选值：
+   *   - `'json'` - 标准 JSON 格式
+   *   - `'json5'` - JSON5 格式，支持注释和更灵活的语法
+   *   - `'jsonc'` - JSONC 格式（带注释的 JSON）
+   *
+   * @throws {Error} 如果默认配置模板文件不存在
+   * @throws {Error} 如果配置文件已存在
+   *
+   * @example
+   * ```typescript
+   * // 初始化标准 JSON 配置文件
+   * configManager.initConfig();
+   *
+   * // 初始化 JSON5 格式配置文件（支持注释）
+   * configManager.initConfig('json5');
+   * ```
    */
   public initConfig(format: "json" | "json5" | "jsonc" = "json"): void {
     if (!existsSync(this.defaultConfigPath)) {
@@ -511,6 +565,20 @@ export class ConfigManager {
 
   /**
    * 验证配置文件结构
+   * 检查配置对象是否符合 AppConfig 接口规范
+   *
+   * @param config - 待验证的配置对象
+   *
+   * @throws {Error} 如果配置根对象无效
+   * @throws {Error} 如果 mcpEndpoint 字段无效或格式错误
+   * @throws {Error} 如果 mcpServers 字段无效
+   * @throws {Error} 如果某个 MCP 服务配置无效
+   *
+   * @example
+   * ```typescript
+   * const rawConfig = JSON.parse(configString);
+   * configManager.validateConfig(rawConfig); // 验证通过或抛出错误
+   * ```
    */
   public validateConfig(config: unknown): void {
     if (!config || typeof config !== "object") {
@@ -557,7 +625,16 @@ export class ConfigManager {
 
   /**
    * 获取配置（只读）
-   * 使用缓存机制避免频繁的文件 I/O 操作
+   * 使用缓存机制避免频繁的文件 I/O 操作，返回配置对象的深拷贝
+   *
+   * @returns 只读的完整配置对象（深拷贝）
+   *
+   * @example
+   * ```typescript
+   * const config = configManager.getConfig();
+   * console.log('MCP 端点:', config.mcpEndpoint);
+   * console.log('MCP 服务:', config.mcpServers);
+   * ```
    */
   public getConfig(): Readonly<AppConfig> {
     // 使用缓存，避免每次都重新加载文件
@@ -582,7 +659,20 @@ export class ConfigManager {
 
   /**
    * 获取 MCP 端点（向后兼容）
-   * @deprecated 使用 getMcpEndpoints() 获取所有端点
+   * 返回第一个 MCP 端点，适用于单端点场景
+   *
+   * @deprecated 使用 getMcpEndpoints() 获取所有端点数组
+   * @returns 第一个 MCP 端点字符串，如果没有配置则返回空字符串
+   *
+   * @example
+   * ```typescript
+   * // 旧方式（已弃用）
+   * const endpoint = configManager.getMcpEndpoint();
+   *
+   * // 新方式（推荐）
+   * const endpoints = configManager.getMcpEndpoints();
+   * const primaryEndpoint = endpoints[0] || '';
+   * ```
    */
   public getMcpEndpoint(): string {
     const config = this.getConfig();
@@ -594,6 +684,22 @@ export class ConfigManager {
 
   /**
    * 获取所有 MCP 端点
+   * 返回配置中的所有 MCP 端点数组，支持多端点配置
+   *
+   * @returns MCP 端点字符串数组，如果没有配置则返回空数组
+   *
+   * @example
+   * ```typescript
+   * const endpoints = configManager.getMcpEndpoints();
+   * for (const endpoint of endpoints) {
+   *   console.log('端点:', endpoint);
+   * }
+   *
+   * // 检查是否有配置端点
+   * if (endpoints.length === 0) {
+   *   console.warn('未配置 MCP 端点');
+   * }
+   * ```
    */
   public getMcpEndpoints(): string[] {
     const config = this.getConfig();
@@ -605,6 +711,17 @@ export class ConfigManager {
 
   /**
    * 获取 MCP 服务配置
+   * 返回所有 MCP 服务的配置对象
+   *
+   * @returns MCP 服务配置对象的只读副本
+   *
+   * @example
+   * ```typescript
+   * const servers = configManager.getMcpServers();
+   * for (const [name, config] of Object.entries(servers)) {
+   *   console.log(`服务 ${name}:`, config.command, config.args);
+   * }
+   * ```
    */
   public getMcpServers(): Readonly<Record<string, MCPServerConfig>> {
     const config = this.getConfig();
@@ -613,6 +730,16 @@ export class ConfigManager {
 
   /**
    * 获取 MCP 服务工具配置
+   * 返回所有 MCP 服务的工具配置信息
+   *
+   * @returns MCP 服务工具配置对象的只读副本
+   *
+   * @example
+   * ```typescript
+   * const serverConfig = configManager.getMcpServerConfig();
+   * // 查看所有服务的工具配置
+   * console.log('已配置的服务:', Object.keys(serverConfig));
+   * ```
    */
   public getMcpServerConfig(): Readonly<Record<string, MCPServerToolsConfig>> {
     const config = this.getConfig();
@@ -621,6 +748,18 @@ export class ConfigManager {
 
   /**
    * 获取指定服务的工具配置
+   * 返回指定 MCP 服务中所有工具的配置信息
+   *
+   * @param serverName - 服务名称
+   * @returns 工具配置对象的只读副本，包含每个工具的启用状态、描述等
+   *
+   * @example
+   * ```typescript
+   * const toolsConfig = configManager.getServerToolsConfig('my-server');
+   * for (const [toolName, config] of Object.entries(toolsConfig)) {
+   *   console.log(`工具 ${toolName}: 启用=${config.enable}, 使用次数=${config.usageCount}`);
+   * }
+   * ```
    */
   public getServerToolsConfig(
     serverName: string
@@ -631,6 +770,19 @@ export class ConfigManager {
 
   /**
    * 检查工具是否启用
+   * 快捷方法，检查指定服务的指定工具是否启用
+   *
+   * @param serverName - 服务名称
+   * @param toolName - 工具名称
+   * @returns 如果工具启用返回 true，默认情况下未配置的工具也返回 true
+   *
+   * @example
+   * ```typescript
+   * // 检查工具是否可用
+   * if (configManager.isToolEnabled('my-server', 'read_file')) {
+   *   // 执行工具调用
+   * }
+   * ```
    */
   public isToolEnabled(serverName: string, toolName: string): boolean {
     const toolsConfig = this.getServerToolsConfig(serverName);
@@ -640,6 +792,23 @@ export class ConfigManager {
 
   /**
    * 更新 MCP 端点（支持字符串或数组）
+   * 替换当前的 MCP 端点配置
+   *
+   * @param endpoint - 新的 MCP 端点，可以是单个字符串或字符串数组
+   *
+   * @throws {Error} 如果端点数组中包含非空字符串
+   *
+   * @example
+   * ```typescript
+   * // 更新为单个端点
+   * configManager.updateMcpEndpoint('wss://new-endpoint.example.com');
+   *
+   * // 更新为多个端点
+   * configManager.updateMcpEndpoint([
+   *   'wss://endpoint1.example.com',
+   *   'wss://endpoint2.example.com'
+   * ]);
+   * ```
    */
   public updateMcpEndpoint(endpoint: string | string[]): void {
     if (Array.isArray(endpoint)) {
@@ -663,6 +832,18 @@ export class ConfigManager {
 
   /**
    * 添加 MCP 端点
+   * 在现有端点列表末尾添加新端点
+   *
+   * @param endpoint - 要添加的 MCP 端点字符串
+   *
+   * @throws {Error} 如果端点为空或不是字符串
+   * @throws {Error} 如果端点已存在
+   *
+   * @example
+   * ```typescript
+   * // 添加新的备用端点
+   * configManager.addMcpEndpoint('wss://backup-endpoint.example.com');
+   * ```
    */
   public addMcpEndpoint(endpoint: string): void {
     if (!endpoint || typeof endpoint !== "string") {
@@ -684,6 +865,18 @@ export class ConfigManager {
 
   /**
    * 移除 MCP 端点
+   * 从端点列表中删除指定端点
+   *
+   * @param endpoint - 要移除的 MCP 端点字符串
+   *
+   * @throws {Error} 如果端点为空或不是字符串
+   * @throws {Error} 如果端点不存在
+   *
+   * @example
+   * ```typescript
+   * // 移除无效的端点
+   * configManager.removeMcpEndpoint('wss://old-endpoint.example.com');
+   * ```
    */
   public removeMcpEndpoint(endpoint: string): void {
     if (!endpoint || typeof endpoint !== "string") {
@@ -706,6 +899,28 @@ export class ConfigManager {
 
   /**
    * 更新 MCP 服务配置
+   * 添加或更新指定 MCP 服务的配置
+   *
+   * @param serverName - 服务名称（非空字符串）
+   * @param serverConfig - 服务配置对象（LocalMCPServerConfig、SSEMCPServerConfig 或 HTTPMCPServerConfig）
+   *
+   * @throws {Error} 如果服务名称为空或不是字符串
+   *
+   * @example
+   * ```typescript
+   * // 更新本地 MCP 服务
+   * configManager.updateMcpServer('my-server', {
+   *   command: 'node',
+   *   args: ['server.js'],
+   *   env: { NODE_ENV: 'production' }
+   * });
+   *
+   * // 更新 SSE MCP 服务
+   * configManager.updateMcpServer('remote-server', {
+   *   type: 'sse',
+   *   url: 'https://api.example.com/mcp'
+   * });
+   * ```
    */
   public updateMcpServer(
     serverName: string,
@@ -723,6 +938,21 @@ export class ConfigManager {
 
   /**
    * 删除 MCP 服务配置
+   * 完整删除指定 MCP 服务，包括：
+   * 1. mcpServers 字段中的服务定义
+   * 2. mcpServerConfig 字段中的工具配置
+   * 3. customMCP 字段中关联的 CustomMCP 工具定义
+   *
+   * @param serverName - 要删除的服务名称（非空字符串）
+   *
+   * @throws {Error} 如果服务名称为空或不是字符串
+   * @throws {Error} 如果服务不存在
+   *
+   * @example
+   * ```typescript
+   * // 删除 MCP 服务及其所有关联配置
+   * configManager.removeMcpServer('deprecated-server');
+   * ```
    */
   public removeMcpServer(serverName: string): void {
     if (!serverName || typeof serverName !== "string") {
@@ -784,6 +1014,31 @@ export class ConfigManager {
 
   /**
    * 批量更新配置（由 Handler 调用）
+   * 支持一次性更新多个配置项，只更新传入的非 undefined 字段
+   *
+   * @param newConfig - 要更新的配置部分对象，可包含：
+   *   - mcpEndpoint?: MCP 端点（字符串或数组）
+   *   - mcpServers?: MCP 服务配置对象
+   *   - connection?: 连接配置
+   *   - modelscope?: ModelScope 配置
+   *   - webUI?: Web UI 配置
+   *   - platforms?: 平台配置
+   *   - asr?: ASR 配置
+   *   - tts?: TTS 配置
+   *   - llm?: LLM 配置
+   *
+   * @example
+   * ```typescript
+   * // 更新 MCP 端点
+   * configManager.updateConfig({ mcpEndpoint: 'wss://new-endpoint' });
+   *
+   * // 同时更新多个配置项
+   * configManager.updateConfig({
+   *   mcpEndpoint: ['wss://endpoint1', 'wss://endpoint2'],
+   *   connection: { heartbeatInterval: 60000 },
+   *   webUI: { port: 8080 }
+   * });
+   * ```
    */
   public updateConfig(newConfig: Partial<AppConfig>): void {
     const config = this.getMutableConfig();
@@ -884,6 +1139,19 @@ export class ConfigManager {
 
   /**
    * 更新服务工具配置
+   * 更新指定 MCP 服务的工具启用/禁用状态和描述
+   *
+   * @param serverName - 服务名称
+   * @param toolsConfig - 工具配置对象，包含每个工具的配置信息
+   *
+   * @example
+   * ```typescript
+   * // 禁用特定工具
+   * configManager.updateServerToolsConfig('my-server', {
+   *   'read_file': { enable: true, description: '读取文件' },
+   *   'write_file': { enable: false, description: '写入文件' }
+   * });
+   * ```
    */
   public updateServerToolsConfig(
     serverName: string,
@@ -918,6 +1186,15 @@ export class ConfigManager {
 
   /**
    * 删除指定服务器的工具配置
+   * 清除指定 MCP 服务的所有工具配置信息
+   *
+   * @param serverName - 要删除工具配置的服务名称
+   *
+   * @example
+   * ```typescript
+   * // 删除服务的工具配置
+   * configManager.removeServerToolsConfig('deprecated-server');
+   * ```
    */
   public removeServerToolsConfig(serverName: string): void {
     const config = this.getConfig();
@@ -934,6 +1211,13 @@ export class ConfigManager {
   /**
    * 清理无效的服务器工具配置
    * 删除在 mcpServerConfig 中存在但在 mcpServers 中不存在的服务配置
+   * 用于维护配置一致性，清理遗留的无效配置
+   *
+   * @example
+   * ```typescript
+   * // 清理遗留的工具配置
+   * configManager.cleanupInvalidServerToolsConfig();
+   * ```
    */
   public cleanupInvalidServerToolsConfig(): void {
     const config = this.getMutableConfig();
@@ -968,6 +1252,21 @@ export class ConfigManager {
 
   /**
    * 设置工具启用状态
+   * 更新指定服务中指定工具的启用状态和可选描述
+   *
+   * @param serverName - 服务名称
+   * @param toolName - 工具名称
+   * @param enabled - 是否启用
+   * @param description - 可选的工具描述
+   *
+   * @example
+   * ```typescript
+   * // 禁用工具
+   * configManager.setToolEnabled('my-server', 'dangerous_tool', false);
+   *
+   * // 启用工具并更新描述
+   * configManager.setToolEnabled('my-server', 'safe_tool', true, '安全工具');
+   * ```
    */
   public setToolEnabled(
     serverName: string,
@@ -1088,6 +1387,15 @@ export class ConfigManager {
 
   /**
    * 重新加载配置（清除缓存）
+   * 强制从文件重新读取配置，清除所有缓存状态
+   * 适用于配置文件被外部修改后需要同步的场景
+   *
+   * @example
+   * ```typescript
+   * // 配置文件被外部编辑器修改后，重新加载
+   * configManager.reloadConfig();
+   * const freshConfig = configManager.getConfig();
+   * ```
    */
   public reloadConfig(): void {
     this.config = null;
@@ -1097,6 +1405,15 @@ export class ConfigManager {
 
   /**
    * 获取配置文件路径
+   * 返回当前使用的配置文件的完整路径
+   *
+   * @returns 配置文件的绝对路径
+   *
+   * @example
+   * ```typescript
+   * const configPath = configManager.getConfigPath();
+   * console.log('配置文件位于:', configPath);
+   * ```
    */
   public getConfigPath(): string {
     return this.getConfigFilePath();
@@ -1104,6 +1421,15 @@ export class ConfigManager {
 
   /**
    * 获取默认配置文件路径
+   * 返回模板目录中的默认配置文件路径
+   *
+   * @returns 默认配置模板文件的绝对路径
+   *
+   * @example
+   * ```typescript
+   * const defaultPath = configManager.getDefaultConfigPath();
+   * console.log('默认配置模板:', defaultPath);
+   * ```
    */
   public getDefaultConfigPath(): string {
     return this.defaultConfigPath;
@@ -1111,6 +1437,19 @@ export class ConfigManager {
 
   /**
    * 获取连接配置（包含默认值）
+   * 合并用户配置与默认值，确保所有连接参数都有有效值
+   *
+   * @returns 包含默认值的完整连接配置对象
+   *   - heartbeatInterval: 心跳检测间隔（默认 30000ms）
+   *   - heartbeatTimeout: 心跳超时时间（默认 10000ms）
+   *   - reconnectInterval: 重连间隔（默认 5000ms）
+   *
+   * @example
+   * ```typescript
+   * const connectionConfig = configManager.getConnectionConfig();
+   * console.log('心跳间隔:', connectionConfig.heartbeatInterval, 'ms');
+   * console.log('重连间隔:', connectionConfig.reconnectInterval, 'ms');
+   * ```
    */
   public getConnectionConfig(): Required<ConnectionConfig> {
     const config = this.getConfig();
@@ -1131,6 +1470,16 @@ export class ConfigManager {
 
   /**
    * 获取心跳检测间隔（毫秒）
+   * 快捷方法，直接获取心跳检测间隔配置值
+   *
+   * @returns 心跳检测间隔（毫秒），默认 30000ms
+   *
+   * @example
+   * ```typescript
+   * const interval = configManager.getHeartbeatInterval();
+   * // 设置心跳定时器
+   * setInterval(sendHeartbeat, interval);
+   * ```
    */
   public getHeartbeatInterval(): number {
     return this.getConnectionConfig().heartbeatInterval;
@@ -1138,6 +1487,16 @@ export class ConfigManager {
 
   /**
    * 获取心跳超时时间（毫秒）
+   * 快捷方法，直接获取心跳超时配置值
+   *
+   * @returns 心跳超时时间（毫秒），默认 10000ms
+   *
+   * @example
+   * ```typescript
+   * const timeout = configManager.getHeartbeatTimeout();
+   * // 超时后关闭连接
+   * socket.setTimeout(timeout);
+   * ```
    */
   public getHeartbeatTimeout(): number {
     return this.getConnectionConfig().heartbeatTimeout;
@@ -1145,6 +1504,16 @@ export class ConfigManager {
 
   /**
    * 获取重连间隔（毫秒）
+   * 快捷方法，直接获取连接重连间隔配置值
+   *
+   * @returns 重连间隔时间（毫秒），默认 5000ms
+   *
+   * @example
+   * ```typescript
+   * const interval = configManager.getReconnectInterval();
+   * // 连接断开后延迟重连
+   * setTimeout(reconnect, interval);
+   * ```
    */
   public getReconnectInterval(): number {
     return this.getConnectionConfig().reconnectInterval;
@@ -1152,6 +1521,25 @@ export class ConfigManager {
 
   /**
    * 更新连接配置
+   * 更新心跳检测、超时和重连等连接参数
+   *
+   * @param connectionConfig - 要更新的连接配置部分
+   *   - heartbeatInterval?: 心跳检测间隔（毫秒）
+   *   - heartbeatTimeout?: 心跳超时时间（毫秒）
+   *   - reconnectInterval?: 重连间隔（毫秒）
+   *
+   * @example
+   * ```typescript
+   * // 更新心跳间隔为 60 秒
+   * configManager.updateConnectionConfig({ heartbeatInterval: 60000 });
+   *
+   * // 同时更新多个参数
+   * configManager.updateConnectionConfig({
+   *   heartbeatInterval: 45000,
+   *   heartbeatTimeout: 15000,
+   *   reconnectInterval: 3000
+   * });
+   * ```
    */
   public updateConnectionConfig(
     connectionConfig: Partial<ConnectionConfig>
@@ -1249,10 +1637,17 @@ export class ConfigManager {
 
   /**
    * 更新 MCP 服务工具统计信息（重载方法）
-   * @param serviceName 服务名称
-   * @param toolName 工具名称
-   * @param callTime 调用时间（ISO 8601 格式）
-   * @param incrementUsageCount 是否增加使用计数，默认为 true
+   * 更新指定 MCP 服务工具的使用次数和最后使用时间
+   *
+   * @param serviceName - 服务名称
+   * @param toolName - 工具名称
+   * @param callTime - 调用时间（ISO 8601 格式）
+   * @param incrementUsageCount - 是否增加使用计数，默认 true
+   *
+   * @example
+   * ```typescript
+   * await configManager.updateMCPServerToolStats('my-server', 'read_file', new Date().toISOString());
+   * ```
    */
   public async updateMCPServerToolStats(
     serviceName: string,
@@ -1270,6 +1665,17 @@ export class ConfigManager {
 
   /**
    * 设置心跳检测间隔
+   * 快捷方法，更新心跳检测间隔配置
+   *
+   * @param interval - 心跳检测间隔（毫秒），必须大于 0
+   *
+   * @throws {Error} 如果间隔值小于等于 0
+   *
+   * @example
+   * ```typescript
+   * // 设置心跳间隔为 60 秒
+   * configManager.setHeartbeatInterval(60000);
+   * ```
    */
   public setHeartbeatInterval(interval: number): void {
     if (interval <= 0) {
@@ -1280,6 +1686,17 @@ export class ConfigManager {
 
   /**
    * 设置心跳超时时间
+   * 快捷方法，更新心跳超时时间配置
+   *
+   * @param timeout - 心跳超时时间（毫秒），必须大于 0
+   *
+   * @throws {Error} 如果超时值小于等于 0
+   *
+   * @example
+   * ```typescript
+   * // 设置心跳超时为 15 秒
+   * configManager.setHeartbeatTimeout(15000);
+   * ```
    */
   public setHeartbeatTimeout(timeout: number): void {
     if (timeout <= 0) {
@@ -1290,6 +1707,17 @@ export class ConfigManager {
 
   /**
    * 设置重连间隔
+   * 快捷方法，更新连接重连间隔配置
+   *
+   * @param interval - 重连间隔（毫秒），必须大于 0
+   *
+   * @throws {Error} 如果间隔值小于等于 0
+   *
+   * @example
+   * ```typescript
+   * // 设置重连间隔为 3 秒
+   * configManager.setReconnectInterval(3000);
+   * ```
    */
   public setReconnectInterval(interval: number): void {
     if (interval <= 0) {
@@ -1300,6 +1728,17 @@ export class ConfigManager {
 
   /**
    * 获取 ModelScope 配置
+   * 返回 ModelScope API 相关配置信息
+   *
+   * @returns ModelScope 配置对象的只读副本
+   *
+   * @example
+   * ```typescript
+   * const modelScopeConfig = configManager.getModelScopeConfig();
+   * if (modelScopeConfig.apiKey) {
+   *   console.log('ModelScope API Key 已配置');
+   * }
+   * ```
    */
   public getModelScopeConfig(): Readonly<ModelScopeConfig> {
     const config = this.getConfig();
@@ -1308,7 +1747,17 @@ export class ConfigManager {
 
   /**
    * 获取 ModelScope API Key
-   * 优先从配置文件读取，其次从环境变量读取
+   * 优先从配置文件读取，其次从环境变量 MODELSCOPE_API_TOKEN 读取
+   *
+   * @returns ModelScope API Key 字符串，如果未配置则返回 undefined
+   *
+   * @example
+   * ```typescript
+   * const apiKey = configManager.getModelScopeApiKey();
+   * if (!apiKey) {
+   *   console.warn('请配置 ModelScope API Key');
+   * }
+   * ```
    */
   public getModelScopeApiKey(): string | undefined {
     const modelScopeConfig = this.getModelScopeConfig();
@@ -1317,6 +1766,15 @@ export class ConfigManager {
 
   /**
    * 更新 ModelScope 配置
+   * 更新 ModelScope API 相关配置信息
+   *
+   * @param modelScopeConfig - 要更新的 ModelScope 配置部分
+   *
+   * @example
+   * ```typescript
+   * // 设置 ModelScope API Key
+   * configManager.updateModelScopeConfig({ apiKey: 'your-api-key' });
+   * ```
    */
   public updateModelScopeConfig(
     modelScopeConfig: Partial<ModelScopeConfig>
@@ -1341,6 +1799,16 @@ export class ConfigManager {
 
   /**
    * 设置 ModelScope API Key
+   * 快捷方法，直接设置 ModelScope API Key
+   *
+   * @param apiKey - ModelScope API Key（非空字符串）
+   *
+   * @throws {Error} 如果 API Key 为空或不是字符串
+   *
+   * @example
+   * ```typescript
+   * configManager.setModelScopeApiKey('your-modelscope-api-key');
+   * ```
    */
   public setModelScopeApiKey(apiKey: string): void {
     if (!apiKey || typeof apiKey !== "string") {
@@ -1351,6 +1819,17 @@ export class ConfigManager {
 
   /**
    * 获取 customMCP 配置
+   * 返回自定义 MCP 工具配置信息
+   *
+   * @returns CustomMCP 配置对象，如果未配置则返回 null
+   *
+   * @example
+   * ```typescript
+   * const customMCPConfig = configManager.getCustomMCPConfig();
+   * if (customMCPConfig) {
+   *   console.log('CustomMCP 工具数量:', customMCPConfig.tools.length);
+   * }
+   * ```
    */
   public getCustomMCPConfig(): CustomMCPConfig | null {
     const config = this.getConfig();
@@ -1359,6 +1838,17 @@ export class ConfigManager {
 
   /**
    * 获取 customMCP 工具列表
+   * 返回所有自定义 MCP 工具定义
+   *
+   * @returns CustomMCP 工具数组，如果未配置则返回空数组
+   *
+   * @example
+   * ```typescript
+   * const tools = configManager.getCustomMCPTools();
+   * for (const tool of tools) {
+   *   console.log(`工具 ${tool.name}: ${tool.description}`);
+   * }
+   * ```
    */
   public getCustomMCPTools(): CustomMCPTool[] {
     const customMCPConfig = this.getCustomMCPConfig();
@@ -1371,6 +1861,18 @@ export class ConfigManager {
 
   /**
    * 验证 customMCP 工具配置
+   * 检查工具配置是否符合规范，验证必需字段和处理器配置
+   *
+   * @param tools - 要验证的工具配置数组
+   * @returns 如果所有工具配置有效返回 true，否则返回 false
+   *
+   * @example
+   * ```typescript
+   * const tools = [{ name: 'my_tool', description: '...', inputSchema: {}, handler: { type: 'http', url: '...' } }];
+   * if (configManager.validateCustomMCPTools(tools)) {
+   *   configManager.updateCustomMCPTools(tools);
+   * }
+   * ```
    */
   public validateCustomMCPTools(tools: CustomMCPTool[]): boolean {
     if (!Array.isArray(tools)) {
@@ -1663,6 +2165,16 @@ export class ConfigManager {
 
   /**
    * 检查是否配置了有效的 customMCP 工具
+   * 验证是否存在有效的 CustomMCP 工具配置
+   *
+   * @returns 如果有有效的工具配置返回 true，否则返回 false
+   *
+   * @example
+   * ```typescript
+   * if (configManager.hasValidCustomMCPTools()) {
+   *   // 初始化 CustomMCP 处理器
+   * }
+   * ```
    */
   public hasValidCustomMCPTools(): boolean {
     try {
@@ -1680,6 +2192,23 @@ export class ConfigManager {
 
   /**
    * 添加自定义 MCP 工具
+   * 在 customMCP.tools 数组开头添加新工具
+   *
+   * @param tool - 工具配置对象，必须包含 name、description、inputSchema 和 handler
+   *
+   * @throws {Error} 如果工具配置为空或无效
+   * @throws {Error} 如果工具名称已存在
+   * @throws {Error} 如果工具配置验证失败
+   *
+   * @example
+   * ```typescript
+   * configManager.addCustomMCPTool({
+   *   name: 'http_request',
+   *   description: '发送 HTTP 请求',
+   *   inputSchema: { type: 'object', properties: { url: { type: 'string' } } },
+   *   handler: { type: 'http', url: 'https://api.example.com' }
+   * });
+   * ```
    */
   public addCustomMCPTool(tool: CustomMCPTool): void {
     if (!tool || typeof tool !== "object") {
@@ -1715,7 +2244,20 @@ export class ConfigManager {
 
   /**
    * 批量添加自定义 MCP 工具
-   * @param tools 要添加的工具数组
+   * 批量添加多个 CustomMCP 工具，自动过滤已存在的工具
+   *
+   * @param tools - 要添加的工具数组
+   *
+   * @throws {Error} 如果工具配置不是数组
+   * @throws {Error} 如果工具配置验证失败
+   *
+   * @example
+   * ```typescript
+   * await configManager.addCustomMCPTools([
+   *   { name: 'tool1', description: '...', inputSchema: {}, handler: { type: 'http', url: '...' } },
+   *   { name: 'tool2', description: '...', inputSchema: {}, handler: { type: 'script', script: '...' } }
+   * ]);
+   * ```
    */
   public async addCustomMCPTools(tools: CustomMCPTool[]): Promise<void> {
     if (!Array.isArray(tools)) {
@@ -1764,6 +2306,18 @@ export class ConfigManager {
 
   /**
    * 删除自定义 MCP 工具
+   * 从 customMCP.tools 数组中删除指定工具
+   *
+   * @param toolName - 要删除的工具名称（非空字符串）
+   *
+   * @throws {Error} 如果工具名称为空
+   * @throws {Error} 如果未配置 CustomMCP 工具
+   * @throws {Error} 如果工具不存在
+   *
+   * @example
+   * ```typescript
+   * configManager.removeCustomMCPTool('deprecated_tool');
+   * ```
    */
   public removeCustomMCPTool(toolName: string): void {
     if (!toolName || typeof toolName !== "string") {
@@ -1792,8 +2346,26 @@ export class ConfigManager {
 
   /**
    * 更新单个自定义 MCP 工具配置
-   * @param toolName 工具名称
-   * @param updatedTool 更新后的工具配置
+   * 替换指定工具的完整配置
+   *
+   * @param toolName - 要更新的工具名称（非空字符串）
+   * @param updatedTool - 更新后的完整工具配置
+   *
+   * @throws {Error} 如果工具名称为空
+   * @throws {Error} 如果更新后的工具配置为空
+   * @throws {Error} 如果未配置 CustomMCP 工具
+   * @throws {Error} 如果工具不存在
+   * @throws {Error} 如果更新后的工具配置验证失败
+   *
+   * @example
+   * ```typescript
+   * configManager.updateCustomMCPTool('my_tool', {
+   *   name: 'my_tool',
+   *   description: '更新后的描述',
+   *   inputSchema: { type: 'object', properties: {} },
+   *   handler: { type: 'http', url: 'https://new-url.com' }
+   * });
+   * ```
    */
   public updateCustomMCPTool(
     toolName: string,
@@ -1833,6 +2405,19 @@ export class ConfigManager {
 
   /**
    * 更新自定义 MCP 工具配置
+   * 完整替换 customMCP.tools 数组
+   *
+   * @param tools - 新的工具配置数组（完整替换）
+   *
+   * @throws {Error} 如果工具配置不是数组
+   * @throws {Error} 如果工具配置验证失败
+   *
+   * @example
+   * ```typescript
+   * configManager.updateCustomMCPTools([
+   *   { name: 'tool1', description: '...', inputSchema: {}, handler: { type: 'http', url: '...' } }
+   * ]);
+   * ```
    */
   public updateCustomMCPTools(tools: CustomMCPTool[]): void {
     if (!Array.isArray(tools)) {
@@ -1865,6 +2450,15 @@ export class ConfigManager {
 
   /**
    * 获取 Web UI 配置
+   * 返回 Web UI 相关配置信息
+   *
+   * @returns Web UI 配置对象的只读副本
+   *
+   * @example
+   * ```typescript
+   * const webUIConfig = configManager.getWebUIConfig();
+   * console.log('Web UI 端口:', webUIConfig.port ?? 9999);
+   * ```
    */
   public getWebUIConfig(): Readonly<WebUIConfig> {
     const config = this.getConfig();
@@ -1873,6 +2467,15 @@ export class ConfigManager {
 
   /**
    * 获取 Web UI 端口号
+   * 快捷方法，返回 Web UI 服务监听端口
+   *
+   * @returns Web UI 端口号，默认 9999
+   *
+   * @example
+   * ```typescript
+   * const port = configManager.getWebUIPort();
+   * console.log(`Web UI 运行在端口 ${port}`);
+   * ```
    */
   public getWebUIPort(): number {
     const webUIConfig = this.getWebUIConfig();
@@ -1905,6 +2508,15 @@ export class ConfigManager {
 
   /**
    * 更新 Web UI 配置
+   * 更新 Web UI 相关配置信息
+   *
+   * @param webUIConfig - 要更新的 Web UI 配置部分
+   *
+   * @example
+   * ```typescript
+   * // 设置 Web UI 端口和自动重启选项
+   * configManager.updateWebUIConfig({ port: 8080, autoRestart: false });
+   * ```
    */
   public updateWebUIConfig(webUIConfig: Partial<WebUIConfig>): void {
     const config = this.getMutableConfig();
@@ -1927,6 +2539,16 @@ export class ConfigManager {
 
   /**
    * 设置 Web UI 端口号
+   * 快捷方法，直接设置 Web UI 监听端口
+   *
+   * @param port - 端口号（1-65535 之间的整数）
+   *
+   * @throws {Error} 如果端口号不在有效范围内
+   *
+   * @example
+   * ```typescript
+   * configManager.setWebUIPort(8080);
+   * ```
    */
   public setWebUIPort(port: number): void {
     if (!Number.isInteger(port) || port <= 0 || port > 65535) {
@@ -1935,6 +2557,19 @@ export class ConfigManager {
     this.updateWebUIConfig({ port });
   }
 
+  /**
+   * 更新平台配置
+   * 更新指定平台（如 Coze、OpenAI）的配置信息
+   *
+   * @param platformName - 平台名称（如 'coze'、'openai'）
+   * @param platformConfig - 平台配置对象
+   *
+   * @example
+   * ```typescript
+   * // 更新扣子平台配置
+   * configManager.updatePlatformConfig('coze', { token: 'your-token' });
+   * ```
+   */
   public updatePlatformConfig(
     platformName: string,
     platformConfig: PlatformConfig
@@ -1957,6 +2592,17 @@ export class ConfigManager {
 
   /**
    * 获取扣子平台配置
+   * 返回扣子（Coze）平台的配置信息
+   *
+   * @returns 扣子平台配置对象，如果未配置或缺少 token 则返回 null
+   *
+   * @example
+   * ```typescript
+   * const cozeConfig = configManager.getCozePlatformConfig();
+   * if (cozeConfig) {
+   *   console.log('扣子 Token 已配置');
+   * }
+   * ```
    */
   public getCozePlatformConfig(): CozePlatformConfig | null {
     const config = this.getConfig();
@@ -1973,6 +2619,17 @@ export class ConfigManager {
 
   /**
    * 获取扣子 API Token
+   * 快捷方法，直接获取扣子平台的 API Token
+   *
+   * @returns 扣子 API Token，如果未配置则返回 null
+   *
+   * @example
+   * ```typescript
+   * const token = configManager.getCozeToken();
+   * if (token) {
+   *   // 使用 Token 调用扣子 API
+   * }
+   * ```
    */
   public getCozeToken(): string | null {
     const cozeConfig = this.getCozePlatformConfig();
@@ -1981,6 +2638,16 @@ export class ConfigManager {
 
   /**
    * 设置扣子平台配置
+   * 配置扣子平台的 API Token
+   *
+   * @param config - 扣子平台配置对象，必须包含有效的 token
+   *
+   * @throws {Error} 如果 token 为空或无效
+   *
+   * @example
+   * ```typescript
+   * configManager.setCozePlatformConfig({ token: 'your-coze-api-token' });
+   * ```
    */
   public setCozePlatformConfig(config: CozePlatformConfig): void {
     if (
@@ -1998,6 +2665,16 @@ export class ConfigManager {
 
   /**
    * 检查扣子平台配置是否有效
+   * 验证扣子平台是否配置了有效的 API Token
+   *
+   * @returns 如果配置了有效的 token 返回 true，否则返回 false
+   *
+   * @example
+   * ```typescript
+   * if (configManager.isCozeConfigValid()) {
+   *   // 执行扣子平台相关操作
+   * }
+   * ```
    */
   public isCozeConfigValid(): boolean {
     const cozeConfig = this.getCozePlatformConfig();
@@ -2217,8 +2894,15 @@ export class ConfigManager {
 
   /**
    * 带并发控制的工具统计更新（CustomMCP 工具）
-   * @param toolName 工具名称
-   * @param incrementUsageCount 是否增加使用计数
+   * 使用锁机制确保同一工具的统计更新串行执行，避免并发冲突
+   *
+   * @param toolName - 工具名称
+   * @param incrementUsageCount - 是否增加使用计数，默认 true
+   *
+   * @example
+   * ```typescript
+   * await configManager.updateToolUsageStatsWithLock('my_custom_tool');
+   * ```
    */
   public async updateToolUsageStatsWithLock(
     toolName: string,
@@ -2243,10 +2927,17 @@ export class ConfigManager {
 
   /**
    * 带并发控制的工具统计更新（MCP 服务工具）
-   * @param serviceName 服务名称
-   * @param toolName 工具名称
-   * @param callTime 调用时间
-   * @param incrementUsageCount 是否增加使用计数
+   * 使用锁机制确保同一工具的统计更新串行执行，避免并发冲突
+   *
+   * @param serviceName - 服务名称
+   * @param toolName - 工具名称
+   * @param callTime - 调用时间（ISO 8601 格式）
+   * @param incrementUsageCount - 是否增加使用计数，默认 true
+   *
+   * @example
+   * ```typescript
+   * await configManager.updateMCPServerToolStatsWithLock('my-server', 'read_file', new Date().toISOString());
+   * ```
    */
   public async updateMCPServerToolStatsWithLock(
     serviceName: string,
@@ -2282,6 +2973,13 @@ export class ConfigManager {
 
   /**
    * 清理所有统计更新锁（用于异常恢复）
+   * 强制清除所有正在等待的统计更新锁，用于处理异常情况
+   *
+   * @example
+   * ```typescript
+   * // 发生异常时清理锁
+   * configManager.clearAllStatsUpdateLocks();
+   * ```
    */
   public clearAllStatsUpdateLocks(): void {
     const lockCount = this.statsUpdateLocks.size;
@@ -2300,6 +2998,15 @@ export class ConfigManager {
 
   /**
    * 获取统计更新锁状态（用于调试和监控）
+   * 返回当前正在等待的统计更新锁列表
+   *
+   * @returns 锁键名数组
+   *
+   * @example
+   * ```typescript
+   * const locks = configManager.getStatsUpdateLocks();
+   * console.log('当前锁数量:', locks.length);
+   * ```
    */
   public getStatsUpdateLocks(): string[] {
     return Array.from(this.statsUpdateLocks.keys());
@@ -2307,6 +3014,15 @@ export class ConfigManager {
 
   /**
    * 获取工具调用日志配置
+   * 返回工具调用日志记录相关配置
+   *
+   * @returns 工具调用日志配置对象的只读副本
+   *
+   * @example
+   * ```typescript
+   * const logConfig = configManager.getToolCallLogConfig();
+   * console.log('最大记录数:', logConfig.maxRecords ?? 100);
+   * ```
    */
   public getToolCallLogConfig(): Readonly<ToolCallLogConfig> {
     const config = this.getConfig();
@@ -2315,6 +3031,14 @@ export class ConfigManager {
 
   /**
    * 更新工具调用日志配置
+   * 更新工具调用日志记录相关配置
+   *
+   * @param toolCallLogConfig - 要更新的日志配置部分
+   *
+   * @example
+   * ```typescript
+   * configManager.updateToolCallLogConfig({ maxRecords: 200 });
+   * ```
    */
   public updateToolCallLogConfig(
     toolCallLogConfig: Partial<ToolCallLogConfig>
@@ -2332,7 +3056,16 @@ export class ConfigManager {
   }
 
   /**
-   * 获取配置目录路径（与配置文件同级目录）
+   * 获取配置目录路径
+   * 返回配置文件所在的目录路径
+   *
+   * @returns 配置目录的绝对路径
+   *
+   * @example
+   * ```typescript
+   * const configDir = configManager.getConfigDir();
+   * console.log('配置目录:', configDir);
+   * ```
    */
   public getConfigDir(): string {
     // 配置文件路径 - 优先使用环境变量指定的目录，否则使用当前工作目录
@@ -2341,6 +3074,17 @@ export class ConfigManager {
 
   /**
    * 获取 TTS 配置
+   * 返回语音合成（TTS）相关配置信息
+   *
+   * @returns TTS 配置对象的只读副本
+   *
+   * @example
+   * ```typescript
+   * const ttsConfig = configManager.getTTSConfig();
+   * if (ttsConfig.appid && ttsConfig.accessToken) {
+   *   console.log('TTS 已配置');
+   * }
+   * ```
    */
   public getTTSConfig(): Readonly<TTSConfig> {
     const config = this.getConfig();
@@ -2349,6 +3093,17 @@ export class ConfigManager {
 
   /**
    * 获取 ASR 配置
+   * 返回语音识别（ASR）相关配置信息
+   *
+   * @returns ASR 配置对象的只读副本
+   *
+   * @example
+   * ```typescript
+   * const asrConfig = configManager.getASRConfig();
+   * if (asrConfig.appid && asrConfig.accessToken) {
+   *   console.log('ASR 已配置');
+   * }
+   * ```
    */
   public getASRConfig(): Readonly<ASRConfig> {
     const config = this.getConfig();
@@ -2357,6 +3112,18 @@ export class ConfigManager {
 
   /**
    * 获取 LLM 配置
+   * 返回大语言模型（LLM）相关配置信息
+   *
+   * @returns LLM 配置对象，如果未配置则返回 null
+   *
+   * @example
+   * ```typescript
+   * const llmConfig = configManager.getLLMConfig();
+   * if (llmConfig) {
+   *   console.log('LLM 模型:', llmConfig.model);
+   *   console.log('API 地址:', llmConfig.baseURL);
+   * }
+   * ```
    */
   public getLLMConfig(): LLMConfig | null {
     const config = this.getConfig();
@@ -2365,6 +3132,16 @@ export class ConfigManager {
 
   /**
    * 检查 LLM 配置是否有效
+   * 验证 LLM 配置是否包含必需的 model、apiKey 和 baseURL 字段
+   *
+   * @returns 如果配置有效返回 true，否则返回 false
+   *
+   * @example
+   * ```typescript
+   * if (configManager.isLLMConfigValid()) {
+   *   // 初始化 LLM 客户端
+   * }
+   * ```
    */
   public isLLMConfigValid(): boolean {
     const llmConfig = this.getLLMConfig();
@@ -2381,6 +3158,18 @@ export class ConfigManager {
 
   /**
    * 更新 TTS 配置
+   * 更新语音合成（TTS）相关配置信息
+   *
+   * @param ttsConfig - 要更新的 TTS 配置部分
+   *
+   * @example
+   * ```typescript
+   * configManager.updateTTSConfig({
+   *   appid: 'your-appid',
+   *   accessToken: 'your-token',
+   *   voice_type: 'zh_female_shuangkuaisisi_moon_bigtts'
+   * });
+   * ```
    */
   public updateTTSConfig(ttsConfig: Partial<TTSConfig>): void {
     const config = this.getMutableConfig();
