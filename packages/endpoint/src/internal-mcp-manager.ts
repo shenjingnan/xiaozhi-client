@@ -9,6 +9,7 @@ import type { EnhancedToolInfo, ToolCallResult } from "./types.js";
 import type { IMCPServiceManager } from "./types.js";
 import type { EndpointConfig } from "./types.js";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
+import { logger } from "./logger.js";
 
 /**
  * 内部 MCP 服务管理器适配器
@@ -32,13 +33,13 @@ export class InternalMCPManagerAdapter implements IMCPServiceManager {
 
     // 设置事件监听
     this.mcpManager.on("connected", (data) => {
-      console.info(
+      logger.info(
         `MCP 服务 ${data.serverName} 已连接，工具数: ${data.tools.length}`
       );
     });
 
     this.mcpManager.on("error", (data) => {
-      console.error(`MCP 服务 ${data.serverName} 出错:`, data.error);
+      logger.error(`MCP 服务 ${data.serverName} 出错:`, data.error);
     });
   }
 
