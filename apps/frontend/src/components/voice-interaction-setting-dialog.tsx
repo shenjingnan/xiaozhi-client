@@ -4,7 +4,10 @@
  * 在对话框中展示和编辑 ASR/LLM/TTS 配置。
  */
 
+import { ASRConfigSection } from "@/components/asr-config-section";
+import { LLMConfigSection } from "@/components/llm-config-section";
 import { PromptEditorDialog } from "@/components/prompt-editor-dialog";
+import { TTSConfigSection } from "@/components/tts-config-section";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,39 +19,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { PasswordInput } from "@/components/ui/password-input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Form } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
+import { useVoiceInteractionData } from "@/hooks/use-voice-interaction-data";
 import { useWebSocketActions } from "@/providers/WebSocketProvider";
-import { type PromptFileInfo, apiClient } from "@/services/api";
 import { useConfig } from "@/stores/config";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type {
-  ASRConfig,
-  AppConfig,
-  LLMConfig,
-  TTSConfig,
-  VoiceInfo,
-} from "@xiaozhi-client/shared-types";
-import { Edit, Plus, SettingsIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import type { ASRConfig, AppConfig, LLMConfig, TTSConfig } from "@xiaozhi-client/shared-types";
+import { SettingsIcon } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
@@ -74,7 +53,7 @@ const voiceInteractionSchema = z.object({
   }),
 });
 
-type VoiceInteractionFormValues = z.infer<typeof voiceInteractionSchema>;
+export type VoiceInteractionFormValues = z.infer<typeof voiceInteractionSchema>;
 
 /**
  * 语音交互设置对话框组件
@@ -84,16 +63,14 @@ type VoiceInteractionFormValues = z.infer<typeof voiceInteractionSchema>;
 export function VoiceInteractionSettingDialog() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [promptFiles, setPromptFiles] = useState<PromptFileInfo[]>([]);
-  const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
   const [promptEditorOpen, setPromptEditorOpen] = useState(false);
-  const [selectedPromptPath, setSelectedPromptPath] = useState<
-    string | undefined
-  >(undefined);
-  const [voices, setVoices] = useState<VoiceInfo[]>([]);
-  const [isLoadingVoices, setIsLoadingVoices] = useState(false);
+  const [selectedPromptPath, setSelectedPromptPath] = useState<string | undefined>(undefined);
   const config = useConfig();
   const { updateConfig } = useWebSocketActions();
+
+  // 使用数据加载 Hook
+  const { promptFiles, voices, isLoadingPrompts, isLoadingVoices, refreshPromptFiles } =
+    useVoiceInteractionData(open);
 
   const form = useForm<VoiceInteractionFormValues>({
     resolver: zodResolver(voiceInteractionSchema),
@@ -121,69 +98,46 @@ export function VoiceInteractionSettingDialog() {
 
   // 当弹窗打开且 config 就绪时，初始化表单数据
   // 只在本次打开期间初始化一次，关闭时重置标记和表单状态
-  useEffect(() => {
-    if (open && !initializedRef.current && config) {
+  const configRef = useRef(config);
+  configRef.current = config;
+
+  const resetFormState = useCallback(() => {
+    if (configRef.current) {
       form.reset({
         asr: {
-          appid: config.asr?.appid || "",
-          accessToken: config.asr?.accessToken || "",
+          appid: configRef.current.asr?.appid || "",
+          accessToken: configRef.current.asr?.accessToken || "",
         },
         llm: {
-          model: config.llm?.model || "",
-          apiKey: config.llm?.apiKey || "",
-          baseURL: config.llm?.baseURL || "",
-          prompt: config.llm?.prompt || "",
+          model: configRef.current.llm?.model || "",
+          apiKey: configRef.current.llm?.apiKey || "",
+          baseURL: configRef.current.llm?.baseURL || "",
+          prompt: configRef.current.llm?.prompt || "",
         },
         tts: {
-          appid: config.tts?.appid || "",
-          accessToken: config.tts?.accessToken || "",
-          voice_type: config.tts?.voice_type || "",
+          appid: configRef.current.tts?.appid || "",
+          accessToken: configRef.current.tts?.accessToken || "",
+          voice_type: configRef.current.tts?.voice_type || "",
         },
       });
-      initializedRef.current = true;
     }
-    // 弹窗关闭时重置初始化标记和表单状态
-    if (!open) {
-      initializedRef.current = false;
-      form.reset();
-    }
-  }, [open, config, form]);
+  }, [form]);
 
-  // 加载提示词文件列表
-  const loadPromptFiles = useCallback(async () => {
-    setIsLoadingPrompts(true);
-    try {
-      const files = await apiClient.getPromptFiles();
-      setPromptFiles(files);
-    } catch (error) {
-      console.error("加载提示词文件列表失败:", error);
-      setPromptFiles([]);
-    } finally {
-      setIsLoadingPrompts(false);
-    }
-  }, []);
-
-  // 加载音色列表
-  const loadVoices = useCallback(async () => {
-    setIsLoadingVoices(true);
-    try {
-      const response = await apiClient.getTTSVoices();
-      setVoices(response.voices);
-    } catch (error) {
-      console.error("加载音色列表失败:", error);
-      setVoices([]);
-    } finally {
-      setIsLoadingVoices(false);
-    }
-  }, []);
-
-  // 对话框打开时加载提示词文件列表
-  useEffect(() => {
-    if (open) {
-      loadPromptFiles();
-      loadVoices();
-    }
-  }, [open, loadPromptFiles, loadVoices]);
+  // 当对话框打开状态变化时处理表单初始化
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      setOpen(newOpen);
+      if (newOpen && !initializedRef.current) {
+        resetFormState();
+        initializedRef.current = true;
+      }
+      if (!newOpen) {
+        initializedRef.current = false;
+        form.reset();
+      }
+    },
+    [form, resetFormState]
+  );
 
   // 打开提示词编辑器（编辑模式）
   const handleEditPrompt = useCallback(() => {
@@ -204,26 +158,27 @@ export function VoiceInteractionSettingDialog() {
 
   // 提示词更新后的处理
   const handlePromptUpdated = useCallback(() => {
-    loadPromptFiles();
-  }, [loadPromptFiles]);
+    refreshPromptFiles();
+  }, [refreshPromptFiles]);
 
   // 提示词创建后的处理
   const handlePromptCreated = useCallback(
     (relativePath: string) => {
-      loadPromptFiles();
+      refreshPromptFiles();
       // 自动选择新创建的提示词文件
       form.setValue("llm.prompt", relativePath);
     },
-    [loadPromptFiles, form]
+    [refreshPromptFiles, form]
   );
 
   // 提示词删除后的处理
   const handlePromptDeleted = useCallback(() => {
-    loadPromptFiles();
+    refreshPromptFiles();
     // 清空当前选择
     form.setValue("llm.prompt", "");
-  }, [loadPromptFiles, form]);
+  }, [refreshPromptFiles, form]);
 
+  // 表单提交处理
   async function onSubmit(values: VoiceInteractionFormValues) {
     if (!config) {
       toast.error("配置数据未加载，请稍后重试");
@@ -270,7 +225,7 @@ export function VoiceInteractionSettingDialog() {
       toast.success("语音交互配置已更新");
       setOpen(false);
     } catch (error) {
-      console.error("更新语音交互配置失败:", error);
+      console.error("[VoiceInteractionDialog] 更新语音交互配置失败:", error);
       toast.error(error instanceof Error ? error.message : "更新配置失败");
     } finally {
       setIsLoading(false);
@@ -279,7 +234,7 @@ export function VoiceInteractionSettingDialog() {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
           <Button variant="secondary" size="icon" className="size-8">
             <SettingsIcon className="size-4" />
@@ -296,299 +251,29 @@ export function VoiceInteractionSettingDialog() {
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <div className="max-h-[60vh] overflow-y-auto pr-2">
                 {/* ASR 配置区块 */}
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-foreground mb-3">
-                    ASR 配置
-                  </h3>
-                  <div className="grid gap-4">
-                    <FormField
-                      control={form.control}
-                      name="asr.appid"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>应用 ID</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="请输入火山引擎语音识别应用 ID"
-                              className="font-mono text-sm"
-                              disabled={isLoading}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="asr.accessToken"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>访问令牌</FormLabel>
-                          <FormControl>
-                            <PasswordInput
-                              placeholder="请输入访问令牌"
-                              className="font-mono text-sm"
-                              disabled={isLoading}
-                              autoComplete="off"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+                <ASRConfigSection form={form} isLoading={isLoading} />
 
                 <Separator className="my-4" />
 
                 {/* LLM 配置区块 */}
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-foreground mb-3">
-                    LLM 配置
-                  </h3>
-                  <div className="grid gap-4">
-                    <FormField
-                      control={form.control}
-                      name="llm.model"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            模型名称 <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="如：gpt-4、deepseek-chat"
-                              className="font-mono text-sm"
-                              disabled={isLoading}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="llm.apiKey"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            API 密钥 <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <PasswordInput
-                              placeholder="请输入 API 密钥"
-                              className="font-mono text-sm"
-                              disabled={isLoading}
-                              autoComplete="off"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="llm.baseURL"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            API 基础地址 <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="如：https://api.openai.com/v1"
-                              className="font-mono text-sm"
-                              disabled={isLoading}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="llm.prompt"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>系统提示词文件</FormLabel>
-                          <div className="flex gap-2">
-                            <FormControl>
-                              <Select
-                                disabled={isLoading || isLoadingPrompts}
-                                value={field.value || "__none__"}
-                                onValueChange={(value) => {
-                                  // 将特殊值转换为空字符串
-                                  field.onChange(
-                                    value === "__none__" ? "" : value
-                                  );
-                                }}
-                              >
-                                <SelectTrigger className="font-mono text-sm flex-1">
-                                  <SelectValue placeholder="选择提示词文件（可选）" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="__none__">
-                                    不使用提示词文件
-                                  </SelectItem>
-                                  {promptFiles.map((file) => (
-                                    <SelectItem
-                                      key={file.relativePath}
-                                      value={file.relativePath}
-                                    >
-                                      {file.fileName}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              onClick={handleEditPrompt}
-                              disabled={
-                                isLoading ||
-                                isLoadingPrompts ||
-                                !form.watch("llm.prompt") ||
-                                form.watch("llm.prompt") === "__none__"
-                              }
-                              title="编辑选中的提示词文件"
-                            >
-                              <Edit className="size-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              onClick={handleCreatePrompt}
-                              disabled={isLoading || isLoadingPrompts}
-                              title="新建提示词文件"
-                            >
-                              <Plus className="size-4" />
-                            </Button>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+                <LLMConfigSection
+                  form={form}
+                  isLoading={isLoading}
+                  isLoadingPrompts={isLoadingPrompts}
+                  promptFiles={promptFiles}
+                  onEditPrompt={handleEditPrompt}
+                  onCreatePrompt={handleCreatePrompt}
+                />
 
                 <Separator className="my-4" />
 
                 {/* TTS 配置区块 */}
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-foreground mb-3">
-                    TTS 配置
-                  </h3>
-                  <div className="grid gap-4">
-                    <FormField
-                      control={form.control}
-                      name="tts.appid"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>应用 ID</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="请输入火山引擎语音合成应用 ID"
-                              className="font-mono text-sm"
-                              disabled={isLoading}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="tts.accessToken"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>访问令牌</FormLabel>
-                          <FormControl>
-                            <PasswordInput
-                              placeholder="请输入访问令牌"
-                              className="font-mono text-sm"
-                              disabled={isLoading}
-                              autoComplete="off"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="tts.voice_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>声音类型</FormLabel>
-                          <FormControl>
-                            <Select
-                              disabled={isLoading || isLoadingVoices}
-                              value={field.value || "__none__"}
-                              onValueChange={(value) => {
-                                field.onChange(
-                                  value === "__none__" ? "" : value
-                                );
-                              }}
-                            >
-                              <SelectTrigger className="font-mono text-sm">
-                                <SelectValue placeholder="选择音色（可选）" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="__none__">
-                                  不指定音色
-                                </SelectItem>
-                                {field.value &&
-                                  field.value !== "__none__" &&
-                                  !voices.some(
-                                    (v) => v.voiceType === field.value
-                                  ) && (
-                                    <SelectItem value={field.value}>
-                                      {field.value} (自定义音色)
-                                    </SelectItem>
-                                  )}
-                                {Object.entries(
-                                  voices.reduce(
-                                    (acc, voice) => {
-                                      if (!acc[voice.scene]) {
-                                        acc[voice.scene] = [];
-                                      }
-                                      acc[voice.scene].push(voice);
-                                      return acc;
-                                    },
-                                    {} as Record<string, VoiceInfo[]>
-                                  )
-                                ).map(([scene, sceneVoices]) => (
-                                  <SelectGroup key={scene}>
-                                    <SelectLabel>{scene}</SelectLabel>
-                                    {sceneVoices.map((voice) => (
-                                      <SelectItem
-                                        key={voice.voiceType}
-                                        value={voice.voiceType}
-                                      >
-                                        {voice.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
+                <TTSConfigSection
+                  form={form}
+                  isLoading={isLoading}
+                  isLoadingVoices={isLoadingVoices}
+                  voices={voices}
+                />
               </div>
               <DialogFooter className="mt-4">
                 <DialogClose asChild>
