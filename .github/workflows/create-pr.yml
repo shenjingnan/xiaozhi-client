@@ -32,7 +32,7 @@ jobs:
       - name: 设置 Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "lts/iron"
+          node-version: "24"
           cache: "pnpm"
 
       - name: 安装依赖
