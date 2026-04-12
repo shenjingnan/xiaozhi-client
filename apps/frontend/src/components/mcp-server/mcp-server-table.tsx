@@ -1,5 +1,7 @@
 "use client";
 
+import { McpServerSettingButton } from "@/components/mcp-server-setting-button";
+import { RemoveMcpServerButton } from "@/components/remove-mcp-server-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,8 +21,6 @@ import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
 import { CoffeeIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { McpServerSettingButton } from "../mcp-server-setting-button";
-import { RemoveMcpServerButton } from "../remove-mcp-server-button";
 import { ServerPagination } from "./server-pagination";
 import { ServerSearchInput } from "./server-search-input";
 import { ServerSortSelector } from "./server-sort-selector";
