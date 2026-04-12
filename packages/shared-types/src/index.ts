@@ -53,7 +53,9 @@ export type {
 export * from "./frontend";
 
 // 工具类型
-export { TimeoutError } from "./utils";
+export { TimeoutError, isTimeoutResponse, isTimeoutError } from "./utils";
+
+export type { TimeoutResponse } from "./utils";
 
 // TTS 相关类型
 export type { VoiceInfo, VoicesResponse } from "./tts";
