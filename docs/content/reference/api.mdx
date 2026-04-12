@@ -1,0 +1,1099 @@
+# API 参考
+
+本文档提供 xiaozhi-client 所有 HTTP API 端点的完整参考。
+
+## 概述
+
+xiaozhi-client 提供了丰富的 HTTP API 用于配置管理、MCP 服务管理、状态查询等功能。所有 API 响应遵循统一格式：
+
+```typescript
+// 成功响应
+{
+  success: true,
+  data: T,
+  message?: string
+}
+
+// 错误响应
+{
+  success: false,
+  code: string,
+  message: string,
+  details?: unknown
+}
+```
+
+---
+
+## 配置管理 API
+
+配置管理 API 提供对 xiaozhi.config.json 配置文件的完整操作支持。
+
+### 获取配置
+
+```http
+GET /api/config
+```
+
+获取当前完整配置。
+
+**响应示例：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "mcpEndpoint": "https://api.xiaozhi.me",
+    "mcpServers": {},
+    "connection": {
+      "heartbeatInterval": 30000,
+      "timeout": 10000
+    }
+  }
+}
+```
+
+### 更新配置
+
+```http
+PUT /api/config
+```
+
+更新配置文件。
+
+**请求体：**
+
+```json
+{
+  "mcpEndpoint": "https://api.xiaozhi.me/v2",
+  "connection": {
+    "heartbeatInterval": 60000
+  }
+}
+```
+
+### 重新加载配置
+
+```http
+POST /api/config/reload
+```
+
+从配置文件重新加载配置，用于手动修改配置文件后同步到服务。
+
+### 获取 MCP 端点
+
+```http
+GET /api/config/mcp-endpoint
+```
+
+获取当前配置的 MCP 端点地址。
+
+**响应示例：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "endpoint": "https://api.xiaozhi.me"
+  }
+}
+```
+
+### 获取 MCP 端点列表
+
+```http
+GET /api/config/mcp-endpoints
+```
+
+获取配置的所有 MCP 端点列表。
+
+### 获取 MCP 服务配置
+
+```http
+GET /api/config/mcp-servers
+```
+
+获取所有 MCP 服务的配置信息。
+
+### 获取连接配置
+
+```http
+GET /api/config/connection
+```
+
+获取连接参数配置（心跳间隔、超时等）。
+
+### 获取配置文件路径
+
+```http
+GET /api/config/path
+```
+
+获取当前使用的配置文件路径。
+
+### 检查配置是否存在
+
+```http
+GET /api/config/exists
+```
+
+检查配置文件是否已创建。
+
+### 提示词文件管理
+
+#### 获取提示词文件列表
+
+```http
+GET /api/config/prompts
+```
+
+获取所有提示词文件列表。
+
+#### 获取提示词文件内容
+
+```http
+GET /api/config/prompts/content?path=./prompts/default.md
+```
+
+获取指定提示词文件的内容。
+
+**参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| path | string | 是 | 提示词文件路径 |
+
+#### 创建提示词文件
+
+```http
+POST /api/config/prompts/content
+```
+
+创建新的提示词文件。
+
+**请求体：**
+
+```json
+{
+  "fileName": "custom-prompt.md",
+  "content": "# 自定义提示词内容"
+}
+```
+
+#### 更新提示词文件
+
+```http
+PUT /api/config/prompts/content
+```
+
+更新已有提示词文件内容。
+
+**请求体：**
+
+```json
+{
+  "path": "./prompts/custom-prompt.md",
+  "content": "# 更新后的内容"
+}
+```
+
+#### 删除提示词文件
+
+```http
+DELETE /api/config/prompts/content?path=./prompts/old-prompt.md
+```
+
+删除指定提示词文件。
+
+---
+
+## MCP 服务管理 API
+
+用于动态管理 MCP 服务器（添加、删除、查询状态）。
+
+### 添加 MCP 服务
+
+```http
+POST /api/mcp-servers
+```
+
+添加新的 MCP 服务到配置并启动连接。
+
+**单服务格式请求体：**
+
+```json
+{
+  "name": "my-server",
+  "config": {
+    "command": "node",
+    "args": ["server.js"],
+    "env": {}
+  }
+}
+```
+
+**批量添加格式请求体：**
+
+```json
+{
+  "mcpServers": {
+    "server1": {
+      "command": "node",
+      "args": ["server1.js"]
+    },
+    "server2": {
+      "url": "https://mcp.example.com/sse"
+    }
+  }
+}
+```
+
+**响应示例：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "name": "my-server",
+    "status": "connected",
+    "tools": ["tool1", "tool2"],
+    "config": { ... }
+  },
+  "message": "MCP 服务添加成功"
+}
+```
+
+### 删除 MCP 服务
+
+```http
+DELETE /api/mcp-servers/:serverName
+```
+
+停止并移除指定的 MCP 服务。
+
+**路径参数：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| serverName | string | 服务名称 |
+
+### 列出所有 MCP 服务
+
+```http
+GET /api/mcp-servers
+```
+
+获取所有已配置的 MCP 服务及其状态。
+
+**响应示例：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "servers": [
+      {
+        "name": "my-server",
+        "status": "connected",
+        "connected": true,
+        "tools": ["tool1", "tool2"],
+        "config": { ... }
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+### 获取单个服务状态
+
+```http
+GET /api/mcp-servers/:serverName/status
+```
+
+获取指定 MCP 服务的详细状态。
+
+---
+
+## MCP 协议 API
+
+处理符合 MCP Streamable HTTP 规范的请求。
+
+### MCP 消息处理
+
+```http
+POST /mcp
+```
+
+处理 MCP JSON-RPC 消息，符合 MCP Streamable HTTP 规范。
+
+**请求头：**
+
+| Header | 说明 |
+|--------|------|
+| Content-Type | 必须为 `application/json` |
+| mcp-protocol-version | MCP 协议版本（可选） |
+
+**请求体（JSON-RPC 格式）：**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1",
+  "method": "tools/list",
+  "params": {}
+}
+```
+
+**响应示例：**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1",
+  "result": {
+    "tools": [
+      {
+        "name": "example_tool",
+        "description": "示例工具",
+        "inputSchema": { ... }
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 工具调用 API
+
+提供 MCP 工具调用和管理功能。
+
+### 调用工具
+
+```http
+POST /api/tools/call
+```
+
+通过 HTTP API 调用 MCP 工具。
+
+**请求体：**
+
+```json
+{
+  "serviceName": "my-server",
+  "toolName": "example_tool",
+  "args": {
+    "param1": "value1"
+  }
+}
+```
+
+### 列出所有工具
+
+```http
+GET /api/tools/list
+```
+
+获取所有可用的 MCP 工具列表。
+
+### 自定义工具管理
+
+#### 获取自定义工具列表
+
+```http
+GET /api/tools/custom
+```
+
+获取所有自定义 MCP 工具（如 Coze 工作流工具）。
+
+#### 添加自定义工具
+
+```http
+POST /api/tools/custom
+```
+
+添加新的自定义 MCP 工具。
+
+**请求体：**
+
+```json
+{
+  "name": "my_workflow_tool",
+  "description": "我的工作流工具",
+  "handler": {
+    "type": "proxy",
+    "platform": "coze",
+    "config": {
+      "workflow_id": "xxx",
+      "parameters": []
+    }
+  }
+}
+```
+
+#### 更新自定义工具
+
+```http
+PUT /api/tools/custom/:toolName
+```
+
+更新指定自定义工具的配置。
+
+#### 删除自定义工具
+
+```http
+DELETE /api/tools/custom/:toolName
+```
+
+删除指定自定义工具。
+
+### MCP 工具管理
+
+#### 启用/禁用工具
+
+```http
+POST /api/tools/mcp/manage
+```
+
+管理 MCP 工具的启用/禁用状态。
+
+**请求体：**
+
+```json
+{
+  "serverName": "my-server",
+  "toolName": "example_tool",
+  "enabled": true
+}
+```
+
+#### 列出 MCP 工具
+
+```http
+POST /api/tools/mcp/list
+```
+
+获取指定服务的 MCP 工具列表及其状态。
+
+---
+
+## 工具日志 API
+
+查询 MCP 工具调用日志。
+
+### 获取工具调用日志
+
+```http
+GET /api/mcp-tool-logs
+```
+
+获取工具调用历史记录。
+
+**查询参数：**
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| limit | number | 50 | 返回记录数量（1-100） |
+| offset | number | 0 | 偏移量 |
+| toolName | string | - | 按工具名称筛选 |
+| serverName | string | - | 按服务名称筛选 |
+| success | boolean | - | 按执行状态筛选 |
+| startDate | string | - | 开始日期 |
+| endDate | string | - | 结束日期 |
+
+**响应示例：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "records": [
+      {
+        "timestamp": "2024-01-01T10:00:00Z",
+        "serverName": "my-server",
+        "toolName": "example_tool",
+        "success": true,
+        "duration": 150
+      }
+    ],
+    "total": 100,
+    "hasMore": true
+  }
+}
+```
+
+---
+
+## 状态 API
+
+查询客户端和服务状态。
+
+### 获取完整状态
+
+```http
+GET /api/status
+```
+
+获取完整的客户端和服务状态信息。
+
+### 获取客户端状态
+
+```http
+GET /api/status/client
+```
+
+获取客户端连接状态。
+
+### 获取重启状态
+
+```http
+GET /api/status/restart
+```
+
+获取服务重启状态。
+
+### 检查客户端连接
+
+```http
+GET /api/status/connected
+```
+
+检查客户端是否已连接。
+
+**响应示例：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "connected": true
+  }
+}
+```
+
+### 获取最后心跳时间
+
+```http
+GET /api/status/heartbeat
+```
+
+获取客户端最后一次心跳时间。
+
+### 获取活跃 MCP 服务器
+
+```http
+GET /api/status/mcp-servers
+```
+
+获取当前活跃的 MCP 服务器列表。
+
+### 更新客户端状态
+
+```http
+PUT /api/status/client
+```
+
+更新客户端状态信息。
+
+### 设置活跃 MCP 服务器
+
+```http
+PUT /api/status/mcp-servers
+```
+
+设置活跃的 MCP 服务器列表。
+
+### 重置状态
+
+```http
+POST /api/status/reset
+```
+
+重置所有状态信息。
+
+---
+
+## 服务管理 API
+
+管理 xiaozhi 服务（启动、停止、重启）。
+
+### 重启服务
+
+```http
+POST /api/services/restart
+```
+
+重启 xiaozhi 服务。
+
+### 停止服务
+
+```http
+POST /api/services/stop
+```
+
+停止 xiaozhi 服务。
+
+### 启动服务
+
+```http
+POST /api/services/start
+```
+
+启动 xiaozhi 服务。
+
+### 获取服务状态
+
+```http
+GET /api/services/status
+```
+
+获取 MCP 服务管理器的运行状态。
+
+### 健康检查
+
+```http
+GET /api/services/health
+```
+
+获取服务健康状态。
+
+**响应示例：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "status": "healthy",
+    "timestamp": 1704067200000,
+    "uptime": 3600,
+    "memory": { ... },
+    "version": "v20.0.0"
+  }
+}
+```
+
+---
+
+## 接入点管理 API
+
+动态管理 MCP 接入点（端点）。
+
+### 获取接入点状态
+
+```http
+POST /api/endpoint/status
+```
+
+获取指定接入点的连接状态。
+
+**请求体：**
+
+```json
+{
+  "endpoint": "https://api.xiaozhi.me"
+}
+```
+
+### 连接接入点
+
+```http
+POST /api/endpoint/connect
+```
+
+连接指定接入点。
+
+### 断开接入点
+
+```http
+POST /api/endpoint/disconnect
+```
+
+断开指定接入点。
+
+### 添加接入点
+
+```http
+POST /api/endpoint/add
+```
+
+添加新的接入点。
+
+**请求体：**
+
+```json
+{
+  "endpoint": "https://api.xiaozhi.me/v2"
+}
+```
+
+### 移除接入点
+
+```http
+POST /api/endpoint/remove
+```
+
+移除指定接入点。
+
+---
+
+## 版本 API
+
+版本信息查询和更新检查。
+
+### 获取版本信息
+
+```http
+GET /api/version
+```
+
+获取完整版本信息。
+
+**响应示例：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "version": "1.10.7",
+    "buildDate": "2024-01-01",
+    "gitHash": "abc123"
+  }
+}
+```
+
+### 获取简化版本号
+
+```http
+GET /api/version/simple
+```
+
+仅获取版本号字符串。
+
+### 清除版本缓存
+
+```http
+POST /api/version/cache/clear
+```
+
+清除版本查询缓存。
+
+### 获取可用版本列表
+
+```http
+GET /api/version/available?type=stable
+```
+
+获取可发布的版本列表。
+
+**参数：**
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| type | string | stable | 版本类型：stable、rc、beta、all |
+
+### 检查最新版本
+
+```http
+GET /api/version/latest
+```
+
+检查是否有新版本可用。
+
+**响应示例：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "currentVersion": "1.10.7",
+    "latestVersion": "1.10.8",
+    "hasUpdate": true
+  }
+}
+```
+
+---
+
+## 更新 API
+
+版本更新和安装。
+
+### 执行版本更新
+
+```http
+POST /api/update
+```
+
+执行版本更新安装。
+
+**请求体：**
+
+```json
+{
+  "version": "1.10.8"
+}
+```
+
+安装进度通过 WebSocket 实时推送。
+
+---
+
+## TTS API
+
+语音合成服务。
+
+### 语音合成
+
+```http
+POST /api/tts
+```
+
+执行语音合成。
+
+**请求体：**
+
+```json
+{
+  "text": "你好，小智",
+  "voice_type": "zh_female_shuangkuaisisi_moon_bigtts",
+  "encoding": "wav"
+}
+```
+
+**响应：**
+
+返回音频文件（根据 encoding 格式返回对应 MIME 类型）。
+
+### 获取音色列表
+
+```http
+GET /api/tts/voices
+```
+
+获取可用的 TTS 音色列表。
+
+**响应示例：**
+
+```json
+{
+  "success": true,
+  "data": {
+    "voices": [
+      {
+        "id": "zh_female_shuangkuaisisi_moon_bigtts",
+        "name": "双快思思",
+        "language": "zh"
+      }
+    ],
+    "total": 10,
+    "scenes": { ... }
+  }
+}
+```
+
+---
+
+## 扣子 API
+
+扣子平台集成（工作空间和工作流）。
+
+### 获取工作空间列表
+
+```http
+GET /api/coze/workspaces
+```
+
+获取扣子平台的工作空间列表。
+
+### 获取工作流列表
+
+```http
+GET /api/coze/workflows?workspace_id=xxx&page_num=1&page_size=20
+```
+
+获取指定工作空间的工作流列表。
+
+**参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| workspace_id | string | 是 | 工作空间 ID |
+| page_num | number | 否 | 页码（1-1000） |
+| page_size | number | 否 | 每页数量（1-100） |
+
+### 清除扣子缓存
+
+```http
+POST /api/coze/cache/clear?pattern=xxx
+```
+
+清除扣子 API 缓存。
+
+### 获取缓存统计
+
+```http
+GET /api/coze/cache/stats
+```
+
+获取扣子 API 缓存统计信息。
+
+---
+
+## ESP32 设备 API
+
+ESP32 硬件设备 OTA 和配置。
+
+### OTA/配置请求
+
+```http
+POST /
+```
+
+处理 ESP32 设备的 OTA 和配置请求。
+
+**请求头：**
+
+| Header | 说明 |
+|--------|------|
+| Device-Id | 设备 MAC 地址 |
+| Client-Id | 设备 UUID |
+| Device-Model | 设备型号（可选） |
+| Device-Version | 设备版本（可选） |
+
+**请求体：**
+
+```json
+{
+  "application": {
+    "version": "1.0.0",
+    "board": {
+      "type": "ESP32-S3-BOX"
+    }
+  }
+}
+```
+
+---
+
+## WebSocket 实时通知
+
+除 HTTP API 外，xiaozhi-client 还提供 WebSocket 实时通知功能。
+
+### WebSocket 连接
+
+```websocket
+ws://localhost:3000/ws
+```
+
+### 客户端消息类型
+
+| 类型 | 说明 | HTTP 替代 |
+|------|------|-----------|
+| clientStatus | 客户端心跳/状态更新 | - |
+| getConfig | 获取配置（已废弃） | GET /api/config |
+| updateConfig | 更新配置（已废弃） | PUT /api/config |
+| getStatus | 获取状态（已废弃） | GET /api/status |
+| restartService | 重启服务（已废弃） | POST /api/services/restart |
+
+### 服务端推送消息类型
+
+| 类型 | 说明 |
+|------|------|
+| configUpdate | 配置更新通知 |
+| statusUpdate | 状态更新通知 |
+| restartStatus | 重启状态通知 |
+| installLog | 安装日志推送 |
+| mcp:server:added | MCP 服务添加事件 |
+| mcp:server:removed | MCP 服务移除事件 |
+| mcp:server:status_changed | MCP 服务状态变化 |
+| endpoint:status:changed | 接入点状态变化 |
+
+---
+
+## 错误码参考
+
+### 通用错误码
+
+| 错误码 | 说明 | HTTP 状态码 |
+|--------|------|-------------|
+| INVALID_REQUEST | 请求格式错误 | 400 |
+| MISSING_PARAMETER | 缺少必需参数 | 400 |
+| INVALID_PARAMETER | 参数值无效 | 400 |
+| INTERNAL_ERROR | 内部错误 | 500 |
+| SERVICE_NOT_INITIALIZED | 服务未初始化 | 503 |
+
+### 配置错误码
+
+| 错误码 | 说明 | HTTP 状态码 |
+|--------|------|-------------|
+| CONFIG_READ_ERROR | 配置读取失败 | 500 |
+| CONFIG_UPDATE_ERROR | 配置更新失败 | 500 |
+| CONFIG_NOT_FOUND | 配置文件不存在 | 404 |
+| INVALID_CONFIG | 配置格式无效 | 400 |
+
+### MCP 服务错误码
+
+| 错误码 | 说明 | HTTP 状态码 |
+|--------|------|-------------|
+| SERVER_NOT_FOUND | 服务不存在 | 404 |
+| SERVER_ALREADY_EXISTS | 服务已存在 | 409 |
+| INVALID_SERVICE_NAME | 服务名称无效 | 400 |
+| CONNECTION_FAILED | 连接失败 | 500 |
+
+### 工具错误码
+
+| 错误码 | 说明 | HTTP 状态码 |
+|--------|------|-------------|
+| SERVICE_OR_TOOL_NOT_FOUND | 服务或工具不存在 | 500 |
+| TOOL_DISABLED | 工具已禁用 | 500 |
+| INVALID_ARGUMENTS | 参数验证失败 | 500 |
+| TIMEOUT_ERROR | 调用超时 | 500 |
+
+---
+
+## 使用示例
+
+### 使用 curl 获取配置
+
+```bash
+curl http://localhost:3000/api/config
+```
+
+### 使用 curl 添加 MCP 服务
+
+```bash
+curl -X POST http://localhost:3000/api/mcp-servers \
+  -H "Content-Type: application/json" \
+  -d '{"name":"my-server","config":{"command":"node","args":["server.js"]}}'
+```
+
+### 使用 curl 调用工具
+
+```bash
+curl -X POST http://localhost:3000/api/tools/call \
+  -H "Content-Type: application/json" \
+  -d '{"serviceName":"my-server","toolName":"example_tool","args":{"param1":"value1"}}'
+```
+
+### WebSocket 客户端示例
+
+```javascript
+const ws = new WebSocket('ws://localhost:3000/ws');
+
+ws.onopen = () => {
+  // 发送心跳
+  ws.send(JSON.stringify({
+    type: 'clientStatus',
+    data: {
+      status: 'connected',
+      timestamp: Date.now()
+    }
+  }));
+};
+
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  console.log('收到消息:', message.type);
+};
+```
