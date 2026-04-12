@@ -43,6 +43,10 @@
  */
 
 import { MCPConnection } from "@xiaozhi-client/mcp-core";
+import {
+  createDefaultCallbacks,
+  runExample,
+} from "./utils/connection-helpers";
 
 /**
  * 主函数
@@ -50,67 +54,18 @@ import { MCPConnection } from "@xiaozhi-client/mcp-core";
 async function main(): Promise<void> {
   console.log("=== SSE MCP 连接示例 ===\n");
 
-  // 1. 创建连接实例
-  const connection = new MCPConnection("12306-mcp", {
-    type: "sse",
-    url: "https://mcp.api-inference.modelscope.net/ed2b195cc8f94d/sse",
-  }, {
-    // 连接成功回调
-    onConnected: (data) => {
-      console.log(`✅ 服务 ${data.serviceName} 已连接`);
-      console.log(`   发现 ${data.tools.length} 个工具`);
-      console.log();
+  // 创建连接实例
+  const connection = new MCPConnection(
+    "12306-mcp",
+    {
+      type: "sse",
+      url: "https://mcp.api-inference.modelscope.net/ed2b195cc8f94d/sse",
     },
+    createDefaultCallbacks(),
+  );
 
-    // 连接失败回调
-    onConnectionFailed: (data) => {
-      console.error(`❌ 服务 ${data.serviceName} 连接失败`);
-      console.error(`   错误: ${data.error.message}`);
-    },
-
-    // 断开连接回调
-    onDisconnected: (data) => {
-      console.log(`👋 服务 ${data.serviceName} 已断开`);
-      console.log(`   原因: ${data.reason || "正常关闭"}`);
-    },
-  });
-
-  try {
-    // 3. 建立连接
-    console.log("正在连接到服务...");
-    console.log();
-
-    await connection.connect();
-
-    // 4. 获取工具列表
-    const tools = connection.getTools();
-    console.log("可用工具:");
-    for (const tool of tools) {
-      console.log(`  - ${tool.name}`);
-      if (tool.description) {
-        console.log(`    描述: ${tool.description}`);
-      }
-    }
-    console.log();
-
-    // 5. 检查连接状态
-    console.log("连接状态:");
-    console.log(`  是否已连接: ${connection.isConnected()}`);
-    const status = connection.getStatus();
-    console.log(`  状态: ${status.connectionState}`);
-  } catch (error) {
-    console.error("执行过程中出错:");
-    if (error instanceof Error) {
-      console.error(`  ${error.message}`);
-    }
-  } finally {
-    // 6. 断开连接
-    console.log();
-    console.log("正在断开连接...");
-    await connection.disconnect();
-    console.log();
-    console.log("=== 示例结束 ===");
-  }
+  // 使用通用框架运行示例
+  await runExample(connection);
 }
 
 // 运行主函数
