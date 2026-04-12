@@ -82,7 +82,9 @@ describe("MCPConnection", () => {
       }),
       ping: vi.fn().mockResolvedValue(undefined),
     };
-    vi.mocked(Client).mockImplementation(() => mockClient as unknown as Client);
+    vi.mocked(Client).mockImplementation(function () {
+      return mockClient as unknown as Client;
+    });
 
     // Mock Transport - 创建一个具有必要方法的 mock transport
     mockTransport = {

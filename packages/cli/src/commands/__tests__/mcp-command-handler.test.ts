@@ -144,9 +144,11 @@ const mockGetServiceStatus = vi
   .mockReturnValue({ running: false, pid: null });
 
 vi.mock("../../services/ProcessManager.js", () => ({
-  ProcessManagerImpl: vi.fn().mockImplementation(() => ({
-    getServiceStatus: mockGetServiceStatus,
-  })),
+  ProcessManagerImpl: vi.fn().mockImplementation(function () {
+    return {
+      getServiceStatus: mockGetServiceStatus,
+    };
+  }),
 }));
 
 // Mock fetch for HTTP API calls

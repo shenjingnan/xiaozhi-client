@@ -41,7 +41,9 @@ const mockMCPServerInstance = {
 };
 
 vi.mock("@/WebServer.js", () => ({
-  WebServer: vi.fn().mockImplementation(() => mockWebServerInstance),
+  WebServer: vi.fn().mockImplementation(function () {
+    return mockWebServerInstance;
+  }),
 }));
 
 // Mock dynamic imports
@@ -59,7 +61,9 @@ vi.mock("node:child_process", () => ({
 }));
 
 vi.mock("@services/MCPServer.js", () => ({
-  MCPServer: vi.fn().mockImplementation(() => mockMCPServerInstance),
+  MCPServer: vi.fn().mockImplementation(function () {
+    return mockMCPServerInstance;
+  }),
 }));
 
 // Mock PathUtils
@@ -163,7 +167,9 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
 
     // Mock dynamic import for WebServer
     vi.doMock("@/WebServer.js", () => ({
-      WebServer: vi.fn().mockImplementation(() => mockWebServerInstance),
+      WebServer: vi.fn().mockImplementation(function () {
+        return mockWebServerInstance;
+      }),
     }));
   });
 

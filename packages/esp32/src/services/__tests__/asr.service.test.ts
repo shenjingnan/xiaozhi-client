@@ -20,9 +20,11 @@ const mockListenGenerator = (async function* () {
 })();
 
 vi.mock("univoice", () => ({
-  createASR: vi.fn().mockImplementation(() => ({
-    listen: vi.fn().mockReturnValue(mockListenGenerator),
-  })),
+  createASR: vi.fn().mockImplementation(function () {
+    return {
+      listen: vi.fn().mockReturnValue(mockListenGenerator),
+    };
+  }),
 }));
 
 describe("ASRService", () => {
@@ -226,10 +228,11 @@ describe("ASRService", () => {
       })();
 
       vi.mocked(createASR).mockImplementation(
-        () =>
-          ({
+        function () {
+          return {
             listen: vi.fn().mockReturnValue(mockVadGenerator),
-          }) as ReturnType<typeof createASR>
+          } as ReturnType<typeof createASR>;
+        }
       );
 
       await service.prepare("device-vad");
@@ -275,10 +278,11 @@ describe("ASRService", () => {
       })();
 
       vi.mocked(createASR).mockImplementation(
-        () =>
-          ({
+        function () {
+          return {
             listen: vi.fn().mockReturnValue(mockNonDefiniteGenerator),
-          }) as ReturnType<typeof createASR>
+          } as ReturnType<typeof createASR>;
+        }
       );
 
       await service.prepare("device-non-definite");
@@ -304,10 +308,11 @@ describe("ASRService", () => {
       })();
 
       vi.mocked(createASR).mockImplementation(
-        () =>
-          ({
+        function () {
+          return {
             listen: vi.fn().mockReturnValue(mockNoSegmentGenerator),
-          }) as ReturnType<typeof createASR>
+          } as ReturnType<typeof createASR>;
+        }
       );
 
       await service.prepare("device-no-segment");

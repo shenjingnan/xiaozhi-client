@@ -62,17 +62,19 @@ const mockEndpointCommandHandler = {
 
 // Mock CommandHandlerFactory
 vi.mock("./CommandHandlerFactory.js", () => ({
-  CommandHandlerFactory: vi.fn().mockImplementation(() => ({
-    createHandlers: vi
-      .fn()
-      .mockReturnValue([
-        mockServiceCommandHandler,
-        mockConfigCommandHandler,
-        mockProjectCommandHandler,
-        mockMcpCommandHandler,
-        mockEndpointCommandHandler,
-      ]),
-  })),
+  CommandHandlerFactory: vi.fn().mockImplementation(function () {
+    return {
+      createHandlers: vi
+        .fn()
+        .mockReturnValue([
+          mockServiceCommandHandler,
+          mockConfigCommandHandler,
+          mockProjectCommandHandler,
+          mockMcpCommandHandler,
+          mockEndpointCommandHandler,
+        ]),
+    };
+  }),
 }));
 
 // Mock ErrorHandler
