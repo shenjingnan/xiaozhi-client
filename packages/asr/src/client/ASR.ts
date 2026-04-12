@@ -437,30 +437,39 @@ export class ASR extends EventEmitter {
   }
 
   /**
-   * Process audio data
+   * 构建并发送初始 WebSocket 请求
+   * @param reqid - 请求 ID
    */
-  private async processAudioData(wavData: Buffer): Promise<ASRResult> {
-    const reqid = uuidv4();
-
-    // Construct request
+  private async buildAndSendInitialRequest(reqid: string): Promise<void> {
+    // 构造请求
     const requestParams = this.constructRequest(reqid);
     const payloadBytes = Buffer.from(JSON.stringify(requestParams), "utf-8");
     const compressedPayload = compressGzipSync(payloadBytes);
 
-    // Build full client request: header + payload size (4 bytes) + payload
+    // 构建完整请求: header + payload size (4 bytes) + payload
     const fullRequest = Buffer.alloc(compressedPayload.length + 8);
     generateFullDefaultHeader().copy(fullRequest, 0);
     fullRequest.writeUInt32BE(compressedPayload.length, 4);
     compressedPayload.copy(fullRequest, 8);
 
-    // Connect
+    // 连接
     await this._connect();
 
-    // Send full request
+    // 发送完整请求
     await this.sendMessage(fullRequest);
 
-    // Receive response
+    // 接收响应
     await this.receiveMessage();
+  }
+
+  /**
+   * Process audio data
+   */
+  private async processAudioData(wavData: Buffer): Promise<ASRResult> {
+    const reqid = uuidv4();
+
+    // 构建并发送初始请求
+    await this.buildAndSendInitialRequest(reqid);
 
     // Process audio chunks
     const segmentSize =
@@ -611,25 +620,8 @@ export class ASR extends EventEmitter {
   private async processOpusData(opusData: Buffer): Promise<ASRResult> {
     const reqid = uuidv4();
 
-    // Construct request
-    const requestParams = this.constructRequest(reqid);
-    const payloadBytes = Buffer.from(JSON.stringify(requestParams), "utf-8");
-    const compressedPayload = compressGzipSync(payloadBytes);
-
-    // Build full client request: header + payload size (4 bytes) + payload
-    const fullRequest = Buffer.alloc(compressedPayload.length + 8);
-    generateFullDefaultHeader().copy(fullRequest, 0);
-    fullRequest.writeUInt32BE(compressedPayload.length, 4);
-    compressedPayload.copy(fullRequest, 8);
-
-    // Connect
-    await this._connect();
-
-    // Send full request
-    await this.sendMessage(fullRequest);
-
-    // Receive response
-    await this.receiveMessage();
+    // 构建并发送初始请求
+    await this.buildAndSendInitialRequest(reqid);
 
     // Process audio chunks - use smaller chunk size for Opus
     const segmentSize = 3200; // ~100ms at 16kHz
@@ -708,25 +700,8 @@ export class ASR extends EventEmitter {
     this.isStreaming = true;
     this.audioEnded = false;
 
-    // Construct request
-    const requestParams = this.constructRequest(this.reqid);
-    const payloadBytes = Buffer.from(JSON.stringify(requestParams), "utf-8");
-    const compressedPayload = compressGzipSync(payloadBytes);
-
-    // Build full client request: header + payload size (4 bytes) + payload
-    const fullRequest = Buffer.alloc(compressedPayload.length + 8);
-    generateFullDefaultHeader().copy(fullRequest, 0);
-    fullRequest.writeUInt32BE(compressedPayload.length, 4);
-    compressedPayload.copy(fullRequest, 8);
-
-    // Connect
-    await this._connect();
-
-    // Send full request
-    await this.sendMessage(fullRequest);
-
-    // Receive response (server acknowledgment)
-    await this.receiveMessage();
+    // 构建并发送初始请求
+    await this.buildAndSendInitialRequest(this.reqid);
   }
 
   /**
