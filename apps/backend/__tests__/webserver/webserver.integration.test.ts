@@ -29,6 +29,11 @@ vi.mock("@xiaozhi-client/config", () => {
     getCustomMCPConfig: vi.fn(() => null),
     hasValidCustomMCPTools: vi.fn(() => false),
     clearAllStatsUpdateLocks: vi.fn(),
+    // ESP32 配置提供者所需方法
+    getASRConfig: vi.fn().mockReturnValue(null),
+    getTTSConfig: vi.fn().mockReturnValue(null),
+    getLLMConfig: vi.fn().mockReturnValue(null),
+    isLLMConfigValid: vi.fn().mockReturnValue(false),
   };
   return {
     configManager: mockConfigManager,

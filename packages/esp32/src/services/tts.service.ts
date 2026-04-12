@@ -4,11 +4,14 @@
  */
 
 import { Readable } from "node:stream";
-import { logger } from "@/Logger.js";
-import type { ESP32Connection } from "@/lib/esp32/connection.js";
-import { configManager } from "@xiaozhi-client/config";
 import * as prism from "prism-media";
 import { createTTS } from "univoice";
+import type {
+  IDeviceConnection,
+  IESP32ConfigProvider,
+  ILogger,
+} from "../interfaces.js";
+import { noopLogger } from "../interfaces.js";
 import type { ITTSService, TTSServiceOptions } from "./tts.interface.js";
 
 /**
@@ -21,6 +24,12 @@ export class TTSService implements ITTSService {
 
   /** TTS 完成回调（stop 消息发送后触发） */
   private onTTSComplete?: TTSServiceOptions["onTTSComplete"];
+
+  /** 日志器 */
+  private readonly logger: ILogger;
+
+  /** 配置提供者 */
+  private readonly configProvider?: IESP32ConfigProvider;
 
   /** 每个设备是否已触发 TTS（避免重复触发） */
   private readonly ttsTriggered = new Map<string, boolean>();
@@ -47,7 +56,7 @@ export class TTSService implements ITTSService {
   private readonly isProcessingBuffer = new Map<string, boolean>();
 
   /** 每个设备的连接引用（用于缓冲区处理） */
-  private readonly deviceConnections = new Map<string, ESP32Connection>();
+  private readonly deviceConnections = new Map<string, IDeviceConnection>();
 
   /**
    * 构造函数
@@ -56,6 +65,8 @@ export class TTSService implements ITTSService {
   constructor(options: TTSServiceOptions = {}) {
     this.getConnection = options.getConnection;
     this.onTTSComplete = options.onTTSComplete;
+    this.logger = options.logger ?? noopLogger;
+    this.configProvider = options.configProvider;
   }
 
   /**
@@ -75,7 +86,7 @@ export class TTSService implements ITTSService {
   async speak(deviceId: string, text: string): Promise<void> {
     // 如果 TTS 正在进行中或已完成，忽略新的音频数据
     if (this.ttsTriggered.get(deviceId) || this.ttsCompleted.get(deviceId)) {
-      logger.debug(
+      this.logger.debug(
         `[TTSService] TTS 正在进行或已完成，忽略: deviceId=${deviceId}`
       );
       return;
@@ -86,20 +97,24 @@ export class TTSService implements ITTSService {
       // 获取设备连接（先检查连接，避免提前设置 ttsTriggered 导致无法清理）
       const connection = this.getConnection?.(deviceId);
       if (!connection) {
-        logger.warn(`[TTSService] 无法获取设备连接: deviceId=${deviceId}`);
+        this.logger.warn(`[TTSService] 无法获取设备连接: deviceId=${deviceId}`);
         return;
       }
 
       // 获取 TTS 配置
-      const ttsConfig = configManager.getTTSConfig();
-      if (!ttsConfig.appid || !ttsConfig.accessToken || !ttsConfig.voice_type) {
-        logger.error("[TTSService] TTS 配置不完整，请检查配置文件");
+      const ttsConfig = this.configProvider?.getTTSConfig();
+      if (
+        !ttsConfig?.appid ||
+        !ttsConfig?.accessToken ||
+        !ttsConfig?.voice_type
+      ) {
+        this.logger.error("[TTSService] TTS 配置不完整，请检查配置文件");
         return;
       }
 
       // 所有前置条件满足后，再设置 ttsTriggered 状态
       this.ttsTriggered.set(deviceId, true);
-      logger.info(`[TTSService] 触发流式 TTS: deviceId=${deviceId}`);
+      this.logger.info(`[TTSService] 触发流式 TTS: deviceId=${deviceId}`);
 
       // 初始化流式处理所需的状态
       this.audioDemuxers.set(deviceId, new prism.opus.OggDemuxer());
@@ -133,12 +148,15 @@ export class TTSService implements ITTSService {
           demuxer.write(Buffer.from(audioChunk));
         }
         // univoice 流自然结束表示完成，手动关闭 demuxer
-        logger.info(`[TTSService] TTS 数据接收完成: deviceId=${deviceId}`);
+        this.logger.info(`[TTSService] TTS 数据接收完成: deviceId=${deviceId}`);
         demuxer.end();
       } catch (error) {
-        logger.error(`[TTSService] TTS 调用失败: deviceId=${deviceId}`, error);
+        this.logger.error(
+          `[TTSService] TTS 调用失败: deviceId=${deviceId}`,
+          error
+        );
         void this.sendStopAndCleanup(deviceId).catch((cleanupError) => {
-          logger.error(
+          this.logger.error(
             `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
             cleanupError
           );
@@ -152,12 +170,12 @@ export class TTSService implements ITTSService {
    * 使用缓冲区模式避免并发问题
    * @param deviceId - 设备 ID
    * @param demuxer - Ogg Demuxer 实例
-   * @param connection - ESP32 连接实例
+   * @param connection - 设备连接实例
    */
   private setupDemuxerEvents(
     deviceId: string,
     demuxer: prism.opus.OggDemuxer,
-    connection: ESP32Connection
+    _connection: IDeviceConnection
   ) {
     demuxer.on("data", (opusPacket: Buffer) => {
       // 只负责将包推入缓冲区，不做异步操作
@@ -168,7 +186,7 @@ export class TTSService implements ITTSService {
 
       // 触发缓冲区处理（如果尚未在处理中），使用 .catch() 捕获异步异常
       void this.processBuffer(deviceId).catch((error) => {
-        logger.error(
+        this.logger.error(
           `[TTSService] processBuffer 执行失败: deviceId=${deviceId}`,
           error
         );
@@ -181,10 +199,10 @@ export class TTSService implements ITTSService {
     });
 
     demuxer.on("error", (err: Error) => {
-      logger.error(`[TTSService] Demuxer 错误: deviceId=${deviceId}`, err);
+      this.logger.error(`[TTSService] Demuxer 错误: deviceId=${deviceId}`, err);
       // 使用 .catch() 捕获异步异常
       void this.sendStopAndCleanup(deviceId).catch((error) => {
-        logger.error(
+        this.logger.error(
           `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
           error
         );
@@ -205,7 +223,7 @@ export class TTSService implements ITTSService {
       const isProcessing = this.isProcessingBuffer.get(deviceId);
 
       // 缓冲区已清空且不在处理中
-      logger.info(
+      this.logger.info(
         `[TTSService] 缓冲区排空检查: deviceId=${deviceId}, buffer=${buffer?.length}, isProcessing=${isProcessing}`
       );
       if ((!buffer || buffer.length === 0) && !isProcessing) {
@@ -259,7 +277,9 @@ export class TTSService implements ITTSService {
             state: "start",
           });
           this.ttsStarted.set(deviceId, true);
-          logger.info(`[TTSService] 发送 TTS start 消息: deviceId=${deviceId}`);
+          this.logger.info(
+            `[TTSService] 发送 TTS start 消息: deviceId=${deviceId}`
+          );
         }
 
         // 从缓冲区取出第一个包
@@ -268,10 +288,6 @@ export class TTSService implements ITTSService {
         // 计算时间戳和时长
         const timestamp = this.cumulativeTimestamps.get(deviceId) || 0;
         const duration = this.getPacketDuration(opusPacket);
-
-        // logger.info(
-        //   `[TTSService] 发送 Opus 包: deviceId=${deviceId}, timestamp=${timestamp}, duration=${duration}, opusPacketLength=${opusPacket.length}`
-        // );
 
         // 发送 Opus 包到硬件
         await connection.sendBinaryProtocol2(opusPacket, timestamp);
@@ -321,7 +337,7 @@ export class TTSService implements ITTSService {
       // 标记 TTS 完成，防止后续音频数据触发新的 TTS
       this.ttsCompleted.set(deviceId, true);
 
-      logger.info(`[TTSService] TTS 音频流发送完成: deviceId=${deviceId}`);
+      this.logger.info(`[TTSService] TTS 音频流发送完成: deviceId=${deviceId}`);
     }
 
     // 清理状态
@@ -439,7 +455,7 @@ export class TTSService implements ITTSService {
           cumulativeTimestamp += duration;
           totalDuration += duration;
         } catch (error) {
-          logger.error(`发送包 ${packetIndex} 失败:`, error);
+          this.logger.error(`发送包 ${packetIndex} 失败:`, error);
         }
       };
 
@@ -472,7 +488,7 @@ export class TTSService implements ITTSService {
             if (packetQueue.length > 0 || isProcessing) {
               setTimeout(checkEnd, 10);
             } else {
-              logger.info(
+              this.logger.info(
                 `处理完成，共 ${packetIndex} 个包，总时长 ${(totalDuration / 1000).toFixed(2)}s`
               );
               resolve({
@@ -500,7 +516,7 @@ export class TTSService implements ITTSService {
     this.opusPacketBuffer.clear();
     this.isProcessingBuffer.clear();
     this.deviceConnections.clear();
-    logger.debug("[TTSService] 服务已销毁");
+    this.logger.debug("[TTSService] 服务已销毁");
   }
 }
 

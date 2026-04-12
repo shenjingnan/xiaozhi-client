@@ -1,6 +1,6 @@
 /**
- * ESP32硬件设备通信相关类型定义
- * 定义ESP32设备激活、通信、管理等所需的类型
+ * ESP32 硬件设备通信相关类型定义
+ * 定义 ESP32 设备激活、通信、管理等所需的类型
  */
 
 /**
@@ -10,7 +10,7 @@ export type ESP32DeviceStatus = "activating" | "active" | "offline";
 
 /**
  * 设备信息
- * 表示一个已注册的ESP32设备
+ * 表示一个已注册的 ESP32 设备
  */
 export interface ESP32Device {
   /** 设备ID（使用MAC地址） */
@@ -31,7 +31,7 @@ export interface ESP32Device {
 
 /**
  * 设备上报信息
- * ESP32设备在OTA接口上报的设备信息
+ * ESP32 设备在 OTA 接口上报的设备信息
  * 与 xiaozhi-esp32-server 的数据结构保持一致
  *
  * 支持两种格式：
@@ -43,13 +43,13 @@ export interface ESP32DeviceReport {
   version?: number;
   /** 语言设置 */
   language?: string;
-  /** Flash大小 */
+  /** Flash 大小 */
   flash_size?: number;
   /** 最小空闲堆大小 */
   minimum_free_heap_size?: string;
-  /** MAC地址 */
+  /** MAC 地址 */
   mac_address?: string;
-  /** 设备UUID */
+  /** 设备 UUID */
   uuid?: string;
   /** 芯片型号名称 */
   chip_model_name?: string;
@@ -81,7 +81,7 @@ export interface ESP32DeviceReport {
     address: number;
     size: number;
   }>;
-  /** OTA信息 */
+  /** OTA 信息 */
   ota?: {
     label: string;
   };
@@ -99,36 +99,36 @@ export interface ESP32DeviceReport {
     name?: string;
     /** WiFi SSID */
     ssid?: string;
-    /** WiFi信号强度 */
+    /** WiFi 信号强度 */
     rssi?: number;
-    /** WiFi信道 */
+    /** WiFi 信道 */
     channel?: number;
-    /** IP地址 */
+    /** IP 地址 */
     ip?: string;
-    /** MAC地址 */
+    /** MAC 地址 */
     mac?: string;
   };
 }
 
 /**
- * WebSocket配置信息
+ * WebSocket 配置信息
  */
 export interface ESP32WebSocketConfig {
   /** WebSocket URL */
   url: string;
-  /** 认证Token（已废弃，保留用于向后兼容） */
+  /** 认证 Token（已废弃，保留用于向后兼容） */
   token: string;
   /** 协议版本 */
   version: number;
 }
 
 /**
- * MQTT配置信息
+ * MQTT 配置信息
  */
 export interface ESP32MQTTConfig {
-  /** MQTT端点 */
+  /** MQTT 端点 */
   endpoint: string;
-  /** 客户端ID */
+  /** 客户端 ID */
   clientId: string;
   /** 用户名 */
   username: string;
@@ -146,7 +146,7 @@ export interface ESP32MQTTConfig {
  * 服务器时间信息
  */
 export interface ESP32ServerTime {
-  /** Unix时间戳（毫秒） */
+  /** Unix 时间戳（毫秒） */
   timestamp: number;
   /** 时区偏移（分钟） */
   timezoneOffset: number;
@@ -158,22 +158,22 @@ export interface ESP32ServerTime {
 export interface ESP32FirmwareInfo {
   /** 固件版本 */
   version: string;
-  /** 固件URL */
+  /** 固件 URL */
   url: string;
   /** 是否强制更新 */
   force: boolean;
 }
 
 /**
- * OTA响应
+ * OTA 响应
  * POST /api/esp32/ota 接口的响应类型
  *
  * 注意：设备激活已改为自动激活，不再返回 activation 字段
  */
 export interface ESP32OTAResponse {
-  /** WebSocket配置 */
+  /** WebSocket 配置 */
   websocket?: ESP32WebSocketConfig;
-  /** MQTT配置（可选） */
+  /** MQTT 配置（可选） */
   mqtt?: ESP32MQTTConfig;
   /** 服务器时间 */
   serverTime?: ESP32ServerTime;
@@ -182,7 +182,7 @@ export interface ESP32OTAResponse {
 }
 
 /**
- * WebSocket消息类型枚举
+ * WebSocket 消息类型枚举
  */
 export type ESP32WSMessageType =
   | "hello"
@@ -200,18 +200,18 @@ export type ESP32WSMessageType =
   | "asr_end"; // ASR 识别结束，VAD 检测到用户说话结束
 
 /**
- * WebSocket消息基础接口
+ * WebSocket 消息基础接口
  */
 export interface ESP32WSMessageBase {
   /** 消息类型 */
   type: ESP32WSMessageType;
-  /** 会话ID（可选，用于关联同一会话的消息） */
+  /** 会话 ID（可选，用于关联同一会话的消息） */
   session_id?: string;
 }
 
 /**
- * 设备Hello消息
- * ESP32设备连接后发送的握手消息
+ * 设备 Hello 消息
+ * ESP32 设备连接后发送的握手消息
  */
 export interface ESP32HelloMessage extends ESP32WSMessageBase {
   type: "hello";
@@ -221,7 +221,7 @@ export interface ESP32HelloMessage extends ESP32WSMessageBase {
   features?: {
     /** 是否支持回声消除 */
     aec?: boolean;
-    /** 是否支持MCP */
+    /** 是否支持 MCP */
     mcp?: boolean;
   };
   /** 传输类型 */
@@ -240,8 +240,8 @@ export interface ESP32HelloMessage extends ESP32WSMessageBase {
 }
 
 /**
- * 设备Listen消息
- * ESP32设备发送的监听状态消息
+ * 设备 Listen 消息
+ * ESP32 设备发送的监听状态消息
  * 用于报告唤醒词检测和监听状态变化
  */
 export interface ESP32ListenMessage extends ESP32WSMessageBase {
@@ -250,13 +250,13 @@ export interface ESP32ListenMessage extends ESP32WSMessageBase {
   state: "detect" | "start" | "stop";
   /** 监听模式 */
   mode?: "auto" | "manual" | "realtime";
-  /** 唤醒词文本（state=detect时包含） */
+  /** 唤醒词文本（state=detect 时包含） */
   text?: string;
 }
 
 /**
- * 服务器Hello响应
- * 服务器对设备Hello消息的响应
+ * 服务器 Hello 响应
+ * 服务器对设备 Hello 消息的响应
  */
 export interface ESP32ServerHelloMessage extends ESP32WSMessageBase {
   type: "hello";
@@ -264,7 +264,7 @@ export interface ESP32ServerHelloMessage extends ESP32WSMessageBase {
   version: number;
   /** 传输类型 */
   transport: "websocket";
-  /** 会话ID */
+  /** 会话 ID */
   sessionId: string;
   /** 音频参数 */
   audioParams: {
@@ -305,28 +305,28 @@ export interface ESP32STTMessage extends ESP32WSMessageBase {
  */
 export interface ESP32TTSMessage extends ESP32WSMessageBase {
   type: "tts";
-  /** TTS状态 */
+  /** TTS 状态 */
   state: "start" | "sentence_start" | "stop";
-  /** 要播放的文本（state=sentence_start时包含） */
+  /** 要播放的文本（state=sentence_start 时包含） */
   text?: string;
 }
 
 /**
  * LLM（大语言模型）消息
- * 服务端发送给设备的LLM生成结果
+ * 服务端发送给设备的 LLM 生成结果
  */
 export interface ESP32LLMMessage extends ESP32WSMessageBase {
   type: "llm";
   /** 表情/情绪 */
   emotion?: string;
-  /** LLM生成的文本或表情符号 */
+  /** LLM 生成的文本或表情符号 */
   text: string;
 }
 
 /**
  * 文本消息
  * 用于传输通用文本数据（已废弃，使用具体类型）
- * @deprecated 使用具体的消息类型（ESP32STTMessage、ESP32TTSMessage等）
+ * @deprecated 使用具体的消息类型（ESP32STTMessage、ESP32TTSMessage 等）
  */
 export interface ESP32TextMessage extends ESP32WSMessageBase {
   type: "text";
@@ -335,7 +335,7 @@ export interface ESP32TextMessage extends ESP32WSMessageBase {
 }
 
 /**
- * MCP消息
+ * MCP 消息
  * 用于传输 MCP 协议的 JSON-RPC 消息
  */
 export interface ESP32MCPMessage extends ESP32WSMessageBase {
@@ -352,7 +352,7 @@ export interface ESP32MCPMessage extends ESP32WSMessageBase {
 }
 
 /**
- * System消息
+ * System 消息
  * 服务端发送给设备的系统控制命令
  */
 export interface ESP32SystemMessage extends ESP32WSMessageBase {
@@ -364,7 +364,7 @@ export interface ESP32SystemMessage extends ESP32WSMessageBase {
 }
 
 /**
- * Abort消息
+ * Abort 消息
  * 设备端发送的终止请求，或服务端发送的终止通知
  */
 export interface ESP32AbortMessage extends ESP32WSMessageBase {
@@ -374,7 +374,7 @@ export interface ESP32AbortMessage extends ESP32WSMessageBase {
 }
 
 /**
- * Custom消息
+ * Custom 消息
  * 自定义消息类型
  */
 export interface ESP32CustomMessage extends ESP32WSMessageBase {
@@ -406,7 +406,7 @@ export interface ESP32ASREndMessage extends ESP32WSMessageBase {
 }
 
 /**
- * WebSocket消息联合类型
+ * WebSocket 消息联合类型
  */
 export type ESP32WSMessage =
   | ESP32HelloMessage
@@ -425,15 +425,15 @@ export type ESP32WSMessage =
   | ESP32ASREndMessage;
 
 /**
- * WebSocket连接状态
+ * WebSocket 连接状态
  */
 export type ESP32ConnectionState = "connecting" | "connected" | "disconnected";
 
 /**
- * ESP32错误代码
+ * ESP32 错误代码
  */
 export enum ESP32ErrorCode {
-  /** 设备ID缺失 */
+  /** 设备 ID 缺失 */
   MISSING_DEVICE_ID = "MISSING_DEVICE_ID",
   /** 设备不存在 */
   DEVICE_NOT_FOUND = "DEVICE_NOT_FOUND",
@@ -441,7 +441,7 @@ export enum ESP32ErrorCode {
   DEVICE_OFFLINE = "DEVICE_OFFLINE",
   /** 无效的设备状态 */
   INVALID_DEVICE_STATUS = "INVALID_DEVICE_STATUS",
-  /** WebSocket连接失败 */
+  /** WebSocket 连接失败 */
   WEBSOCKET_CONNECTION_FAILED = "WEBSOCKET_CONNECTION_FAILED",
   /** 无效的消息格式 */
   INVALID_MESSAGE_FORMAT = "INVALID_MESSAGE_FORMAT",

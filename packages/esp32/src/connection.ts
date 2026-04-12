@@ -1,27 +1,27 @@
 /**
- * ESP32设备连接管理
- * 管理单个ESP32设备的WebSocket连接
+ * ESP32 设备连接管理
+ * 管理单个 ESP32 设备的 WebSocket 连接
  */
 
 import { randomBytes } from "node:crypto";
-import { logger } from "@/Logger.js";
+import type WebSocket from "ws";
 import {
   encodeBinaryProtocol2,
   isBinaryProtocol2,
   isBinaryProtocol3,
   parseBinaryProtocol2,
   parseBinaryProtocol3,
-} from "@/lib/esp32/audio-protocol.js";
-import type { ASRService } from "@/services/asr.service.js";
-import {
-  type ESP32ConnectionState,
-  ESP32ErrorCode,
-  type ESP32HelloMessage,
-  type ESP32ServerHelloMessage,
-  type ESP32WSMessage,
-} from "@/types/esp32.js";
-import { camelToSnakeCase } from "@/utils/esp32-utils.js";
-import type WebSocket from "ws";
+} from "./audio-protocol.js";
+import type { IDeviceConnection, ILogger } from "./interfaces.js";
+import type { IASRService } from "./services/asr.interface.js";
+import type {
+  ESP32ConnectionState,
+  ESP32HelloMessage,
+  ESP32ServerHelloMessage,
+  ESP32WSMessage,
+} from "./types.js";
+import { ESP32ErrorCode } from "./types.js";
+import { camelToSnakeCase } from "./utils.js";
 
 /**
  * 连接配置
@@ -33,24 +33,28 @@ interface ESP32ConnectionConfig {
   onClose: () => void;
   /** 错误回调 */
   onError: (error: Error) => void;
-  /** 心跳超时时间（毫秒），默认30秒 */
+  /** 心跳超时时间（毫秒），默认 30 秒 */
   heartbeatTimeoutMs?: number;
   /** ASR 服务获取函数（用于获取最新的实例） */
-  getASRService: () => ASRService;
+  getASRService: () => IASRService;
+  /** 日志器（可选） */
+  logger?: ILogger;
 }
 
 /**
- * ESP32设备连接类
- * 管理单个设备的WebSocket连接生命周期
+ * ESP32 设备连接类
+ * 管理单个设备的 WebSocket 连接生命周期
+ *
+ * 同时实现 IDeviceConnection 接口，供 TTS 服务使用
  */
-export class ESP32Connection {
-  /** 设备ID */
+export class ESP32Connection implements IDeviceConnection {
+  /** 设备 ID */
   private readonly deviceId: string;
 
-  /** 客户端ID */
+  /** 客户端 ID */
   private readonly clientId: string;
 
-  /** WebSocket实例 */
+  /** WebSocket 实例 */
   private readonly ws: WebSocket;
 
   /** 连接状态 */
@@ -59,7 +63,7 @@ export class ESP32Connection {
   /** 最后活动时间 */
   private lastActivity: Date;
 
-  /** 会话ID */
+  /** 会话 ID */
   private sessionId: string;
 
   /** 配置 */
@@ -68,17 +72,20 @@ export class ESP32Connection {
   /** 心跳超时时间（毫秒） */
   private readonly heartbeatTimeoutMs: number;
 
-  /** 是否已完成Hello握手 */
+  /** 是否已完成 Hello 握手 */
   private helloCompleted = false;
 
   /** ASR 服务获取函数（用于获取最新的实例） */
-  private getASRService: () => ASRService;
+  private getASRService: () => IASRService;
+
+  /** 日志器 */
+  private readonly logger: ILogger;
 
   /**
    * 构造函数
-   * @param deviceId - 设备ID
-   * @param clientId - 客户端ID
-   * @param ws - WebSocket实例
+   * @param deviceId - 设备 ID
+   * @param clientId - 客户端 ID
+   * @param ws - WebSocket 实例
    * @param config - 连接配置
    */
   constructor(
@@ -93,6 +100,7 @@ export class ESP32Connection {
     this.lastActivity = new Date();
     this.sessionId = this.generateSessionId();
     this.getASRService = config.getASRService;
+    this.logger = config.logger ?? (console as unknown as ILogger);
 
     this.heartbeatTimeoutMs = config.heartbeatTimeoutMs ?? 30_000;
 
@@ -102,14 +110,15 @@ export class ESP32Connection {
       onError: config.onError,
       heartbeatTimeoutMs: this.heartbeatTimeoutMs,
       getASRService: config.getASRService,
+      logger: this.logger,
     };
 
     this.setupWebSocket();
   }
 
   /**
-   * 生成会话ID
-   * @returns 会话ID
+   * 生成会话 ID
+   * @returns 会话 ID
    */
   private generateSessionId(): string {
     const randomPart = randomBytes(8).toString("hex");
@@ -117,7 +126,7 @@ export class ESP32Connection {
   }
 
   /**
-   * 设置WebSocket事件监听
+   * 设置 WebSocket 事件监听
    */
   private setupWebSocket(): void {
     this.ws.on("message", async (data: Buffer) => {
@@ -125,13 +134,13 @@ export class ESP32Connection {
     });
 
     this.ws.on("close", () => {
-      logger.debug(`WebSocket连接关闭: deviceId=${this.deviceId}`);
+      this.logger.debug(`WebSocket连接关闭: deviceId=${this.deviceId}`);
       this.state = "disconnected";
       this.config.onClose();
     });
 
     this.ws.on("error", (error: Error) => {
-      logger.error(`WebSocket连接错误: deviceId=${this.deviceId}`, error);
+      this.logger.error(`WebSocket连接错误: deviceId=${this.deviceId}`, error);
       this.config.onError(error);
     });
 
@@ -155,24 +164,26 @@ export class ESP32Connection {
     this.updateActivity();
 
     try {
-      // 尝试解析为JSON消息
+      // 尝试解析为 JSON 消息
       const text = data.toString("utf-8");
       const message: ESP32WSMessage = JSON.parse(text);
 
-      logger.debug(
+      this.logger.debug(
         `收到WebSocket消息: deviceId=${this.deviceId}, type=${message.type}`
       );
 
-      // 处理Hello消息
+      // 处理 Hello 消息
       if (message.type === "hello") {
         await this.handleHello(message as ESP32HelloMessage);
         await this.config.onMessage(message);
         return;
       }
 
-      // 检查是否已完成Hello握手
+      // 检查是否已完成 Hello 握手
       if (!this.helloCompleted) {
-        logger.warn(`收到消息但未完成Hello握手: deviceId=${this.deviceId}`);
+        this.logger.warn(
+          `收到消息但未完成Hello握手: deviceId=${this.deviceId}`
+        );
         await this.sendError(
           ESP32ErrorCode.INVALID_MESSAGE_FORMAT,
           "必须先完成Hello握手"
@@ -185,17 +196,10 @@ export class ESP32Connection {
     } catch (error) {
       // 可能是二进制数据（音频等）
       if (data.length > 0 && !isValidUTF8(data)) {
-        // logger.info(
-        //   `收到二进制消息: deviceId=${this.deviceId}, size=${data.length}`
-        // );
-
         // 尝试解析为 BinaryProtocol2 音频协议
         if (isBinaryProtocol2(data)) {
           const parsed = parseBinaryProtocol2(data);
           if (parsed) {
-            // logger.info(
-            //   `解析音频包成功(协议2): type=${parsed.type}, timestamp=${parsed.timestamp}, payloadSize=${parsed.payload.length}`
-            // );
             // 处理为解析后的音频消息（附加解析信息）
             await this.config.onMessage({
               type: "audio",
@@ -209,14 +213,14 @@ export class ESP32Connection {
             } as ESP32WSMessage);
             return;
           }
-          logger.info("协议2解析失败，尝试其他协议");
+          this.logger.info("协议2解析失败，尝试其他协议");
         }
 
         // 尝试解析为 BinaryProtocol3 音频协议
         if (isBinaryProtocol3(data)) {
           const parsed = parseBinaryProtocol3(data);
           if (parsed) {
-            logger.info(
+            this.logger.info(
               `解析音频包成功(协议3): type=${parsed.type}, timestamp=${parsed.timestamp}, payloadSize=${parsed.payload.length}`
             );
             await this.config.onMessage({
@@ -230,18 +234,20 @@ export class ESP32Connection {
             } as ESP32WSMessage);
             return;
           }
-          logger.info("协议3解析失败，作为原始数据处理");
+          this.logger.info("协议3解析失败，作为原始数据处理");
         }
 
         const version = data.readUInt16BE(0);
-        logger.info(`音频协议解析失败，作为原始数据处理, version=${version}`);
+        this.logger.info(
+          `音频协议解析失败，作为原始数据处理, version=${version}`
+        );
         // 处理为原始音频消息
         await this.config.onMessage({
           type: "audio",
           data: new Uint8Array(data),
         });
       } else {
-        logger.error(`消息解析失败: deviceId=${this.deviceId}`, error);
+        this.logger.error(`消息解析失败: deviceId=${this.deviceId}`, error);
         await this.sendError(
           ESP32ErrorCode.INVALID_MESSAGE_FORMAT,
           error instanceof Error ? error.message : "消息解析失败"
@@ -251,26 +257,26 @@ export class ESP32Connection {
   }
 
   /**
-   * 处理Hello消息
-   * @param message - Hello消息
+   * 处理 Hello 消息
+   * @param message - Hello 消息
    */
   private async handleHello(message: ESP32HelloMessage): Promise<void> {
     if (this.helloCompleted) {
-      logger.warn(`[HELLO] 重复的Hello消息: deviceId=${this.deviceId}`);
+      this.logger.warn(`[HELLO] 重复的Hello消息: deviceId=${this.deviceId}`);
       return;
     }
 
-    logger.info(
+    this.logger.info(
       `[HELLO] 收到设备Hello消息: deviceId=${this.deviceId}, version=${message.version}`
     );
-    logger.info(
+    this.logger.info(
       `[HELLO] 音频参数: format=${message.audioParams?.format}, sampleRate=${message.audioParams?.sampleRate}, channels=${message.audioParams?.channels}, frameDuration=${message.audioParams?.frameDuration}`
     );
-    logger.info(
+    this.logger.info(
       `[HELLO] 特性: mcp=${message.features?.mcp}, transport=${message.transport}`
     );
 
-    // 发送ServerHello响应
+    // 发送 ServerHello 响应
     const serverHello: ESP32ServerHelloMessage = {
       type: "hello",
       version: 1,
@@ -284,33 +290,35 @@ export class ESP32Connection {
       },
     };
 
-    logger.info(`[HELLO] 准备发送ServerHello响应: sessionId=${this.sessionId}`);
+    this.logger.info(
+      `[HELLO] 准备发送ServerHello响应: sessionId=${this.sessionId}`
+    );
     await this.send(serverHello);
-    logger.info("[HELLO] ServerHello响应已发送");
+    this.logger.info("[HELLO] ServerHello响应已发送");
 
     // 在 Hello 阶段只准备 ASR 服务（不建立连接）
     // 连接会在 start 阶段建立，以支持多次语音交互
     const asrService = this.getASRService();
     if (asrService) {
-      logger.info(`[HELLO] 准备 ASR 服务: deviceId=${this.deviceId}`);
+      this.logger.info(`[HELLO] 准备 ASR 服务: deviceId=${this.deviceId}`);
       await asrService.prepare(this.deviceId);
     }
 
     this.helloCompleted = true;
     this.state = "connected";
 
-    logger.info(
+    this.logger.info(
       `[HELLO] Hello握手完成: deviceId=${this.deviceId}, state=${this.state}`
     );
   }
 
   /**
-   * 发送消息到设备
+   * 发送消息到设备（IDeviceConnection 接口实现）
    * @param message - 消息内容
    */
   async send(message: ESP32WSMessage): Promise<void> {
     if (this.state === "disconnected") {
-      logger.error(
+      this.logger.error(
         `[SEND] 连接已断开，无法发送消息: deviceId=${this.deviceId}, type=${message.type}`
       );
       throw new Error(`连接已断开: ${this.deviceId}`);
@@ -321,18 +329,18 @@ export class ESP32Connection {
       const snakeCaseMessage = camelToSnakeCase(message);
       const data = JSON.stringify(snakeCaseMessage);
 
-      logger.info(
+      this.logger.info(
         `[SEND] 发送消息: deviceId=${this.deviceId}, type=${message.type}, data=${data}`
       );
 
       this.ws.send(data);
       this.updateActivity();
 
-      logger.debug(
+      this.logger.debug(
         `[SEND] 消息已发送: deviceId=${this.deviceId}, type=${message.type}`
       );
     } catch (error) {
-      logger.error(
+      this.logger.error(
         `[SEND] 发送消息失败: deviceId=${this.deviceId}, type=${message.type}`,
         error
       );
@@ -353,17 +361,17 @@ export class ESP32Connection {
       const buffer = Buffer.from(data);
       this.ws.send(buffer);
       this.updateActivity();
-      logger.debug(
+      this.logger.debug(
         `二进制数据已发送: deviceId=${this.deviceId}, size=${data.length}`
       );
     } catch (error) {
-      logger.error(`发送二进制数据失败: deviceId=${this.deviceId}`, error);
+      this.logger.error(`发送二进制数据失败: deviceId=${this.deviceId}`, error);
       throw error;
     }
   }
 
   /**
-   * 发送BinaryProtocol2格式的音频数据到设备
+   * 发送 BinaryProtocol2 格式的音频数据到设备（IDeviceConnection 接口实现）
    * @param data - 音频载荷数据
    * @param timestamp - 时间戳（毫秒级累加值，用于音频播放顺序）
    */
@@ -371,7 +379,7 @@ export class ESP32Connection {
     data: Uint8Array,
     timestamp?: number
   ): Promise<void> {
-    logger.debug(
+    this.logger.debug(
       `[ESP32Connection] sendBinaryProtocol2: deviceId=${this.deviceId}, dataSize=${data.length}`
     );
 
@@ -380,11 +388,18 @@ export class ESP32Connection {
 
     const packet = encodeBinaryProtocol2(data, timestampInMs, "opus");
 
-    logger.debug(
+    this.logger.debug(
       `[ESP32Connection] 协议编码完成: deviceId=${this.deviceId}, packetSize=${packet.length}`
     );
 
     await this.sendBinary(new Uint8Array(packet));
+  }
+
+  /**
+   * 获取会话 ID（IDeviceConnection 接口实现）
+   */
+  getSessionId(): string {
+    return this.sessionId;
   }
 
   /**
@@ -400,7 +415,7 @@ export class ESP32Connection {
         message,
       });
     } catch (error) {
-      logger.error(`发送错误消息失败: deviceId=${this.deviceId}`, error);
+      this.logger.error(`发送错误消息失败: deviceId=${this.deviceId}`, error);
     }
   }
 
@@ -417,7 +432,7 @@ export class ESP32Connection {
     const elapsed = now - this.lastActivity.getTime();
 
     if (elapsed > this.heartbeatTimeoutMs) {
-      logger.warn(
+      this.logger.warn(
         `连接超时: deviceId=${this.deviceId}, elapsed=${elapsed}ms, timeout=${this.heartbeatTimeoutMs}ms`
       );
       return true;
@@ -434,7 +449,7 @@ export class ESP32Connection {
       return;
     }
 
-    logger.info(`关闭连接: deviceId=${this.deviceId}`);
+    this.logger.info(`关闭连接: deviceId=${this.deviceId}`);
 
     // 如果连接已断开，直接返回
     if (
@@ -469,14 +484,14 @@ export class ESP32Connection {
   }
 
   /**
-   * 获取设备ID
+   * 获取设备 ID
    */
   getDeviceId(): string {
     return this.deviceId;
   }
 
   /**
-   * 获取客户端ID
+   * 获取客户端 ID
    */
   getClientId(): string {
     return this.clientId;
@@ -490,14 +505,7 @@ export class ESP32Connection {
   }
 
   /**
-   * 获取会话ID
-   */
-  getSessionId(): string {
-    return this.sessionId;
-  }
-
-  /**
-   * 是否已完成Hello握手
+   * 是否已完成 Hello 握手
    */
   isHelloCompleted(): boolean {
     return this.helloCompleted;
@@ -505,15 +513,15 @@ export class ESP32Connection {
 }
 
 /**
- * 检查Buffer是否为有效的UTF-8
- * @param buffer - Buffer对象
- * @returns 是否为有效UTF-8
+ * 检查 Buffer 是否为有效的 UTF-8
+ * @param buffer - Buffer 对象
+ * @returns 是否为有效 UTF-8
  */
 function isValidUTF8(buffer: Buffer): boolean {
   try {
-    // 尝试解码为UTF-8字符串
+    // 尝试解码为 UTF-8 字符串
     const text = buffer.toString("utf-8");
-    // 如果解码后能重新编码回相同的Buffer，则认为是有效的
+    // 如果解码后能重新编码回相同的 Buffer，则认为是有效的
     const reEncoded = Buffer.from(text, "utf-8");
     if (!reEncoded.equals(buffer)) {
       return false;

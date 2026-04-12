@@ -3,7 +3,7 @@
  * 定义语音合成服务的方法和回调
  */
 
-import type { ESP32Connection } from "@/lib/esp32/connection.js";
+import type { IDeviceConnection } from "../interfaces.js";
 
 /**
  * 发送回调函数类型
@@ -26,13 +26,23 @@ export interface TTSServiceOptions {
   /**
    * 获取设备连接的回调
    */
-  getConnection?: (deviceId: string) => ESP32Connection | undefined;
+  getConnection?: (deviceId: string) => IDeviceConnection | undefined;
 
   /**
    * TTS 完成回调（stop 消息发送后触发）
    * 用于通知外部 TTS 流程已完成，可以进行清理或重建
    */
   onTTSComplete?: (deviceId: string) => void;
+
+  /**
+   * 日志器（可选）
+   */
+  logger?: import("../interfaces.js").ILogger;
+
+  /**
+   * 配置提供者（可选，用于获取 TTS 配置）
+   */
+  configProvider?: import("../interfaces.js").IESP32ConfigProvider;
 }
 
 /**

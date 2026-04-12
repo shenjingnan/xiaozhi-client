@@ -47,7 +47,7 @@ export interface BinaryProtocol2Parsed {
  *
  * - Type: 0 = Opus 音频, 1 = JSON
  * - Reserved: 保留字段（0）
- * - Payload Size: 负载字节数（16位，无符号）
+ * - Payload Size: 负载字节数（16 位，无符号）
  * - Payload: 实际音频数据
  */
 
@@ -55,24 +55,20 @@ export interface BinaryProtocol2Parsed {
  * BinaryProtocol3 解析结果接口
  */
 export interface BinaryProtocol3Parsed {
-  /** 协议版本（固定为3） */
+  /** 协议版本（固定为 3） */
   protocolVersion: number;
   /** 数据类型 */
   type: "opus" | "json";
-  /** 时间戳（由于协议3没有时间戳字段，设为0） */
+  /** 时间戳（由于协议 3 没有时间戳字段，设为 0） */
   timestamp: number;
   /** 音频载荷 */
   payload: Uint8Array;
 }
 
-/**
- * 协议2头部大小（字节）
- */
+/** 协议 2 头部大小（字节） */
 const HEADER_SIZE = 16; // 2 + 2 + 4 + 4 + 4
 
-/**
- * 协议3头部大小（字节）: 1 + 1 + 2 = 4
- */
+/** 协议 3 头部大小（字节）: 1 + 1 + 2 = 4 */
 const HEADER_SIZE_PROTOCOL3 = 4;
 
 /**
@@ -208,18 +204,18 @@ export type AudioProtocolType =
  * @returns 是否为 BinaryProtocol3 格式
  */
 export function isBinaryProtocol3(data: Buffer): boolean {
-  // 数据长度至少4字节
+  // 数据长度至少 4 字节
   if (data.length < HEADER_SIZE_PROTOCOL3) {
     return false;
   }
 
-  // 读取 type（第1字节）
+  // 读取 type（第 1 字节）
   const typeValue = data[0];
   if (typeValue !== 0 && typeValue !== 1) {
     return false;
   }
 
-  // 读取 payload_size（第3-4字节，网络字节序大端序，16位）
+  // 读取 payload_size（第 3-4 字节，网络字节序大端序，16 位）
   const payloadSize = data.readUInt16BE(2);
 
   // 检查载荷大小是否合理（不超过数据长度）
@@ -243,11 +239,11 @@ export function parseBinaryProtocol3(
     return null;
   }
 
-  // 读取数据类型（第1字节）
+  // 读取数据类型（第 1 字节）
   const typeValue = data[0];
   const type = typeValue === 0 ? ("opus" as const) : ("json" as const);
 
-  // 读取载荷大小（第3-4字节，16位，大端序）
+  // 读取载荷大小（第 3-4 字节，16 位，大端序）
   const payloadSize = data.readUInt16BE(2);
 
   // 检查载荷大小是否与实际数据长度匹配
@@ -265,22 +261,22 @@ export function parseBinaryProtocol3(
   return {
     protocolVersion: 3,
     type,
-    timestamp: 0, // 协议3没有时间戳字段
+    timestamp: 0, // 协议 3 没有时间戳字段
     payload,
   };
 }
 
 /**
- * 检查是否为纯 Opus 数据（协议1）
+ * 检查是否为纯 Opus 数据（协议 1）
  *
  * Opus 数据以 TOC (Table of Contents) 字节开头
- * TOC 字节的最高2位表示帧类型：
+ * TOC 字节的最高 2 位表示帧类型：
  * - 0b00: 单帧 (single frame)
  * - 0b01: 帧数未压缩
  * - 0b10: 帧数压缩
  * - 0b11: 扩展
  *
- * 对于 Opus 音频，有效的 TOC 字节通常以 0b??开头
+ * 对于 Opus 音频，有效的 TOC 字节通常以 0b?? 开头
  * 我们检查数据是否为有效的 Opus 数据（不能太短，且第一个字节看起来像 Opus TOC）
  * @param data - 待检查的数据
  * @returns 是否可能是有效的 Opus 数据
@@ -317,17 +313,17 @@ function isValidOpusData(data: Buffer): boolean {
  * @returns 检测到的协议类型
  */
 export function detectAudioProtocol(data: Buffer): AudioProtocolType {
-  // 优先检测协议2（16字节头部）
+  // 优先检测协议 2（16 字节头部）
   if (isBinaryProtocol2(data)) {
     return "protocol2";
   }
 
-  // 检测协议3（4字节头部）
+  // 检测协议 3（4 字节头部）
   if (isBinaryProtocol3(data)) {
     return "protocol3";
   }
 
-  // 尝试检测协议1（纯Opus数据）
+  // 尝试检测协议 1（纯 Opus 数据）
   if (isValidOpusData(data)) {
     return "protocol1";
   }

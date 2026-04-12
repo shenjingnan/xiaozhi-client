@@ -12,6 +12,7 @@ appender
 Appender
 appenders
 ASMR
+ASRIs
 badcase
 bfjarx
 bidirection
@@ -68,6 +69,10 @@ healthcheck
 HTTPMCP
 httpx
 IASR
+ICFG
+ICONN
+IESP
+ILOG
 IMCP
 IMEI
 infile
@@ -115,6 +120,7 @@ numpy
 nums
 oneline
 openspeech
+OTAHANDLER
 peiqi
 phantomjs
 postbuild
@@ -180,6 +186,8 @@ vsize
 webui
 wenwanshanshan
 worktrees
+wroom
+WSHANDLER
 wvae
 Xiaoxuan
 xiaoxue

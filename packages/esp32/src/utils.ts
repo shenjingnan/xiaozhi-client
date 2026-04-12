@@ -3,8 +3,7 @@
  * 提供设备型号、固件版本等信息的提取功能
  */
 
-import { logger } from "@/Logger.js";
-import type { ESP32DeviceReport } from "@/types/esp32.js";
+import type { ESP32DeviceReport } from "./types.js";
 
 /**
  * 从请求头获取的设备信息
@@ -63,9 +62,6 @@ function extractBoardType(
       report.application as unknown as { board?: { type: string } }
     ).board;
     if (oldFormat?.type) {
-      logger.debug(
-        `使用旧格式数据结构: application.board.type=${oldFormat.type}`
-      );
       boardType = oldFormat.type;
     }
   }
