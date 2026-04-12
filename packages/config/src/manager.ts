@@ -12,8 +12,11 @@
  * ```typescript
  * import { configManager } from '@xiaozhi-client/config';
  *
- * // 获取配置
+ * // 获取配置（深拷贝，适用于需要独立副本的场景）
  * const config = configManager.getConfig();
+ *
+ * // 获取配置只读引用（适用于 JSON 序列化等只读场景，性能更好）
+ * const configReadOnly = configManager.getConfigReadOnly();
  *
  * // 更新配置
  * configManager.updateConfig({ mcpEndpoint: 'wss://...' });
@@ -29,8 +32,8 @@
  *   // }
  *   console.log('配置已更新事件:', payload);
  *
- *   // 如果需要获取最新的完整配置对象，可在回调中调用 getConfig()
- *   const latestConfig = configManager.getConfig();
+ *   // 如果只需要读取最新配置，推荐使用 getConfigReadOnly() 避免深拷贝开销
+ *   const latestConfig = configManager.getConfigReadOnly();
  *   console.log('最新配置对象:', latestConfig);
  * });
  * ```
@@ -558,6 +561,9 @@ export class ConfigManager {
   /**
    * 获取配置（只读）
    * 使用缓存机制避免频繁的文件 I/O 操作
+   *
+   * 注意：此方法返回配置的深拷贝，以防止外部修改影响内部缓存。
+   * 如果只需要只读访问且不需要独立副本，请使用 getConfigReadOnly()。
    */
   public getConfig(): Readonly<AppConfig> {
     // 使用缓存，避免每次都重新加载文件
@@ -568,6 +574,34 @@ export class ConfigManager {
     // 使用 structuredClone 进行更高效的深拷贝
     // 如果不支持则降级到 JSON.parse(JSON.stringify())
     return structuredClone(this.config);
+  }
+
+  /**
+   * 获取配置的只读引用（不进行深拷贝）
+   *
+   * 适用于只需要读取配置值的场景，避免深拷贝的性能开销。
+   *
+   * **使用场景**：
+   * - HTTP API 返回配置数据（会被 JSON 序列化）
+   * - WebSocket 心跳响应中发送配置
+   * - 事件回调中广播配置更新
+   * - 检查配置属性是否存在
+   *
+   * **注意事项**：
+   * - 返回的对象是内部缓存的直接引用，不应被修改
+   * - 如需修改配置，请使用 updateConfig 等专用方法
+   * - 如需独立的可修改副本，请使用 getConfig()
+   *
+   * @returns 配置对象的只读引用
+   */
+  public getConfigReadOnly(): Readonly<AppConfig> {
+    // 使用缓存，避免每次都重新加载文件
+    if (!this.config) {
+      this.config = this.loadConfig();
+    }
+
+    // 直接返回引用，不进行深拷贝
+    return this.config;
   }
 
   /**
@@ -585,7 +619,7 @@ export class ConfigManager {
    * @deprecated 使用 getMcpEndpoints() 获取所有端点
    */
   public getMcpEndpoint(): string {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     if (Array.isArray(config.mcpEndpoint)) {
       return config.mcpEndpoint[0] || "";
     }
@@ -596,7 +630,7 @@ export class ConfigManager {
    * 获取所有 MCP 端点
    */
   public getMcpEndpoints(): string[] {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     if (Array.isArray(config.mcpEndpoint)) {
       return [...config.mcpEndpoint];
     }
@@ -607,7 +641,7 @@ export class ConfigManager {
    * 获取 MCP 服务配置
    */
   public getMcpServers(): Readonly<Record<string, MCPServerConfig>> {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     return config.mcpServers;
   }
 
@@ -615,7 +649,7 @@ export class ConfigManager {
    * 获取 MCP 服务工具配置
    */
   public getMcpServerConfig(): Readonly<Record<string, MCPServerToolsConfig>> {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     return config.mcpServerConfig || {};
   }
 
@@ -920,14 +954,13 @@ export class ConfigManager {
    * 删除指定服务器的工具配置
    */
   public removeServerToolsConfig(serverName: string): void {
-    const config = this.getConfig();
-    const newConfig = { ...config };
+    const config = this.getMutableConfig();
 
     // 确保 mcpServerConfig 存在
-    if (newConfig.mcpServerConfig) {
+    if (config.mcpServerConfig) {
       // 删除指定服务的工具配置
-      delete newConfig.mcpServerConfig[serverName];
-      this.saveConfig(newConfig);
+      delete config.mcpServerConfig[serverName];
+      this.saveConfig(config);
     }
   }
 
@@ -1113,7 +1146,7 @@ export class ConfigManager {
    * 获取连接配置（包含默认值）
    */
   public getConnectionConfig(): Required<ConnectionConfig> {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     const connectionConfig = config.connection || {};
 
     return {
@@ -1302,7 +1335,7 @@ export class ConfigManager {
    * 获取 ModelScope 配置
    */
   public getModelScopeConfig(): Readonly<ModelScopeConfig> {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     return config.modelscope || {};
   }
 
@@ -1353,7 +1386,7 @@ export class ConfigManager {
    * 获取 customMCP 配置
    */
   public getCustomMCPConfig(): CustomMCPConfig | null {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     return config.customMCP || null;
   }
 
@@ -1867,7 +1900,7 @@ export class ConfigManager {
    * 获取 Web UI 配置
    */
   public getWebUIConfig(): Readonly<WebUIConfig> {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     return config.webUI || {};
   }
 
@@ -1959,7 +1992,7 @@ export class ConfigManager {
    * 获取扣子平台配置
    */
   public getCozePlatformConfig(): CozePlatformConfig | null {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     const cozeConfig = config.platforms?.coze;
 
     if (!cozeConfig || !cozeConfig.token) {
@@ -2309,7 +2342,7 @@ export class ConfigManager {
    * 获取工具调用日志配置
    */
   public getToolCallLogConfig(): Readonly<ToolCallLogConfig> {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     return config.toolCallLog || {};
   }
 
@@ -2343,7 +2376,7 @@ export class ConfigManager {
    * 获取 TTS 配置
    */
   public getTTSConfig(): Readonly<TTSConfig> {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     return config.tts || {};
   }
 
@@ -2351,7 +2384,7 @@ export class ConfigManager {
    * 获取 ASR 配置
    */
   public getASRConfig(): Readonly<ASRConfig> {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     return config.asr || {};
   }
 
@@ -2359,7 +2392,7 @@ export class ConfigManager {
    * 获取 LLM 配置
    */
   public getLLMConfig(): LLMConfig | null {
-    const config = this.getConfig();
+    const config = this.getConfigReadOnly();
     return config.llm || null;
   }
 

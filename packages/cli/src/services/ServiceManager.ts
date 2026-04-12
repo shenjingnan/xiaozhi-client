@@ -207,7 +207,7 @@ export class ServiceManagerImpl implements IServiceManager {
 
     // 验证配置文件
     try {
-      const config = this.configManager.getConfig();
+      const config = this.configManager.getConfigReadOnly();
       if (!config) {
         throw new ConfigError("配置文件无效");
       }

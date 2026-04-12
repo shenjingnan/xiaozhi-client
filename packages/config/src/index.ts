@@ -14,8 +14,8 @@
  * ```typescript
  * import { configManager } from '@xiaozhi-client/config';
  *
- * // 获取配置
- * const config = configManager.getConfig();
+ * // 获取配置只读引用（适用于只读场景，性能更好）
+ * const config = configManager.getConfigReadOnly();
  *
  * // 更新 MCP 端点配置
  * configManager.updateMcpEndpoint('wss://api.example.com/mcp');
