@@ -1,3 +1,14 @@
+## 2.3.0-beta.2 (2026-04-13)
+
+### 🩹 Fixes
+
+- 修复 @xiaozhi-client/esp32 未参与 nx 发布流程 ([#3208](https://github.com/shenjingnan/xiaozhi-client/pull/3208))
+
+### ❤️ Thank You
+
+- GLM-5.1
+- shenjingnan @shenjingnan
+
 ## 2.3.0-beta.1 (2026-04-13)
 
 This was a version bump only, there were no code changes.
