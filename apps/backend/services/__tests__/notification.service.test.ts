@@ -8,6 +8,7 @@ import type { ClientInfo } from "../status.service.js";
 vi.mock("../event-bus.service.js", () => ({
   getEventBus: vi.fn().mockReturnValue({
     onEvent: vi.fn(),
+    offEvent: vi.fn(),
     emitEvent: vi.fn(),
   }),
 }));
@@ -84,6 +85,7 @@ describe("NotificationService", () => {
     // 模拟 EventBus
     mockEventBus = {
       onEvent: vi.fn(),
+      offEvent: vi.fn(),
       emitEvent: vi.fn(),
     };
     const { getEventBus } = await import("../event-bus.service.js");
@@ -887,6 +889,35 @@ describe("NotificationService", () => {
       const stats = notificationService.getClientStats();
       expect(stats.totalClients).toBe(0);
       expect(stats.queuedMessages).toBe(0);
+    });
+
+    it("should remove all event listeners on destroy", () => {
+      // 验证初始化时注册了 10 个监听器
+      expect(mockEventBus.onEvent).toHaveBeenCalledTimes(10);
+
+      // 执行 destroy
+      notificationService.destroy();
+
+      // 验证移除了所有监听器
+      expect(mockEventBus.offEvent).toHaveBeenCalledTimes(10);
+
+      // 验证移除的事件名称和处理器
+      const registeredEvents = mockEventBus.onEvent.mock.calls.map(
+        (call: any) => call[0]
+      );
+      const removedEvents = mockEventBus.offEvent.mock.calls.map(
+        (call: any) => call[0]
+      );
+
+      // 移除的事件应该与注册的事件一致
+      expect(removedEvents).toEqual(registeredEvents);
+
+      // 验证移除时使用的是相同的处理器引用
+      for (let i = 0; i < 10; i++) {
+        const registeredHandler = mockEventBus.onEvent.mock.calls[i][1];
+        const removedHandler = mockEventBus.offEvent.mock.calls[i][1];
+        expect(removedHandler).toBe(registeredHandler);
+      }
     });
   });
 
