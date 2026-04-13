@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { COPY_FEEDBACK_DURATION } from "@/constants/timeouts";
 import type { VersionInfo } from "@/services/api";
 import { apiClient } from "@/services/api";
 import { CopyIcon, InfoIcon, RocketIcon } from "lucide-react";
@@ -104,7 +105,10 @@ export function VersionDisplay({ className }: VersionDisplayProps) {
         if (copiedTimerRef.current) {
           clearTimeout(copiedTimerRef.current);
         }
-        copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
+        copiedTimerRef.current = setTimeout(
+          () => setCopied(false),
+          COPY_FEEDBACK_DURATION
+        );
       } catch (err) {
         console.error("复制版本号失败:", err);
       }

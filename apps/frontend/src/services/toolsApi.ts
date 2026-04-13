@@ -3,6 +3,12 @@
  * 专门处理自定义工具的添加、删除和管理操作
  */
 
+import {
+  CUSTOM_TOOL_DESCRIPTION_MAX_LENGTH,
+  CUSTOM_TOOL_NAME_MAX_LENGTH,
+  WORKFLOW_DESCRIPTION_MAX_LENGTH,
+  WORKFLOW_NAME_MAX_LENGTH,
+} from "@/constants/limits";
 import type {
   CozeWorkflow,
   JSONSchema,
@@ -143,12 +149,19 @@ export class ToolsApiService {
     }
 
     // 验证字段长度
-    if (workflow.workflow_name.length > 100) {
-      throw new Error("工作流名称过长，不能超过100个字符");
+    if (workflow.workflow_name.length > WORKFLOW_NAME_MAX_LENGTH) {
+      throw new Error(
+        `工作流名称过长，不能超过${WORKFLOW_NAME_MAX_LENGTH}个字符`
+      );
     }
 
-    if (workflow.description && workflow.description.length > 500) {
-      throw new Error("工作流描述过长，不能超过500个字符");
+    if (
+      workflow.description &&
+      workflow.description.length > WORKFLOW_DESCRIPTION_MAX_LENGTH
+    ) {
+      throw new Error(
+        `工作流描述过长，不能超过${WORKFLOW_DESCRIPTION_MAX_LENGTH}个字符`
+      );
     }
 
     // 验证自定义参数
@@ -159,8 +172,10 @@ export class ToolsApiService {
       if (customName.trim() === "") {
         throw new Error("自定义名称不能为空");
       }
-      if (customName.length > 50) {
-        throw new Error("自定义名称过长，不能超过50个字符");
+      if (customName.length > CUSTOM_TOOL_NAME_MAX_LENGTH) {
+        throw new Error(
+          `自定义名称过长，不能超过${CUSTOM_TOOL_NAME_MAX_LENGTH}个字符`
+        );
       }
     }
 
@@ -168,8 +183,10 @@ export class ToolsApiService {
       if (typeof customDescription !== "string") {
         throw new Error("自定义描述必须是字符串");
       }
-      if (customDescription.length > 200) {
-        throw new Error("自定义描述过长，不能超过200个字符");
+      if (customDescription.length > CUSTOM_TOOL_DESCRIPTION_MAX_LENGTH) {
+        throw new Error(
+          `自定义描述过长，不能超过${CUSTOM_TOOL_DESCRIPTION_MAX_LENGTH}个字符`
+        );
       }
     }
 
@@ -255,8 +272,10 @@ export class ToolsApiService {
         throw new Error(`第${i + 1}个参数的描述不能为空且必须是字符串`);
       }
 
-      if (param.description.length > 200) {
-        throw new Error(`第${i + 1}个参数的描述不能超过200个字符`);
+      if (param.description.length > CUSTOM_TOOL_DESCRIPTION_MAX_LENGTH) {
+        throw new Error(
+          `第${i + 1}个参数的描述不能超过${CUSTOM_TOOL_DESCRIPTION_MAX_LENGTH}个字符`
+        );
       }
 
       // 验证类型
