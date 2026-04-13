@@ -141,12 +141,45 @@
       "rollup@<5.0.0": ">=4.59.0",
       "express-rate-limit@<9.0.0": ">=8.2.2",
       "dompurify@<4.0.0": ">=3.3.2",
-      "immutable@<6.0.0": ">=5.1.5"
+      "immutable@<6.0.0": ">=5.1.5",
+      "flatted@<3.4.0": ">=3.4.0",
+      "next@>=16.0.0-beta.0 <16.1.7": ">=16.1.7",
+      "next@>=16.0.1 <16.1.7": ">=16.1.7",
+      "flatted@<=3.4.1": ">=3.4.2",
+      "smol-toml@<1.6.1": ">=1.6.1",
+      "brace-expansion@>=4.0.0 <5.0.5": ">=5.0.5",
+      "picomatch@<2.3.2": ">=2.3.2",
+      "picomatch@>=4.0.0 <4.0.4": ">=4.0.4",
+      "yaml@>=1.0.0 <1.10.3": ">=1.10.3",
+      "yaml@>=2.0.0 <2.8.3": ">=2.8.3",
+      "path-to-regexp@>=8.0.0 <8.4.0": ">=8.4.0",
+      "happy-dom@<20.8.9": ">=20.8.9",
+      "happy-dom@>=15.10.0 <=20.8.7": ">=20.8.8",
+      "lodash-es@>=4.0.0 <=4.17.23": ">=4.18.0",
+      "lodash@>=4.0.0 <=4.17.23": ">=4.18.0",
+      "lodash-es@<=4.17.23": ">=4.18.0",
+      "lodash@<=4.17.23": ">=4.18.0",
+      "@xmldom/xmldom@>=0.9.0 <0.9.9": ">=0.9.9",
+      "vite@>=7.0.0 <=7.3.1": ">=7.3.2",
+      "vite@>=7.1.0 <=7.3.1": ">=7.3.2",
+      "hono@<4.12.12": ">=4.12.12",
+      "hono@>=4.0.0 <=4.12.11": ">=4.12.12",
+      "@hono/node-server@<1.19.13": ">=1.19.13",
+      "axios@<1.15.0": ">=1.15.0",
+      "next@>=16.0.0-beta.0 <16.2.3": ">=16.2.3",
+      "mathjs@<15.2.0": ">=15.2.0",
+      "picomatch": ">=4.0.4",
+      "yaml": ">=2.8.3",
+      "cosmiconfig": ">=7.1.0"
     }
   },
   "lint-staged": {
-    "*.{ts,tsx,json}": ["biome check --write --no-errors-on-unmatched"],
-    "*.{md,mdx}": ["cspell --no-must-find-files --no-progress"]
+    "*.{ts,tsx,json}": [
+      "biome check --write --no-errors-on-unmatched"
+    ],
+    "*.{md,mdx}": [
+      "cspell --no-must-find-files --no-progress"
+    ]
   },
   "packageManager": "pnpm@10.13.1"
 }
