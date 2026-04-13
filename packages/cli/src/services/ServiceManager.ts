@@ -22,6 +22,7 @@ import type {
   ServiceStatus,
 } from "../interfaces/Service";
 import { PathUtils } from "../utils/PathUtils";
+import { SignalHandlerManager } from "../utils/SignalHandlerManager";
 import { Validation } from "../utils/Validation";
 
 /**
@@ -280,14 +281,14 @@ export class ServiceManagerImpl implements IServiceManager {
       const { WebServer } = await import("@/WebServer.js");
       const server = new WebServer(port);
 
-      // 处理退出信号
+      // 使用信号处理器管理器注册清理函数
+      const signalManager = SignalHandlerManager.getInstance();
       const cleanup = async () => {
         await server.stop();
-        process.exit(0);
       };
 
-      process.once("SIGINT", cleanup);
-      process.once("SIGTERM", cleanup);
+      signalManager.registerHandler("SIGINT", "mcp-server-mode", cleanup);
+      signalManager.registerHandler("SIGTERM", "mcp-server-mode", cleanup);
 
       await server.start();
     }
@@ -339,15 +340,15 @@ export class ServiceManagerImpl implements IServiceManager {
     const { WebServer } = await import("@/WebServer.js");
     const server = new WebServer();
 
-    // 处理退出信号
+    // 使用信号处理器管理器注册清理函数
+    const signalManager = SignalHandlerManager.getInstance();
     const cleanup = async () => {
       await server.stop();
       this.processManager.cleanupPidFile();
-      process.exit(0);
     };
 
-    process.once("SIGINT", cleanup);
-    process.once("SIGTERM", cleanup);
+    signalManager.registerHandler("SIGINT", "foreground-mode", cleanup);
+    signalManager.registerHandler("SIGTERM", "foreground-mode", cleanup);
 
     // 保存 PID 信息
     this.processManager.savePidInfo(process.pid, "foreground");

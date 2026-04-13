@@ -5,6 +5,12 @@
  * 用于后台模式启动，替代原有的 adaptiveMCPPipe 启动方式
  */
 
+// 信号处理器注册状态（防止重复注册）
+const signalHandlersRegistered = {
+  SIGINT: false,
+  SIGTERM: false,
+};
+
 // 动态导入避免 CLI 代码执行
 async function importModules() {
   const webServerModule = await import("@/WebServer.js");
@@ -15,6 +21,20 @@ async function importModules() {
     configManager: configModule.configManager,
     logger: loggerModule.logger,
   };
+}
+
+/**
+ * 安全注册信号处理器（防止重复注册）
+ */
+function safeRegisterSignal(
+  signal: "SIGINT" | "SIGTERM",
+  handler: () => void
+): void {
+  if (signalHandlersRegistered[signal]) {
+    return;
+  }
+  signalHandlersRegistered[signal] = true;
+  process.once(signal, handler);
 }
 
 async function main() {
@@ -36,15 +56,15 @@ async function main() {
 
     logger.info("[WEBSERVER_STANDALONE] WebServer 启动成功");
 
-    // 处理退出信号
+    // 处理退出信号（使用安全注册）
     const cleanup = async () => {
       logger.info("[WEBSERVER_STANDALONE] 正在停止 WebServer...");
       await webServer.stop();
       process.exit(0);
     };
 
-    process.once("SIGINT", cleanup);
-    process.once("SIGTERM", cleanup);
+    safeRegisterSignal("SIGINT", cleanup);
+    safeRegisterSignal("SIGTERM", cleanup);
   } catch (error) {
     console.error("WebServer 启动失败:", error);
     process.exit(1);
