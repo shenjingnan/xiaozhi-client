@@ -113,6 +113,11 @@ const initialState: ConfigState = {
 };
 
 /**
+ * WebSocket 监听器取消订阅函数
+ */
+let configUpdateUnsubscribe: (() => void) | null = null;
+
+/**
  * 创建配置 Store
  */
 export const useConfigStore = create<ConfigStore>()(
@@ -316,6 +321,13 @@ export const useConfigStore = create<ConfigStore>()(
 
       reset: () => {
         console.log("[ConfigStore] 重置状态");
+
+        // 取消 WebSocket 监听器订阅
+        if (configUpdateUnsubscribe) {
+          configUpdateUnsubscribe();
+          configUpdateUnsubscribe = null;
+        }
+
         set(initialState, false, "reset");
       },
 
@@ -326,11 +338,20 @@ export const useConfigStore = create<ConfigStore>()(
           setLoading({ isLoading: true });
           console.log("[ConfigStore] 初始化配置 Store");
 
-          // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:configUpdate", (config) => {
-            console.log("[ConfigStore] 收到 WebSocket 配置更新");
-            get().setConfig(config, "websocket");
-          });
+          // 取消旧的 WebSocket 监听器订阅（如果存在）
+          if (configUpdateUnsubscribe) {
+            configUpdateUnsubscribe();
+            configUpdateUnsubscribe = null;
+          }
+
+          // 设置 WebSocket 事件监听并保存 unsubscribe 函数
+          configUpdateUnsubscribe = webSocketManager.subscribe(
+            "data:configUpdate",
+            (config) => {
+              console.log("[ConfigStore] 收到 WebSocket 配置更新");
+              get().setConfig(config, "websocket");
+            }
+          );
 
           // 获取初始配置
           await refreshConfig();
