@@ -80,6 +80,43 @@ function MyComponent() {
 
 ### 2. 使用复合选择器
 
+当组件需要多个相关状态时，使用复合选择器可以减少 hook 调用次数：
+
+```typescript
+// WebSocket 连接信息（包含连接状态、URL、统计等）
+import { useWebSocketConnectionInfo } from '@/stores/websocket';
+
+// 配置数据和加载状态
+import { useConfigWithLoading } from '@/stores/config';
+
+// MCP 相关配置
+import { useMcpConfig } from '@/stores/config';
+
+function ConnectionStatus() {
+  // 一次性获取所有连接相关信息
+  const { connected, connectionState, wsUrl, stats, lastError } = useWebSocketConnectionInfo();
+
+  return (
+    <div>
+      <p>连接状态: {connectionState}</p>
+      <p>连接地址: {wsUrl}</p>
+      <p>重连次数: {stats.reconnectAttempts}</p>
+      {lastError && <p>错误: {lastError.message}</p>}
+    </div>
+  );
+}
+
+function ConfigPanel() {
+  // 同时获取配置和加载状态
+  const { config, isLoading, isUpdating, error } = useConfigWithLoading();
+
+  if (isLoading) return <div>加载中...</div>;
+  if (error) return <div>错误: {error.message}</div>;
+
+  return <pre>{JSON.stringify(config, null, 2)}</pre>;
+}
+```
+
 ### 3. 使用完整 Store
 
 如果需要访问所有状态和操作方法：
@@ -156,7 +193,7 @@ function Dashboard() {
 
 ### 1. 选择合适的选择器
 
-- 使用具体的选择器 hooks（如 `useWebSocketConfig`）而不是完整的 store
+- 使用具体的选择器 hooks（如 `useConfig`、`useMcpEndpoint`、`useWebSocketConnected`）而不是完整的 store
 - 只订阅组件实际需要的状态
 - 对于需要多个状态的组件，考虑使用复合选择器
 
