@@ -74,12 +74,14 @@ import { WebServer } from "@/WebServer";
 
 ## 开发命令
 
+> 以下命令需在仓库根目录执行，而非 `packages/cli/` 目录。
+
 ```bash
 # 构建
 pnpm build
 
 # 类型检查
-pnpm check:type
+pnpm typecheck
 
 # 运行测试
 pnpm test

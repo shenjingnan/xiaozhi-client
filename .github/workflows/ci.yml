@@ -60,14 +60,14 @@ jobs:
         command: pnpm run build
 
     - name: Nx Type Check
-      run: pnpm run check:type
+      run: pnpm run typecheck
 
     - name: Docs Type Check
       working-directory: ./docs
       run: npx tsc --noEmit
 
     - name: 拼写检查 (根目录)
-      run: pnpm run check:spell
+      run: pnpm run spellcheck
 
     - name: 代码重复率检查 (monorepo)
       run: pnpm run check:cpd

@@ -31,8 +31,8 @@ pnpm test:coverage
 #### 检查内容详解
 - **`pnpm check:all`** 包含：
   - `pnpm lint` - Biome 代码规范和格式检查
-  - `pnpm check:type` - TypeScript 严格类型检查
-  - `pnpm check:spell` - 拼写检查
+  - `pnpm typecheck` - TypeScript 严格类型检查
+  - `pnpm spellcheck` - 拼写检查
   - `pnpm check:cpd` - 重复代码检查
 
 - **`pnpm test`** 包含：
@@ -142,9 +142,9 @@ vi.mock("@/services/light-service", () => ({
 #### CI 检查清单
 ```yaml
 # GitHub Actions CI 流程检查项
-- ✅ 类型检查通过 (pnpm check:type)
+- ✅ 类型检查通过 (pnpm typecheck)
 - ✅ 代码规范检查通过 (pnpm lint)
-- ✅ 拼写检查通过 (pnpm check:spell)
+- ✅ 拼写检查通过 (pnpm spellcheck)
 - ✅ 构建成功 (pnpm build)
 - ✅ 测试通过 (pnpm test:coverage)
 - ✅ 覆盖率达到要求
@@ -187,10 +187,10 @@ function preCommitCheck() {
   pnpm lint
 
   # 2. 类型检查
-  pnpm check:type
+  pnpm typecheck
 
   # 3. 拼写检查
-  pnpm check:spell
+  pnpm spellcheck
 
   # 4. 运行测试
   pnpm test
@@ -242,7 +242,7 @@ function handleCheckFailure(failure: CheckFailure): void {
 
     case 'spell_error':
       console.log(`📖 拼写错误: ${failure.message}`);
-      console.log(`💡 检查拼写: pnpm check:spell`);
+      console.log(`💡 检查拼写: pnpm spellcheck`);
       break;
 
     case 'test_failure':
@@ -291,8 +291,8 @@ pnpm lint
 
 # 如果仍有问题，运行详细诊断
 pnpm check:all  # 查看具体错误
-pnpm check:type  # 查看类型错误详情
-pnpm check:spell  # 查看拼写错误详情
+pnpm typecheck  # 查看类型错误详情
+pnpm spellcheck  # 查看拼写错误详情
 ```
 
 ### 2. 智能修复脚本
@@ -308,19 +308,19 @@ pnpm lint
 
 # 2. 类型检查（仅诊断，不自动修复）
 echo "🔍 检查类型问题..."
-TYPE_ERRORS=$(pnpm check:type 2>&1 | grep -c "error" || echo "0")
+TYPE_ERRORS=$(pnpm typecheck 2>&1 | grep -c "error" || echo "0")
 if [ "$TYPE_ERRORS" -gt 0 ]; then
   echo "❌ 发现 $TYPE_ERRORS 个类型错误，需要手动修复"
-  pnpm check:type
+  pnpm typecheck
   exit 1
 fi
 
 # 4. 拼写检查
 echo "📖 检查拼写..."
-SPELL_ERRORS=$(pnpm check:spell 2>&1 | grep -c "error" || echo "0")
+SPELL_ERRORS=$(pnpm spellcheck 2>&1 | grep -c "error" || echo "0")
 if [ "$SPELL_ERRORS" -gt 0 ]; then
   echo "❌ 发现 $SPELL_ERRORS 个拼写错误，请检查"
-  pnpm check:spell
+  pnpm spellcheck
   exit 1
 fi
 

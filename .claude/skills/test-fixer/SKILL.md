@@ -60,7 +60,7 @@ description: 测试修复技能，用于分析和修复失败的测试用例
 pnpm lint
 
 # 执行类型检查
-pnpm check:type
+pnpm typecheck
 ```
 
 ## 输出

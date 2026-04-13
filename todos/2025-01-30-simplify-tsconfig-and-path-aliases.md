@@ -101,7 +101,7 @@
 
 ### 阶段五：验证
 
-1. **类型检查**：`pnpm check:type`
+1. **类型检查**：`pnpm typecheck`
 2. **Lint 检查**：`pnpm lint`
 3. **运行测试**：`pnpm test`
 4. **构建检查**：`pnpm build`

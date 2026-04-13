@@ -60,7 +60,7 @@ find docs/ -name "*.mdx" -type f
 ```
 
 ### 2. 类型安全问题
-**检查命令**: `pnpm check:type`
+**检查命令**: `pnpm typecheck`
 
 **检测内容**:
 - any 类型使用（尤其是非测试文件）
@@ -178,7 +178,7 @@ pnpm check:cpd
 
 ### 9. 编译时问题检测
 **检查命令**:
-- `pnpm check:type` - TypeScript 类型错误
+- `pnpm typecheck` - TypeScript 类型错误
 - `pnpm build` - 构建错误
 
 **关注点**:
@@ -276,7 +276,7 @@ find apps/backend packages/cli -name "*.ts" ! -path "*/__tests__/*" ! -name "*.t
 
 #### 类型安全问题检测
 ```bash
-pnpm check:type 2>&1 | grep -A 5 "error TS"
+pnpm typecheck 2>&1 | grep -A 5 "error TS"
 ```
 
 #### 错误处理问题检测
@@ -316,7 +316,7 @@ find apps/frontend/src -name "*.tsx" -type f -exec wc -l {} + | sort -rn | head 
 
 #### 编译时问题检测
 ```bash
-pnpm check:type
+pnpm typecheck
 pnpm build
 ```
 
@@ -548,7 +548,7 @@ catch (error) {
 
 ⚠️ 随机选择问题类型: 类型安全问题
 
-🔍 检测命令: pnpm check:type
+🔍 检测命令: pnpm typecheck
 
 ⚠️ 发现问题：非测试文件中使用 any 类型
 

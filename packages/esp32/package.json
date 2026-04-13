@@ -28,12 +28,12 @@
     "test": "vitest run --coverage.enabled=false",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "check:type": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "check:spell": "cspell .",
+    "spellcheck": "cspell .",
     "check:cpd": "jscpd . --ignore 'node_modules'",
-    "check:all": "pnpm run lint && pnpm run check:type && pnpm run check:spell && pnpm run check:cpd",
+    "check:all": "pnpm run lint && pnpm run typecheck && pnpm run spellcheck && pnpm run check:cpd",
     "clean:dist": "rimraf dist"
   },
   "keywords": [
