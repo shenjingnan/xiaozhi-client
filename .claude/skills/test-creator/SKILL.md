@@ -129,9 +129,9 @@ pnpm test:coverage
 ## 质量保证检查
 
 ```bash
-pnpm check:type      # TypeScript类型检查
+pnpm typecheck      # TypeScript类型检查
 pnpm lint            # 代码规范和格式检查
-pnpm check:spell     # 拼写检查
+pnpm spellcheck     # 拼写检查
 pnpm check:all       # 运行所有质量检查
 ```
 

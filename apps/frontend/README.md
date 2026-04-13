@@ -56,7 +56,7 @@ pnpm test:coverage
 pnpm lint
 
 # 类型检查
-pnpm check:type
+pnpm typecheck
 
 # 运行所有检查并修复
 pnpm check:fix
@@ -159,7 +159,7 @@ pnpm test:coverage
 提交前请确保：
 - 所有测试通过 (`pnpm test`)
 - 代码通过格式检查 (`pnpm check:fix`)
-- 类型检查通过 (`pnpm check:type`)
+- 类型检查通过 (`pnpm typecheck`)
 
 ## 许可证
 

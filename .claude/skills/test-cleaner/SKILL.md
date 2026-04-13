@@ -149,7 +149,7 @@ describe("MCPManageHandler", () => {
 
 ```bash
 # 类型检查
-pnpm check:type
+pnpm typecheck
 
 # 代码规范检查
 pnpm lint

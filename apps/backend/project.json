@@ -53,7 +53,7 @@
     "type-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm --filter backend run check:type"
+        "command": "pnpm --filter backend run typecheck"
       },
       "dependsOn": ["config:build", "endpoint:build", "version:build"]
     },

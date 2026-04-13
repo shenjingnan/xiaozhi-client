@@ -93,7 +93,7 @@ description: 文档创建技能，用于创建标准化的项目文档
 
 ```bash
 # 拼写检查
-pnpm check:spell
+pnpm spellcheck
 
 # 代码格式检查
 pnpm lint

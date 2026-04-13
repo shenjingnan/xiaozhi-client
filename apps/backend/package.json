@@ -12,10 +12,10 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "check:type": "tsc --noEmit",
-    "check:spell": "cspell .",
+    "typecheck": "tsc --noEmit",
+    "spellcheck": "cspell .",
     "check:cpd": "jscpd . --ignore 'node_modules'",
-    "check:all": "pnpm run lint && pnpm run check:type && pnpm run check:spell && pnpm run check:cpd",
+    "check:all": "pnpm run lint && pnpm run typecheck && pnpm run spellcheck && pnpm run check:cpd",
     "clean:dist": "rimraf ../../dist/backend"
   },
   "dependencies": {

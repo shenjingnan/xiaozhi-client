@@ -79,7 +79,7 @@ import { WebServer } from "@/WebServer";
 pnpm build
 
 # 类型检查
-pnpm check:type
+pnpm typecheck
 
 # 运行测试
 pnpm test

@@ -374,13 +374,13 @@ function organizeTypeImports(sourceFile: SourceFile): void {
 ### 1. 检查命令
 ```bash
 # 运行类型检查（xiaozhi-client 项目）
-pnpm check:type
+pnpm typecheck
 
 # 运行代码规范和格式检查
 pnpm lint
 
 # 运行拼写检查
-pnpm check:spell
+pnpm spellcheck
 
 # 运行所有质量检查
 pnpm check:all

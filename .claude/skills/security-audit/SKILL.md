@@ -46,8 +46,8 @@ pnpm build:all
 # 运行 pnpm test 确保所有测试通过
 pnpm test
 
-# 执行 pnpm check:type 确保类型检查无错误
-pnpm check:type
+# 执行 pnpm typecheck 确保类型检查无错误
+pnpm typecheck
 ```
 
 ### 代码质量检查
@@ -56,8 +56,8 @@ pnpm check:type
 # 运行 pnpm lint 修复代码格式问题
 pnpm lint:fix
 
-# 执行 pnpm check:spell 检查拼写
-pnpm check:spell
+# 执行 pnpm spellcheck 检查拼写
+pnpm spellcheck
 ```
 
 ## 风险控制
