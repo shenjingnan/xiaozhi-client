@@ -8,6 +8,7 @@
  * - 支持安装操作触发
  */
 
+import { apiClient } from "@/services/api";
 import { webSocketManager } from "@/services/websocket";
 import { useCallback, useEffect, useState } from "react";
 
@@ -141,22 +142,11 @@ export function useNPMInstall() {
     try {
       console.log("[useNPMInstall] 开始安装版本:", version);
 
-      const response = await fetch("/api/update", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ version }),
-      });
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error?.message || "安装请求失败");
-      }
+      // 使用 apiClient 进行版本更新请求
+      const result = await apiClient.updateVersion(version);
 
       console.log("[useNPMInstall] 安装请求已接受:", result);
-      return result;
+      return { success: true, data: result };
     } catch (error) {
       console.error("[useNPMInstall] 安装请求失败:", error);
 
