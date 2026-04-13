@@ -148,11 +148,12 @@ describe("ESP32DeviceManager", () => {
       expect(response.websocket?.version).toBe(2);
 
       // firmware 内部字段也是 snake_case
-      const firmware = response.firmware as Record<string, unknown>;
+      const firmware = response.firmware as unknown as Record<string, unknown>;
       expect(firmware.version).toBe("2.2.2");
       expect(firmware.force).toBe(false);
 
-      const serverTime = response.server_time as Record<string, unknown>;
+      const serverTime = (response as unknown as Record<string, string>)
+        .server_time as unknown as Record<string, unknown>;
       expect(Number(serverTime.timestamp)).toBeGreaterThan(0);
       expect(typeof serverTime.timezone_offset).toBe("number");
     });
@@ -231,7 +232,7 @@ describe("ESP32DeviceManager", () => {
       // firmware 键名无大写字母，保持不变
       expect(response).toHaveProperty("firmware");
 
-      const firmware = response.firmware as Record<string, unknown>;
+      const firmware = response.firmware as unknown as Record<string, unknown>;
       // firmwareVersion → firmware_version（如果有这个字段的话）
       // 当前固件对象只有 version/force/url，都是全小写
       expect(firmware).toHaveProperty("version");
@@ -270,7 +271,7 @@ describe("ESP32DeviceManager", () => {
         "h:80"
       );
 
-      const firmware = response.firmware as Record<string, unknown>;
+      const firmware = response.firmware as unknown as Record<string, unknown>;
       expect(firmware.version).toBe("3.0.0-beta");
       expect(firmware.url).toBe("https://firmware.example.com/v3.bin");
       expect(firmware.force).toBe(true);

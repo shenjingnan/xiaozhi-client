@@ -154,7 +154,8 @@ describe("ASRService", () => {
       const { OpusDecoder } = await import("@xiaozhi-client/asr");
       expect(OpusDecoder.toPcm).toHaveBeenCalled();
       // 验证传入的是 Buffer 类型（代码中 Buffer.from(audioData)）
-      const calledArg = OpusDecoder.toPcm.mock.calls[0][0];
+      const calledArg = (OpusDecoder.toPcm as ReturnType<typeof vi.fn>).mock
+        .calls[0][0];
       expect(Buffer.isBuffer(calledArg)).toBe(true);
     });
   });
@@ -229,7 +230,7 @@ describe("ASRService", () => {
         () =>
           ({
             listen: vi.fn().mockReturnValue(mockVadGenerator),
-          }) as ReturnType<typeof createASR>
+          }) as unknown as ReturnType<typeof createASR>
       );
 
       await service.prepare("device-vad");
@@ -278,7 +279,7 @@ describe("ASRService", () => {
         () =>
           ({
             listen: vi.fn().mockReturnValue(mockNonDefiniteGenerator),
-          }) as ReturnType<typeof createASR>
+          }) as unknown as ReturnType<typeof createASR>
       );
 
       await service.prepare("device-non-definite");
@@ -307,7 +308,7 @@ describe("ASRService", () => {
         () =>
           ({
             listen: vi.fn().mockReturnValue(mockNoSegmentGenerator),
-          }) as ReturnType<typeof createASR>
+          }) as unknown as ReturnType<typeof createASR>
       );
 
       await service.prepare("device-no-segment");
