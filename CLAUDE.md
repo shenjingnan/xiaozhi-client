@@ -348,7 +348,7 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
   - 前端代码：`pnpm typecheck && pnpm lint && pnpm test`
   - 后端代码：`pnpm typecheck && pnpm lint && pnpm test`
   - 全面检查：`pnpm check:all`
-  - **注意**: pre-commit hook 已自动处理 lint/format 和 commit 规范校验，typecheck 和测试仍需手动运行
+  - **注意**: Git hooks 已自动处理 lint/format 与 commit message 规范校验，typecheck 和测试仍需手动运行
 
 ### 本地化规范
 
