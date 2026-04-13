@@ -78,60 +78,46 @@ function MyComponent() {
 }
 ```
 
-### 2. 专用 Hooks（推荐）
+### 2. 使用复合选择器
 
-使用新的专用 hooks 获得更好的类型安全和功能分离：
+当组件需要多个相关状态时，使用复合选择器可以减少 hook 调用次数：
 
 ```typescript
-import { useWebSocketConnection } from '@/hooks/useWebSocketConnection';
-import { useConfigData } from '@/hooks/useConfigData';
-import { useStatusData } from '@/hooks/useStatusData';
+// WebSocket 连接信息（包含连接状态、URL、统计等）
+import { useWebSocketConnectionInfo } from '@/stores/websocket';
 
-function MyComponent() {
-  // 连接管理
-  const { connected, connect, disconnect, lastError } = useWebSocketConnection();
+// 配置数据和加载状态
+import { useConfigWithLoading } from '@/stores/config';
 
-  // 配置管理
-  const { config, updateConfig, isLoading } = useConfigData();
+// MCP 相关配置
+import { useMcpConfig } from '@/stores/config';
 
-  // 状态管理
-  const { clientStatus, refreshStatus, restartService } = useStatusData();
+function ConnectionStatus() {
+  // 一次性获取所有连接相关信息
+  const { connected, connectionState, wsUrl, stats, lastError } = useWebSocketConnectionInfo();
 
   return (
     <div>
-      <p>连接状态: {connected ? '已连接' : '未连接'}</p>
-      {lastError && <p>连接错误: {lastError.message}</p>}
-      <button onClick={connect}>连接</button>
-      <button onClick={() => refreshStatus()}>刷新状态</button>
+      <p>连接状态: {connectionState}</p>
+      <p>连接地址: {wsUrl}</p>
+      <p>重连次数: {stats.reconnectAttempts}</p>
+      {lastError && <p>错误: {lastError.message}</p>}
     </div>
   );
 }
-```
 
-### 3. 使用复合选择器
+function ConfigPanel() {
+  // 同时获取配置和加载状态
+  const { config, isLoading, isUpdating, error } = useConfigWithLoading();
 
-对于需要多个状态的组件，可以使用复合选择器：
+  if (isLoading) return <div>加载中...</div>;
+  if (error) return <div>错误: {error.message}</div>;
 
-```typescript
-import { useWebSocketConnectionInfo, useWebSocketData } from '../stores/websocket';
-
-function MyComponent() {
-  // 获取连接相关信息
-  const { connected, wsUrl } = useWebSocketConnectionInfo();
-
-  // 获取数据相关信息
-  const { config, status } = useWebSocketData();
-
-  return (
-    <div>
-      <p>连接到: {wsUrl}</p>
-      <p>状态: {connected ? '已连接' : '未连接'}</p>
-    </div>
-  );
+  return <pre>{JSON.stringify(config, null, 2)}</pre>;
 }
 ```
 
-### 4. 使用完整 Store
+### 3. 使用完整 Store
 
 如果需要访问所有状态和操作方法：
 
@@ -207,7 +193,7 @@ function Dashboard() {
 
 ### 1. 选择合适的选择器
 
-- 使用具体的选择器 hooks（如 `useWebSocketConfig`）而不是完整的 store
+- 使用具体的选择器 hooks（如 `useConfig`、`useMcpEndpoint`、`useWebSocketConnected`）而不是完整的 store
 - 只订阅组件实际需要的状态
 - 对于需要多个状态的组件，考虑使用复合选择器
 
@@ -231,54 +217,6 @@ function Dashboard() {
 - `StatusCardWithStore.tsx`: 基本的状态订阅示例
 - `ConfigEditorWithStore.tsx`: 复杂组件的 store 使用示例
 - `DashboardWithStore.tsx`: 混合使用 hook 和 store 的示例
-
-## 迁移指南
-
-### 从旧的 WebSocket Store 迁移
-
-如果你的组件使用了以下废弃的选择器，请按照下表进行迁移：
-
-| 旧选择器 | 新选择器 | 说明 |
-|---------|---------|------|
-| `useWebSocketConfig` | `useConfig` from `@/stores/config` | 配置数据已迁移到专门的 config store |
-| `useWebSocketStatus` | `useClientStatus` from `@/stores/status` | 状态数据已迁移到专门的 status store |
-| `useWebSocketMcpEndpoint` | `useMcpEndpoint` from `@/stores/config` | MCP 端点数据在 config store 中 |
-| `useWebSocketMcpServers` | `useMcpServers` from `@/stores/config` | MCP 服务器数据在 config store 中|
-| `useWebSocketRestartStatus` | `useRestartStatus` from `@/stores/status` | 重启状态在 status store 中 |
-
-### 迁移示例
-
-**之前：**
-
-```typescript
-import { useWebSocketConfig, useWebSocketStatus } from '@/stores/websocket';
-
-function MyComponent() {
-  const config = useWebSocketConfig();
-  const status = useWebSocketStatus();
-  // ...
-}
-```
-
-**之后：**
-
-```typescript
-import { useConfig } from '@/stores/config';
-import { useClientStatus } from '@/stores/status';
-
-function MyComponent() {
-  const config = useConfig();
-  const status = useClientStatus();
-  // ...
-}
-```
-
-## 向后兼容性
-
-- ✅ **完全兼容现有的 `useWebSocket` hook**：现有组件无需修改即可继续工作
-- ✅ **废弃选择器仍然可用**：旧的选择器会显示警告但仍然工作
-- ✅ **渐进式迁移**：可以在同一个应用中混合使用新旧方式
-- ✅ **所有现有测试仍然有效**：不会破坏现有的测试用例
 
 ## 架构优势
 

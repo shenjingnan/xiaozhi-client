@@ -371,19 +371,6 @@ export const useWebSocketConnectionTimes = () =>
     }))
   );
 
-// ==================== 向后兼容的选择器（废弃） ====================
-//
-// 注意：这些选择器已迁移到 ./websocket-compat.ts 以避免循环依赖
-// 请从 @/stores/websocket-compat 或 @/stores 导入这些废弃的选择器
-//
-// 迁移指南：
-// - useWebSocketConfig → useConfig from "./config"
-// - useWebSocketStatus → useClientStatus from "./status"
-// - useWebSocketMcpEndpoint → useMcpEndpoint from "./config"
-// - useWebSocketMcpServers → useMcpServers from "./config"
-// - useWebSocketMcpServerConfig → useMcpServerConfig from "./config"
-// - useWebSocketRestartStatus → useRestartStatus from "./status"
-
 // ==================== 复合选择器 ====================
 
 /**
@@ -465,14 +452,3 @@ export const useWebSocketControls = () =>
   );
 
 // ==================== 向后兼容的复合选择器（废弃） ====================
-
-/**
- * @deprecated 数据已分离到不同的 stores，请使用对应的选择器
- */
-export const useWebSocketData = () => {
-  console.warn("useWebSocketData 已废弃，请使用对应的专门 stores");
-  return {
-    config: null,
-    status: null,
-  };
-};

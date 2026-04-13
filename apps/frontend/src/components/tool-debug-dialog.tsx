@@ -36,6 +36,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { COPY_FEEDBACK_DURATION } from "@/constants/timeouts";
 import {
   createDefaultValues,
   createZodSchemaFromJsonSchema,
@@ -617,7 +618,10 @@ export function ToolDebugDialog({
       if (copiedTimerRef.current) {
         clearTimeout(copiedTimerRef.current);
       }
-      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
+      copiedTimerRef.current = setTimeout(
+        () => setCopied(false),
+        COPY_FEEDBACK_DURATION
+      );
     } catch {
       toast.error("复制失败");
     }
