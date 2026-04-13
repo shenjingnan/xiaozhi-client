@@ -8,6 +8,7 @@
  */
 
 import { WEBSOCKET_RECONNECT_DELAY } from "@/constants/timeouts";
+import { EventBus, type EventListener } from "@/services/event-bus.js";
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 
 /**
@@ -119,11 +120,6 @@ interface EventBusEvents {
 }
 
 /**
- * 事件监听器类型
- */
-type EventListener<T = unknown> = (data: T) => void;
-
-/**
  * WebSocket 连接状态
  */
 enum ConnectionState {
@@ -145,87 +141,6 @@ interface WebSocketManagerConfig {
 }
 
 /**
- * 事件总线类 - 支持多个订阅者
- */
-class EventBus {
-  private listeners: Map<keyof EventBusEvents, Set<EventListener<unknown>>> =
-    new Map();
-
-  /**
-   * 订阅事件
-   */
-  on<K extends keyof EventBusEvents>(
-    event: K,
-    listener: EventListener<EventBusEvents[K]>
-  ): () => void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
-    }
-    this.listeners.get(event)!.add(listener as EventListener<unknown>);
-
-    // 返回取消订阅函数
-    return () => {
-      this.off(event, listener);
-    };
-  }
-
-  /**
-   * 取消订阅事件
-   */
-  off<K extends keyof EventBusEvents>(
-    event: K,
-    listener: EventListener<EventBusEvents[K]>
-  ): void {
-    const eventListeners = this.listeners.get(event);
-    if (eventListeners) {
-      eventListeners.delete(listener as EventListener<unknown>);
-      if (eventListeners.size === 0) {
-        this.listeners.delete(event);
-      }
-    }
-  }
-
-  /**
-   * 发布事件
-   */
-  emit<K extends keyof EventBusEvents>(
-    event: K,
-    data: EventBusEvents[K]
-  ): void {
-    const eventListeners = this.listeners.get(event);
-    if (eventListeners) {
-      for (const listener of eventListeners) {
-        try {
-          listener(data);
-        } catch (error) {
-          console.error(`[EventBus] 事件监听器执行失败 (${event}):`, error);
-        }
-      }
-    }
-  }
-
-  /**
-   * 清除所有监听器
-   */
-  clear(): void {
-    this.listeners.clear();
-  }
-
-  /**
-   * 获取事件监听器数量
-   */
-  getListenerCount(event?: keyof EventBusEvents): number {
-    if (event) {
-      return this.listeners.get(event)?.size || 0;
-    }
-    return Array.from(this.listeners.values()).reduce(
-      (total, listeners) => total + listeners.size,
-      0
-    );
-  }
-}
-
-/**
  * WebSocket 管理器类 - 严格单例模式
  */
 export class WebSocketManager {
@@ -235,7 +150,7 @@ export class WebSocketManager {
   private ws: WebSocket | null = null;
   private url: string;
   private state: ConnectionState = ConnectionState.DISCONNECTED;
-  private eventBus: EventBus = new EventBus();
+  private eventBus: EventBus<EventBusEvents> = new EventBus<EventBusEvents>();
   private reconnectAttempts = 0;
   private maxReconnectAttempts: number;
   private reconnectInterval: number;
@@ -370,7 +285,7 @@ export class WebSocketManager {
   /**
    * 获取事件总线实例（用于高级用法）
    */
-  getEventBus(): EventBus {
+  getEventBus(): EventBus<EventBusEvents> {
     return this.eventBus;
   }
 
@@ -725,10 +640,11 @@ export const webSocketManager = WebSocketManager.getInstance();
 
 // 导出类型和枚举
 export { ConnectionState };
+// 重新导出 EventBus 和 EventListener（从 event-bus.ts）
+export { EventBus, type EventListener } from "@/services/event-bus.js";
 export type {
   WebSocketMessage,
   RestartStatus,
   WebSocketManagerConfig,
   EventBusEvents,
-  EventListener,
 };
