@@ -1,3 +1,23 @@
+## 2.3.0-beta.0 (2026-04-13)
+
+### 🚀 Features
+
+- 添加 Playwright CLI 技能和 Claude Code 命令 ([#3079](https://github.com/shenjingnan/xiaozhi-client/pull/3079))
+- 添加覆盖率分析 Claude Code 命令 ([#3168](https://github.com/shenjingnan/xiaozhi-client/pull/3168))
+- 引入 husky + lint-staged + commitlint 配置 Git hooks ([#3206](https://github.com/shenjingnan/xiaozhi-client/pull/3206))
+- **e2e:** 优化截图存储规则并添加测试用例 ([#3104](https://github.com/shenjingnan/xiaozhi-client/pull/3104))
+- **esp32:** 添加 VAD 端点检测支持，优化语音识别结束判断 ([#3169](https://github.com/shenjingnan/xiaozhi-client/pull/3169))
+
+### 🩹 Fixes
+
+- 修复依赖安全漏洞，添加 pnpm overrides 强制升级 ([#3207](https://github.com/shenjingnan/xiaozhi-client/pull/3207))
+- **esp32:** 修正 TTS 流控速率为实时速率 ([#3166](https://github.com/shenjingnan/xiaozhi-client/pull/3166))
+
+### ❤️ Thank You
+
+- GLM-5.1
+- shenjingnan @shenjingnan
+
 ## 2.2.0 (2026-03-16)
 
 This was a version bump only, there were no code changes.
