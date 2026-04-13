@@ -45,7 +45,7 @@
 
 - **pre-commit**: 对暂存的文件自动执行 lint 和格式化
   - `*.{ts,tsx,json}` → `biome check --write`（自动修复并重新暂存）
-  - `*.md` → `cspell` 拼写检查
+  - `*.{md,mdx}` → `cspell` 拼写检查
 - **commit-msg**: 校验 commit message 符合 Conventional Commits 规范
 
 > **注意**: 紧急情况下可使用 `git commit --no-verify` 跳过 hooks，但不建议日常使用。

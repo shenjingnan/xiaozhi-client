@@ -146,7 +146,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,json}": ["biome check --write --no-errors-on-unmatched"],
-    "*.md": ["cspell --no-must-find-files --no-progress"]
+    "*.{md,mdx}": ["cspell --no-must-find-files --no-progress"]
   },
   "packageManager": "pnpm@10.13.1"
 }
