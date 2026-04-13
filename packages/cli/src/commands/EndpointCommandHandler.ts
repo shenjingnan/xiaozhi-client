@@ -2,6 +2,7 @@
  * 端点管理命令处理器
  */
 
+import type { ConfigManager } from "@xiaozhi-client/config";
 import chalk from "chalk";
 import ora from "ora";
 import type { SubCommand } from "../interfaces/Command";
@@ -74,7 +75,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
     const spinner = ora("读取端点配置...").start();
 
     try {
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<ConfigManager>("configManager");
       const endpoints = configManager.getMcpEndpoints();
       spinner.succeed("端点列表");
 
@@ -101,7 +102,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
     const spinner = ora("添加端点...").start();
 
     try {
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<ConfigManager>("configManager");
       configManager.addMcpEndpoint(url);
       spinner.succeed(`成功添加端点: ${url}`);
 
@@ -122,7 +123,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
     const spinner = ora("移除端点...").start();
 
     try {
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<ConfigManager>("configManager");
       configManager.removeMcpEndpoint(url);
       spinner.succeed(`成功移除端点: ${url}`);
 
@@ -143,7 +144,7 @@ export class EndpointCommandHandler extends BaseCommandHandler {
     const spinner = ora("设置端点...").start();
 
     try {
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<ConfigManager>("configManager");
 
       if (urls.length === 1) {
         configManager.updateMcpEndpoint(urls[0]);
