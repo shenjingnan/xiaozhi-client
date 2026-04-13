@@ -39,7 +39,19 @@
     }
   },
   "release": {
-    "projects": ["cli", "config", "shared-types", "mcp-core", "endpoint", "version", "asr", "calculator-mcp", "datetime-mcp", "xiaozhi-client"],
+    "projects": [
+      "cli",
+      "config",
+      "shared-types",
+      "mcp-core",
+      "endpoint",
+      "version",
+      "asr",
+      "esp32",
+      "calculator-mcp",
+      "datetime-mcp",
+      "xiaozhi-client"
+    ],
     "projectsRelationship": "fixed",
     "git": {
       "commit": true,

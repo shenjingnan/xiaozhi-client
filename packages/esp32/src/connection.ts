@@ -26,7 +26,7 @@ import { camelToSnakeCase } from "./utils.js";
 /**
  * 连接配置
  */
-interface ESP32ConnectionConfig {
+export interface ESP32ConnectionConfig {
   /** 消息回调 */
   onMessage: (message: ESP32WSMessage) => Promise<void>;
   /** 关闭回调 */

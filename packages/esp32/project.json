@@ -1,0 +1,71 @@
+{
+  "name": "esp32",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/esp32/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter @xiaozhi-client/esp32 run build",
+        "cwd": "packages/esp32"
+      },
+      "outputs": ["{workspaceRoot}/packages/esp32/dist"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter @xiaozhi-client/esp32 run test",
+        "cwd": "packages/esp32"
+      },
+      "outputs": ["{workspaceRoot}/coverage"]
+    },
+    "test:watch": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter @xiaozhi-client/esp32 run test:watch",
+        "cwd": "packages/esp32"
+      }
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter @xiaozhi-client/esp32 run test:coverage",
+        "cwd": "packages/esp32"
+      },
+      "outputs": ["{workspaceRoot}/coverage"]
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter @xiaozhi-client/esp32 run typecheck",
+        "cwd": "packages/esp32"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm --filter @xiaozhi-client/esp32 run lint" }
+    },
+    "lint:fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter @xiaozhi-client/esp32 run lint:fix"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter @xiaozhi-client/esp32 run dev",
+        "cwd": "packages/esp32"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "../../scripts/publish-with-tag.sh",
+        "cwd": "packages/esp32"
+      }
+    }
+  },
+  "tags": ["type:lib", "scope:esp32"]
+}

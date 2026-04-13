@@ -175,9 +175,10 @@
   },
   "lint-staged": {
     "*.{ts,tsx,json}": [
-      "biome check --write --no-errors-on-unmatched"
+      "biome check --write --no-errors-on-unmatched",
+      "./scripts/typecheck-staged.sh"
     ],
-    "*.{md,mdx}": [
+    "*.{md,mdx,sh}": [
       "cspell --no-must-find-files --no-progress"
     ]
   },

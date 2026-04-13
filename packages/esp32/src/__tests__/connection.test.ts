@@ -4,7 +4,9 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { WebSocket } from "ws";
 import { ESP32Connection } from "../connection.js";
+import type { ESP32ConnectionConfig } from "../connection.js";
 import type { IASRService } from "../services/asr.interface.js";
 
 /**
@@ -18,7 +20,8 @@ class MockWebSocket {
   static CLOSING = 2;
   static CLOSED = 3;
 
-  private eventListeners: Map<string, (...args: unknown[]) => void> = new Map();
+  private eventListeners: Map<string, ((...args: unknown[]) => void)[]> =
+    new Map();
 
   send = vi.fn();
   close = vi.fn();
@@ -54,9 +57,7 @@ vi.mock("ws", () => ({
 }));
 
 /** 创建测试用的配置 */
-function createConfig(
-  overrides?: Partial<Parameters<typeof ESP32Connection>[3]>
-) {
+function createConfig(overrides?: Partial<ESP32ConnectionConfig>) {
   const mockASRService: IASRService = {
     prepare: vi.fn().mockResolvedValue(undefined),
     connect: vi.fn().mockResolvedValue(undefined),
@@ -85,6 +86,8 @@ function createConfig(
 
 describe("ESP32Connection", () => {
   let wsInstance: MockWebSocket;
+  /** 类型断言：MockWebSocket 在运行时通过 vi.mock 替代了真实的 WebSocket */
+  const mockWS = (): WebSocket => wsInstance as unknown as WebSocket;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -97,7 +100,7 @@ describe("ESP32Connection", () => {
       const conn = new ESP32Connection(
         "device-1",
         "client-1",
-        wsInstance,
+        mockWS(),
         config
       );
       expect(conn.getState()).toBe("connecting");
@@ -108,7 +111,7 @@ describe("ESP32Connection", () => {
       const conn = new ESP32Connection(
         "AA:BB:CC",
         "client-1",
-        wsInstance,
+        mockWS(),
         config
       );
       const sessionId = conn.getSessionId();
@@ -121,13 +124,13 @@ describe("ESP32Connection", () => {
     it("默认心跳超时 30s", () => {
       const config = createConfig();
       const { heartbeatTimeoutMs: _, ...rest } = config;
-      const conn = new ESP32Connection("d1", "c1", wsInstance, rest);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), rest);
       expect(conn.checkTimeout()).toBe(false);
     });
 
     it("自定义超时生效", async () => {
       const config = createConfig({ heartbeatTimeoutMs: 1 }); // 1ms 超时
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
 
       await new Promise((resolve) => setTimeout(resolve, 10));
       expect(conn.checkTimeout()).toBe(true);
@@ -135,7 +138,7 @@ describe("ESP32Connection", () => {
 
     it("设置 WS 事件监听：message/close/error/pong", () => {
       const config = createConfig();
-      new ESP32Connection("d1", "c1", wsInstance, config);
+      new ESP32Connection("d1", "c1", mockWS(), config);
 
       expect(wsInstance.on).toHaveBeenCalledWith(
         "message",
@@ -150,15 +153,17 @@ describe("ESP32Connection", () => {
   describe("send", () => {
     it("断开连接发送抛错", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
       await conn.close();
 
-      await expect(conn.send({ type: "hello" })).rejects.toThrow("连接已断开");
+      await expect(
+        conn.send({ type: "hello" } as Parameters<typeof conn.send>[0])
+      ).rejects.toThrow("连接已断开");
     });
 
     it("连接状态发送 JSON 成功", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
 
       await conn.send({ type: "stt", text: "你好" });
 
@@ -170,19 +175,21 @@ describe("ESP32Connection", () => {
 
     it("发送失败传播错误", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
       wsInstance.send.mockImplementationOnce(() => {
         throw new Error("网络错误");
       });
 
-      await expect(conn.send({ type: "test" })).rejects.toThrow("网络错误");
+      await expect(
+        conn.send({ type: "stt", text: "" } as Parameters<typeof conn.send>[0])
+      ).rejects.toThrow("网络错误");
     });
   });
 
   describe("sendBinaryProtocol2", () => {
     it("编码后调用 sendBinary，默认 timestamp=0", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
 
       const audioData = new Uint8Array([0x01, 0x02, 0x03]);
       await conn.sendBinaryProtocol2(audioData);
@@ -196,7 +203,7 @@ describe("ESP32Connection", () => {
 
     it("自定义 timestamp 生效", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
 
       const audioData = new Uint8Array([0x01]);
       await conn.sendBinaryProtocol2(audioData, 5000);
@@ -209,26 +216,26 @@ describe("ESP32Connection", () => {
   describe("getter 方法", () => {
     it("getSessionId 返回会话 ID", () => {
       const config = createConfig();
-      const conn = new ESP32Connection("my-device", "c1", wsInstance, config);
+      const conn = new ESP32Connection("my-device", "c1", mockWS(), config);
       expect(typeof conn.getSessionId()).toBe("string");
       expect(conn.getSessionId()).toContain("my-device");
     });
 
     it("getDeviceId 返回设备 ID", () => {
       const config = createConfig();
-      const conn = new ESP32Connection("dev-123", "c1", wsInstance, config);
+      const conn = new ESP32Connection("dev-123", "c1", mockWS(), config);
       expect(conn.getDeviceId()).toBe("dev-123");
     });
 
     it("getClientId 返回客户端 ID", () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "client-abc", wsInstance, config);
+      const conn = new ESP32Connection("d1", "client-abc", mockWS(), config);
       expect(conn.getClientId()).toBe("client-abc");
     });
 
     it("getState 返回当前状态", () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
       expect(conn.getState()).toBe("connecting");
     });
   });
@@ -236,7 +243,7 @@ describe("ESP32Connection", () => {
   describe("checkTimeout", () => {
     it("断开状态不超时", async () => {
       const config = createConfig({ heartbeatTimeoutMs: 1 });
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
       await conn.close();
 
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -245,13 +252,13 @@ describe("ESP32Connection", () => {
 
     it("未超时返回 false", () => {
       const config = createConfig({ heartbeatTimeoutMs: 60_000 });
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
       expect(conn.checkTimeout()).toBe(false);
     });
 
     it("已超时返回 true", async () => {
       const config = createConfig({ heartbeatTimeoutMs: 1 });
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
 
       await new Promise((resolve) => setTimeout(resolve, 10));
       expect(conn.checkTimeout()).toBe(true);
@@ -261,7 +268,7 @@ describe("ESP32Connection", () => {
   describe("close", () => {
     it("重复关闭直接返回", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
       await conn.close();
 
       wsInstance.close.mockClear();
@@ -271,7 +278,7 @@ describe("ESP32Connection", () => {
 
     it("关闭设为 disconnected 并调用 ws.close(1000)", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
 
       // close 内部会调用 ws.close() 并等待 close 事件
       const closePromise = conn.close();
@@ -289,7 +296,7 @@ describe("ESP32Connection", () => {
   describe("Hello 流程", () => {
     it("收到 Hello 发送 ServerHello", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
 
       const helloMessage = JSON.stringify({
         type: "hello",
@@ -317,7 +324,7 @@ describe("ESP32Connection", () => {
 
     it("握手后状态=connected", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
 
       wsInstance.emit(
         "message",
@@ -336,9 +343,10 @@ describe("ESP32Connection", () => {
 
     it("重复 Hello 忽略（不重复发送 ServerHello）", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
 
       // 第一次 Hello
+      void conn;
       wsInstance.emit(
         "message",
         Buffer.from(
@@ -383,7 +391,8 @@ describe("ESP32Connection", () => {
         destroy: vi.fn(),
       };
       const config = createConfig({ getASRService: () => mockASR });
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
+      void conn;
 
       wsInstance.emit(
         "message",
@@ -404,7 +413,8 @@ describe("ESP32Connection", () => {
   describe("非 Hello 消息", () => {
     it("未握手收到其他消息发错误", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
+      void conn;
 
       wsInstance.emit(
         "message",
@@ -424,7 +434,8 @@ describe("ESP32Connection", () => {
 
     it("握手后消息路由到 onMessage", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
+      void conn;
 
       // 先完成握手
       wsInstance.emit(
@@ -440,7 +451,7 @@ describe("ESP32Connection", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       wsInstance.send.mockClear();
-      config.onMessage.mockClear();
+      (config.onMessage as ReturnType<typeof vi.fn>).mockClear();
 
       wsInstance.emit(
         "message",
@@ -461,7 +472,7 @@ describe("ESP32Connection", () => {
 
     it("二进制协议2音频解析", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
 
       // 完成握手（需要等待异步操作完成）
       wsInstance.emit(
@@ -477,7 +488,7 @@ describe("ESP32Connection", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
       expect(conn.isHelloCompleted()).toBe(true);
 
-      config.onMessage.mockClear();
+      (config.onMessage as ReturnType<typeof vi.fn>).mockClear();
 
       // 发送二进制协议2音频数据（payload 包含高字节确保非有效 UTF-8）
       const { encodeBinaryProtocol2 } = await import("../audio-protocol.js");
@@ -490,7 +501,8 @@ describe("ESP32Connection", () => {
 
       // 二进制协议2 数据应被正确解析并路由到 onMessage
       expect(config.onMessage).toHaveBeenCalled();
-      const msgArg = config.onMessage.mock.calls[0][0];
+      const msgArg = (config.onMessage as ReturnType<typeof vi.fn>).mock
+        .calls[0][0];
       expect(msgArg.type).toBe("audio");
       expect(msgArg._parsed).toMatchObject({
         protocolVersion: 2,
@@ -501,7 +513,8 @@ describe("ESP32Connection", () => {
 
     it("无法识别的二进制作为原始音频", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
+      void conn;
 
       // 完成握手
       wsInstance.emit(
@@ -516,7 +529,7 @@ describe("ESP32Connection", () => {
       );
       await new Promise((resolve) => setTimeout(resolve, 50));
 
-      config.onMessage.mockClear();
+      (config.onMessage as ReturnType<typeof vi.fn>).mockClear();
 
       // 发送无法识别的二进制数据
       const invalidBinary = Buffer.from([0xff, 0xfe, 0xfd, 0xfc, 0xfb]);
@@ -533,7 +546,8 @@ describe("ESP32Connection", () => {
 
     it("无效 JSON 发错误", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
+      void conn;
 
       wsInstance.emit("message", Buffer.from("{invalid json}"));
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -547,13 +561,13 @@ describe("ESP32Connection", () => {
   describe("isHelloCompleted", () => {
     it("初始 false", () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
       expect(conn.isHelloCompleted()).toBe(false);
     });
 
     it("Hello 后 true", async () => {
       const config = createConfig();
-      const conn = new ESP32Connection("d1", "c1", wsInstance, config);
+      const conn = new ESP32Connection("d1", "c1", mockWS(), config);
 
       wsInstance.emit(
         "message",

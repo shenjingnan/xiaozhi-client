@@ -43,6 +43,7 @@ describe("DeviceRegistryService", () => {
 
     it("重复设备ID覆盖", () => {
       const device1 = registry.createDevice("device-1", "board-a", "1.0.0");
+      void device1;
       const device2 = registry.createDevice("device-1", "board-b", "2.0.0");
 
       // 应该返回新创建的设备
