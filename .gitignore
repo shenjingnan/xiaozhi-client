@@ -151,3 +151,7 @@ tool-calls.jsonl
 .worktrees
 worktrees
 .playwright-cli
+
+# E2E 测试运行时产物（视频、日志、trace 等）
+tests/e2e/*/artifacts/
+tests/e2e/adhoc-artifacts/
