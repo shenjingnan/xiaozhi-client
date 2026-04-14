@@ -2,16 +2,14 @@
  * 状态数据统一管理 Store
  *
  * 特性：
- * - 支持定时轮询和 WebSocket 实时更新
+ * - 支持定时轮询获取状态数据（HTTP RESTful API）
  * - 提供异步方法：getStatus()、refreshStatus()、restartService()
  * - 管理重启状态和服务状态
  * - 使用 Zustand 进行状态管理
  * - 提供选择器 hooks 优化组件渲染
- * - 集成 WebSocket 事件监听
  */
 
 import { apiClient } from "@/services/api";
-import { webSocketManager } from "@/services/websocket";
 import type { ClientStatus } from "@xiaozhi-client/shared-types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
@@ -209,11 +207,6 @@ let pollingTimer: NodeJS.Timeout | null = null;
  * 重启轮询定时器引用
  */
 let restartPollingTimer: NodeJS.Timeout | null = null;
-
-/**
- * WebSocket 订阅取消函数列表
- */
-let wsUnsubscribers: (() => void)[] = [];
 
 /**
  * 是否已完成初始化
@@ -687,12 +680,6 @@ export const useStatusStore = create<StatusStore>()(
       reset: () => {
         console.log("[StatusStore] 重置状态");
 
-        // 清理 WebSocket 订阅
-        for (const unsubscribe of wsUnsubscribers) {
-          unsubscribe();
-        }
-        wsUnsubscribers = [];
-
         // 重置初始化标记
         initialized = false;
 
@@ -717,23 +704,8 @@ export const useStatusStore = create<StatusStore>()(
           setLoading({ isLoading: true });
           console.log("[StatusStore] 初始化状态 Store");
 
-          // 设置 WebSocket 事件监听，并保存取消订阅函数
-          wsUnsubscribers.push(
-            webSocketManager.subscribe("data:statusUpdate", (status) => {
-              console.log("[StatusStore] 收到 WebSocket 状态更新");
-              get().setClientStatus(status, "websocket");
-            })
-          );
-
-          wsUnsubscribers.push(
-            webSocketManager.subscribe("data:restartStatus", (status) => {
-              console.log("[StatusStore] 收到 WebSocket 重启状态更新");
-              get().setRestartStatus(status, "websocket");
-            })
-          );
-
           // 启动状态轮询（15 秒间隔），startPolling 内部会立即执行一次刷新
-          // 无需在此额外调用 refreshStatus()，避免冗余请求
+          // 状态数据统一通过 HTTP 轮询获取，不再依赖 WebSocket 推送
           get().startPolling(15000);
 
           initialized = true;

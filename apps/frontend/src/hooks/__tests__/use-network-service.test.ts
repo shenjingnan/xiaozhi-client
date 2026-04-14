@@ -143,7 +143,7 @@ describe("useNetworkService", () => {
 
     it("应该设置正确数量的事件监听器", () => {
       renderHook(() => useNetworkService());
-      expect(mockNetworkService.onWebSocketEvent).toHaveBeenCalledTimes(6); // 6个主要事件
+      expect(mockNetworkService.onWebSocketEvent).toHaveBeenCalledTimes(4); // 移除 statusUpdate 和 restartStatus 后剩余 4 个事件
     });
   });
 
@@ -421,9 +421,8 @@ describe("useNetworkService", () => {
       expect(eventNames).toContain("connection:connected");
       expect(eventNames).toContain("connection:disconnected");
       expect(eventNames).toContain("data:configUpdate");
-      expect(eventNames).toContain("data:statusUpdate");
-      expect(eventNames).toContain("data:restartStatus");
       expect(eventNames).toContain("system:error");
+      // 注意：data:statusUpdate 和 data:restartStatus 已移除，统一使用 HTTP 轮询获取状态数据
     });
   });
 

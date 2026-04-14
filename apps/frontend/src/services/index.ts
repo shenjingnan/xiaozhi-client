@@ -322,37 +322,33 @@ export class NetworkService {
   }
 
   /**
-   * 重启服务并等待状态通知 (混合模式)
+   * 重启服务并等待完成 (轮询模式)
+   *
+   * 通过 HTTP API 触发重启，然后轮询状态接口等待重启完成。
+   * 不再依赖 WebSocket 的 data:restartStatus 事件推送。
    */
   async restartServiceWithNotification(timeout = 30000): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const unsubscribe = this.webSocketManager.subscribe(
-        "data:restartStatus",
-        (status) => {
-          if (status.status === "completed") {
-            clearTimeout(timeoutId);
-            unsubscribe();
-            resolve();
-          } else if (status.status === "failed") {
-            clearTimeout(timeoutId);
-            unsubscribe();
-            reject(new Error(status.error || "服务重启失败"));
-          }
+    // 先通过 HTTP API 发送重启请求
+    await this.restartService();
+
+    // 轮询等待重启完成
+    const startTime = Date.now();
+    const pollInterval = 1000; // 1 秒间隔
+
+    while (Date.now() - startTime < timeout) {
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+
+      try {
+        const status = await this.getClientStatus();
+        if (status.status === "connected") {
+          return; // 重启成功，服务已重新连接
         }
-      );
+      } catch {
+        // 轮询期间服务可能不可用，继续重试
+      }
+    }
 
-      const timeoutId = setTimeout(() => {
-        unsubscribe();
-        reject(new Error("等待重启状态通知超时"));
-      }, timeout);
-
-      // 通过 HTTP API 重启服务
-      this.restartService().catch((error) => {
-        clearTimeout(timeoutId);
-        unsubscribe?.();
-        reject(error);
-      });
-    });
+    throw new Error("等待重启完成超时");
   }
 }
 
