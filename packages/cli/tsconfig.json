@@ -3,7 +3,11 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "../../dist/cli",
-    "rootDir": "src"
+    "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../../apps/backend/*"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"],
