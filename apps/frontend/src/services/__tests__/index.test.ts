@@ -454,72 +454,40 @@ describe("NetworkService", () => {
     });
 
     describe("restartServiceWithNotification", () => {
-      it("应该等待重启完成通知", async () => {
-        const unsubscribe = vi.fn();
-        const completedStatus = { status: "completed", timestamp: Date.now() };
-
-        mockWebSocketManager.subscribe.mockImplementation(
-          (event: string, listener: EventListener) => {
-            if (event === "data:restartStatus") {
-              setTimeout(() => listener(completedStatus), 10);
-            }
-            return unsubscribe;
-          }
-        );
-
+      it("应该通过轮询等待重启完成", async () => {
+        // 模拟重启后服务恢复连接
         mockApiClient.restartService.mockResolvedValue(undefined);
+        mockApiClient.getClientStatus
+          .mockResolvedValueOnce({ status: "reconnecting" } as any)
+          .mockResolvedValueOnce({ status: "connected" } as any);
 
         await networkService.restartServiceWithNotification(5000);
 
         expect(mockApiClient.restartService).toHaveBeenCalled();
-        expect(mockWebSocketManager.subscribe).toHaveBeenCalledWith(
-          "data:restartStatus",
-          expect.any(Function)
-        );
-        expect(unsubscribe).toHaveBeenCalled();
+        expect(mockApiClient.getClientStatus).toHaveBeenCalled();
       });
 
-      it("应该在重启失败时拒绝 Promise", async () => {
-        const unsubscribe = vi.fn();
-        const failedStatus = {
-          status: "failed",
-          error: "重启失败",
-          timestamp: Date.now(),
-        };
-
-        mockWebSocketManager.subscribe.mockImplementation(
-          (event: string, listener: EventListener) => {
-            if (event === "data:restartStatus") {
-              setTimeout(() => listener(failedStatus), 10);
-            }
-            return unsubscribe;
-          }
-        );
-
-        mockApiClient.restartService.mockResolvedValue(undefined);
+      it("应该在重启失败（API 异常）时拒绝 Promise", async () => {
+        const apiError = new Error("重启 API 调用失败");
+        mockApiClient.restartService.mockRejectedValue(apiError);
 
         await expect(
           networkService.restartServiceWithNotification()
-        ).rejects.toThrow("重启失败");
-        expect(unsubscribe).toHaveBeenCalled();
+        ).rejects.toThrow(apiError);
       });
 
-      it("应该在超时时拒绝 Promise", async () => {
-        const unsubscribe = vi.fn();
-
-        mockWebSocketManager.subscribe.mockReturnValue(unsubscribe);
+      it("应该在轮询超时时拒绝 Promise", async () => {
         mockApiClient.restartService.mockResolvedValue(undefined);
+        // 模拟服务一直未恢复连接（每次轮询都返回 reconnecting 状态）
+        mockApiClient.getClientStatus.mockResolvedValue({
+          status: "reconnecting",
+        } as any);
 
-        vi.useFakeTimers();
+        // 使用较短的超时时间进行测试（轮询间隔 1s，超时 2.5s，约轮询 2 次后超时）
+        const promise = networkService.restartServiceWithNotification(2500);
 
-        const promise = networkService.restartServiceWithNotification(1000);
-        vi.advanceTimersByTime(1000);
-
-        await expect(promise).rejects.toThrow("等待重启状态通知超时");
-        expect(unsubscribe).toHaveBeenCalled();
-
-        vi.useRealTimers();
-      });
+        await expect(promise).rejects.toThrow("等待重启完成超时");
+      }, 10000); // 延长单测试超时以适应真实轮询等待
     });
   });
 
