@@ -323,37 +323,36 @@ describe("NetworkService", () => {
 
     it("应该支持不同类型的事件", () => {
       const listeners = {
-        config: vi.fn(),
-        status: vi.fn(),
-        restart: vi.fn(),
+        npmInstallStarted: vi.fn(),
+        npmInstallLog: vi.fn(),
         error: vi.fn(),
       };
 
       mockWebSocketManager.subscribe.mockReturnValue(() => {});
 
-      networkService.onWebSocketEvent("data:configUpdate", listeners.config);
-      networkService.onWebSocketEvent("data:statusUpdate", listeners.status);
-      networkService.onWebSocketEvent("data:restartStatus", listeners.restart);
+      networkService.onWebSocketEvent(
+        "data:npmInstallStarted",
+        listeners.npmInstallStarted
+      );
+      networkService.onWebSocketEvent(
+        "data:npmInstallLog",
+        listeners.npmInstallLog
+      );
       networkService.onWebSocketEvent("system:error", listeners.error);
 
-      expect(mockWebSocketManager.subscribe).toHaveBeenCalledTimes(4);
+      expect(mockWebSocketManager.subscribe).toHaveBeenCalledTimes(3);
       expect(mockWebSocketManager.subscribe).toHaveBeenNthCalledWith(
         1,
-        "data:configUpdate",
-        listeners.config
+        "data:npmInstallStarted",
+        listeners.npmInstallStarted
       );
       expect(mockWebSocketManager.subscribe).toHaveBeenNthCalledWith(
         2,
-        "data:statusUpdate",
-        listeners.status
+        "data:npmInstallLog",
+        listeners.npmInstallLog
       );
       expect(mockWebSocketManager.subscribe).toHaveBeenNthCalledWith(
         3,
-        "data:restartStatus",
-        listeners.restart
-      );
-      expect(mockWebSocketManager.subscribe).toHaveBeenNthCalledWith(
-        4,
         "system:error",
         listeners.error
       );
