@@ -8,7 +8,6 @@
  */
 
 import { WEBSOCKET_RECONNECT_DELAY } from "@/constants/timeouts";
-import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 
 /**
  * WebSocket 消息类型
@@ -22,27 +21,6 @@ interface WebSocketMessage {
     message: string;
     timestamp?: number;
   };
-}
-
-/**
- * 重启状态接口
- */
-interface RestartStatus {
-  status: "restarting" | "completed" | "failed";
-  error?: string;
-  timestamp: number;
-}
-
-/**
- * 接入点状态变更事件数据
- */
-export interface EndpointStatusChangedEvent {
-  endpoint: string;
-  connected: boolean;
-  operation: "connect" | "disconnect" | "reconnect";
-  success: boolean;
-  message?: string;
-  timestamp: number;
 }
 
 /**
@@ -97,14 +75,6 @@ interface EventBusEvents {
   "connection:disconnected": undefined;
   "connection:reconnecting": { attempt: number; maxAttempts: number };
   "connection:error": { error: Error; context?: string };
-
-  // 数据更新事件
-  "data:configUpdate": AppConfig;
-  "data:statusUpdate": ClientStatus;
-  "data:restartStatus": RestartStatus;
-
-  // 接入点状态事件
-  "data:endpointStatusChanged": EndpointStatusChangedEvent;
 
   // NPM 安装事件
   "data:npmInstallStarted": NPMInstallStartedEvent;
@@ -499,41 +469,6 @@ export class WebSocketManager {
 
     try {
       switch (message.type) {
-        case "configUpdate":
-        case "config":
-          if (message.data) {
-            this.eventBus.emit("data:configUpdate", message.data as AppConfig);
-          }
-          break;
-
-        case "statusUpdate":
-        case "status":
-          if (message.data) {
-            this.eventBus.emit(
-              "data:statusUpdate",
-              message.data as ClientStatus
-            );
-          }
-          break;
-
-        case "restartStatus":
-          if (message.data) {
-            this.eventBus.emit(
-              "data:restartStatus",
-              message.data as RestartStatus
-            );
-          }
-          break;
-
-        case "endpoint_status_changed":
-          if (message.data) {
-            this.eventBus.emit(
-              "data:endpointStatusChanged",
-              message.data as EndpointStatusChangedEvent
-            );
-          }
-          break;
-
         case "npm:install:started":
           if (message.data) {
             this.eventBus.emit(
@@ -727,7 +662,6 @@ export const webSocketManager = WebSocketManager.getInstance();
 export { ConnectionState };
 export type {
   WebSocketMessage,
-  RestartStatus,
   WebSocketManagerConfig,
   EventBusEvents,
   EventListener,

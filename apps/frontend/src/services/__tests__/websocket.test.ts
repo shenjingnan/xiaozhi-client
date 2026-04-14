@@ -3,7 +3,6 @@
  * 测试重构后的事件系统和连接管理功能
  */
 
-import type { ClientStatus } from "@xiaozhi-client/shared-types";
 import {
   afterEach,
   beforeAll,
@@ -286,39 +285,26 @@ describe("WebSocketManager", () => {
     });
 
     it("应该正确处理不同类型的事件", () => {
-      const configListener = vi.fn();
-      const statusListener = vi.fn();
+      const npmInstallListener = vi.fn();
       const errorListener = vi.fn();
 
-      manager.subscribe("data:configUpdate", configListener);
-      manager.subscribe("data:statusUpdate", statusListener);
+      manager.subscribe("data:npmInstallStarted", npmInstallListener);
       manager.subscribe("system:error", errorListener);
 
-      const testConfig = {
-        mcpEndpoint: "ws://localhost:9999",
-        mcpServers: {
-          "test-server": {
-            command: "node",
-            args: ["server.js"],
-          },
-        },
-      };
-      const testStatus: ClientStatus = {
-        status: "connected",
-        mcpEndpoint: "ws://localhost:9999",
-        activeMCPServers: ["test-server"],
+      const testNpmInstallData = {
+        version: "1.0.0",
+        installId: "test-install-id",
+        timestamp: Date.now(),
       };
       const testError = {
         error: new Error("test error"),
         message: { type: "error" },
       };
 
-      manager.getEventBus().emit("data:configUpdate", testConfig);
-      manager.getEventBus().emit("data:statusUpdate", testStatus);
+      manager.getEventBus().emit("data:npmInstallStarted", testNpmInstallData);
       manager.getEventBus().emit("system:error", testError);
 
-      expect(configListener).toHaveBeenCalledWith(testConfig);
-      expect(statusListener).toHaveBeenCalledWith(testStatus);
+      expect(npmInstallListener).toHaveBeenCalledWith(testNpmInstallData);
       expect(errorListener).toHaveBeenCalledWith(testError);
     });
 
@@ -354,63 +340,6 @@ describe("WebSocketManager", () => {
     beforeEach(() => {
       manager = WebSocketManager.getInstance();
       manager.connect();
-    });
-
-    it("应该处理配置更新消息", () => {
-      const configListener = vi.fn();
-      manager.subscribe("data:configUpdate", configListener);
-
-      const testMessage = {
-        type: "configUpdate",
-        data: {
-          mcpEndpoint: "ws://localhost:8888",
-          mcpServers: {
-            "test-server-2": {
-              command: "node",
-              args: ["server2.js"],
-            },
-          },
-        },
-      };
-
-      (manager as any).ws.mockMessage(testMessage);
-
-      expect(configListener).toHaveBeenCalledWith(testMessage.data);
-    });
-
-    it("应该处理状态更新消息", () => {
-      const statusListener = vi.fn();
-      manager.subscribe("data:statusUpdate", statusListener);
-
-      const testMessage = {
-        type: "statusUpdate",
-        data: {
-          status: "connected",
-          mcpEndpoint: "ws://localhost:9999",
-          activeMCPServers: ["test-server"],
-        },
-      };
-
-      (manager as any).ws.mockMessage(testMessage);
-
-      expect(statusListener).toHaveBeenCalledWith(testMessage.data);
-    });
-
-    it("应该处理重启状态消息", () => {
-      const restartListener = vi.fn();
-      manager.subscribe("data:restartStatus", restartListener);
-
-      const testMessage = {
-        type: "restartStatus",
-        data: { status: "completed", timestamp: Date.now() },
-      };
-
-      (manager as any).ws.mockMessage(testMessage);
-
-      expect(restartListener).toHaveBeenCalledWith({
-        status: "completed",
-        timestamp: expect.any(Number),
-      });
     });
 
     it("应该处理错误消息", () => {
@@ -694,7 +623,7 @@ describe("WebSocketManager", () => {
 
     it("应该能够清理所有监听器", () => {
       manager.subscribe("connection:connected", () => {});
-      manager.subscribe("data:configUpdate", () => {});
+      manager.subscribe("data:npmInstallStarted", () => {});
 
       expect(manager.getEventBus().getListenerCount()).toBe(2);
 
