@@ -28,6 +28,53 @@ Object.defineProperty(document, "execCommand", {
   writable: true,
 });
 
+/**
+ * 清理 DOM 元素中的 dialog、focus-guard 等相关属性和样式
+ * 用于 beforeEach 和 afterEach 钩子中，避免重复代码
+ */
+function cleanupDOMElements(): void {
+  try {
+    const elementsToRemove = document.querySelectorAll("*");
+    for (const el of elementsToRemove) {
+      if (
+        el.getAttribute("role") === "dialog" ||
+        el.hasAttribute("data-radix-focus-guard") ||
+        el.hasAttribute("aria-hidden") ||
+        el.getAttribute("data-state") === "open" ||
+        (el.classList.contains("fixed") && el.classList.contains("inset-0"))
+      ) {
+        el.remove();
+      }
+      // 重置可能导致问题的属性和样式
+      if (el.hasAttribute("data-scroll-locked")) {
+        el.removeAttribute("data-scroll-locked");
+      }
+      if (el.hasAttribute("data-aria-hidden")) {
+        el.removeAttribute("data-aria-hidden");
+      }
+      if (el.hasAttribute("aria-hidden")) {
+        el.removeAttribute("aria-hidden");
+      }
+      if (el instanceof HTMLElement) {
+        if (el.style.pointerEvents === "none") {
+          el.style.pointerEvents = "auto";
+        }
+        if (el.style.position === "fixed") {
+          el.style.position = "";
+        }
+        if (el.style.opacity === "0") {
+          el.style.opacity = "";
+        }
+        if (el.style.visibility === "hidden") {
+          el.style.visibility = "visible";
+        }
+      }
+    }
+  } catch (e) {
+    // Ignore errors during cleanup
+  }
+}
+
 // Global test setup and cleanup
 beforeEach(() => {
   // Clean up clipboard before each test to avoid conflicts with userEvent.setup()
@@ -160,89 +207,15 @@ beforeEach(() => {
     ?.setAttribute("data-testid", "test-modal-root");
 
   // Aggressively clean up any radix dialogs, portals, or focus guards
-  try {
-    const elementsToRemove = document.querySelectorAll("*");
-    for (const el of elementsToRemove) {
-      if (
-        el.getAttribute("role") === "dialog" ||
-        el.hasAttribute("data-radix-focus-guard") ||
-        el.hasAttribute("aria-hidden") ||
-        el.getAttribute("data-state") === "open" ||
-        (el.classList.contains("fixed") && el.classList.contains("inset-0"))
-      ) {
-        el.remove();
-      }
-      // 重置可能导致问题的属性和样式
-      if (el.hasAttribute("data-scroll-locked")) {
-        el.removeAttribute("data-scroll-locked");
-      }
-      if (el.hasAttribute("data-aria-hidden")) {
-        el.removeAttribute("data-aria-hidden");
-      }
-      if (el.hasAttribute("aria-hidden")) {
-        el.removeAttribute("aria-hidden");
-      }
-      if (el instanceof HTMLElement) {
-        if (el.style.pointerEvents === "none") {
-          el.style.pointerEvents = "auto";
-        }
-        if (el.style.position === "fixed") {
-          el.style.position = "";
-        }
-        if (el.style.opacity === "0") {
-          el.style.opacity = "";
-        }
-        if (el.style.visibility === "hidden") {
-          el.style.visibility = "visible";
-        }
-      }
-    }
-  } catch (e) {
-    // Ignore errors during cleanup
-  }
+  cleanupDOMElements();
 });
 
 afterEach(() => {
   // Clean up all dynamically created elements after each test
-  try {
-    const elementsToRemove = document.querySelectorAll("*");
-    for (const el of elementsToRemove) {
-      if (
-        el.getAttribute("role") === "dialog" ||
-        el.hasAttribute("data-radix-focus-guard") ||
-        el.hasAttribute("aria-hidden") ||
-        el.getAttribute("data-state") === "open" ||
-        (el.classList.contains("fixed") && el.classList.contains("inset-0"))
-      ) {
-        el.remove();
-      }
-      // 重置可能导致问题的属性和样式
-      if (el.hasAttribute("data-scroll-locked")) {
-        el.removeAttribute("data-scroll-locked");
-      }
-      if (el.hasAttribute("data-aria-hidden")) {
-        el.removeAttribute("data-aria-hidden");
-      }
-      if (el.hasAttribute("aria-hidden")) {
-        el.removeAttribute("aria-hidden");
-      }
-      if (el instanceof HTMLElement) {
-        if (el.style.pointerEvents === "none") {
-          el.style.pointerEvents = "auto";
-        }
-        if (el.style.position === "fixed") {
-          el.style.position = "";
-        }
-        if (el.style.opacity === "0") {
-          el.style.opacity = "";
-        }
-        if (el.style.visibility === "hidden") {
-          el.style.visibility = "visible";
-        }
-      }
-    }
+  cleanupDOMElements();
 
-    // Reset body state after each test
+  // Reset body state after each test
+  try {
     if (document.body?.attributes) {
       while (document.body.attributes.length > 0) {
         document.body.removeAttribute(document.body.attributes[0].name);
