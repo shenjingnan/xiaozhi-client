@@ -211,6 +211,16 @@ let pollingTimer: NodeJS.Timeout | null = null;
 let restartPollingTimer: NodeJS.Timeout | null = null;
 
 /**
+ * WebSocket 订阅取消函数列表
+ */
+let wsUnsubscribers: (() => void)[] = [];
+
+/**
+ * 是否已完成初始化
+ */
+let initialized = false;
+
+/**
  * 创建状态 Store
  */
 export const useStatusStore = create<StatusStore>()(
@@ -677,6 +687,15 @@ export const useStatusStore = create<StatusStore>()(
       reset: () => {
         console.log("[StatusStore] 重置状态");
 
+        // 清理 WebSocket 订阅
+        for (const unsubscribe of wsUnsubscribers) {
+          unsubscribe();
+        }
+        wsUnsubscribers = [];
+
+        // 重置初始化标记
+        initialized = false;
+
         // 停止所有轮询
         get().stopPolling();
         get().stopRestartPolling();
@@ -686,29 +705,38 @@ export const useStatusStore = create<StatusStore>()(
       },
 
       initialize: async (): Promise<void> => {
-        const { setLoading, refreshStatus } = get();
+        // 防止重复初始化（如 React StrictMode 下二次挂载）
+        if (initialized) {
+          console.log("[StatusStore] 已初始化，跳过重复初始化");
+          return;
+        }
+
+        const { setLoading } = get();
 
         try {
           setLoading({ isLoading: true });
           console.log("[StatusStore] 初始化状态 Store");
 
-          // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:statusUpdate", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 状态更新");
-            get().setClientStatus(status, "websocket");
-          });
+          // 设置 WebSocket 事件监听，并保存取消订阅函数
+          wsUnsubscribers.push(
+            webSocketManager.subscribe("data:statusUpdate", (status) => {
+              console.log("[StatusStore] 收到 WebSocket 状态更新");
+              get().setClientStatus(status, "websocket");
+            })
+          );
 
-          webSocketManager.subscribe("data:restartStatus", (status) => {
-            console.log("[StatusStore] 收到 WebSocket 重启状态更新");
-            get().setRestartStatus(status, "websocket");
-          });
+          wsUnsubscribers.push(
+            webSocketManager.subscribe("data:restartStatus", (status) => {
+              console.log("[StatusStore] 收到 WebSocket 重启状态更新");
+              get().setRestartStatus(status, "websocket");
+            })
+          );
 
-          // 获取初始状态
-          await refreshStatus();
-
-          // 启动状态轮询（15 秒间隔），替代 WebSocket 的 statusUpdate 推送
+          // 启动状态轮询（15 秒间隔），startPolling 内部会立即执行一次刷新
+          // 无需在此额外调用 refreshStatus()，避免冗余请求
           get().startPolling(15000);
 
+          initialized = true;
           console.log("[StatusStore] 状态 Store 初始化完成");
         } catch (error) {
           console.error("[StatusStore] 状态 Store 初始化失败:", error);
