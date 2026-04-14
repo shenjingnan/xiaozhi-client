@@ -289,7 +289,6 @@ describe("McpServerList 组件", () => {
         restartService: vi.fn(),
         refreshStatus: vi.fn(),
         getStatus: vi.fn(),
-        updateConfigWithNotification: vi.fn(),
         restartServiceWithNotification: vi.fn(),
         setCustomWsUrl: vi.fn(),
         getWebSocketUrl: vi.fn(),

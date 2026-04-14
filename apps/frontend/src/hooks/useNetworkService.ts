@@ -47,15 +47,6 @@ export function useNetworkService() {
         webSocketActions.setConnectionState(ConnectionState.DISCONNECTED);
       }),
 
-      // 数据更新事件
-      networkService.onWebSocketEvent(
-        "data:configUpdate",
-        (config: AppConfig) => {
-          console.log("[NetworkService] 收到配置更新通知");
-          useConfigStore.getState().setConfig(config, "websocket");
-        }
-      ),
-
       // 系统事件
       networkService.onWebSocketEvent(
         "system:error",
@@ -144,7 +135,7 @@ export function useNetworkService() {
       console.log("[NetworkService] 更新配置");
       await networkService.updateConfig(config);
 
-      // 立即更新本地状态，WebSocket 通知会进一步确认
+      // 立即更新本地状态
       useConfigStore.getState().setConfig(config, "http");
       console.log("[NetworkService] 配置更新成功");
     } catch (error) {
@@ -203,23 +194,6 @@ export function useNetworkService() {
         console.log("[NetworkService] 服务重启完成");
       } catch (error) {
         console.error("[NetworkService] 重启服务失败:", error);
-        throw error;
-      }
-    },
-    []
-  );
-
-  /**
-   * 更新配置并等待通知
-   */
-  const updateConfigWithNotification = useCallback(
-    async (config: AppConfig, timeout = 5000): Promise<void> => {
-      try {
-        console.log("[NetworkService] 更新配置并等待通知");
-        await networkService.updateConfigWithNotification(config, timeout);
-        console.log("[NetworkService] 配置更新完成");
-      } catch (error) {
-        console.error("[NetworkService] 配置更新失败:", error);
         throw error;
       }
     },
@@ -308,8 +282,7 @@ export function useNetworkService() {
     refreshStatus,
     restartService,
 
-    // 混合模式方法 (HTTP + WebSocket)
-    updateConfigWithNotification,
+    // 重启服务（带轮询等待）
     restartServiceWithNotification,
 
     // WebSocket 管理

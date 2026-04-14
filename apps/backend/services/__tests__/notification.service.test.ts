@@ -661,19 +661,6 @@ describe("NotificationService", () => {
   });
 
   describe("broadcast methods", () => {
-    it("should broadcast config update", () => {
-      notificationService.registerClient("test-client", mockWebSocket);
-
-      notificationService.broadcastConfigUpdate(mockConfig);
-
-      expect(mockWebSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"type":"configUpdate"')
-      );
-
-      const sentMessage = JSON.parse(mockWebSocket.send.mock.calls[0][0]);
-      expect(sentMessage.data).toEqual(mockConfig);
-    });
-
     it("should broadcast status update", () => {
       notificationService.registerClient("test-client", mockWebSocket);
 

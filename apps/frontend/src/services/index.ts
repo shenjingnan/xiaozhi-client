@@ -290,38 +290,6 @@ export class NetworkService {
   }
 
   /**
-   * 更新配置并等待 WebSocket 通知 (混合模式)
-   */
-  async updateConfigWithNotification(
-    config: AppConfig,
-    timeout = 5000
-  ): Promise<void> {
-    // 设置 WebSocket 监听器等待配置更新通知
-    return new Promise((resolve, reject) => {
-      const unsubscribe = this.webSocketManager.subscribe(
-        "data:configUpdate",
-        () => {
-          clearTimeout(timeoutId);
-          unsubscribe();
-          resolve();
-        }
-      );
-
-      const timeoutId = setTimeout(() => {
-        unsubscribe();
-        reject(new Error("等待配置更新通知超时"));
-      }, timeout);
-
-      // 通过 HTTP API 更新配置
-      this.updateConfig(config).catch((error) => {
-        clearTimeout(timeoutId);
-        unsubscribe?.();
-        reject(error);
-      });
-    });
-  }
-
-  /**
    * 重启服务并等待完成 (轮询模式)
    *
    * 通过 HTTP API 触发重启，然后轮询状态接口等待重启完成。
