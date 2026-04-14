@@ -167,12 +167,14 @@ describe("HeartbeatHandler", () => {
         `websocket-${clientId}`
       );
 
-      expect(mockConfigService.getConfig).toHaveBeenCalledTimes(1);
+      // 应该发送心跳响应（而非配置推送）
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         JSON.stringify({
-          type: "configUpdate",
-          data: mockConfig,
-          timestamp: 1234567890,
+          type: "heartbeatResponse",
+          data: {
+            timestamp: 1234567890,
+            status: "ok",
+          },
         })
       );
 
@@ -180,7 +182,7 @@ describe("HeartbeatHandler", () => {
         `客户端状态更新成功: ${clientId}`
       );
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        `最新配置已发送给客户端: ${clientId}`
+        `心跳响应已发送: ${clientId}`
       );
     });
 
@@ -236,10 +238,10 @@ describe("HeartbeatHandler", () => {
       );
     });
 
-    it("应该优雅地处理配置服务错误", async () => {
-      const configError = new Error("Config fetch failed");
-      mockConfigService.getConfig.mockImplementation(() => {
-        throw configError;
+    it("应该优雅地处理心跳响应发送错误", async () => {
+      const sendError = new Error("Heartbeat response send failed");
+      mockWebSocket.send.mockImplementation(() => {
+        throw sendError;
       });
 
       await heartbeatHandler.handleClientStatus(
@@ -254,14 +256,14 @@ describe("HeartbeatHandler", () => {
         `客户端状态更新成功: ${clientId}`
       );
 
-      // 应该记录配置错误，但不应该导致心跳失败
+      // 应该记录心跳响应发送错误，但不应该导致心跳处理失败
       expect(mockLogger.error).toHaveBeenCalledWith(
-        `发送最新配置失败: ${clientId}`,
-        configError
+        `发送心跳响应失败: ${clientId}`,
+        sendError
       );
     });
 
-    it("应该处理配置更新中的 WebSocket 发送错误", async () => {
+    it("应该处理心跳响应中的 WebSocket 发送错误", async () => {
       const sendError = new Error("WebSocket send failed");
       mockWebSocket.send.mockImplementation(() => {
         throw sendError;
@@ -274,7 +276,7 @@ describe("HeartbeatHandler", () => {
       );
 
       expect(mockLogger.error).toHaveBeenCalledWith(
-        `发送最新配置失败: ${clientId}`,
+        `发送心跳响应失败: ${clientId}`,
         sendError
       );
     });
@@ -892,7 +894,8 @@ describe("HeartbeatHandler", () => {
       await Promise.all(promises);
 
       expect(mockStatusService.updateClientInfo).toHaveBeenCalledTimes(10);
-      expect(mockConfigService.getConfig).toHaveBeenCalledTimes(10);
+      // 每次心跳都应发送心跳响应
+      expect(mockWebSocket.send).toHaveBeenCalledTimes(10);
     });
 
     it("应该处理快速定时器推进的监控", () => {

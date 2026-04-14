@@ -706,8 +706,8 @@ export const useStatusStore = create<StatusStore>()(
           // 获取初始状态
           await refreshStatus();
 
-          // 启动轮询（可选）
-          // get().startPolling();
+          // 启动状态轮询（15 秒间隔），替代 WebSocket 的 statusUpdate 推送
+          get().startPolling(15000);
 
           console.log("[StatusStore] 状态 Store 初始化完成");
         } catch (error) {
