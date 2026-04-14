@@ -10,7 +10,6 @@ import { HEARTBEAT_MONITORING } from "@/constants/index.js";
 import type { NotificationService } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
 import { sendWebSocketError } from "@/utils/websocket-helper.js";
-import { configManager } from "@xiaozhi-client/config";
 
 /**
  * 心跳消息接口
@@ -64,8 +63,8 @@ export class HeartbeatHandler {
         `websocket-${clientId}`
       );
 
-      // 发送最新配置给客户端（心跳响应）
-      await this.sendLatestConfig(ws, clientId);
+      // 发送心跳响应
+      this.sendHeartbeatResponse(ws, clientId);
 
       this.logger.debug(`客户端状态更新成功: ${clientId}`);
     } catch (error) {
@@ -76,26 +75,6 @@ export class HeartbeatHandler {
         error instanceof Error ? error.message : "客户端状态更新失败",
         this.logger
       );
-    }
-  }
-
-  /**
-   * 发送最新配置给客户端
-   */
-  private async sendLatestConfig(ws: any, clientId: string): Promise<void> {
-    try {
-      const latestConfig = configManager.getConfig();
-      const message = {
-        type: "configUpdate",
-        data: latestConfig,
-        timestamp: Date.now(),
-      };
-
-      ws.send(JSON.stringify(message));
-      this.logger.debug(`最新配置已发送给客户端: ${clientId}`);
-    } catch (error) {
-      this.logger.error(`发送最新配置失败: ${clientId}`, error);
-      // 不抛出错误，避免影响心跳处理
     }
   }
 

@@ -1,19 +1,23 @@
 /**
  * 实时通知 HTTP 路由处理器
- * 提供 WebSocket 实时通知相关的消息处理接口，处理配置更新、状态变化和服务重启等实时通知
+ * 提供 WebSocket 实时通知相关的客户端连接管理和初始数据推送功能
+ *
+ * 注意：原先通过 WebSocket 处理的 getConfig、updateConfig、getStatus、restartService
+ * 等消息类型已废弃，对应功能请使用 RESTful API：
+ * - 获取配置：GET /api/config
+ * - 更新配置：PUT /api/config
+ * - 获取状态：GET /api/status
+ * - 重启服务：POST /api/services/restart
  */
 
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
-import type { EventBus } from "@/services/event-bus.service.js";
-import { getEventBus } from "@/services/event-bus.service.js";
 import type {
   NotificationService,
   WebSocketLike,
 } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
 import { sendWebSocketError } from "@/utils/websocket-helper.js";
-import type { AppConfig } from "@xiaozhi-client/config";
 import { configManager } from "@xiaozhi-client/config";
 
 /**
@@ -27,12 +31,14 @@ interface WebSocketMessage {
 
 /**
  * 实时通知处理器
+ *
+ * 职责：管理 WebSocket 客户端连接生命周期和初始数据推送。
+ * 业务操作（配置读写、状态查询、服务控制）均已迁移至 RESTful API。
  */
 export class RealtimeNotificationHandler {
   private logger: Logger;
   private notificationService: NotificationService;
   private statusService: StatusService;
-  private eventBus: EventBus;
 
   constructor(
     notificationService: NotificationService,
@@ -41,213 +47,50 @@ export class RealtimeNotificationHandler {
     this.logger = logger;
     this.notificationService = notificationService;
     this.statusService = statusService;
-    this.eventBus = getEventBus();
   }
 
   /**
    * 处理 WebSocket 消息
-   * @deprecated 部分消息类型已废弃，建议使用 HTTP API
+   *
+   * 当前仅保留心跳消息（clientStatus）由 HeartbeatHandler 处理，
+   * 其他业务消息类型已废弃并迁移至 RESTful API。
    */
   async handleMessage(
     ws: WebSocketLike,
     message: WebSocketMessage,
     clientId: string
   ): Promise<void> {
-    try {
-      this.logger.debug(`处理 WebSocket 消息: ${message.type}`, { clientId });
+    // 已废弃的消息类型不再处理，返回错误提示引导使用 REST API
+    const deprecatedTypes = [
+      "getConfig",
+      "updateConfig",
+      "getStatus",
+      "restartService",
+    ];
 
-      // 发射消息接收事件
-      this.eventBus.emitEvent("websocket:message:received", {
-        type: message.type,
-        data: message.data,
-        clientId,
-      });
-
-      switch (message.type) {
-        case "getConfig":
-          await this.handleGetConfig(ws, clientId);
-          break;
-
-        case "updateConfig":
-          await this.handleUpdateConfig(
-            ws,
-            message.data as AppConfig,
-            clientId
-          );
-          break;
-
-        case "getStatus":
-          await this.handleGetStatus(ws, clientId);
-          break;
-
-        case "restartService":
-          await this.handleRestartService(ws, clientId);
-          break;
-
-        default:
-          this.logger.warn(`未知的 WebSocket 消息类型: ${message.type}`, {
-            clientId,
-          });
-          sendWebSocketError(
-            ws,
-            "UNKNOWN_MESSAGE_TYPE",
-            `未知的消息类型: ${message.type}`,
-            this.logger
-          );
-      }
-    } catch (error) {
-      this.logger.error(`处理 WebSocket 消息失败: ${message.type}`, error);
+    if (deprecatedTypes.includes(message.type)) {
+      this.logger.warn(
+        `[DEPRECATED] WebSocket 消息类型 "${message.type}" 已废弃，请使用对应的 RESTful API`,
+        { clientId }
+      );
       sendWebSocketError(
         ws,
-        "MESSAGE_PROCESSING_ERROR",
-        error instanceof Error ? error.message : "消息处理失败",
+        "DEPRECATED_MESSAGE_TYPE",
+        `消息类型 "${message.type}" 已废弃，请使用 RESTful API`,
         this.logger
       );
+      return;
     }
-  }
 
-  /**
-   * 处理获取配置请求
-   * @deprecated 使用 GET /api/config 替代
-   */
-  private async handleGetConfig(
-    ws: WebSocketLike,
-    clientId: string
-  ): Promise<void> {
-    this.logDeprecationWarning("WebSocket getConfig", "GET /api/config");
-
-    try {
-      const config = configManager.getConfig();
-      this.logger.debug("WebSocket: getConfig 请求处理成功", { clientId });
-      ws.send(JSON.stringify({ type: "config", data: config }));
-    } catch (error) {
-      this.logger.error("WebSocket: getConfig 请求处理失败", error);
-      sendWebSocketError(
-        ws,
-        "CONFIG_READ_ERROR",
-        error instanceof Error ? error.message : "获取配置失败",
-        this.logger
-      );
-    }
-  }
-
-  /**
-   * 处理更新配置请求
-   * @deprecated 使用 PUT /api/config 替代
-   */
-  private async handleUpdateConfig(
-    ws: WebSocketLike,
-    configData: AppConfig,
-    clientId: string
-  ): Promise<void> {
-    this.logDeprecationWarning("WebSocket updateConfig", "PUT /api/config");
-
-    try {
-      // 使用 configManager 的验证方法
-      configManager.validateConfig(configData);
-
-      // 使用 configManager 的批量更新方法
-      configManager.updateConfig(configData);
-
-      // 更新服务工具配置（单独处理，因为 updateConfig 只更新已存在的配置）
-      if (configData.mcpServerConfig) {
-        for (const [serverName, toolsConfig] of Object.entries(
-          configData.mcpServerConfig
-        )) {
-          for (const [toolName, toolConfig] of Object.entries(
-            toolsConfig.tools
-          )) {
-            configManager.setToolEnabled(
-              serverName,
-              toolName,
-              toolConfig.enable
-            );
-          }
-        }
-      }
-
-      this.logger.debug("WebSocket: 配置更新成功", { clientId });
-      ws.send(JSON.stringify({ type: "config:updated", success: true }));
-    } catch (error) {
-      this.logger.error("WebSocket: 配置更新失败", error);
-      sendWebSocketError(
-        ws,
-        "CONFIG_UPDATE_ERROR",
-        error instanceof Error ? error.message : String(error),
-        this.logger
-      );
-    }
-  }
-
-  /**
-   * 处理获取状态请求
-   * @deprecated 使用 GET /api/status 替代
-   */
-  private async handleGetStatus(
-    ws: WebSocketLike,
-    clientId: string
-  ): Promise<void> {
-    this.logDeprecationWarning("WebSocket getStatus", "GET /api/status");
-
-    try {
-      const status = this.statusService.getFullStatus();
-      ws.send(JSON.stringify({ type: "status", data: status.client }));
-      this.logger.debug("WebSocket: getStatus 请求处理成功", { clientId });
-    } catch (error) {
-      this.logger.error("WebSocket: getStatus 请求处理失败", error);
-      sendWebSocketError(
-        ws,
-        "STATUS_READ_ERROR",
-        error instanceof Error ? error.message : "获取状态失败",
-        this.logger
-      );
-    }
-  }
-
-  /**
-   * 处理重启服务请求
-   * @deprecated 使用 POST /api/services/restart 替代
-   */
-  private async handleRestartService(
-    ws: WebSocketLike,
-    clientId: string
-  ): Promise<void> {
-    this.logDeprecationWarning(
-      "WebSocket restartService",
-      "POST /api/services/restart"
-    );
-
-    try {
-      this.logger.info("WebSocket: 收到服务重启请求", { clientId });
-
-      // 发射重启请求事件
-      this.eventBus.emitEvent("service:restart:requested", {
-        serviceName: "unknown", // 由于是WebSocket触发的，服务名未知
-        source: `websocket-${clientId}`,
-        delay: 0,
-        attempt: 1,
-        timestamp: Date.now(),
-      });
-
-      // 更新重启状态
-      this.statusService.updateRestartStatus("restarting");
-    } catch (error) {
-      this.logger.error("WebSocket: 处理重启请求失败", error);
-      sendWebSocketError(
-        ws,
-        "RESTART_REQUEST_ERROR",
-        error instanceof Error ? error.message : "处理重启请求失败",
-        this.logger
-      );
-    }
-  }
-
-  /**
-   * 记录废弃功能使用警告
-   */
-  private logDeprecationWarning(feature: string, alternative: string): void {
-    this.logger.warn(
-      `[DEPRECATED] ${feature} 功能已废弃，请使用 ${alternative} 替代`
+    // 未知消息类型
+    this.logger.warn(`未知的 WebSocket 消息类型: ${message.type}`, {
+      clientId,
+    });
+    sendWebSocketError(
+      ws,
+      "UNKNOWN_MESSAGE_TYPE",
+      `未知的消息类型: ${message.type}`,
+      this.logger
     );
   }
 
