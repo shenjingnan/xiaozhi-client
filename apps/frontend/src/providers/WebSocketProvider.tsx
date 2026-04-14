@@ -4,8 +4,7 @@
  * 为应用提供网络相关的功能，包括：
  * - HTTP API 调用（getConfig、updateConfig、getStatus 等）
  * - WebSocket 连接管理
- * - 配置更新通知（结合 HTTP 和 WebSocket）
- * - 服务重启通知
+ * - 服务重启通知（HTTP + 轮询等待）
  * - 端口切换
  *
  * 该组件在内部初始化所有 stores，尝试在应用启动时完成数据初始化；若初始化失败会记录错误并允许应用继续运行。
@@ -48,11 +47,7 @@ interface NetworkServiceContextType {
   refreshStatus: () => Promise<void>;
   restartService: () => Promise<void>;
 
-  // 混合模式方法 (HTTP + WebSocket)
-  updateConfigWithNotification: (
-    config: AppConfig,
-    timeout?: number
-  ) => Promise<void>;
+  // 重启服务（带轮询等待）
   restartServiceWithNotification: (timeout?: number) => Promise<void>;
 
   // WebSocket 管理

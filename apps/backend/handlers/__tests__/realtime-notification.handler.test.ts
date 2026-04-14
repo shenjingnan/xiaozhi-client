@@ -269,13 +269,7 @@ describe("RealtimeNotificationHandler", () => {
       expect(mockLogger.debug).toHaveBeenCalledWith("发送初始数据给客户端", {
         clientId,
       });
-      expect(mockConfigService.getConfig).toHaveBeenCalledTimes(1);
       expect(mockStatusService.getFullStatus).toHaveBeenCalledTimes(1);
-
-      // 应该发送配置更新
-      expect(mockWebSocket.send).toHaveBeenCalledWith(
-        JSON.stringify({ type: "configUpdate", data: mockConfig })
-      );
 
       // 应该发送状态更新
       expect(mockWebSocket.send).toHaveBeenCalledWith(
@@ -297,16 +291,12 @@ describe("RealtimeNotificationHandler", () => {
         client: mockStatus.client,
         restart: null,
       };
-      mockConfigService.getConfig.mockReturnValue(mockConfig);
       mockStatusService.getFullStatus.mockReturnValue(statusWithoutRestart);
 
       await realtimeHandler.sendInitialData(mockWebSocket, clientId);
 
-      // 应该发送配置和状态更新
-      expect(mockWebSocket.send).toHaveBeenCalledTimes(2);
-      expect(mockWebSocket.send).toHaveBeenCalledWith(
-        JSON.stringify({ type: "configUpdate", data: mockConfig })
-      );
+      // 应该只发送状态更新
+      expect(mockWebSocket.send).toHaveBeenCalledTimes(1);
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         JSON.stringify({ type: "statusUpdate", data: mockStatus.client })
       );
@@ -319,7 +309,7 @@ describe("RealtimeNotificationHandler", () => {
 
     it("应该正确处理发送初始数据时的错误", async () => {
       const error = new Error("Initial data failed");
-      mockConfigService.getConfig.mockImplementation(() => {
+      mockStatusService.getFullStatus.mockImplementation(() => {
         throw error;
       });
 
@@ -334,7 +324,7 @@ describe("RealtimeNotificationHandler", () => {
     });
 
     it("应该正确处理非 Error 类型的异常", async () => {
-      mockConfigService.getConfig.mockImplementation(() => {
+      mockStatusService.getFullStatus.mockImplementation(() => {
         throw "String error";
       });
 
@@ -358,15 +348,18 @@ describe("RealtimeNotificationHandler", () => {
       );
     });
 
-    it("应该正确处理配置服务返回空对象的情况", async () => {
-      mockConfigService.getConfig.mockReturnValue({});
+    it("应该正确处理状态服务返回完整数据的情况", async () => {
       mockStatusService.getFullStatus.mockReturnValue(mockStatus);
 
       await realtimeHandler.sendInitialData(mockWebSocket, clientId);
 
-      // 应该发送空配置
+      // 应该发送状态更新和重启状态
+      expect(mockWebSocket.send).toHaveBeenCalledTimes(2);
       expect(mockWebSocket.send).toHaveBeenCalledWith(
-        JSON.stringify({ type: "configUpdate", data: {} })
+        JSON.stringify({ type: "statusUpdate", data: mockStatus.client })
+      );
+      expect(mockWebSocket.send).toHaveBeenCalledWith(
+        JSON.stringify({ type: "restartStatus", data: mockStatus.restart })
       );
     });
   });

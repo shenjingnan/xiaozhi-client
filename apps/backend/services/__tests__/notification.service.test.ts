@@ -127,14 +127,10 @@ describe("NotificationService", () => {
   describe("constructor", () => {
     it("should initialize with correct dependencies", () => {
       expect(notificationService).toBeInstanceOf(NotificationService);
-      expect(mockEventBus.onEvent).toHaveBeenCalledTimes(10); // 10 event listeners
+      expect(mockEventBus.onEvent).toHaveBeenCalledTimes(9); // 9 event listeners
     });
 
     it("should set up event listeners correctly", () => {
-      expect(mockEventBus.onEvent).toHaveBeenCalledWith(
-        "config:updated",
-        expect.any(Function)
-      );
       expect(mockEventBus.onEvent).toHaveBeenCalledWith(
         "status:updated",
         expect.any(Function)
@@ -520,22 +516,6 @@ describe("NotificationService", () => {
   });
 
   describe("event listeners", () => {
-    it("should handle config:updated event", () => {
-      notificationService.registerClient("test-client", mockWebSocket);
-
-      // Get the config:updated listener
-      const configUpdatedListener = mockEventBus.onEvent.mock.calls.find(
-        (call: any) => call[0] === "config:updated"
-      )[1];
-
-      // Trigger the event
-      configUpdatedListener({ config: mockConfig });
-
-      expect(mockWebSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"type":"configUpdate"')
-      );
-    });
-
     it("should handle status:updated event", () => {
       notificationService.registerClient("test-client", mockWebSocket);
 
@@ -661,19 +641,6 @@ describe("NotificationService", () => {
   });
 
   describe("broadcast methods", () => {
-    it("should broadcast config update", () => {
-      notificationService.registerClient("test-client", mockWebSocket);
-
-      notificationService.broadcastConfigUpdate(mockConfig);
-
-      expect(mockWebSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"type":"configUpdate"')
-      );
-
-      const sentMessage = JSON.parse(mockWebSocket.send.mock.calls[0][0]);
-      expect(sentMessage.data).toEqual(mockConfig);
-    });
-
     it("should broadcast status update", () => {
       notificationService.registerClient("test-client", mockWebSocket);
 
@@ -956,23 +923,14 @@ describe("NotificationService", () => {
     it("should handle event-driven notifications end-to-end", () => {
       notificationService.registerClient("test-client", mockWebSocket);
 
-      // Simulate config update event
-      const configUpdatedListener = mockEventBus.onEvent.mock.calls.find(
-        (call: any) => call[0] === "config:updated"
-      )[1];
-      configUpdatedListener({ config: mockConfig });
-
-      // Simulate status update event
+      // 模拟状态更新事件
       const statusUpdatedListener = mockEventBus.onEvent.mock.calls.find(
         (call: any) => call[0] === "status:updated"
       )[1];
       statusUpdatedListener({ status: mockClientInfo });
 
-      // Should have sent both notifications
-      expect(mockWebSocket.send).toHaveBeenCalledTimes(2);
-      expect(mockWebSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"type":"configUpdate"')
-      );
+      // 应该发送状态更新通知
+      expect(mockWebSocket.send).toHaveBeenCalledTimes(1);
       expect(mockWebSocket.send).toHaveBeenCalledWith(
         expect.stringContaining('"type":"statusUpdate"')
       );

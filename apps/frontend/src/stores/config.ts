@@ -2,15 +2,13 @@
  * 配置数据统一管理 Store
  *
  * 特性：
- * - 支持 HTTP API 和 WebSocket 双重数据源
+ * - 通过 HTTP RESTful API 获取和更新配置
  * - 提供异步方法：getConfig()、updateConfig()、refreshConfig()
  * - 使用 Zustand 进行状态管理
  * - 提供选择器 hooks 优化组件渲染
- * - 集成 WebSocket 事件监听
  */
 
 import { apiClient } from "@/services/api";
-import { webSocketManager } from "@/services/websocket";
 import type {
   AppConfig,
   ConnectionConfig,
@@ -326,13 +324,7 @@ export const useConfigStore = create<ConfigStore>()(
           setLoading({ isLoading: true });
           console.log("[ConfigStore] 初始化配置 Store");
 
-          // 设置 WebSocket 事件监听
-          webSocketManager.subscribe("data:configUpdate", (config) => {
-            console.log("[ConfigStore] 收到 WebSocket 配置更新");
-            get().setConfig(config, "websocket");
-          });
-
-          // 获取初始配置
+          // 获取初始配置（通过 HTTP API）
           await refreshConfig();
 
           console.log("[ConfigStore] 配置 Store 初始化完成");

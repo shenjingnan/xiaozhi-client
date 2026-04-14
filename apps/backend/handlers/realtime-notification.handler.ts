@@ -18,7 +18,6 @@ import type {
 } from "@/services/notification.service.js";
 import type { StatusService } from "@/services/status.service.js";
 import { sendWebSocketError } from "@/utils/websocket-helper.js";
-import { configManager } from "@xiaozhi-client/config";
 
 /**
  * WebSocket 消息接口
@@ -100,10 +99,6 @@ export class RealtimeNotificationHandler {
   async sendInitialData(ws: WebSocketLike, clientId: string): Promise<void> {
     try {
       this.logger.debug("发送初始数据给客户端", { clientId });
-
-      // 发送当前配置
-      const config = configManager.getConfig();
-      ws.send(JSON.stringify({ type: "configUpdate", data: config }));
 
       // 发送当前状态
       const status = this.statusService.getFullStatus();

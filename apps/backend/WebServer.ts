@@ -236,8 +236,6 @@ export class WebServer {
     // 在所有路由设置完成后，设置 404 处理
     this.app.notFound(notFoundHandlerMiddleware);
 
-    // 监听接入点状态变更事件
-    this.setupEndpointStatusListener();
     // 监听 MCP 服务添加事件
     this.setupMCPServerAddedListener();
   }
@@ -786,38 +784,6 @@ export class WebServer {
 
     // 发送初始数据
     this.realtimeNotificationHandler.sendInitialData(ws, clientId);
-  }
-
-  /**
-   * 设置接入点状态变更事件监听
-   */
-  private setupEndpointStatusListener(): void {
-    const listener = (eventData: EventBusEvents["endpoint:status:changed"]) => {
-      // 向所有连接的 WebSocket 客户端广播接入点状态变更事件
-      const message = {
-        type: "endpoint_status_changed",
-        data: {
-          endpoint: eventData.endpoint,
-          connected: eventData.connected,
-          operation: eventData.operation,
-          success: eventData.success,
-          message: eventData.message,
-          timestamp: eventData.timestamp,
-        },
-      };
-
-      this.notificationService.broadcast("endpoint_status_changed", message);
-      this.logger.debug(
-        `广播接入点状态变更事件: ${eventData.endpoint} - ${eventData.operation}`
-      );
-    };
-
-    this.eventBus.onEvent("endpoint:status:changed", listener);
-
-    // 存储清理函数，用于在 destroy 时移除监听器
-    this.eventListenerUnsubscribers.push(() => {
-      this.eventBus.offEvent("endpoint:status:changed", listener);
-    });
   }
 
   /**

@@ -17,7 +17,6 @@ vi.mock("@/services/index", () => ({
     getStatus: vi.fn(),
     getClientStatus: vi.fn(),
     restartService: vi.fn(),
-    updateConfigWithNotification: vi.fn(),
     restartServiceWithNotification: vi.fn(),
     setWebSocketUrl: vi.fn(),
     isWebSocketConnected: vi.fn(),
@@ -74,9 +73,6 @@ describe("useNetworkService", () => {
     } as any);
     mockNetworkService.updateConfig.mockResolvedValue(undefined);
     mockNetworkService.restartService.mockResolvedValue(undefined);
-    mockNetworkService.updateConfigWithNotification.mockResolvedValue(
-      undefined
-    );
     mockNetworkService.restartServiceWithNotification.mockResolvedValue(
       undefined
     );
@@ -127,9 +123,6 @@ describe("useNetworkService", () => {
       expect(typeof result.current.getStatus).toBe("function");
       expect(typeof result.current.refreshStatus).toBe("function");
       expect(typeof result.current.restartService).toBe("function");
-      expect(typeof result.current.updateConfigWithNotification).toBe(
-        "function"
-      );
       expect(typeof result.current.restartServiceWithNotification).toBe(
         "function"
       );
@@ -143,7 +136,7 @@ describe("useNetworkService", () => {
 
     it("应该设置正确数量的事件监听器", () => {
       renderHook(() => useNetworkService());
-      expect(mockNetworkService.onWebSocketEvent).toHaveBeenCalledTimes(4); // 移除 statusUpdate 和 restartStatus 后剩余 4 个事件
+      expect(mockNetworkService.onWebSocketEvent).toHaveBeenCalledTimes(3); // connection:connected、connection:disconnected、system:error
     });
   });
 
@@ -200,19 +193,7 @@ describe("useNetworkService", () => {
     });
   });
 
-  describe("混合模式方法", () => {
-    it("updateConfigWithNotification 应该正确工作", async () => {
-      const config = { version: "1.0.0" };
-
-      const { result } = renderHook(() => useNetworkService());
-
-      await result.current.updateConfigWithNotification(config as any);
-
-      expect(
-        mockNetworkService.updateConfigWithNotification
-      ).toHaveBeenCalledWith(config, 5000);
-    });
-
+  describe("重启服务（轮询等待模式）", () => {
     it("restartServiceWithNotification 应该正确工作", async () => {
       const { result } = renderHook(() => useNetworkService());
 
@@ -348,26 +329,6 @@ describe("useNetworkService", () => {
       consoleSpy.mockRestore();
     });
 
-    it("updateConfigWithNotification 应该处理失败", async () => {
-      const error = new Error("更新配置通知失败");
-      mockNetworkService.updateConfigWithNotification.mockRejectedValue(error);
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-
-      const { result } = renderHook(() => useNetworkService());
-
-      await expect(
-        result.current.updateConfigWithNotification({} as any)
-      ).rejects.toThrow(error);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[NetworkService] 配置更新失败:",
-        error
-      );
-
-      consoleSpy.mockRestore();
-    });
-
     it("restartServiceWithNotification 应该处理失败", async () => {
       const error = new Error("重启服务通知失败");
       mockNetworkService.restartServiceWithNotification.mockRejectedValue(
@@ -420,9 +381,8 @@ describe("useNetworkService", () => {
 
       expect(eventNames).toContain("connection:connected");
       expect(eventNames).toContain("connection:disconnected");
-      expect(eventNames).toContain("data:configUpdate");
       expect(eventNames).toContain("system:error");
-      // 注意：data:statusUpdate 和 data:restartStatus 已移除，统一使用 HTTP 轮询获取状态数据
+      // 注意：data:configUpdate、data:statusUpdate 和 data:restartStatus 已移除，统一使用 HTTP API 和轮询获取数据
     });
   });
 

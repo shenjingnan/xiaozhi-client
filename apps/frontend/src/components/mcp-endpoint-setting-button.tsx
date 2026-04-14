@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { type EndpointStatusResponse, apiClient } from "@/services/api";
-import { webSocketManager } from "@/services/websocket";
 import { useConfig, useConfigActions, useMcpEndpoint } from "@/stores/config";
 import {
   BadgeInfoIcon,
@@ -377,60 +376,6 @@ export function McpEndpointSettingButton() {
       initializeEndpointStates(mcpEndpoints);
     }
   }, [open, mcpEndpoints, initializeEndpointStates]);
-
-  // 实时状态同步 - 处理端点状态变更事件
-  useEffect(() => {
-    if (!open || mcpEndpoints.length === 0) return;
-
-    // 为每个端点订阅状态变更事件
-    const unsubscribers = mcpEndpoints.map((endpoint) => {
-      const unsubscribe = webSocketManager.subscribe(
-        "data:endpointStatusChanged",
-        (event: any) => {
-          // 只处理当前端点的事件
-          if (event.endpoint === endpoint) {
-            console.log(
-              `[McpEndpointSettingButton] 接收到端点 ${endpoint} 状态变更:`,
-              event
-            );
-
-            // 更新端点状态
-            updateEndpointState(endpoint, {
-              connected: event.connected,
-              isOperating: false, // 接收到事件说明操作已完成
-              lastOperation: {
-                type: event.operation,
-                success: event.success,
-                message:
-                  event.message || (event.connected ? "连接成功" : "断开成功"),
-                timestamp: event.timestamp,
-              },
-            });
-
-            // 显示通知
-            if (event.success) {
-              toast.success(
-                `端点 ${event.operation === "connect" ? "连接" : event.operation === "disconnect" ? "断开" : "重连"}成功`
-              );
-            } else {
-              toast.error(
-                `端点 ${event.operation === "connect" ? "连接" : event.operation === "disconnect" ? "断开" : "重连"}失败: ${event.message || "未知错误"}`
-              );
-            }
-          }
-        }
-      );
-
-      return unsubscribe;
-    });
-
-    // 清理函数
-    return () => {
-      for (const unsubscribe of unsubscribers) {
-        unsubscribe();
-      }
-    };
-  }, [open, mcpEndpoints, updateEndpointState]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
