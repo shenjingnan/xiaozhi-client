@@ -1,28 +1,20 @@
 /**
  * 统一的网络服务管理器
- * 整合 HTTP API 客户端和 WebSocket 管理器
+ * 整合 HTTP API 客户端
  */
 
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import { type ApiClient, apiClient } from "./api";
-import {
-  type ConnectionState,
-  type WebSocketManager,
-  type WebSocketMessage,
-  webSocketManager,
-} from "./websocket";
 
 /**
  * 网络服务管理器类
  */
 export class NetworkService {
   private apiClient: ApiClient;
-  private webSocketManager: WebSocketManager;
   private initialized = false;
 
   constructor() {
     this.apiClient = apiClient;
-    this.webSocketManager = webSocketManager;
   }
 
   /**
@@ -34,10 +26,6 @@ export class NetworkService {
     }
 
     console.log("[NetworkService] 初始化网络服务");
-
-    // 启动 WebSocket 连接
-    this.webSocketManager.connect();
-
     this.initialized = true;
     console.log("[NetworkService] 网络服务初始化完成");
   }
@@ -47,7 +35,6 @@ export class NetworkService {
    */
   destroy(): void {
     console.log("[NetworkService] 销毁网络服务");
-    this.webSocketManager.disconnect();
     this.initialized = false;
   }
 
@@ -214,68 +201,14 @@ export class NetworkService {
     return this.apiClient.resetStatus();
   }
 
-  // ==================== WebSocket 方法 ====================
-
-  /**
-   * 获取 WebSocket 连接状态
-   */
-  getWebSocketState(): ConnectionState {
-    return this.webSocketManager.getState();
-  }
-
-  /**
-   * 检查 WebSocket 是否已连接
-   */
-  isWebSocketConnected(): boolean {
-    return this.webSocketManager.isConnected();
-  }
-
-  /**
-   * 设置 WebSocket URL
-   */
-  setWebSocketUrl(url: string): void {
-    this.webSocketManager.setUrl(url);
-  }
-
-  /**
-   * 监听 WebSocket 事件
-   * @returns 取消订阅的函数
-   */
-  onWebSocketEvent<K extends keyof import("./websocket").EventBusEvents>(
-    event: K,
-    listener: import("./websocket").EventListener<
-      import("./websocket").EventBusEvents[K]
-    >
-  ): () => void {
-    return this.webSocketManager.subscribe(event, listener);
-  }
-
-  /**
-   * 重新连接 WebSocket
-   */
-  reconnectWebSocket(): void {
-    this.webSocketManager.disconnect();
-    setTimeout(() => {
-      this.webSocketManager.connect();
-    }, 1000);
-  }
-
-  /**
-   * 通过 WebSocket 发送消息
-   */
-  send(message: WebSocketMessage): boolean {
-    return this.webSocketManager.send(message);
-  }
-
   // ==================== 便捷方法 ====================
 
   /**
-   * 获取完整的应用状态 (HTTP + WebSocket)
+   * 获取完整的应用状态 (HTTP)
    */
   async getFullAppState(): Promise<{
     config: AppConfig;
     status: any;
-    webSocketConnected: boolean;
   }> {
     const [config, status] = await Promise.all([
       this.getConfig(),
@@ -285,7 +218,6 @@ export class NetworkService {
     return {
       config,
       status,
-      webSocketConnected: this.isWebSocketConnected(),
     };
   }
 
@@ -293,7 +225,6 @@ export class NetworkService {
    * 重启服务并等待完成 (轮询模式)
    *
    * 通过 HTTP API 触发重启，然后轮询状态接口等待重启完成。
-   * 不再依赖 WebSocket 的 data:restartStatus 事件推送。
    */
   async restartServiceWithNotification(timeout = 30000): Promise<void> {
     // 先通过 HTTP API 发送重启请求
@@ -324,9 +255,8 @@ export class NetworkService {
 export const networkService = new NetworkService();
 
 // 导出其他服务
-export { apiClient, webSocketManager };
-export { ConnectionState } from "./websocket";
+export { apiClient };
 export { cozeApiClient, CozeApiClient } from "./cozeApi";
 
 // 导出类型
-export type { ApiClient, WebSocketManager };
+export type { ApiClient };

@@ -89,18 +89,6 @@ vi.mock("@/services/StatusService", () => {
   };
 });
 
-vi.mock("@/services/NotificationService", () => {
-  const mockNotificationService = {
-    addClient: vi.fn(),
-    removeClient: vi.fn(),
-    broadcast: vi.fn(),
-    sendToClient: vi.fn(),
-  };
-  return {
-    NotificationService: vi.fn(() => mockNotificationService),
-  };
-});
-
 // Mock CLI
 vi.mock("@cli", () => ({
   getServiceStatus: vi.fn(),

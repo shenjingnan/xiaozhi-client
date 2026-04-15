@@ -2,7 +2,7 @@
  * useNetworkService Hook 测试
  */
 
-import { ConnectionState, networkService } from "@/services/index";
+import { networkService } from "@/services/index";
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useNetworkService } from "../useNetworkService";
@@ -18,16 +18,6 @@ vi.mock("@/services/index", () => ({
     getClientStatus: vi.fn(),
     restartService: vi.fn(),
     restartServiceWithNotification: vi.fn(),
-    setWebSocketUrl: vi.fn(),
-    isWebSocketConnected: vi.fn(),
-    getWebSocketState: vi.fn(),
-    onWebSocketEvent: vi.fn(),
-  },
-  ConnectionState: {
-    DISCONNECTED: "disconnected",
-    CONNECTING: "connecting",
-    CONNECTED: "connected",
-    RECONNECTING: "reconnecting",
   },
 }));
 
@@ -49,14 +39,6 @@ vi.mock("@/stores/status", () => ({
   },
 }));
 
-vi.mock("@/stores/websocket", () => ({
-  useWebSocketActions: () => ({
-    setConnectionState: vi.fn(),
-    setWsUrl: vi.fn(),
-    setPortChangeStatus: vi.fn(),
-  }),
-}));
-
 describe("useNetworkService", () => {
   const mockNetworkService = vi.mocked(networkService);
 
@@ -76,22 +58,6 @@ describe("useNetworkService", () => {
     mockNetworkService.restartServiceWithNotification.mockResolvedValue(
       undefined
     );
-    mockNetworkService.isWebSocketConnected.mockReturnValue(false);
-    mockNetworkService.getWebSocketState.mockReturnValue(
-      ConnectionState.DISCONNECTED
-    );
-
-    // Mock onWebSocketEvent 返回 unsubscribe 函数
-    mockNetworkService.onWebSocketEvent.mockReturnValue(() => {});
-
-    // Mock localStorage
-    Object.defineProperty(window, "localStorage", {
-      value: {
-        getItem: vi.fn(),
-        setItem: vi.fn(),
-      },
-      writable: true,
-    });
 
     // Mock location
     Object.defineProperty(window, "location", {
@@ -126,17 +92,9 @@ describe("useNetworkService", () => {
       expect(typeof result.current.restartServiceWithNotification).toBe(
         "function"
       );
-      expect(typeof result.current.setCustomWsUrl).toBe("function");
-      expect(typeof result.current.getWebSocketUrl).toBe("function");
       expect(typeof result.current.changePort).toBe("function");
       expect(typeof result.current.loadInitialData).toBe("function");
-      expect(typeof result.current.isWebSocketConnected).toBe("function");
-      expect(typeof result.current.getWebSocketState).toBe("function");
-    });
-
-    it("应该设置正确数量的事件监听器", () => {
-      renderHook(() => useNetworkService());
-      expect(mockNetworkService.onWebSocketEvent).toHaveBeenCalledTimes(3); // connection:connected、connection:disconnected、system:error
+      expect(typeof result.current.getServerUrl).toBe("function");
     });
   });
 
@@ -215,60 +173,13 @@ describe("useNetworkService", () => {
     });
   });
 
-  describe("WebSocket 管理", () => {
-    it("setCustomWsUrl 应该正确设置 URL", () => {
-      const url = "ws://localhost:8080";
+  describe("工具方法", () => {
+    it("getServerUrl 应该返回基于当前页面的 URL", () => {
       const { result } = renderHook(() => useNetworkService());
 
-      result.current.setCustomWsUrl(url);
+      const url = result.current.getServerUrl();
 
-      expect(mockNetworkService.setWebSocketUrl).toHaveBeenCalledWith(url);
-    });
-
-    it("getWebSocketUrl 应该返回 localStorage 中的 URL", () => {
-      const savedUrl = "ws://localhost:8080";
-      vi.mocked(window.localStorage.getItem).mockReturnValue(savedUrl);
-
-      const { result } = renderHook(() => useNetworkService());
-
-      const url = result.current.getWebSocketUrl();
-
-      expect(window.localStorage.getItem).toHaveBeenCalledWith(
-        "xiaozhi-ws-url"
-      );
-      expect(url).toBe(savedUrl);
-    });
-
-    it("getWebSocketUrl 应该根据 location 构建 URL", () => {
-      vi.mocked(window.localStorage.getItem).mockReturnValue(null);
-
-      const { result } = renderHook(() => useNetworkService());
-
-      const url = result.current.getWebSocketUrl();
-
-      expect(url).toBe("ws://localhost:5173");
-    });
-
-    it("isWebSocketConnected 应该返回连接状态", () => {
-      mockNetworkService.isWebSocketConnected.mockReturnValue(true);
-
-      const { result } = renderHook(() => useNetworkService());
-
-      const isConnected = result.current.isWebSocketConnected();
-
-      expect(isConnected).toBe(true);
-    });
-
-    it("getWebSocketState 应该返回状态", () => {
-      mockNetworkService.getWebSocketState.mockReturnValue(
-        ConnectionState.CONNECTED
-      );
-
-      const { result } = renderHook(() => useNetworkService());
-
-      const state = result.current.getWebSocketState();
-
-      expect(state).toBe(ConnectionState.CONNECTED);
+      expect(url).toBe("http://localhost:5173");
     });
   });
 
@@ -344,7 +255,7 @@ describe("useNetworkService", () => {
         result.current.restartServiceWithNotification()
       ).rejects.toThrow(error);
       expect(consoleSpy).toHaveBeenCalledWith(
-        "[NetworkService] 重启服务失败:",
+        "[NetworkService] 重启失败:",
         error
       );
 
@@ -368,21 +279,8 @@ describe("useNetworkService", () => {
         "[NetworkService] 初始化失败:",
         error
       );
+
       consoleSpy.mockRestore();
-    });
-  });
-
-  describe("事件监听器设置", () => {
-    it("应该设置所有预期的事件监听器", () => {
-      renderHook(() => useNetworkService());
-
-      const eventCalls = mockNetworkService.onWebSocketEvent.mock.calls;
-      const eventNames = eventCalls.map((call) => call[0]);
-
-      expect(eventNames).toContain("connection:connected");
-      expect(eventNames).toContain("connection:disconnected");
-      expect(eventNames).toContain("system:error");
-      // 注意：data:configUpdate、data:statusUpdate 和 data:restartStatus 已移除，统一使用 HTTP API 和轮询获取数据
     });
   });
 
@@ -416,6 +314,7 @@ describe("useNetworkService", () => {
         "[NetworkService] 加载初始数据失败:",
         error
       );
+
       consoleSpy.mockRestore();
     });
   });

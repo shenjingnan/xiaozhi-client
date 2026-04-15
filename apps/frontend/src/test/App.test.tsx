@@ -3,25 +3,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock WebSocket
-class MockWebSocket {
-  url: string;
-  readyState = 0;
-  onopen: ((event: Event) => void) | null = null;
-  onmessage: ((event: MessageEvent) => void) | null = null;
-  onclose: ((event: CloseEvent) => void) | null = null;
-  onerror: ((event: Event) => void) | null = null;
-
-  constructor(url: string) {
-    this.url = url;
-  }
-
-  send(_data: string) {}
-  close() {}
-}
-
-global.WebSocket = MockWebSocket as any;
-
 // Mock fetch for API calls
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -49,7 +30,7 @@ describe("App Routing", () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
-        mcpEndpoint: "wss://localhost:3000/mcp",
+        mcpEndpoint: "http://localhost:3000/mcp",
         mcpServers: {},
         connection: {
           heartbeatInterval: 30000,
@@ -64,11 +45,9 @@ describe("App Routing", () => {
     try {
       const { useConfigStore } = await import("@/stores/config");
       const { useStatusStore } = await import("@/stores/status");
-      const { useWebSocketStore } = await import("@/stores/websocket");
 
       useConfigStore.getState().reset();
       useStatusStore.getState().reset();
-      useWebSocketStore.getState().reset();
     } catch (error) {
       // If stores don't exist or can't be imported, that's okay for these tests
       console.warn("Could not reset stores:", error);
@@ -127,10 +106,10 @@ describe("App Routing", () => {
     }
   });
 
-  it("wraps content in WebSocketProvider", async () => {
+  it("wraps content in NetworkServiceProvider", async () => {
     renderWithRouter(<App />);
 
-    // If WebSocketProvider is working, the page should render without errors
+    // If NetworkServiceProvider is working, the page should render without errors
     await waitFor(
       () => {
         expect(screen.getByTestId("dashboard-page")).toBeInTheDocument();

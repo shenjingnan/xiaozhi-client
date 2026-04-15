@@ -19,10 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useNetworkServiceActions } from "@/providers/WebSocketProvider";
 import { useConfig } from "@/stores/config";
-import {
-  useWebSocketConnected,
-  useWebSocketPortChangeStatus,
-} from "@/stores/websocket";
+import { useConnectionStatus } from "@/stores/status";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SettingsIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -45,12 +42,29 @@ const formSchema = z.object({
     }),
 });
 
+interface PortChangeStatus {
+  status:
+    | "idle"
+    | "checking"
+    | "polling"
+    | "connecting"
+    | "completed"
+    | "failed";
+  targetPort?: number;
+  currentAttempt?: number;
+  maxAttempts?: number;
+  error?: string;
+  timestamp: number;
+}
+
 export function WebUrlSettingButton() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const config = useConfig();
-  const connected = useWebSocketConnected();
-  const portChangeStatus = useWebSocketPortChangeStatus();
+  const connected = useConnectionStatus();
+  const [portChangeStatus, _setPortChangeStatus] = useState<
+    PortChangeStatus | undefined
+  >(undefined);
   const { changePort } = useNetworkServiceActions();
 
   const form = useForm<z.infer<typeof formSchema>>({

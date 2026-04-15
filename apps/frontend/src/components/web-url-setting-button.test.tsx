@@ -57,9 +57,9 @@ vi.mock("@/providers/WebSocketProvider", () => ({
   }),
 }));
 
-vi.mock("@/stores/websocket", () => ({
-  useWebSocketConnected: vi.fn(() => false),
-  useWebSocketPortChangeStatus: vi.fn(() => undefined),
+// 模拟 status store（连接状态来源）
+vi.mock("@/stores/status", () => ({
+  useConnectionStatus: vi.fn(() => false),
 }));
 
 // 模拟 sonner toast 组件

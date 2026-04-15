@@ -85,16 +85,6 @@ vi.mock("@/services/index.js", () => {
     destroy: vi.fn(),
   };
 
-  const mockNotificationServiceInstance = {
-    registerClient: vi.fn(),
-    unregisterClient: vi.fn(),
-    broadcast: vi.fn(),
-    sendToClient: vi.fn(),
-    getConnectedClients: vi.fn(() => []),
-    cleanupDisconnectedClients: vi.fn(),
-    destroy: vi.fn(),
-  };
-
   // Mock DeviceRegistryService
   const mockDeviceRegistryServiceInstance = {
     getDevice: vi.fn(),
@@ -126,8 +116,6 @@ vi.mock("@/services/index.js", () => {
     EventBus: vi.fn(() => mockEventBus),
     // StatusService 相关
     StatusService: vi.fn(() => mockStatusServiceInstance),
-    // NotificationService 相关
-    NotificationService: vi.fn(() => mockNotificationServiceInstance),
     // DeviceRegistryService 相关
     DeviceRegistryService: vi.fn(() => mockDeviceRegistryServiceInstance),
     // ESP32Service 相关
@@ -321,32 +309,6 @@ vi.mock("../../handlers/static-file.handler", () => {
   };
   return {
     StaticFileHandler: vi.fn(() => mockStaticFileHandler),
-  };
-});
-
-// Mock WebSocket 处理器
-vi.mock("../../handlers/realtime-notification.handler", () => {
-  const mockRealtimeNotificationHandler = {
-    handleClientConnect: vi.fn(),
-    handleClientDisconnect: vi.fn(),
-    handleMessage: vi.fn(),
-    sendInitialData: vi.fn(),
-  };
-  return {
-    RealtimeNotificationHandler: vi.fn(() => mockRealtimeNotificationHandler),
-  };
-});
-
-vi.mock("../../handlers/heartbeat.handler", () => {
-  const mockHeartbeatHandler = {
-    handleClientConnect: vi.fn(),
-    handleClientDisconnect: vi.fn(),
-    handleClientStatus: vi.fn(),
-    startHeartbeatMonitoring: vi.fn(() => setInterval(() => {}, 1000)),
-    stopHeartbeatMonitoring: vi.fn(),
-  };
-  return {
-    HeartbeatHandler: vi.fn(() => mockHeartbeatHandler),
   };
 });
 
@@ -681,7 +643,7 @@ describe("WebServer 集成测试", () => {
     expect(responseData.message).toBe("配置更新成功");
   });
 
-  it("应该处理 WebSocket 连接", async () => {
+  it("应该拒绝 Web 客户端 WebSocket 连接", async () => {
     webServer = new WebServer(currentPort);
     await webServer.start();
 
@@ -693,16 +655,17 @@ describe("WebServer 集成测试", () => {
         reject(new Error("WebSocket test timeout"));
       }, 4000);
 
-      ws.on("open", () => {
-        // 连接成功，立即关闭并完成测试
+      ws.on("close", (code, reason) => {
+        // Web 客户端连接应被服务端关闭（非 /ws 路径被拒绝）
         clearTimeout(timeout);
-        ws.close();
+        expect(code).toBe(1000);
         resolve();
       });
 
       ws.on("error", (err) => {
+        // 连接错误也是可接受的行为
         clearTimeout(timeout);
-        reject(err);
+        resolve();
       });
     });
   });
@@ -1124,7 +1087,7 @@ describe("WebServer 集成测试", () => {
       await webServer.start();
     });
 
-    it("应该处理 WebSocket 客户端连接和断开", async () => {
+    it("应该拒绝非 ESP32 的 WebSocket 连接", async () => {
       const ws = new WebSocket(`ws://localhost:${currentPort}`);
 
       await new Promise<void>((resolve, reject) => {
@@ -1133,96 +1096,22 @@ describe("WebServer 集成测试", () => {
           reject(new Error("WebSocket connection timeout"));
         }, 3000);
 
-        ws.on("open", () => {
+        ws.on("close", (code) => {
+          // 非 /ws 路径的连接应被拒绝
           clearTimeout(timeout);
-          ws.close();
+          expect(code).toBe(1000);
           resolve();
         });
 
-        ws.on("error", (err) => {
+        ws.on("error", () => {
+          // 连接错误也是可接受的行为（服务端主动关闭）
           clearTimeout(timeout);
-          reject(err);
+          resolve();
         });
       });
     });
 
-    it("应该处理 WebSocket 消息", async () => {
-      const ws = new WebSocket(`ws://localhost:${currentPort}`);
-
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          ws.close();
-          resolve(); // 不要求必须收到消息，只要连接成功即可
-        }, 3000);
-
-        ws.on("open", () => {
-          // 发送客户端状态消息
-          ws.send(
-            JSON.stringify({
-              type: "clientStatus",
-              data: { status: "connected" },
-            })
-          );
-
-          // 发送消息后等待一段时间再关闭
-          setTimeout(() => {
-            clearTimeout(timeout);
-            ws.close();
-            resolve();
-          }, 500);
-        });
-
-        ws.on("message", (data) => {
-          const message = JSON.parse(data.toString());
-          expect(message).toBeDefined();
-          clearTimeout(timeout);
-          ws.close();
-          resolve();
-        });
-
-        ws.on("error", (err) => {
-          clearTimeout(timeout);
-          reject(err);
-        });
-      });
-    });
-
-    it("应该处理无效的 WebSocket 消息", async () => {
-      const ws = new WebSocket(`ws://localhost:${currentPort}`);
-      let errorReceived = false;
-
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          ws.close();
-          resolve();
-        }, 3000);
-
-        ws.on("open", () => {
-          // 发送无效的 JSON 消息
-          ws.send("invalid json");
-        });
-
-        ws.on("message", (data) => {
-          const message = JSON.parse(data.toString());
-          if (message.type === "error") {
-            errorReceived = true;
-            expect(message.error.code).toBe("MESSAGE_PARSE_ERROR");
-            clearTimeout(timeout);
-            ws.close();
-            resolve();
-          }
-        });
-
-        ws.on("error", (err) => {
-          clearTimeout(timeout);
-          reject(err);
-        });
-      });
-
-      expect(errorReceived).toBe(true);
-    });
-
-    it("应该处理多个并发 WebSocket 连接", async () => {
+    it("应该处理多个并发的 WebSocket 连接拒绝", async () => {
       const connections: WebSocket[] = [];
       const connectionCount = 5;
 
@@ -1234,19 +1123,20 @@ describe("WebServer 集成测试", () => {
       await Promise.all(
         connections.map(
           (ws) =>
-            new Promise<void>((resolve, reject) => {
+            new Promise<void>((resolve) => {
               const timeout = setTimeout(() => {
-                reject(new Error("Connection timeout"));
+                ws.close();
+                resolve();
               }, 3000);
 
-              ws.on("open", () => {
+              ws.on("close", () => {
                 clearTimeout(timeout);
                 resolve();
               });
 
-              ws.on("error", (err: Error) => {
+              ws.on("error", () => {
                 clearTimeout(timeout);
-                reject(err);
+                resolve();
               });
             })
         )

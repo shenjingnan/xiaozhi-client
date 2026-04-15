@@ -1,9 +1,8 @@
 /**
  * 网络服务 Provider 组件
  *
- * 为应用提供网络相关的功能，包括：
+ * 为应用提供网络相关的功能，全部基于 HTTP API：
  * - HTTP API 调用（getConfig、updateConfig、getStatus 等）
- * - WebSocket 连接管理
  * - 服务重启通知（HTTP + 轮询等待）
  * - 端口切换
  *
@@ -11,13 +10,13 @@
  *
  * @example
  * ```tsx
- * import { WebSocketProvider, useNetworkServiceActions } from '@/providers/WebSocketProvider';
+ * import { NetworkServiceProvider, useNetworkServiceActions } from '@/providers/WebSocketProvider';
  *
  * function App() {
  *   return (
- *     <WebSocketProvider>
+ *     <NetworkServiceProvider>
  *       <YourAppComponents />
- *     </WebSocketProvider>
+ *     </NetworkServiceProvider>
  *   );
  * }
  *
@@ -44,23 +43,18 @@ interface NetworkServiceContextType {
   getConfig: () => Promise<AppConfig>;
   updateConfig: (config: AppConfig) => Promise<void>;
   getStatus: () => Promise<any>;
-  refreshStatus: () => Promise<void>;
+  refreshStatus: () => void;
   restartService: () => Promise<void>;
 
   // 重启服务（带轮询等待）
   restartServiceWithNotification: (timeout?: number) => Promise<void>;
 
-  // WebSocket 管理
-  setCustomWsUrl: (url: string) => void;
-  getWebSocketUrl: () => string;
-
-  // 端口切换 (向后兼容)
+  // 端口切换
   changePort: (newPort: number) => Promise<void>;
 
   // 工具方法
   loadInitialData: () => Promise<void>;
-  isWebSocketConnected: () => boolean;
-  getWebSocketState: () => any;
+  getServerUrl: () => string;
 }
 
 const NetworkServiceContext = createContext<NetworkServiceContextType | null>(
@@ -83,15 +77,15 @@ export function NetworkServiceProvider({
 
     const initStores = async () => {
       try {
-        console.log("[WebSocketProvider] 开始初始化 stores");
+        console.log("[NetworkProvider] 开始初始化 stores");
         await initializeStores();
 
         if (mounted) {
           setStoresInitialized(true);
-          console.log("[WebSocketProvider] Stores 初始化完成");
+          console.log("[NetworkProvider] Stores 初始化完成");
         }
       } catch (error) {
-        console.error("[WebSocketProvider] Stores 初始化失败:", error);
+        console.error("[NetworkProvider] Stores 初始化失败:", error);
         // 即使初始化失败，也允许应用继续运行
         if (mounted) {
           setStoresInitialized(true);
