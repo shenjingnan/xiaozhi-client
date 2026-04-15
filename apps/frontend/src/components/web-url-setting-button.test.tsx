@@ -3,22 +3,15 @@ import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WebUrlSettingButton } from "./web-url-setting-button";
 
-// 获取 sonner mock 实例（用于断言）
-let mockToast: {
-  success: ReturnType<typeof vi.fn>;
-  error: ReturnType<typeof vi.fn>;
-  info: ReturnType<typeof vi.fn>;
-};
-
-// 模拟 react-hook-form - 保留真实 zod 验证逻辑
-let capturedOnSubmit: ((data: any) => Promise<void>) | null = null;
+// 模拟 react-hook-form - 保留真实 zod 验证逻辑（捕获 onSubmit 用于表单提交模拟）
 let currentErrors: Record<string, { message: string }> = {};
 
 vi.mock("react-hook-form", () => ({
   useForm: () => ({
     control: {},
-    handleSubmit: (fn: (data: any) => void) => {
-      capturedOnSubmit = fn;
+    handleSubmit: (fn: (data: any) => Promise<void>) => {
+      // 捕获提交函数用于表单模拟
+      void fn;
       return (e: React.FormEvent) => {
         e.preventDefault();
         fn({ port: "" });
@@ -105,13 +98,12 @@ describe("WebUrlSettingButton", () => {
     vi.clearAllMocks();
     mockConnected = false;
     mockConfig = undefined;
-    capturedOnSubmit = null;
+    // 重置表单状态
     currentErrors = {};
     mockChangePort.mockReset();
 
-    // 获取 toast mock 实例
-    const { toast } = require("sonner");
-    mockToast = toast as any;
+    // 获取 toast mock 实例（用于断言，需要时可通过 require("sonner").toast 访问）
+    require("sonner");
   });
 
   // ========== 基础渲染测试（保留原有）==========

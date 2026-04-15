@@ -4,6 +4,7 @@
 
 import { networkService } from "@/services/index";
 import { renderHook } from "@testing-library/react";
+import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useNetworkService } from "../useNetworkService";
 
@@ -378,16 +379,18 @@ describe("useNetworkService", () => {
       const config = {};
       const status = {};
 
-      let configResolve: (value: unknown) => void;
-      let statusResolve: (value: unknown) => void;
+      let configResolve: (value: AppConfig | PromiseLike<AppConfig>) => void;
+      let statusResolve: (
+        value: ClientStatus | PromiseLike<ClientStatus>
+      ) => void;
 
       mockNetworkService.getConfig.mockReturnValue(
-        new Promise((resolve) => {
+        new Promise<AppConfig>((resolve) => {
           configResolve = resolve;
         })
       );
       mockNetworkService.getClientStatus.mockReturnValue(
-        new Promise((resolve) => {
+        new Promise<ClientStatus>((resolve) => {
           statusResolve = resolve;
         })
       );
@@ -403,8 +406,8 @@ describe("useNetworkService", () => {
       expect(mockNetworkService.getClientStatus).toHaveBeenCalledTimes(1);
 
       // 解决 promises
-      configResolve!(config);
-      statusResolve!(status);
+      configResolve!(config as AppConfig);
+      statusResolve!(status as ClientStatus);
 
       await loadPromise;
     });
@@ -413,16 +416,18 @@ describe("useNetworkService", () => {
       const config = {};
       const status = {};
 
-      let configResolve: (value: unknown) => void;
-      let statusResolve: (value: unknown) => void;
+      let configResolve: (value: AppConfig | PromiseLike<AppConfig>) => void;
+      let statusResolve: (
+        value: ClientStatus | PromiseLike<ClientStatus>
+      ) => void;
 
       mockNetworkService.getConfig.mockReturnValue(
-        new Promise((resolve) => {
+        new Promise<AppConfig>((resolve) => {
           configResolve = resolve;
         })
       );
       mockNetworkService.getClientStatus.mockReturnValue(
-        new Promise((resolve) => {
+        new Promise<ClientStatus>((resolve) => {
           statusResolve = resolve;
         })
       );
@@ -438,8 +443,8 @@ describe("useNetworkService", () => {
       expect(mockNetworkService.getClientStatus).toHaveBeenCalledTimes(1);
 
       // 解决 promises
-      configResolve!(config);
-      statusResolve!(status);
+      configResolve!(config as AppConfig);
+      statusResolve!(status as ClientStatus);
 
       await loadPromise;
     });

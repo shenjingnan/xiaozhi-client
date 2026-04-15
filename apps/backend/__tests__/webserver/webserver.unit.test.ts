@@ -703,7 +703,7 @@ describe("WebServer connectWithRetry 重试逻辑", () => {
 
     const resultPromise = (webServer as any)
       .connectWithRetry(connectionFn, "测试连接", 3, 100, 30000, 2)
-      .catch((e) => e); // 捕获 rejection 避免 unhandled
+      .catch((e: Error) => e); // 捕获 rejection 避免 unhandled
 
     // 推进定时器让所有重试完成（每次间隔: 100ms, 200ms）
     await vi.advanceTimersByTimeAsync(500);
@@ -729,7 +729,7 @@ describe("WebServer connectWithRetry 重试逻辑", () => {
         2000, // maxDelay 上限
         10 // 大的乘数让延迟快速超过上限
       )
-      .catch((e) => e); // 捕获 rejection 避免 unhandled
+      .catch((e: Error) => e); // 捕获 rejection 避免 unhandled
 
     // 推进定时器直到所有重试完成（maxDelay=2000，所以每次最多等 2000ms）
     await vi.advanceTimersByTimeAsync(10000);

@@ -290,7 +290,7 @@ describe("WebServer 配置清理功能", () => {
       // 模拟启动过程中的配置加载
       try {
         // @ts-ignore - 调用私有方法用于测试
-        await webServer.loadConfiguration();
+        await (webServer as any).loadConfiguration();
       } catch (error) {
         // 忽略其他初始化错误，我们只关心配置清理是否被调用
       }
@@ -309,7 +309,7 @@ describe("WebServer 配置清理功能", () => {
       // 应该抛出错误
       await expect(async () => {
         // @ts-ignore - 调用私有方法用于测试
-        await webServer.loadConfiguration();
+        await (webServer as any).loadConfiguration();
       }).rejects.toThrow("配置文件不存在");
 
       // 验证配置清理方法没有被调用
@@ -332,7 +332,7 @@ describe("WebServer 配置清理功能", () => {
       webServer = new WebServer(currentPort);
 
       // @ts-ignore - 调用私有方法用于测试
-      const config = await webServer.loadConfiguration();
+      const config = await (webServer as any).loadConfiguration();
 
       // 验证配置清理方法被调用
       expect(
@@ -357,7 +357,7 @@ describe("WebServer 配置清理功能", () => {
       mockConfigManager.getConfig.mockReturnValue(expectedConfig);
       webServer = new WebServer(currentPort);
 
-      const config = await webServer.loadConfiguration();
+      const config = await (webServer as any).loadConfiguration();
 
       // 应使用 DEFAULT_PORT（从 HTTP_SERVER_CONFIG 获取）
       expect(config.webUIPort).toBeGreaterThan(0);
@@ -372,7 +372,7 @@ describe("WebServer 配置清理功能", () => {
       mockConfigManager.getConfig.mockReturnValue(expectedConfig);
       webServer = new WebServer(currentPort);
 
-      const config = await webServer.loadConfiguration();
+      const config = await (webServer as any).loadConfiguration();
 
       expect(config.mcpEndpoint).toEqual([
         "wss://ep1.example.com",
@@ -389,7 +389,7 @@ describe("WebServer 配置清理功能", () => {
       mockConfigManager.getConfig.mockReturnValue(expectedConfig);
       webServer = new WebServer(currentPort);
 
-      const config = await webServer.loadConfiguration();
+      const config = await (webServer as any).loadConfiguration();
 
       expect(config.mcpServers).toEqual({});
     });
@@ -407,7 +407,7 @@ describe("WebServer 配置清理功能", () => {
       });
 
       webServer = new WebServer(currentPort);
-      await webServer.loadConfiguration();
+      await (webServer as any).loadConfiguration();
 
       expect(callOrder).toEqual(["cleanup", "getConfig"]);
     });
