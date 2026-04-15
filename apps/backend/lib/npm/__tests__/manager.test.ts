@@ -7,6 +7,7 @@ vi.mock("semver");
 vi.mock("../../../services/event-bus.service.js");
 
 import { NPMManager } from "@/lib/npm";
+import { InstallLogStream } from "../install-log-stream";
 // Import after mocking
 import type { EventBus } from "@/services/event-bus.service.js";
 
@@ -398,4 +399,156 @@ describe("NPMManager", () => {
       // TODO: Fix top-level const execAsync mocking
     });
   });
+
+  // ==================== InstallLogStream 集成测试 ====================
+
+  describe("NPMManager (with InstallLogStream)", () => {
+    let npmManager: NPMManager;
+    let logStream: InstallLogStream;
+
+    beforeEach(async () => {
+      vi.clearAllMocks();
+
+      logStream = new InstallLogStream();
+
+      mockEventBus = { emitEvent: vi.fn() };
+      mockSpawn = vi.fn();
+      mockExecAsync = vi.fn();
+
+      const { getEventBus } = await import(
+        "../../../services/event-bus.service.js"
+      );
+      vi.mocked(getEventBus).mockReturnValue(mockEventBus as never);
+
+      const { spawn } = await import("node:child_process");
+      vi.mocked(spawn).mockImplementation(mockSpawn as never);
+
+      const { promisify } = await import("node:util");
+      vi.mocked(promisify).mockReturnValue(mockExecAsync as never);
+
+      npmManager = new NPMManager(mockEventBus as never, logStream);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    describe("installVersion - 日志流集成", () => {
+      it("安装开始时应创建 LogStream 会话", async () => {
+        mockSpawn.mockReturnValue(createMockProcess(0));
+        await npmManager.installVersion("1.7.9");
+
+        const startCall = mockEventBus.emitEvent.mock.calls.find(
+          (c) => c[0] === "npm:install:started"
+        );
+        expect(logStream.hasSession(startCall?.[1]?.installId)).toBe(true);
+      });
+
+      it("stdout 输出应通过 logStream 记录（会话可创建 SSE 流）", async () => {
+        mockSpawn.mockReturnValue(
+          createMockProcessWithOutput(0, "Installing...", "")
+        );
+        await npmManager.installVersion("1.7.9");
+
+        const startCall = mockEventBus.emitEvent.mock.calls.find(
+          (c) => c[0] === "npm:install:started"
+        );
+        expect(logStream.createSSEStream(startCall?.[1]?.installId)).not.toBeNull();
+      });
+
+      it("成功退出码 0 时应调用 logStream.complete()（会话标记为完成）", async () => {
+        mockSpawn.mockReturnValue(createMockProcess(0));
+        await npmManager.installVersion("1.7.9");
+
+        const startCall = mockEventBus.emitEvent.mock.calls.find(
+          (c) => c[0] === "npm:install:started"
+        );
+        const installId = startCall?.[1]?.installId;
+
+        // complete 后创建流应立即返回 completed 事件并关闭
+        const stream = logStream.createSSEStream(installId!);
+        expect(stream).not.toBeNull();
+
+        // 读取流验证包含 completed 事件
+        const reader = stream!.getReader();
+        const { value: firstChunk } = await reader.read();
+        expect(firstChunk).toBe(": connected\n\n");
+        reader.cancel();
+      });
+
+      it("失败退出码非 0 时应调用 logStream.fail()", async () => {
+        mockSpawn.mockReturnValue(createMockProcess(1));
+
+        await expect(npmManager.installVersion("1.7.9")).rejects.toThrow();
+
+        const startCall = mockEventBus.emitEvent.mock.calls.find(
+          (c) => c[0] === "npm:install:started"
+        );
+        // fail 后仍可创建流（会话已完成状态）
+        const stream = logStream.createSSEStream(startCall?.[1]?.installId!);
+        expect(stream).not.toBeNull();
+      });
+
+      it("进程启动失败时 fail 错误信息应以 '进程' 开头", async () => {
+        mockSpawn.mockReturnValue(createMockProcessWithError());
+
+        await expect(npmManager.installVersion("1.7.9")).rejects.toThrow();
+
+        // 验证 EventBus 发射的失败事件包含 '进程' 前缀
+        const failCall = mockEventBus.emitEvent.mock.calls.find(
+          (c) => c[0] === "npm:install:failed"
+        );
+        expect(failCall?.[1]?.error).toContain("进程");
+      });
+    });
+  });
+
+  function createMockProcess(exitCode: number): MockChildProcess {
+    return {
+      stdout: { on: vi.fn(), removeAllListeners: vi.fn(), destroy: vi.fn() },
+      stderr: { on: vi.fn(), removeAllListeners: vi.fn(), destroy: vi.fn() },
+      on: vi.fn((event: string, callback: (...args: never[]) => void) => {
+        if (event === "close") callback(exitCode as never);
+      }),
+      removeAllListeners: vi.fn(),
+    };
+  }
+
+  function createMockProcessWithOutput(
+    exitCode: number,
+    stdoutData: string,
+    stderrData: string
+  ): MockChildProcess {
+    return {
+      stdout: {
+        on: vi.fn((event: string, callback: (...args: never[]) => void) => {
+          if (event === "data") callback(stdoutData as never);
+        }),
+        removeAllListeners: vi.fn(),
+        destroy: vi.fn(),
+      },
+      stderr: {
+        on: vi.fn((event: string, callback: (...args: never[]) => void) => {
+          if (event === "data") callback(stderrData as never);
+        }),
+        removeAllListeners: vi.fn(),
+        destroy: vi.fn(),
+      },
+      on: vi.fn((event: string, callback: (...args: never[]) => void) => {
+        if (event === "close") callback(exitCode as never);
+      }),
+      removeAllListeners: vi.fn(),
+    };
+  }
+
+  function createMockProcessWithError(): MockChildProcess {
+    return {
+      stdout: { on: vi.fn(), removeAllListeners: vi.fn(), destroy: vi.fn() },
+      stderr: { on: vi.fn(), removeAllListeners: vi.fn(), destroy: vi.fn() },
+      on: vi.fn((event: string, callback: (...args: never[]) => void) => {
+        if (event === "error") callback(new Error("spawn ENOENT") as never);
+      }),
+      removeAllListeners: vi.fn(),
+    };
+  }
 });

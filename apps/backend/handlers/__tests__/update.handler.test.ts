@@ -1,4 +1,5 @@
 import { NPMManager } from "@/lib/npm";
+import { InstallLogStream } from "@/lib/npm/install-log-stream.js";
 import type { Context } from "hono";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../../Logger.js";
@@ -307,6 +308,113 @@ describe("UpdateApiHandler", () => {
         }),
         "安装请求已接受"
       );
+    });
+  });
+
+  // ==================== SSE 日志流集成测试 ====================
+
+  describe("UpdateApiHandler - SSE 日志流集成", () => {
+    let updateApiHandler: UpdateApiHandler;
+    let logStream: InstallLogStream;
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+
+      // 使用真实的 InstallLogStream 实例
+      logStream = new InstallLogStream();
+
+      // 创建处理器实例（注入真实 logStream）
+      updateApiHandler = new UpdateApiHandler(logStream);
+
+      // 设置模拟 logger
+      mockLogger = { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() };
+      Object.assign(logger, mockLogger);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    describe("getInstallLogs", () => {
+      it("缺少 installId 参数时应返回 400 错误", async () => {
+        const mockContext = createMockContext({
+          req: { query: vi.fn().mockReturnValue(undefined) },
+        } as any);
+
+        const response = await updateApiHandler.getInstallLogs(
+          mockContext as unknown as Context
+        );
+
+        const body = await response.json();
+        expect(response.status).toBe(400);
+        expect(body.error.code).toBe("MISSING_INSTALL_ID");
+      });
+
+      it("installId 对应的会话不存在时应返回 404", async () => {
+        const mockContext = createMockContext({
+          req: { query: vi.fn().mockReturnValue("non-existent") },
+        } as any);
+
+        const response = await updateApiHandler.getInstallLogs(
+          mockContext as unknown as Context
+        );
+
+        const body = await response.json();
+        expect(response.status).toBe(404);
+        expect(body.error.code).toBe("INSTALL_NOT_FOUND");
+      });
+
+      it("会话存在时应返回 text/event-stream 类型的 Response", async () => {
+        // 先创建一个安装会话
+        logStream.startInstall({
+          version: "1.0.0",
+          installId: "test-sse-id",
+          timestamp: Date.now(),
+        });
+
+        const mockContext = createMockContext({
+          req: { query: vi.fn().mockReturnValue("test-sse-id") },
+        } as any);
+
+        const response = await updateApiHandler.getInstallLogs(
+          mockContext as unknown as Context
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toBe("text/event-stream");
+        expect(response.headers.get("Cache-Control")).toContain("no-cache");
+        expect(response.headers.get("X-Accel-Buffering")).toBe("no");
+      });
+    });
+
+    describe("getLogStream", () => {
+      it("应返回注入的 InstallLogStream 实例", () => {
+        expect(updateApiHandler.getLogStream()).toBe(logStream);
+      });
+    });
+
+    describe("performUpdate 与 getInstallLogs 协作", () => {
+      it("performUpdate 应将生成的 installId 传递给 NPMManager", async () => {
+        const mockContext = createMockContext({
+          req: {
+            json: vi.fn().mockResolvedValue({ version: "1.7.9" }),
+          },
+        } as any);
+
+        mockNPMManager.installVersion.mockResolvedValue(undefined);
+
+        await updateApiHandler.performUpdate(mockContext as unknown as Context);
+
+        // 验证 installVersion 被调用且接收到了正确的 installId
+        expect(mockNPMManager.installVersion).toHaveBeenCalledWith(
+          "1.7.9",
+          expect.stringMatching(/^install-/)
+        );
+
+        // 验证响应包含 installId（前端可用它来连接 SSE）
+        const successCall = mockContext.success.mock.calls[0];
+        expect(successCall[0].installId).toMatch(/^install-/);
+      });
     });
   });
 });
