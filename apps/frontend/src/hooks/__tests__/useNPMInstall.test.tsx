@@ -42,7 +42,9 @@ describe("useNPMInstall", () => {
       _emit(event: string, data: unknown) {
         const handlers = listeners.get(event);
         if (handlers) {
-          handlers.forEach((h) => h({ data: JSON.stringify(data) }));
+          for (const h of handlers) {
+            h({ data: JSON.stringify(data) });
+          }
         }
       },
       _emitError() {

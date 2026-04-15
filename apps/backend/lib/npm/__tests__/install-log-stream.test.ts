@@ -8,7 +8,7 @@
  * - 多消费者场景
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { InstallLogStream } from "../install-log-stream";
 
 /**
@@ -31,7 +31,9 @@ async function readStreamChunks(
           setTimeout(() => reject(new Error("timeout")), 100)
         ),
       ]);
-      chunks.push(result.value);
+      if (result.value !== undefined) {
+        chunks.push(result.value);
+      }
     }
   } catch {
     // 超时或流关闭，正常退出
@@ -648,9 +650,7 @@ describe("InstallLogStream", () => {
         collectClosedStream(reader2),
       ]);
 
-      expect(
-        results.every((r) => r.status === "fulfilled")
-      ).toBe(true);
+      expect(results.every((r) => r.status === "fulfilled")).toBe(true);
 
       // 两者都应包含 completed 事件
       if (results[0].status === "fulfilled") {

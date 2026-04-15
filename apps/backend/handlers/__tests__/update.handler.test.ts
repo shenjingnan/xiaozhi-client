@@ -327,7 +327,12 @@ describe("UpdateApiHandler", () => {
       updateApiHandler = new UpdateApiHandler(logStream);
 
       // 设置模拟 logger
-      mockLogger = { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() };
+      mockLogger = {
+        info: vi.fn(),
+        error: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
+      };
       Object.assign(logger, mockLogger);
     });
 
@@ -412,8 +417,10 @@ describe("UpdateApiHandler", () => {
         );
 
         // 验证响应包含 installId（前端可用它来连接 SSE）
-        const successCall = mockContext.success.mock.calls[0];
-        expect(successCall[0].installId).toMatch(/^install-/);
+        const successCall = mockContext.success.mock.calls[0][0] as {
+          installId: string;
+        };
+        expect(successCall.installId).toMatch(/^install-/);
       });
     });
   });

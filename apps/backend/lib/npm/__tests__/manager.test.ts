@@ -7,9 +7,9 @@ vi.mock("semver");
 vi.mock("../../../services/event-bus.service.js");
 
 import { NPMManager } from "@/lib/npm";
-import { InstallLogStream } from "../install-log-stream";
 // Import after mocking
 import type { EventBus } from "@/services/event-bus.service.js";
+import { InstallLogStream } from "../install-log-stream";
 
 /**
  * Mock EventBus 类型接口
@@ -453,7 +453,9 @@ describe("NPMManager", () => {
         const startCall = mockEventBus.emitEvent.mock.calls.find(
           (c) => c[0] === "npm:install:started"
         );
-        expect(logStream.createSSEStream(startCall?.[1]?.installId)).not.toBeNull();
+        expect(
+          logStream.createSSEStream(startCall?.[1]?.installId)
+        ).not.toBeNull();
       });
 
       it("成功退出码 0 时应调用 logStream.complete()（会话标记为完成）", async () => {
