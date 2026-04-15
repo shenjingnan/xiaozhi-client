@@ -323,33 +323,30 @@ describe("NetworkService", () => {
 
     it("应该支持不同类型的事件", () => {
       const listeners = {
-        npmInstallStarted: vi.fn(),
-        npmInstallLog: vi.fn(),
+        connected: vi.fn(),
+        heartbeat: vi.fn(),
         error: vi.fn(),
       };
 
       mockWebSocketManager.subscribe.mockReturnValue(() => {});
 
       networkService.onWebSocketEvent(
-        "data:npmInstallStarted",
-        listeners.npmInstallStarted
+        "connection:connected",
+        listeners.connected
       );
-      networkService.onWebSocketEvent(
-        "data:npmInstallLog",
-        listeners.npmInstallLog
-      );
+      networkService.onWebSocketEvent("system:heartbeat", listeners.heartbeat);
       networkService.onWebSocketEvent("system:error", listeners.error);
 
       expect(mockWebSocketManager.subscribe).toHaveBeenCalledTimes(3);
       expect(mockWebSocketManager.subscribe).toHaveBeenNthCalledWith(
         1,
-        "data:npmInstallStarted",
-        listeners.npmInstallStarted
+        "connection:connected",
+        listeners.connected
       );
       expect(mockWebSocketManager.subscribe).toHaveBeenNthCalledWith(
         2,
-        "data:npmInstallLog",
-        listeners.npmInstallLog
+        "system:heartbeat",
+        listeners.heartbeat
       );
       expect(mockWebSocketManager.subscribe).toHaveBeenNthCalledWith(
         3,

@@ -285,26 +285,22 @@ describe("WebSocketManager", () => {
     });
 
     it("应该正确处理不同类型的事件", () => {
-      const npmInstallListener = vi.fn();
+      const heartbeatListener = vi.fn();
       const errorListener = vi.fn();
 
-      manager.subscribe("data:npmInstallStarted", npmInstallListener);
+      manager.subscribe("system:heartbeat", heartbeatListener);
       manager.subscribe("system:error", errorListener);
 
-      const testNpmInstallData = {
-        version: "1.0.0",
-        installId: "test-install-id",
-        timestamp: Date.now(),
-      };
+      const testHeartbeatData = { timestamp: Date.now() };
       const testError = {
         error: new Error("test error"),
         message: { type: "error" },
       };
 
-      manager.getEventBus().emit("data:npmInstallStarted", testNpmInstallData);
+      manager.getEventBus().emit("system:heartbeat", testHeartbeatData);
       manager.getEventBus().emit("system:error", testError);
 
-      expect(npmInstallListener).toHaveBeenCalledWith(testNpmInstallData);
+      expect(heartbeatListener).toHaveBeenCalledWith(testHeartbeatData);
       expect(errorListener).toHaveBeenCalledWith(testError);
     });
 
@@ -623,7 +619,7 @@ describe("WebSocketManager", () => {
 
     it("应该能够清理所有监听器", () => {
       manager.subscribe("connection:connected", () => {});
-      manager.subscribe("data:npmInstallStarted", () => {});
+      manager.subscribe("system:heartbeat", () => {});
 
       expect(manager.getEventBus().getListenerCount()).toBe(2);
 
