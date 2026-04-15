@@ -259,7 +259,7 @@ describe("McpServerList 组件", () => {
 
     // 使用动态导入设置模拟
     const configModule = await import("@/stores/config");
-    const webSocketProviderModule = await import(
+    const networkServiceProviderModule = await import(
       "@/providers/NetworkServiceProvider"
     );
     const apiModule = await import("@/services/api");
@@ -282,19 +282,19 @@ describe("McpServerList 组件", () => {
       reset: vi.fn(),
       initialize: vi.fn().mockResolvedValue(undefined),
     });
-    vi.mocked(webSocketProviderModule.useNetworkServiceActions).mockReturnValue(
-      {
-        getConfig: vi.fn(),
-        updateConfig: mockUpdateConfig,
-        restartService: vi.fn(),
-        refreshStatus: vi.fn(),
-        getStatus: vi.fn(),
-        restartServiceWithNotification: vi.fn(),
-        changePort: vi.fn(),
-        loadInitialData: vi.fn(),
-        getServerUrl: vi.fn(() => "http://localhost:9999"),
-      }
-    );
+    vi.mocked(
+      networkServiceProviderModule.useNetworkServiceActions
+    ).mockReturnValue({
+      getConfig: vi.fn(),
+      updateConfig: mockUpdateConfig,
+      restartService: vi.fn(),
+      refreshStatus: vi.fn(),
+      getStatus: vi.fn(),
+      restartServiceWithNotification: vi.fn(),
+      changePort: vi.fn(),
+      loadInitialData: vi.fn(),
+      getServerUrl: vi.fn(() => "http://localhost:9999"),
+    });
 
     // 模拟 API 调用
     vi.mocked(apiModule.apiClient.getToolsList).mockImplementation(
