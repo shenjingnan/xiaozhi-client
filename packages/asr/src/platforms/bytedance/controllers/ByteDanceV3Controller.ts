@@ -33,6 +33,7 @@ export class ByteDanceV3Controller extends ByteDanceController {
 
     // 设置结果事件处理
     const resultQueue: ListenResult[] = [];
+    let processedIndex = 0; // 使用索引追踪已处理位置，替代 shift() 的 O(n) 性能开销
     let resolveNext: (() => void) | null = null;
     let settled = false;
     let endCalled = false;
@@ -170,8 +171,14 @@ export class ByteDanceV3Controller extends ByteDanceController {
           });
 
         // 发送帧后立即检查并 yield 可用的结果（不等待帧发送完成）
-        while (resultQueue.length > 0) {
-          yield resultQueue.shift()!;
+        while (processedIndex < resultQueue.length) {
+          yield resultQueue[processedIndex];
+          processedIndex++;
+        }
+        // 定期清理已处理的元素（批量移除），减少内存占用
+        if (processedIndex > 0 && processedIndex >= resultQueue.length) {
+          resultQueue.splice(0, processedIndex);
+          processedIndex = 0;
         }
       }
     } catch (error) {
@@ -208,8 +215,14 @@ export class ByteDanceV3Controller extends ByteDanceController {
     // 注意：并行发送时，发送完成不代表结果处理完成，需要等待连接关闭
     while (true) {
       // 如果队列中有结果，立即 yield
-      while (resultQueue.length > 0) {
-        yield resultQueue.shift()!;
+      while (processedIndex < resultQueue.length) {
+        yield resultQueue[processedIndex];
+        processedIndex++;
+      }
+      // 定期清理已处理的元素（批量移除），减少内存占用
+      if (processedIndex > 0 && processedIndex >= resultQueue.length) {
+        resultQueue.splice(0, processedIndex);
+        processedIndex = 0;
       }
 
       // 如果连接已关闭，退出
