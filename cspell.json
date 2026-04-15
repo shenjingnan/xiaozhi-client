@@ -15,6 +15,7 @@
     "docs/content/音色列表.md",
     "node_modules/**",
     "reports/jscpd",
+    "tests/e2e/**/artifacts/**",
     "**/dist/**",
     "dist/**",
     "docs/out/**",
