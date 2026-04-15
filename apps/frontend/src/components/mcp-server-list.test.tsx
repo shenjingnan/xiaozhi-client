@@ -290,12 +290,9 @@ describe("McpServerList 组件", () => {
         refreshStatus: vi.fn(),
         getStatus: vi.fn(),
         restartServiceWithNotification: vi.fn(),
-        setCustomWsUrl: vi.fn(),
-        getWebSocketUrl: vi.fn(),
         changePort: vi.fn(),
         loadInitialData: vi.fn(),
-        isWebSocketConnected: vi.fn(),
-        getWebSocketState: vi.fn(),
+        getServerUrl: vi.fn(() => "http://localhost:9999"),
       }
     );
 

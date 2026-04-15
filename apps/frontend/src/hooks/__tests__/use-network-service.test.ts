@@ -2,8 +2,9 @@
  * useNetworkService Hook 测试
  */
 
-import { ConnectionState, networkService } from "@/services/index";
+import { networkService } from "@/services/index";
 import { renderHook } from "@testing-library/react";
+import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useNetworkService } from "../useNetworkService";
 
@@ -18,16 +19,6 @@ vi.mock("@/services/index", () => ({
     getClientStatus: vi.fn(),
     restartService: vi.fn(),
     restartServiceWithNotification: vi.fn(),
-    setWebSocketUrl: vi.fn(),
-    isWebSocketConnected: vi.fn(),
-    getWebSocketState: vi.fn(),
-    onWebSocketEvent: vi.fn(),
-  },
-  ConnectionState: {
-    DISCONNECTED: "disconnected",
-    CONNECTING: "connecting",
-    CONNECTED: "connected",
-    RECONNECTING: "reconnecting",
   },
 }));
 
@@ -49,14 +40,6 @@ vi.mock("@/stores/status", () => ({
   },
 }));
 
-vi.mock("@/stores/websocket", () => ({
-  useWebSocketActions: () => ({
-    setConnectionState: vi.fn(),
-    setWsUrl: vi.fn(),
-    setPortChangeStatus: vi.fn(),
-  }),
-}));
-
 describe("useNetworkService", () => {
   const mockNetworkService = vi.mocked(networkService);
 
@@ -76,22 +59,6 @@ describe("useNetworkService", () => {
     mockNetworkService.restartServiceWithNotification.mockResolvedValue(
       undefined
     );
-    mockNetworkService.isWebSocketConnected.mockReturnValue(false);
-    mockNetworkService.getWebSocketState.mockReturnValue(
-      ConnectionState.DISCONNECTED
-    );
-
-    // Mock onWebSocketEvent 返回 unsubscribe 函数
-    mockNetworkService.onWebSocketEvent.mockReturnValue(() => {});
-
-    // Mock localStorage
-    Object.defineProperty(window, "localStorage", {
-      value: {
-        getItem: vi.fn(),
-        setItem: vi.fn(),
-      },
-      writable: true,
-    });
 
     // Mock location
     Object.defineProperty(window, "location", {
@@ -126,17 +93,9 @@ describe("useNetworkService", () => {
       expect(typeof result.current.restartServiceWithNotification).toBe(
         "function"
       );
-      expect(typeof result.current.setCustomWsUrl).toBe("function");
-      expect(typeof result.current.getWebSocketUrl).toBe("function");
       expect(typeof result.current.changePort).toBe("function");
       expect(typeof result.current.loadInitialData).toBe("function");
-      expect(typeof result.current.isWebSocketConnected).toBe("function");
-      expect(typeof result.current.getWebSocketState).toBe("function");
-    });
-
-    it("应该设置正确数量的事件监听器", () => {
-      renderHook(() => useNetworkService());
-      expect(mockNetworkService.onWebSocketEvent).toHaveBeenCalledTimes(3); // connection:connected、connection:disconnected、system:error
+      expect(typeof result.current.getServerUrl).toBe("function");
     });
   });
 
@@ -215,60 +174,69 @@ describe("useNetworkService", () => {
     });
   });
 
-  describe("WebSocket 管理", () => {
-    it("setCustomWsUrl 应该正确设置 URL", () => {
-      const url = "ws://localhost:8080";
+  describe("工具方法", () => {
+    it("getServerUrl 应该返回基于当前页面的 URL", () => {
       const { result } = renderHook(() => useNetworkService());
 
-      result.current.setCustomWsUrl(url);
+      const url = result.current.getServerUrl();
 
-      expect(mockNetworkService.setWebSocketUrl).toHaveBeenCalledWith(url);
+      expect(url).toBe("http://localhost:5173");
     });
 
-    it("getWebSocketUrl 应该返回 localStorage 中的 URL", () => {
-      const savedUrl = "ws://localhost:8080";
-      vi.mocked(window.localStorage.getItem).mockReturnValue(savedUrl);
+    it("getServerUrl 在 HTTPS 协议下应返回 https 前缀", () => {
+      Object.defineProperty(window, "location", {
+        value: {
+          protocol: "https:",
+          hostname: "example.com",
+          port: "443",
+          reload: vi.fn(),
+        },
+        writable: true,
+      });
 
       const { result } = renderHook(() => useNetworkService());
+      const url = result.current.getServerUrl();
 
-      const url = result.current.getWebSocketUrl();
+      expect(url).toBe("https://example.com:443");
 
-      expect(window.localStorage.getItem).toHaveBeenCalledWith(
-        "xiaozhi-ws-url"
-      );
-      expect(url).toBe(savedUrl);
+      // 恢复默认
+      Object.defineProperty(window, "location", {
+        value: {
+          protocol: "http:",
+          hostname: "localhost",
+          port: "5173",
+          reload: vi.fn(),
+        },
+        writable: true,
+      });
     });
 
-    it("getWebSocketUrl 应该根据 location 构建 URL", () => {
-      vi.mocked(window.localStorage.getItem).mockReturnValue(null);
+    it("getServerUrl 无端口时应使用默认值 9999", () => {
+      Object.defineProperty(window, "location", {
+        value: {
+          protocol: "http:",
+          hostname: "localhost",
+          port: "", // 空端口
+          reload: vi.fn(),
+        },
+        writable: true,
+      });
 
       const { result } = renderHook(() => useNetworkService());
+      const url = result.current.getServerUrl();
 
-      const url = result.current.getWebSocketUrl();
+      expect(url).toBe("http://localhost:9999");
 
-      expect(url).toBe("ws://localhost:5173");
-    });
-
-    it("isWebSocketConnected 应该返回连接状态", () => {
-      mockNetworkService.isWebSocketConnected.mockReturnValue(true);
-
-      const { result } = renderHook(() => useNetworkService());
-
-      const isConnected = result.current.isWebSocketConnected();
-
-      expect(isConnected).toBe(true);
-    });
-
-    it("getWebSocketState 应该返回状态", () => {
-      mockNetworkService.getWebSocketState.mockReturnValue(
-        ConnectionState.CONNECTED
-      );
-
-      const { result } = renderHook(() => useNetworkService());
-
-      const state = result.current.getWebSocketState();
-
-      expect(state).toBe(ConnectionState.CONNECTED);
+      // 恢复默认
+      Object.defineProperty(window, "location", {
+        value: {
+          protocol: "http:",
+          hostname: "localhost",
+          port: "5173",
+          reload: vi.fn(),
+        },
+        writable: true,
+      });
     });
   });
 
@@ -344,7 +312,7 @@ describe("useNetworkService", () => {
         result.current.restartServiceWithNotification()
       ).rejects.toThrow(error);
       expect(consoleSpy).toHaveBeenCalledWith(
-        "[NetworkService] 重启服务失败:",
+        "[NetworkService] 重启失败:",
         error
       );
 
@@ -368,21 +336,8 @@ describe("useNetworkService", () => {
         "[NetworkService] 初始化失败:",
         error
       );
+
       consoleSpy.mockRestore();
-    });
-  });
-
-  describe("事件监听器设置", () => {
-    it("应该设置所有预期的事件监听器", () => {
-      renderHook(() => useNetworkService());
-
-      const eventCalls = mockNetworkService.onWebSocketEvent.mock.calls;
-      const eventNames = eventCalls.map((call) => call[0]);
-
-      expect(eventNames).toContain("connection:connected");
-      expect(eventNames).toContain("connection:disconnected");
-      expect(eventNames).toContain("system:error");
-      // 注意：data:configUpdate、data:statusUpdate 和 data:restartStatus 已移除，统一使用 HTTP API 和轮询获取数据
     });
   });
 
@@ -416,7 +371,82 @@ describe("useNetworkService", () => {
         "[NetworkService] 加载初始数据失败:",
         error
       );
+
       consoleSpy.mockRestore();
+    });
+
+    it("loadInitialData 成功时应并行调用 getConfig 和 getClientStatus", async () => {
+      const config = {};
+      const status = {};
+
+      let configResolve: (value: AppConfig | PromiseLike<AppConfig>) => void;
+      let statusResolve: (
+        value: ClientStatus | PromiseLike<ClientStatus>
+      ) => void;
+
+      mockNetworkService.getConfig.mockReturnValue(
+        new Promise<AppConfig>((resolve) => {
+          configResolve = resolve;
+        })
+      );
+      mockNetworkService.getClientStatus.mockReturnValue(
+        new Promise<ClientStatus>((resolve) => {
+          statusResolve = resolve;
+        })
+      );
+
+      const { result } = renderHook(() => useNetworkService());
+      const loadPromise = result.current.loadInitialData();
+
+      // 等一个微任务让两个并行请求都发出
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // 此时两个都应该已经调用了（并行）
+      expect(mockNetworkService.getConfig).toHaveBeenCalledTimes(1);
+      expect(mockNetworkService.getClientStatus).toHaveBeenCalledTimes(1);
+
+      // 解决 promises
+      configResolve!(config as AppConfig);
+      statusResolve!(status as ClientStatus);
+
+      await loadPromise;
+    });
+
+    it("loadInitialData 应并行调用 getConfig 和 getClientStatus", async () => {
+      const config = {};
+      const status = {};
+
+      let configResolve: (value: AppConfig | PromiseLike<AppConfig>) => void;
+      let statusResolve: (
+        value: ClientStatus | PromiseLike<ClientStatus>
+      ) => void;
+
+      mockNetworkService.getConfig.mockReturnValue(
+        new Promise<AppConfig>((resolve) => {
+          configResolve = resolve;
+        })
+      );
+      mockNetworkService.getClientStatus.mockReturnValue(
+        new Promise<ClientStatus>((resolve) => {
+          statusResolve = resolve;
+        })
+      );
+
+      const { result } = renderHook(() => useNetworkService());
+      const loadPromise = result.current.loadInitialData();
+
+      // 等一个微任务让两个并行请求都发出
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // 此时两个都应该已经调用了（并行）
+      expect(mockNetworkService.getConfig).toHaveBeenCalledTimes(1);
+      expect(mockNetworkService.getClientStatus).toHaveBeenCalledTimes(1);
+
+      // 解决 promises
+      configResolve!(config as AppConfig);
+      statusResolve!(status as ClientStatus);
+
+      await loadPromise;
     });
   });
 
@@ -428,6 +458,43 @@ describe("useNetworkService", () => {
       const { result } = renderHook(() => useNetworkService());
 
       await expect(result.current.changePort(8080)).rejects.toThrow(error);
+    });
+
+    it("changePort 成功时应调用 restartService 并最终触发 reload", async () => {
+      vi.useFakeTimers();
+      mockNetworkService.restartService.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useNetworkService());
+
+      // changePort 内部会调用 restartService，然后等待 5000ms 后 reload
+      // 使用 fake timers 来避免实际等待
+      const changePromise = result.current.changePort(9090);
+
+      // 推进定时器让 setTimeout(5000) 完成
+      await vi.advanceTimersByTimeAsync(6000);
+
+      await changePromise;
+
+      expect(mockNetworkService.restartService).toHaveBeenCalled();
+      // window.location.reload 应被调用
+      expect(window.location.reload).toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
+
+    it("changePort 应传递正确的端口号给 restartService", async () => {
+      vi.useFakeTimers();
+      mockNetworkService.restartService.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useNetworkService());
+
+      result.current.changePort(8888);
+      await vi.advanceTimersByTimeAsync(6000);
+
+      // restartService 不接受端口参数（changePort 内部管理端口）
+      expect(mockNetworkService.restartService).toHaveBeenCalled();
+
+      vi.useRealTimers();
     });
   });
 

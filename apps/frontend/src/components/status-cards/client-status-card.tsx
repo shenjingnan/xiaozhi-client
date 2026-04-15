@@ -1,7 +1,8 @@
 /**
  * 客户端连接状态卡片组件
  *
- * 显示 Xiaozhi Client 的连接状态和 WebSocket URL。
+ * 显示 Xiaozhi Client 的连接状态和服务端 URL。
+ * 连接状态基于 HTTP API 轮询数据，不再依赖 WebSocket。
  */
 
 import {
@@ -12,17 +13,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { WebUrlSettingButton } from "@/components/web-url-setting-button";
-import { useWebSocketConnected, useWebSocketUrl } from "@/stores/websocket";
+import { useConnectionStatus } from "@/stores/status";
 import { MiniCircularProgress } from "./mini-circular-progress";
 
 /**
  * 客户端连接状态卡片组件
  *
- * 显示当前 WebSocket 连接状态和 URL，右上角显示连接状态指示器。
+ * 显示当前连接状态（基于 HTTP 状态轮询）和 URL，右上角显示连接状态指示器。
  */
 export function ClientStatusCard() {
-  const connected = useWebSocketConnected();
-  const wsUrl = useWebSocketUrl();
+  const connected = useConnectionStatus();
+  // 基于当前页面构建服务端 URL（不再依赖 WebSocket URL）
+  const serverUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port || "9999"}`;
 
   return (
     <Card className="@container/card">
@@ -44,7 +46,7 @@ export function ClientStatusCard() {
         </div>
       </CardHeader>
       <CardFooter className="flex items-center justify-between gap-1 text-sm">
-        <div className="text-muted-foreground">{wsUrl}</div>
+        <div className="text-muted-foreground">{serverUrl}</div>
         <WebUrlSettingButton />
       </CardFooter>
     </Card>

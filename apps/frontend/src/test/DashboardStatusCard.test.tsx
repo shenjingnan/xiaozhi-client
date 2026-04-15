@@ -25,7 +25,7 @@ const mockUseMcpServersWithStatus = vi.hoisted(() =>
     lastUpdate: Date.now(),
   }))
 );
-const mockUseConfig = vi.hoisted(() =>
+const useConfig = vi.hoisted(() =>
   vi.fn(() => ({
     modelscope: { apiKey: "test-key" },
     platforms: { coze: { token: "test-token" } },
@@ -36,10 +36,7 @@ const mockUseConfig = vi.hoisted(() =>
     },
   }))
 );
-const mockUseWebSocketConnected = vi.hoisted(() => vi.fn(() => true));
-const mockUseWebSocketUrl = vi.hoisted(() =>
-  vi.fn(() => "ws://localhost:3000")
-);
+const mockUseConnectionStatus = vi.hoisted(() => vi.fn(() => true));
 const mockUseVoiceInteractionConfig = vi.hoisted(() =>
   vi.fn(() => ({
     asr: { appid: "test-appid", accessToken: "test-token" },
@@ -60,13 +57,19 @@ vi.mock("@/stores/config", () => ({
   useMcpEndpoint: mockUseMcpEndpoint,
   useMcpServers: mockUseMcpServers,
   useMcpServersWithStatus: mockUseMcpServersWithStatus,
-  useConfig: mockUseConfig,
+  useConfig,
   useVoiceInteractionConfig: mockUseVoiceInteractionConfig,
 }));
 
-vi.mock("@/stores/websocket", () => ({
-  useWebSocketConnected: mockUseWebSocketConnected,
-  useWebSocketUrl: mockUseWebSocketUrl,
+vi.mock("@/stores/status", () => ({
+  useConnectionStatus: mockUseConnectionStatus,
+  useStatusStore: vi.fn(() => ({
+    clientStatus: { status: "connected" as const },
+    loading: { isLoading: false, isRestarting: false },
+    polling: { enabled: true },
+    lastSource: "http",
+  })),
+  useRestartPollingStatus: vi.fn(() => null),
 }));
 
 // Mock child components
@@ -75,19 +78,15 @@ vi.mock("@/components/mcp-endpoint-setting-button", () => ({
     <div data-testid="mcp-endpoint-setting-button" />
   ),
 }));
-
 vi.mock("@/components/web-url-setting-button", () => ({
   WebUrlSettingButton: () => <div data-testid="web-url-setting-button" />,
 }));
-
 vi.mock("@/components/tool-call-logs-dialog", () => ({
   ToolCallLogsDialog: () => <div data-testid="tool-call-logs-dialog" />,
 }));
-
 vi.mock("@/components/system-setting-dialog", () => ({
   SystemSettingDialog: () => <div data-testid="system-setting-dialog" />,
 }));
-
 vi.mock("@/components/voice-interaction-setting-dialog", () => ({
   VoiceInteractionSettingDialog: () => (
     <div data-testid="voice-interaction-setting-dialog" />
@@ -114,7 +113,7 @@ describe("DashboardStatusCard", () => {
       refresh: vi.fn(),
       lastUpdate: Date.now(),
     });
-    mockUseConfig.mockReturnValue({
+    useConfig.mockReturnValue({
       modelscope: { apiKey: "test-key" },
       platforms: { coze: { token: "test-token" } },
       connection: {
@@ -123,8 +122,7 @@ describe("DashboardStatusCard", () => {
         reconnectInterval: 5000,
       },
     });
-    mockUseWebSocketConnected.mockReturnValue(true);
-    mockUseWebSocketUrl.mockReturnValue("ws://localhost:3000");
+    mockUseConnectionStatus.mockReturnValue(true);
     mockUseVoiceInteractionConfig.mockReturnValue({
       asr: { appid: "test-appid", accessToken: "test-token" },
       llm: {
@@ -169,10 +167,11 @@ describe("DashboardStatusCard", () => {
     expect(screen.getByTestId("tool-call-logs-dialog")).toBeInTheDocument();
   });
 
-  it("应该正确显示WebSocket URL", () => {
+  it("应该正确显示服务端 URL", () => {
     render(<DashboardStatusCard />);
 
-    expect(screen.getByText("ws://localhost:3000")).toBeInTheDocument();
+    // 基于 HTTP 的服务端 URL
+    expect(screen.getByText(/http:/)).toBeInTheDocument();
   });
 
   it("应该正确渲染多个MCP端点", () => {
@@ -192,7 +191,7 @@ describe("DashboardStatusCard", () => {
 
   it("应该正确处理未连接状态", () => {
     // Mock未连接状态
-    mockUseWebSocketConnected.mockReturnValue(false);
+    mockUseConnectionStatus.mockReturnValue(false);
 
     render(<DashboardStatusCard />);
 

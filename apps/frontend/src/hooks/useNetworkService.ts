@@ -1,21 +1,38 @@
 /**
- * 新的网络服务 Hook
- * 使用统一的网络服务管理器，实现 HTTP 和 WebSocket 的协调使用
+ * 网络服务 Hook
+ *
+ * 使用统一的网络服务管理器，基于 HTTP API 实现所有功能。
  */
 
-import { ConnectionState, networkService } from "@/services/index";
+import { networkService } from "@/services/index";
 import { useConfigStore } from "@/stores/config";
 import { useStatusStore } from "@/stores/status";
-import { useWebSocketActions } from "@/stores/websocket";
 import type { AppConfig } from "@xiaozhi-client/shared-types";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+interface PortChangeStatus {
+  status:
+    | "idle"
+    | "checking"
+    | "polling"
+    | "connecting"
+    | "completed"
+    | "failed";
+  targetPort?: number;
+  currentAttempt?: number;
+  maxAttempts?: number;
+  error?: string;
+  timestamp: number;
+}
 
 /**
  * 网络服务 Hook
  */
 export function useNetworkService() {
-  const webSocketActions = useWebSocketActions();
   const initializationRef = useRef(false);
+  const [_portChangeStatus, setPortChangeStatus] = useState<
+    PortChangeStatus | undefined
+  >(undefined);
 
   // 初始化网络服务
   useEffect(() => {
@@ -31,66 +48,12 @@ export function useNetworkService() {
       console.error("[NetworkService] 初始化失败:", error);
     });
 
-    // 保存所有事件监听器的取消订阅函数
-    const unsubscribers = [
-      // 连接状态事件
-      networkService.onWebSocketEvent("connection:connected", () => {
-        console.log("[NetworkService] WebSocket 已连接");
-        webSocketActions.setConnectionState(ConnectionState.CONNECTED);
-
-        // 连接成功后立即获取初始数据
-        loadInitialData();
-      }),
-
-      networkService.onWebSocketEvent("connection:disconnected", () => {
-        console.log("[NetworkService] WebSocket 已断开");
-        webSocketActions.setConnectionState(ConnectionState.DISCONNECTED);
-      }),
-
-      // 系统事件
-      networkService.onWebSocketEvent(
-        "system:error",
-        ({ error }: { error: Error }) => {
-          console.error("[NetworkService] WebSocket 错误:", error);
-
-          // 将错误信息存储到状态管理中，供 UI 展示
-          const errorMessage = `WebSocket 连接错误: ${error.message}`;
-          useStatusStore.getState().setError(new Error(errorMessage));
-
-          // 根据错误类型进行分类处理
-          if (
-            error.message.includes("ECONNREFUSED") ||
-            error.message.includes("连接被拒绝")
-          ) {
-            console.warn("[NetworkService] 连接被拒绝，可能是服务未启动");
-            // 可以在这里添加用户友好的提示逻辑
-          } else if (
-            error.message.includes("timeout") ||
-            error.message.includes("超时")
-          ) {
-            console.warn("[NetworkService] 连接超时，请检查网络连接");
-          } else {
-            console.warn("[NetworkService] 未知的 WebSocket 错误:", error);
-          }
-        }
-      ),
-    ];
-
-    // 清理函数
     return () => {
       console.log("[NetworkService] 清理网络服务");
-      // 清理所有事件监听器，防止内存泄漏
-      for (const unsubscribe of unsubscribers) {
-        try {
-          unsubscribe?.();
-        } catch (error) {
-          console.error("[NetworkService] 清理事件监听器失败:", error);
-        }
-      }
       networkService.destroy();
       initializationRef.current = false;
     };
-  }, [webSocketActions]);
+  }, []);
 
   /**
    * 加载初始数据
@@ -193,7 +156,7 @@ export function useNetworkService() {
         await networkService.restartServiceWithNotification(timeout);
         console.log("[NetworkService] 服务重启完成");
       } catch (error) {
-        console.error("[NetworkService] 重启服务失败:", error);
+        console.error("[NetworkService] 重启失败:", error);
         throw error;
       }
     },
@@ -201,19 +164,7 @@ export function useNetworkService() {
   );
 
   /**
-   * 设置自定义 WebSocket URL
-   */
-  const setCustomWsUrl = useCallback(
-    (url: string): void => {
-      console.log("[NetworkService] 设置自定义 WebSocket URL:", url);
-      networkService.setWebSocketUrl(url);
-      webSocketActions.setWsUrl(url);
-    },
-    [webSocketActions]
-  );
-
-  /**
-   * 端口切换功能 (保留向后兼容)
+   * 端口切换功能
    */
   const changePort = useCallback(
     async (newPort: number): Promise<void> => {
@@ -221,31 +172,30 @@ export function useNetworkService() {
         console.log(`[NetworkService] 切换到端口 ${newPort}`);
 
         // 更新端口变更状态
-        webSocketActions.setPortChangeStatus({
+        setPortChangeStatus({
           status: "checking",
           targetPort: newPort,
           timestamp: Date.now(),
         });
 
-        // 构建新的 WebSocket URL
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const hostname = window.location.hostname;
-        const newUrl = `${protocol}//${hostname}:${newPort}`;
-
         // 重启服务
         await restartService();
 
         // 等待一段时间让服务重启
+        setPortChangeStatus({
+          status: "polling",
+          targetPort: newPort,
+          currentAttempt: 0,
+          maxAttempts: 45,
+          timestamp: Date.now(),
+        });
         await new Promise((resolve) => setTimeout(resolve, 5000));
-
-        // 更新 WebSocket URL
-        setCustomWsUrl(newUrl);
 
         // 重新加载页面
         window.location.reload();
       } catch (error) {
         console.error("[NetworkService] 端口切换失败:", error);
-        webSocketActions.setPortChangeStatus({
+        setPortChangeStatus({
           status: "failed",
           targetPort: newPort,
           error: error instanceof Error ? error.message : "端口切换失败",
@@ -254,24 +204,18 @@ export function useNetworkService() {
         throw error;
       }
     },
-    [webSocketActions, restartService, setCustomWsUrl]
+    [restartService]
   );
 
   /**
-   * 获取当前 WebSocket URL
+   * 获取当前服务端 URL
    */
-  const getWebSocketUrl = useCallback((): string => {
-    // 从 localStorage 获取自定义 URL
-    const savedUrl = localStorage.getItem("xiaozhi-ws-url");
-    if (savedUrl) {
-      return savedUrl;
-    }
-
-    // 根据当前页面 URL 构建 WebSocket URL
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const getServerUrl = useCallback((): string => {
+    // 根据当前页面 URL 构建服务端 URL
+    const protocol = window.location.protocol === "https:" ? "https:" : "http:";
     const hostname = window.location.hostname;
-    const port = window.location.port;
-    return `${protocol}//${hostname}${port ? `:${port}` : ""}`;
+    const port = window.location.port || "9999";
+    return `${protocol}//${hostname}:${port}`;
   }, []);
 
   return {
@@ -285,18 +229,11 @@ export function useNetworkService() {
     // 重启服务（带轮询等待）
     restartServiceWithNotification,
 
-    // WebSocket 管理
-    setCustomWsUrl,
-    getWebSocketUrl,
-
-    // 端口切换 (向后兼容)
+    // 端口切换
     changePort,
 
     // 工具方法
     loadInitialData,
-
-    // 网络服务状态
-    isWebSocketConnected: () => networkService.isWebSocketConnected(),
-    getWebSocketState: () => networkService.getWebSocketState(),
+    getServerUrl,
   };
 }

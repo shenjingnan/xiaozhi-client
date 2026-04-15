@@ -1,6 +1,6 @@
 /**
  * NetworkService 单元测试
- * 测试网络服务管理器的功能，特别是新的事件订阅 API
+ * 测试网络服务管理器的功能，基于 HTTP API
  */
 
 import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
@@ -15,7 +15,7 @@ import {
 } from "vitest";
 import { NetworkService } from "../index";
 
-// Mock 模块
+// Mock API 客户端
 vi.mock("../api", () => ({
   apiClient: {
     getConfig: vi.fn(),
@@ -44,47 +44,20 @@ vi.mock("../api", () => ({
   },
 }));
 
-vi.mock("../websocket", () => ({
-  webSocketManager: {
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-    getState: vi.fn(),
-    isConnected: vi.fn(),
-    setUrl: vi.fn(),
-    subscribe: vi.fn(),
-    unsubscribe: vi.fn(),
-    send: vi.fn(),
-    getUrl: vi.fn(),
-    getConnectionStats: vi.fn(),
-    getEventBus: vi.fn(),
-  },
-  ConnectionState: {
-    DISCONNECTED: "disconnected",
-    CONNECTING: "connecting",
-    CONNECTED: "connected",
-    RECONNECTING: "reconnecting",
-  },
-}));
-
 describe("NetworkService", () => {
   let networkService: NetworkService;
   let mockApiClient: any;
-  let mockWebSocketManager: any;
 
   beforeAll(async () => {
     // 获取 mock 实例
     const { apiClient } = await import("../api");
-    const { webSocketManager } = await import("../websocket");
     mockApiClient = apiClient;
-    mockWebSocketManager = webSocketManager;
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // 重置 mock 的默认行为
-    mockWebSocketManager.connect.mockImplementation(() => {});
     mockApiClient.getConfig.mockResolvedValue({
-      mcpEndpoint: "ws://localhost:9999",
+      mcpEndpoint: "http://localhost:9999",
       mcpServers: {
         "test-server": {
           command: "node",
@@ -102,33 +75,20 @@ describe("NetworkService", () => {
   describe("初始化", () => {
     it("应该正确初始化", async () => {
       expect(networkService).toBeDefined();
-      expect(mockWebSocketManager.connect).not.toHaveBeenCalled();
-      expect(mockWebSocketManager.disconnect).not.toHaveBeenCalled();
     });
 
-    it("应该初始化 WebSocket 连接", async () => {
+    it("应该正确初始化", async () => {
       await networkService.initialize();
 
-      expect(mockWebSocketManager.connect).toHaveBeenCalledTimes(1);
+      expect(networkService).toBeDefined();
     });
 
     it("不应该重复初始化", async () => {
       await networkService.initialize();
       await networkService.initialize(); // 第二次调用应该被忽略
 
-      expect(mockWebSocketManager.connect).toHaveBeenCalledTimes(1);
-    });
-
-    it("初始化失败应该抛出错误", async () => {
-      const testNetworkService = new NetworkService();
-      mockWebSocketManager.connect.mockImplementation(() => {
-        throw new Error("连接失败");
-      });
-
-      await expect(testNetworkService.initialize()).rejects.toThrow("连接失败");
-
-      // 清理
-      testNetworkService.destroy();
+      // 不应抛出错误
+      expect(networkService).toBeDefined();
     });
   });
 
@@ -136,7 +96,7 @@ describe("NetworkService", () => {
     it("应该正确销毁", () => {
       networkService.destroy();
 
-      expect(mockWebSocketManager.disconnect).toHaveBeenCalledTimes(1);
+      expect(networkService).toBeDefined();
     });
   });
 
@@ -147,7 +107,7 @@ describe("NetworkService", () => {
 
     it("应该调用 API 客户端的方法", async () => {
       const testConfig: AppConfig = {
-        mcpEndpoint: "ws://localhost:9999",
+        mcpEndpoint: "http://localhost:9999",
         mcpServers: {
           "test-server": {
             command: "node",
@@ -165,7 +125,7 @@ describe("NetworkService", () => {
 
     it("应该更新配置", async () => {
       const testConfig: AppConfig = {
-        mcpEndpoint: "ws://localhost:8888",
+        mcpEndpoint: "http://localhost:8888",
         mcpServers: {
           "test-server-2": {
             command: "node",
@@ -193,7 +153,7 @@ describe("NetworkService", () => {
     it("应该获取客户端状态", async () => {
       const testClientStatus: ClientStatus = {
         status: "connected",
-        mcpEndpoint: "ws://localhost:9999",
+        mcpEndpoint: "http://localhost:9999",
         activeMCPServers: ["test-server"],
       };
       mockApiClient.getClientStatus.mockResolvedValue(testClientStatus);
@@ -213,7 +173,7 @@ describe("NetworkService", () => {
     });
 
     it("应该获取 MCP 端点", async () => {
-      const testEndpoint = "ws://localhost:9999";
+      const testEndpoint = "http://localhost:9999";
       mockApiClient.getMcpEndpoint.mockResolvedValue(testEndpoint);
 
       const result = await networkService.getMcpEndpoint();
@@ -223,7 +183,7 @@ describe("NetworkService", () => {
     });
 
     it("应该获取 MCP 端点列表", async () => {
-      const testEndpoints = ["ws://localhost:9999", "ws://localhost:8888"];
+      const testEndpoints = ["http://localhost:9999", "http://localhost:8888"];
       mockApiClient.getMcpEndpoints.mockResolvedValue(testEndpoints);
 
       const result = await networkService.getMcpEndpoints();
@@ -239,120 +199,6 @@ describe("NetworkService", () => {
 
       expect(mockApiClient.checkClientConnected).toHaveBeenCalledTimes(1);
       expect(result).toBe(true);
-    });
-  });
-
-  describe("WebSocket 方法", () => {
-    beforeEach(async () => {
-      await networkService.initialize();
-    });
-
-    it("应该获取 WebSocket 状态", () => {
-      mockWebSocketManager.getState.mockReturnValue("connected");
-      mockWebSocketManager.isConnected.mockReturnValue(true);
-
-      const state = networkService.getWebSocketState();
-      const isConnected = networkService.isWebSocketConnected();
-
-      expect(mockWebSocketManager.getState).toHaveBeenCalledTimes(1);
-      expect(mockWebSocketManager.isConnected).toHaveBeenCalledTimes(1);
-      expect(state).toBe("connected");
-      expect(isConnected).toBe(true);
-    });
-
-    it("应该设置 WebSocket URL", () => {
-      const testUrl = "ws://localhost:8080";
-
-      networkService.setWebSocketUrl(testUrl);
-
-      expect(mockWebSocketManager.setUrl).toHaveBeenCalledWith(testUrl);
-    });
-
-    it("应该重新连接 WebSocket", () => {
-      networkService.reconnectWebSocket();
-
-      expect(mockWebSocketManager.disconnect).toHaveBeenCalled();
-      expect(mockWebSocketManager.connect).toHaveBeenCalled();
-    });
-  });
-
-  describe("事件订阅 API", () => {
-    beforeEach(async () => {
-      await networkService.initialize();
-      mockWebSocketManager.subscribe.mockReturnValue(() => {});
-    });
-
-    it("应该订阅 WebSocket 事件并返回取消订阅函数", () => {
-      const listener = vi.fn();
-      const unsubscribe = vi.fn();
-
-      mockWebSocketManager.subscribe.mockReturnValue(unsubscribe);
-
-      const result = networkService.onWebSocketEvent(
-        "connection:connected",
-        listener
-      );
-
-      expect(mockWebSocketManager.subscribe).toHaveBeenCalledWith(
-        "connection:connected",
-        listener
-      );
-      expect(result).toBe(unsubscribe);
-    });
-
-    it("应该通过返回的函数取消订阅 WebSocket 事件", () => {
-      const listener = vi.fn();
-      const unsubscribe = vi.fn();
-
-      mockWebSocketManager.subscribe.mockReturnValue(unsubscribe);
-
-      const unsubscribeFn = networkService.onWebSocketEvent(
-        "connection:connected",
-        listener
-      );
-
-      // 调用返回的取消订阅函数
-      unsubscribeFn();
-
-      expect(mockWebSocketManager.subscribe).toHaveBeenCalledWith(
-        "connection:connected",
-        listener
-      );
-      expect(unsubscribe).toHaveBeenCalled();
-    });
-
-    it("应该支持不同类型的事件", () => {
-      const listeners = {
-        connected: vi.fn(),
-        heartbeat: vi.fn(),
-        error: vi.fn(),
-      };
-
-      mockWebSocketManager.subscribe.mockReturnValue(() => {});
-
-      networkService.onWebSocketEvent(
-        "connection:connected",
-        listeners.connected
-      );
-      networkService.onWebSocketEvent("system:heartbeat", listeners.heartbeat);
-      networkService.onWebSocketEvent("system:error", listeners.error);
-
-      expect(mockWebSocketManager.subscribe).toHaveBeenCalledTimes(3);
-      expect(mockWebSocketManager.subscribe).toHaveBeenNthCalledWith(
-        1,
-        "connection:connected",
-        listeners.connected
-      );
-      expect(mockWebSocketManager.subscribe).toHaveBeenNthCalledWith(
-        2,
-        "system:heartbeat",
-        listeners.heartbeat
-      );
-      expect(mockWebSocketManager.subscribe).toHaveBeenNthCalledWith(
-        3,
-        "system:error",
-        listeners.error
-      );
     });
   });
 
@@ -400,7 +246,7 @@ describe("NetworkService", () => {
 
     it("应该获取完整应用状态", async () => {
       const testConfig: AppConfig = {
-        mcpEndpoint: "ws://localhost:9999",
+        mcpEndpoint: "http://localhost:9999",
         mcpServers: {
           "test-server": {
             command: "node",
@@ -409,7 +255,6 @@ describe("NetworkService", () => {
         },
       };
       const testStatus = { server: { status: "running" } };
-      mockWebSocketManager.isConnected.mockReturnValue(true);
 
       mockApiClient.getConfig.mockResolvedValue(testConfig);
       mockApiClient.getStatus.mockResolvedValue(testStatus);
@@ -419,13 +264,12 @@ describe("NetworkService", () => {
       expect(result).toEqual({
         config: testConfig,
         status: testStatus,
-        webSocketConnected: true,
       });
     });
 
     it("应该并行获取配置和状态", async () => {
       const testConfig: AppConfig = {
-        mcpEndpoint: "ws://localhost:9999",
+        mcpEndpoint: "http://localhost:9999",
         mcpServers: {
           "test-server": {
             command: "node",
@@ -444,7 +288,6 @@ describe("NetworkService", () => {
 
       mockApiClient.getConfig.mockReturnValue(getConfigPromise);
       mockApiClient.getStatus.mockReturnValue(getStatusPromise);
-      mockWebSocketManager.isConnected.mockReturnValue(true);
 
       const startTime = Date.now();
       const result = await networkService.getFullAppState();
@@ -461,38 +304,6 @@ describe("NetworkService", () => {
   describe("错误处理", () => {
     beforeEach(async () => {
       await networkService.initialize();
-    });
-
-    it("应该正确处理 WebSocket 订阅错误", () => {
-      const listener = vi.fn();
-      const error = new Error("订阅失败");
-
-      mockWebSocketManager.subscribe.mockImplementation(() => {
-        throw error;
-      });
-
-      expect(() => {
-        networkService.onWebSocketEvent("connection:connected", listener);
-      }).toThrow(error);
-    });
-
-    it("应该正确处理取消订阅函数执行错误", () => {
-      const listener = vi.fn();
-      const error = new Error("取消订阅失败");
-      const unsubscribe = vi.fn(() => {
-        throw error;
-      });
-
-      mockWebSocketManager.subscribe.mockReturnValue(unsubscribe);
-
-      const unsubscribeFn = networkService.onWebSocketEvent(
-        "connection:connected",
-        listener
-      );
-
-      expect(() => {
-        unsubscribeFn();
-      }).toThrow(error);
     });
 
     it("应该正确处理 API 调用错误", async () => {
@@ -519,27 +330,50 @@ describe("NetworkService", () => {
         emptyConfig as AppConfig
       );
     });
+  });
 
-    it("应该处理 WebSocket 未连接时的消息发送", () => {
-      mockWebSocketManager.isConnected.mockReturnValue(false);
-      mockWebSocketManager.send.mockReturnValue(false);
-
-      const result = (networkService as any).send?.({ test: "message" });
-
-      expect(result).toBe(false);
+  describe("restartServiceWithNotification 边界情况", () => {
+    beforeEach(async () => {
+      await networkService.initialize();
     });
 
-    it("应该处理多次快速的状态查询", () => {
-      mockWebSocketManager.getState.mockReturnValue("connected");
-      mockWebSocketManager.isConnected.mockReturnValue(true);
+    it("轮询期间网络异常不应中断轮询", async () => {
+      mockApiClient.restartService.mockResolvedValue(undefined);
+      // 第一次返回 reconnecting，第二次抛异常（网络问题），第三次返回 connected
+      mockApiClient.getClientStatus
+        .mockResolvedValueOnce({ status: "reconnecting" } as any)
+        .mockRejectedValueOnce(new Error("网络错误"))
+        .mockResolvedValueOnce({ status: "connected" } as any);
 
-      for (let i = 0; i < 10; i++) {
-        expect(networkService.getWebSocketState()).toBe("connected");
-        expect(networkService.isWebSocketConnected()).toBe(true);
-      }
+      // 使用足够长的超时让轮询完成
+      await networkService.restartServiceWithNotification(10000);
 
-      expect(mockWebSocketManager.getState).toHaveBeenCalledTimes(10);
-      expect(mockWebSocketManager.isConnected).toHaveBeenCalledTimes(10);
+      // 应该完成了轮询（网络异常被捕获并继续）
+      expect(mockApiClient.getClientStatus).toHaveBeenCalledTimes(3);
+    }, 15000);
+
+    it("第一次 getClientStatus 就返回 connected 时应在首轮轮询后返回", async () => {
+      mockApiClient.restartService.mockResolvedValue(undefined);
+      mockApiClient.getClientStatus.mockResolvedValue({
+        status: "connected",
+      } as any);
+
+      const startTime = Date.now();
+      await networkService.restartServiceWithNotification(30000);
+      const elapsed = Date.now() - startTime;
+
+      // 应该在第一轮 pollInterval (1000ms) 后返回
+      expect(elapsed).toBeLessThan(2000);
+      // 只调用了一次（首次即成功）
+      expect(mockApiClient.getClientStatus).toHaveBeenCalledTimes(1);
+    });
+
+    it("timeout=0 时应立即超时", async () => {
+      mockApiClient.restartService.mockResolvedValue(undefined);
+
+      await expect(
+        networkService.restartServiceWithNotification(0)
+      ).rejects.toThrow("等待重启完成超时");
     });
   });
 });

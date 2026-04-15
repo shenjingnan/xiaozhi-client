@@ -59,8 +59,6 @@ describe("处理器基础测试", () => {
     // 测试所有处理器模块都可以无错误导入
     const modules = [
       () => import("../config.handler.js"),
-      () => import("../heartbeat.handler.js"),
-      () => import("../realtime-notification.handler.js"),
       () => import("../service.handler.js"),
       () => import("../static-file.handler.js"),
       () => import("../status.handler.js"),

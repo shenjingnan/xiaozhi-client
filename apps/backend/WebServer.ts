@@ -5,7 +5,7 @@
  * - 启动和管理 HTTP/HTTPS 服务器
  * - 注册和管理路由
  * - 集成中间件（CORS、日志、错误处理等）
- * - 管理 WebSocket 连接
+ * - 管理 ESP32 设备 WebSocket 连接
  * - 集成 MCP 服务和端点管理器
  * - 生命周期管理（启动、停止、清理）
  *
@@ -26,12 +26,10 @@ import {
   ConfigApiHandler,
   CozeHandler,
   ESP32Handler,
-  HeartbeatHandler,
   MCPHandler,
   MCPRouteHandler,
   MCPToolHandler,
   MCPToolLogHandler,
-  RealtimeNotificationHandler,
   ServiceApiHandler,
   StaticFileHandler,
   StatusApiHandler,
@@ -54,7 +52,6 @@ import {
 } from "@/middlewares/index.js";
 import type { EventBus, EventBusEvents } from "@/services/index.js";
 import {
-  NotificationService,
   StatusService,
   destroyEventBus,
   getEventBus,
@@ -136,7 +133,6 @@ export class WebServer {
 
   // 服务层
   private statusService: StatusService;
-  private notificationService: NotificationService;
   private esp32Manager: ESP32DeviceManager;
 
   // HTTP API 处理器
@@ -153,13 +149,6 @@ export class WebServer {
   private cozeHandler: CozeHandler;
   private ttsApiHandler: TTSApiHandler;
   private esp32Handler: ESP32Handler;
-
-  // WebSocket 处理器
-  private realtimeNotificationHandler: RealtimeNotificationHandler;
-  private heartbeatHandler: HeartbeatHandler;
-
-  // 心跳监控
-  private heartbeatMonitorInterval?: NodeJS.Timeout;
 
   // 路由系统
   private routeManager?: RouteManager;
@@ -187,7 +176,6 @@ export class WebServer {
 
     // 初始化服务层
     this.statusService = new StatusService();
-    this.notificationService = new NotificationService();
 
     // 创建基于 configManager 的配置提供者
     const esp32ConfigProvider: IESP32ConfigProvider = {
@@ -218,16 +206,6 @@ export class WebServer {
     this.esp32Handler = new ESP32Handler(this.esp32Manager);
 
     // MCPServerApiHandler 将在 start() 方法中初始化，因为它需要 mcpServiceManager
-
-    // 初始化 WebSocket 处理器
-    this.realtimeNotificationHandler = new RealtimeNotificationHandler(
-      this.notificationService,
-      this.statusService
-    );
-    this.heartbeatHandler = new HeartbeatHandler(
-      this.statusService,
-      this.notificationService
-    );
 
     // 初始化 Hono 应用
     this.app = createApp();
@@ -667,8 +645,12 @@ export class WebServer {
         return;
       }
 
-      // 处理Web客户端连接
-      this.handleWebClientConnection(ws, req);
+      // Web 客户端 WebSocket 已移除，关闭非 ESP32 连接
+      this.logger.warn("Web 客户端 WebSocket 连接已被弃用，拒绝连接");
+      ws.close(
+        1000,
+        "Web client WebSocket is deprecated. Use HTTP API instead."
+      );
     });
   }
 
@@ -721,69 +703,6 @@ export class WebServer {
           ws.close(1011, "Connection handling failed");
         }
       });
-  }
-
-  /**
-   * 处理Web客户端WebSocket连接
-   */
-  private handleWebClientConnection(ws: WebSocket, req: IncomingMessage): void {
-    // 生成客户端 ID
-    const clientId = `client-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
-
-    this.logger.debug(`WebSocket 客户端已连接: ${clientId}`);
-    this.logger.debug(`当前 WebSocket 连接数: ${this.wss?.clients.size || 0}`);
-
-    // 注册客户端到通知服务
-    this.realtimeNotificationHandler.handleClientConnect(ws, clientId);
-    this.heartbeatHandler.handleClientConnect(clientId);
-
-    ws.on("message", async (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-
-        // 根据消息类型分发到不同的处理器
-        if (data.type === "clientStatus") {
-          await this.heartbeatHandler.handleClientStatus(ws, data, clientId);
-        } else {
-          await this.realtimeNotificationHandler.handleMessage(
-            ws,
-            data,
-            clientId
-          );
-        }
-      } catch (error) {
-        this.logger.error("WebSocket message error:", error);
-        const errorResponse = {
-          type: "error",
-          error: {
-            code: "MESSAGE_PARSE_ERROR",
-            message: error instanceof Error ? error.message : "消息解析失败",
-            timestamp: Date.now(),
-          },
-        };
-        ws.send(JSON.stringify(errorResponse));
-      }
-    });
-
-    ws.on("close", () => {
-      this.logger.debug(`WebSocket 客户端已断开连接: ${clientId}`);
-      this.logger.debug(
-        `剩余 WebSocket 连接数: ${this.wss?.clients.size || 0}`
-      );
-
-      // 处理客户端断开连接
-      this.realtimeNotificationHandler.handleClientDisconnect(clientId);
-      this.heartbeatHandler.handleClientDisconnect(clientId);
-    });
-
-    ws.on("error", (error) => {
-      this.logger.error(`WebSocket 连接错误 (${clientId}):`, error);
-    });
-
-    // 发送初始数据
-    this.realtimeNotificationHandler.sendInitialData(ws, clientId);
   }
 
   /**
@@ -947,10 +866,6 @@ export class WebServer {
     });
     this.setupWebSocket();
 
-    // 启动心跳监控
-    this.heartbeatMonitorInterval =
-      this.heartbeatHandler.startHeartbeatMonitoring();
-
     this.logger.info(
       `Web server listening on http://${HTTP_SERVER_CONFIG.DEFAULT_BIND_ADDRESS}:${this.port}`
     );
@@ -987,14 +902,6 @@ export class WebServer {
           }
         } catch (error) {
           this.logger.error("MCPServiceManager 清理失败:", error);
-        }
-
-        // 停止心跳监控
-        if (this.heartbeatMonitorInterval) {
-          this.heartbeatHandler.stopHeartbeatMonitoring(
-            this.heartbeatMonitorInterval
-          );
-          this.heartbeatMonitorInterval = undefined;
         }
 
         // 强制断开所有 WebSocket 客户端连接
@@ -1048,14 +955,6 @@ export class WebServer {
   public destroy(): void {
     this.logger.debug("销毁 WebServer 实例");
 
-    // 停止心跳监控
-    if (this.heartbeatMonitorInterval) {
-      this.heartbeatHandler.stopHeartbeatMonitoring(
-        this.heartbeatMonitorInterval
-      );
-      this.heartbeatMonitorInterval = undefined;
-    }
-
     // 移除所有事件监听器，防止内存泄漏
     for (const unsubscribe of this.eventListenerUnsubscribers) {
       unsubscribe();
@@ -1065,7 +964,6 @@ export class WebServer {
 
     // 销毁服务层
     this.statusService.destroy();
-    this.notificationService.destroy();
     // 异步销毁 ESP32 设备管理器（fire and forget）
     this.esp32Manager.destroy();
 
