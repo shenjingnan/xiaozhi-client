@@ -331,4 +331,49 @@ describe("NetworkService", () => {
       );
     });
   });
+
+  describe("restartServiceWithNotification 边界情况", () => {
+    beforeEach(async () => {
+      await networkService.initialize();
+    });
+
+    it("轮询期间网络异常不应中断轮询", async () => {
+      mockApiClient.restartService.mockResolvedValue(undefined);
+      // 第一次返回 reconnecting，第二次抛异常（网络问题），第三次返回 connected
+      mockApiClient.getClientStatus
+        .mockResolvedValueOnce({ status: "reconnecting" } as any)
+        .mockRejectedValueOnce(new Error("网络错误"))
+        .mockResolvedValueOnce({ status: "connected" } as any);
+
+      // 使用足够长的超时让轮询完成
+      await networkService.restartServiceWithNotification(10000);
+
+      // 应该完成了轮询（网络异常被捕获并继续）
+      expect(mockApiClient.getClientStatus).toHaveBeenCalledTimes(3);
+    }, 15000);
+
+    it("第一次 getClientStatus 就返回 connected 时应在首轮轮询后返回", async () => {
+      mockApiClient.restartService.mockResolvedValue(undefined);
+      mockApiClient.getClientStatus.mockResolvedValue({
+        status: "connected",
+      } as any);
+
+      const startTime = Date.now();
+      await networkService.restartServiceWithNotification(30000);
+      const elapsed = Date.now() - startTime;
+
+      // 应该在第一轮 pollInterval (1000ms) 后返回
+      expect(elapsed).toBeLessThan(2000);
+      // 只调用了一次（首次即成功）
+      expect(mockApiClient.getClientStatus).toHaveBeenCalledTimes(1);
+    });
+
+    it("timeout=0 时应立即超时", async () => {
+      mockApiClient.restartService.mockResolvedValue(undefined);
+
+      await expect(
+        networkService.restartServiceWithNotification(0)
+      ).rejects.toThrow("等待重启完成超时");
+    });
+  });
 });

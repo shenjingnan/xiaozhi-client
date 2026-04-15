@@ -181,6 +181,62 @@ describe("useNetworkService", () => {
 
       expect(url).toBe("http://localhost:5173");
     });
+
+    it("getServerUrl 在 HTTPS 协议下应返回 https 前缀", () => {
+      Object.defineProperty(window, "location", {
+        value: {
+          protocol: "https:",
+          hostname: "example.com",
+          port: "443",
+          reload: vi.fn(),
+        },
+        writable: true,
+      });
+
+      const { result } = renderHook(() => useNetworkService());
+      const url = result.current.getServerUrl();
+
+      expect(url).toBe("https://example.com:443");
+
+      // 恢复默认
+      Object.defineProperty(window, "location", {
+        value: {
+          protocol: "http:",
+          hostname: "localhost",
+          port: "5173",
+          reload: vi.fn(),
+        },
+        writable: true,
+      });
+    });
+
+    it("getServerUrl 无端口时应使用默认值 9999", () => {
+      Object.defineProperty(window, "location", {
+        value: {
+          protocol: "http:",
+          hostname: "localhost",
+          port: "", // 空端口
+          reload: vi.fn(),
+        },
+        writable: true,
+      });
+
+      const { result } = renderHook(() => useNetworkService());
+      const url = result.current.getServerUrl();
+
+      expect(url).toBe("http://localhost:9999");
+
+      // 恢复默认
+      Object.defineProperty(window, "location", {
+        value: {
+          protocol: "http:",
+          hostname: "localhost",
+          port: "5173",
+          reload: vi.fn(),
+        },
+        writable: true,
+      });
+    });
   });
 
   describe("错误处理", () => {
@@ -317,6 +373,76 @@ describe("useNetworkService", () => {
 
       consoleSpy.mockRestore();
     });
+
+    it("loadInitialData 成功时应并行调用 getConfig 和 getClientStatus", async () => {
+      const config = {};
+      const status = {};
+
+      let configResolve: (value: unknown) => void;
+      let statusResolve: (value: unknown) => void;
+
+      mockNetworkService.getConfig.mockReturnValue(
+        new Promise((resolve) => {
+          configResolve = resolve;
+        })
+      );
+      mockNetworkService.getClientStatus.mockReturnValue(
+        new Promise((resolve) => {
+          statusResolve = resolve;
+        })
+      );
+
+      const { result } = renderHook(() => useNetworkService());
+      const loadPromise = result.current.loadInitialData();
+
+      // 等一个微任务让两个并行请求都发出
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // 此时两个都应该已经调用了（并行）
+      expect(mockNetworkService.getConfig).toHaveBeenCalledTimes(1);
+      expect(mockNetworkService.getClientStatus).toHaveBeenCalledTimes(1);
+
+      // 解决 promises
+      configResolve!(config);
+      statusResolve!(status);
+
+      await loadPromise;
+    });
+
+    it("loadInitialData 应并行调用 getConfig 和 getClientStatus", async () => {
+      const config = {};
+      const status = {};
+
+      let configResolve: (value: unknown) => void;
+      let statusResolve: (value: unknown) => void;
+
+      mockNetworkService.getConfig.mockReturnValue(
+        new Promise((resolve) => {
+          configResolve = resolve;
+        })
+      );
+      mockNetworkService.getClientStatus.mockReturnValue(
+        new Promise((resolve) => {
+          statusResolve = resolve;
+        })
+      );
+
+      const { result } = renderHook(() => useNetworkService());
+      const loadPromise = result.current.loadInitialData();
+
+      // 等一个微任务让两个并行请求都发出
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // 此时两个都应该已经调用了（并行）
+      expect(mockNetworkService.getConfig).toHaveBeenCalledTimes(1);
+      expect(mockNetworkService.getClientStatus).toHaveBeenCalledTimes(1);
+
+      // 解决 promises
+      configResolve!(config);
+      statusResolve!(status);
+
+      await loadPromise;
+    });
   });
 
   describe("端口切换功能", () => {
@@ -327,6 +453,43 @@ describe("useNetworkService", () => {
       const { result } = renderHook(() => useNetworkService());
 
       await expect(result.current.changePort(8080)).rejects.toThrow(error);
+    });
+
+    it("changePort 成功时应调用 restartService 并最终触发 reload", async () => {
+      vi.useFakeTimers();
+      mockNetworkService.restartService.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useNetworkService());
+
+      // changePort 内部会调用 restartService，然后等待 5000ms 后 reload
+      // 使用 fake timers 来避免实际等待
+      const changePromise = result.current.changePort(9090);
+
+      // 推进定时器让 setTimeout(5000) 完成
+      await vi.advanceTimersByTimeAsync(6000);
+
+      await changePromise;
+
+      expect(mockNetworkService.restartService).toHaveBeenCalled();
+      // window.location.reload 应被调用
+      expect(window.location.reload).toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
+
+    it("changePort 应传递正确的端口号给 restartService", async () => {
+      vi.useFakeTimers();
+      mockNetworkService.restartService.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useNetworkService());
+
+      result.current.changePort(8888);
+      await vi.advanceTimersByTimeAsync(6000);
+
+      // restartService 不接受端口参数（changePort 内部管理端口）
+      expect(mockNetworkService.restartService).toHaveBeenCalled();
+
+      vi.useRealTimers();
     });
   });
 

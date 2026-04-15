@@ -346,5 +346,70 @@ describe("WebServer 配置清理功能", () => {
         webUIPort: currentPort,
       });
     });
+
+    it("webUI.port 缺失时应使用默认端口", async () => {
+      const expectedConfig = {
+        mcpEndpoint: "wss://test.endpoint",
+        mcpServers: {},
+        // 不包含 webUI.port
+      };
+
+      mockConfigManager.getConfig.mockReturnValue(expectedConfig);
+      webServer = new WebServer(currentPort);
+
+      const config = await webServer.loadConfiguration();
+
+      // 应使用 DEFAULT_PORT（从 HTTP_SERVER_CONFIG 获取）
+      expect(config.webUIPort).toBeGreaterThan(0);
+    });
+
+    it("mcpEndpoint 为数组时应正确返回", async () => {
+      const expectedConfig = {
+        mcpEndpoint: ["wss://ep1.example.com", "wss://ep2.example.com"],
+        mcpServers: {},
+      };
+
+      mockConfigManager.getConfig.mockReturnValue(expectedConfig);
+      webServer = new WebServer(currentPort);
+
+      const config = await webServer.loadConfiguration();
+
+      expect(config.mcpEndpoint).toEqual([
+        "wss://ep1.example.com",
+        "wss://ep2.example.com",
+      ]);
+    });
+
+    it("mcpServers 为空对象时应正确返回", async () => {
+      const expectedConfig = {
+        mcpEndpoint: [],
+        mcpServers: {},
+      };
+
+      mockConfigManager.getConfig.mockReturnValue(expectedConfig);
+      webServer = new WebServer(currentPort);
+
+      const config = await webServer.loadConfiguration();
+
+      expect(config.mcpServers).toEqual({});
+    });
+
+    it("cleanupInvalidServerToolsConfig 应在 getConfig 之前被调用", async () => {
+      const callOrder: string[] = [];
+      mockConfigManager.cleanupInvalidServerToolsConfig.mockImplementation(
+        () => {
+          callOrder.push("cleanup");
+        }
+      );
+      mockConfigManager.getConfig.mockImplementation(() => {
+        callOrder.push("getConfig");
+        return { mcpEndpoint: [], mcpServers: {} };
+      });
+
+      webServer = new WebServer(currentPort);
+      await webServer.loadConfiguration();
+
+      expect(callOrder).toEqual(["cleanup", "getConfig"]);
+    });
   });
 });

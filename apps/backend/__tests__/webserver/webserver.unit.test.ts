@@ -65,6 +65,18 @@ vi.mock("@/lib/endpoint/index.js", () => ({
   })),
 }));
 
+// Mock ESP32DeviceManager
+let esp32ManagerInstance: any = null;
+vi.mock("@xiaozhi-client/esp32", () => ({
+  ESP32DeviceManager: vi.fn().mockImplementation(() => {
+    esp32ManagerInstance = {
+      handleWebSocketConnection: vi.fn().mockResolvedValue(undefined),
+      destroy: vi.fn(),
+    };
+    return esp32ManagerInstance;
+  }),
+}));
+
 // Mock MCPServiceManager
 vi.mock("@/lib/mcp", () => ({
   MCPServiceManager: vi.fn().mockImplementation(() => ({
@@ -95,10 +107,12 @@ function createMockEndpointManager(): any {
     connect: vi.fn().mockResolvedValue(undefined),
     cleanup: vi.fn().mockResolvedValue(undefined),
     setServiceManager: vi.fn(),
+    setMcpManager: vi.fn(),
     getConnectionStatus: vi.fn().mockReturnValue([]),
     on: vi.fn(),
     addEndpoint: vi.fn(),
     getEndpoints: vi.fn().mockReturnValue([]),
+    reconnect: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -422,5 +436,409 @@ describe("WebServer MCPServiceManager 方法测试", () => {
         expect((error as Error).message).toContain("start() 方法");
       }
     });
+  });
+});
+
+describe("WebServer initializeConnections 降级模式", () => {
+  let webServer: WebServer;
+  const mockPort = 3002;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    webServer = new WebServer(mockPort);
+  });
+
+  afterEach(async () => {
+    if (webServer?.stop) {
+      try {
+        await webServer.stop();
+      } catch {
+        // 忽略停止错误
+      }
+    }
+  });
+
+  it("应该在配置加载失败时进入降级模式并创建空 MCPServiceManager", async () => {
+    // Mock loadConfiguration 抛出异常（模拟配置文件损坏）
+    const originalLoadConfig = (webServer as any).loadConfiguration.bind(
+      webServer
+    );
+    (webServer as any).loadConfiguration = vi
+      .fn()
+      .mockRejectedValue(new Error("配置文件解析失败"));
+
+    // 确保初始没有 mcpServiceManager
+    expect((webServer as any).mcpServiceManager).toBeNull();
+
+    // 调用 initializeConnections，应进入降级模式
+    await (webServer as any).initializeConnections();
+
+    // 验证降级模式下创建了新的 MCPServiceManager 实例
+    expect(MCPServiceManager).toHaveBeenCalled();
+    expect((webServer as any).mcpServiceManager).toBeDefined();
+    expect((webServer as any).mcpServiceManager.start).toHaveBeenCalled();
+  });
+
+  it("在 MCPServiceManager 已存在时不应重复创建", async () => {
+    // 预先设置一个 mcpServiceManager
+    const existingManager = new MCPServiceManager();
+    webServer.setMCPServiceManager(existingManager);
+
+    // Mock loadConfiguration 抛异常
+    (webServer as any).loadConfiguration = vi
+      .fn()
+      .mockRejectedValue(new Error("配置加载失败"));
+
+    await (webServer as any).initializeConnections();
+
+    // MCPServiceManager 构造函数不应被再次调用（使用已有实例）
+    // 注意：由于 vi.mock 在顶层，构造函数调用次数是累计的
+    // 但关键是 mcpServiceManager 应该仍然是同一个实例
+    expect((webServer as any).mcpServiceManager).toBe(existingManager);
+  });
+
+  it("降级模式下 getMCPServiceManager 不应抛错", async () => {
+    (webServer as any).loadConfiguration = vi
+      .fn()
+      .mockRejectedValue(new Error("配置加载失败"));
+
+    await (webServer as any).initializeConnections();
+
+    // 降级后应该能正常获取 manager
+    const manager = webServer.getMCPServiceManager();
+    expect(manager).toBeDefined();
+  });
+});
+
+describe("WebServer setupMCPServerAddedListener 事件监听器", () => {
+  let webServer: WebServer;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    webServer = new WebServer(3003);
+  });
+
+  it("构造函数中应注册两个事件监听器", () => {
+    // 通过验证 destroy 时清理函数数量来间接确认监听器注册
+    const unsubscribersBefore = (webServer as any).eventListenerUnsubscribers;
+    expect(unsubscribersBefore).toHaveLength(2);
+  });
+
+  it("destroy() 应移除所有事件监听器", () => {
+    // 获取 eventBus mock（从 services/index 的 mock 中获取）
+    webServer.destroy();
+
+    // 验证清理函数被调用
+    const unsubscribers = (webServer as any).eventListenerUnsubscribers;
+    expect(unsubscribers).toHaveLength(0);
+  });
+
+  it("endpointManager 未初始化时事件处理应安全跳过", () => {
+    // 不设置 endpointManager，确保为 null
+    expect((webServer as any).endpointManager).toBeNull();
+
+    // 验证事件监听器清理函数已注册（构造函数中通过 setupMCPServerAddedListener 注册）
+    expect((webServer as any).eventListenerUnsubscribers).toHaveLength(2);
+  });
+});
+
+describe("WebServer handleESP32DeviceConnection 错误处理", () => {
+  let webServer: WebServer;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    esp32ManagerInstance = null;
+    webServer = new WebServer(3004);
+    // 构造函数会通过 mock 创建 esp32ManagerInstance
+  });
+
+  it("缺少 device-id 请求头时应关闭连接(code 1008)", () => {
+    const mockWs = { close: vi.fn(), readyState: 1 };
+    const mockReq = { headers: {}, url: "/ws" };
+
+    (webServer as any).handleESP32DeviceConnection(mockWs, mockReq);
+
+    expect(mockWs.close).toHaveBeenCalledWith(1008, "Missing required headers");
+  });
+
+  it("缺少 client-id 请求头时应关闭连接(code 1008)", () => {
+    const mockWs = { close: vi.fn(), readyState: 1 };
+    const mockReq = {
+      headers: { "device-id": "dev-001" },
+      url: "/ws",
+    };
+
+    (webServer as any).handleESP32DeviceConnection(mockWs, mockReq);
+
+    expect(mockWs.close).toHaveBeenCalledWith(1008, "Missing required headers");
+  });
+
+  it("连接处理成功时应记录日志", async () => {
+    const mockWs = { close: vi.fn(), readyState: 1 };
+    const mockReq = {
+      headers: {
+        "device-id": "dev-001",
+        "client-id": "cli-001",
+        authorization: "Bearer token123",
+      },
+      url: "/ws",
+    };
+
+    const { logger } = await import("../../Logger.js");
+
+    await (webServer as any).handleESP32DeviceConnection(mockWs, mockReq);
+
+    expect(esp32ManagerInstance.handleWebSocketConnection).toHaveBeenCalledWith(
+      mockWs,
+      "dev-001",
+      "cli-001",
+      "token123"
+    );
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringContaining("[WS-ESP32] ESP32设备连接处理成功")
+    );
+  });
+
+  it("连接处理失败且 ws 为 OPEN 时应关闭(code 1011)", async () => {
+    esp32ManagerInstance.handleWebSocketConnection = vi
+      .fn()
+      .mockRejectedValue(new Error("处理失败"));
+    const mockWs = { close: vi.fn(), readyState: 1 }; // OPEN = 1
+    const mockReq = {
+      headers: {
+        "device-id": "dev-001",
+        "client-id": "cli-001",
+      },
+      url: "/ws",
+    };
+
+    // handleESP32DeviceConnection 内部是 fire-and-forget，需要等待微任务执行 .catch
+    (webServer as any).handleESP32DeviceConnection(mockWs, mockReq);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mockWs.close).toHaveBeenCalledWith(
+      1011,
+      "Connection handling failed"
+    );
+  });
+
+  it("连接处理失败且 ws 为 CONNECTING 时应关闭(code 1011)", async () => {
+    esp32ManagerInstance.handleWebSocketConnection = vi
+      .fn()
+      .mockRejectedValue(new Error("处理失败"));
+    const mockWs = { close: vi.fn(), readyState: 0 }; // CONNECTING = 0
+    const mockReq = {
+      headers: {
+        "device-id": "dev-001",
+        "client-id": "cli-001",
+      },
+      url: "/ws",
+    };
+
+    // handleESP32DeviceConnection 内部是 fire-and-forget，需要等待微任务执行 .catch
+    (webServer as any).handleESP32DeviceConnection(mockWs, mockReq);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mockWs.close).toHaveBeenCalledWith(
+      1011,
+      "Connection handling failed"
+    );
+  });
+});
+
+describe("WebServer connectWithRetry 重试逻辑", () => {
+  let webServer: WebServer;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    webServer = new WebServer(3005);
+  });
+
+  it("第一次尝试成功时应立即返回结果", async () => {
+    const expectedData = { success: true };
+    const connectionFn = vi.fn().mockResolvedValue(expectedData);
+
+    const result = await (webServer as any).connectWithRetry(
+      connectionFn,
+      "测试连接"
+    );
+
+    expect(result).toEqual(expectedData);
+    expect(connectionFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("失败后应按指数退避重试并最终成功", async () => {
+    vi.useFakeTimers();
+    const expectedData = { success: true };
+    const connectionFn = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("第一次失败"))
+      .mockRejectedValueOnce(new Error("第二次失败"))
+      .mockResolvedValueOnce(expectedData);
+
+    const resultPromise = (webServer as any).connectWithRetry(
+      connectionFn,
+      "测试连接",
+      5,
+      1000,
+      30000,
+      2
+    );
+
+    // 第一次尝试失败后等待 1s（initialDelay * backoffMultiplier^0 = 1000ms）
+    await vi.advanceTimersByTimeAsync(1000);
+    // 第二次尝试失败后等待 2s（initialDelay * backoffMultiplier^1 = 2000ms）
+    await vi.advanceTimersByTimeAsync(2000);
+
+    const result = await resultPromise;
+    vi.useRealTimers();
+
+    expect(result).toEqual(expectedData);
+    expect(connectionFn).toHaveBeenCalledTimes(3);
+  });
+
+  it("达到最大重试次数后应抛出包含最后一次错误信息的 Error", async () => {
+    vi.useFakeTimers();
+    const connectionFn = vi.fn().mockRejectedValue(new Error("持续失败"));
+
+    const resultPromise = (webServer as any)
+      .connectWithRetry(connectionFn, "测试连接", 3, 100, 30000, 2)
+      .catch((e) => e); // 捕获 rejection 避免 unhandled
+
+    // 推进定时器让所有重试完成（每次间隔: 100ms, 200ms）
+    await vi.advanceTimersByTimeAsync(500);
+
+    const error = await resultPromise;
+    expect(error.message).toContain(
+      "测试连接 - 连接失败，已达到最大重试次数: 持续失败"
+    );
+    expect(connectionFn).toHaveBeenCalledTimes(3);
+    vi.useRealTimers();
+  });
+
+  it("延迟时间不应超过 maxDelay 上限", async () => {
+    vi.useFakeTimers();
+    const connectionFn = vi.fn().mockRejectedValue(new Error("失败"));
+
+    const resultPromise = (webServer as any)
+      .connectWithRetry(
+        connectionFn,
+        "测试连接",
+        4,
+        1000,
+        2000, // maxDelay 上限
+        10 // 大的乘数让延迟快速超过上限
+      )
+      .catch((e) => e); // 捕获 rejection 避免 unhandled
+
+    // 推进定时器直到所有重试完成（maxDelay=2000，所以每次最多等 2000ms）
+    await vi.advanceTimersByTimeAsync(10000);
+
+    await resultPromise; // 等待 promise 完成（预期是 reject）
+
+    // 验证完成了所有 4 次尝试（没有因超长延迟而卡住）
+    expect(connectionFn).toHaveBeenCalledTimes(4);
+    vi.useRealTimers();
+  });
+});
+
+describe("WebServer initializeXiaozhiConnection 多端点处理", () => {
+  let webServer: WebServer;
+  let mockConnectionManager: any;
+  let mockServiceManager: any;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    webServer = new WebServer(3006);
+
+    mockConnectionManager = createMockEndpointManager();
+    mockServiceManager = {
+      startAllServices: vi.fn().mockResolvedValue(undefined),
+      stopAllServices: vi.fn().mockResolvedValue(undefined),
+      cleanup: vi.fn().mockResolvedValue(undefined),
+    };
+  });
+
+  it("字符串端点应转为单元素数组处理", async () => {
+    webServer.setXiaozhiConnectionManager(mockConnectionManager);
+    webServer.setMCPServiceManager(mockServiceManager);
+
+    await (webServer as any).initializeXiaozhiConnection(
+      "wss://single.endpoint",
+      {}
+    );
+
+    expect(mockConnectionManager.addEndpoint).toHaveBeenCalledWith(
+      "wss://single.endpoint"
+    );
+    expect(mockConnectionManager.connect).toHaveBeenCalled();
+  });
+
+  it("多端点数组中混合有效和无效端点时只添加有效端点", async () => {
+    webServer.setXiaozhiConnectionManager(mockConnectionManager);
+    webServer.setMCPServiceManager(mockServiceManager);
+
+    await (webServer as any).initializeXiaozhiConnection(
+      ["wss://valid.endpoint", "<请填写小智接入点>", "", "wss://another.valid"],
+      {}
+    );
+
+    // 只有两个有效端点
+    expect(mockConnectionManager.addEndpoint).toHaveBeenCalledTimes(2);
+    expect(mockConnectionManager.addEndpoint).toHaveBeenCalledWith(
+      "wss://valid.endpoint"
+    );
+    expect(mockConnectionManager.addEndpoint).toHaveBeenCalledWith(
+      "wss://another.valid"
+    );
+  });
+
+  it("endpointManager 已存在时应复用实例而非新建", async () => {
+    webServer.setXiaozhiConnectionManager(mockConnectionManager);
+    webServer.setMCPServiceManager(mockServiceManager);
+
+    await (webServer as any).initializeXiaozhiConnection(
+      "wss://test.endpoint",
+      {}
+    );
+
+    // endpointManager 已存在时不会创建新实例（不进入 if (!this.endpointManager) 分支）
+    // 验证 addEndpoint 和 connect 使用的是注入的实例
+    expect(mockConnectionManager.addEndpoint).toHaveBeenCalledWith(
+      "wss://test.endpoint"
+    );
+    expect(mockConnectionManager.connect).toHaveBeenCalled();
+  });
+
+  it("有效端点添加后应注册事件监听器", async () => {
+    webServer.setXiaozhiConnectionManager(mockConnectionManager);
+    webServer.setMCPServiceManager(mockServiceManager);
+
+    await (webServer as any).initializeXiaozhiConnection(
+      "wss://test.endpoint",
+      {}
+    );
+
+    // 应注册 endpointAdded 和 endpointRemoved 监听器
+    expect(mockConnectionManager.on).toHaveBeenCalledWith(
+      "endpointAdded",
+      expect.any(Function)
+    );
+    expect(mockConnectionManager.on).toHaveBeenCalledWith(
+      "endpointRemoved",
+      expect.any(Function)
+    );
+  });
+
+  it("connect 失败时应向上抛出错误", async () => {
+    mockConnectionManager.connect = vi
+      .fn()
+      .mockRejectedValue(new Error("连接失败"));
+    webServer.setXiaozhiConnectionManager(mockConnectionManager);
+    webServer.setMCPServiceManager(mockServiceManager);
+
+    await expect(
+      (webServer as any).initializeXiaozhiConnection("wss://test.endpoint", {})
+    ).rejects.toThrow("连接失败");
   });
 });
