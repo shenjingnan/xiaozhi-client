@@ -154,7 +154,7 @@ describe("ProjectCommandHandler", () => {
       await handler.testHandleCreate(projectName, options);
 
       expect(mockTemplateManager.createProject).toHaveBeenCalledWith({
-        templateName: null,
+        templateName: undefined,
         targetPath: expect.any(String),
         projectName: "basic-project",
       });

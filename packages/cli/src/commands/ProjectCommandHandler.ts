@@ -5,6 +5,7 @@
 import path from "node:path";
 import chalk from "chalk";
 import ora from "ora";
+import type { Ora } from "ora";
 import type { CommandOption } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
 import type {
@@ -12,6 +13,7 @@ import type {
   CommandOptions,
 } from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
+import type { TemplateManager } from "../interfaces/Service";
 
 /**
  * 项目管理命令处理器
@@ -54,8 +56,12 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     const spinner = ora("初始化项目...").start();
 
     try {
-      const templateManager = this.getService<any>("templateManager");
-      const fileUtils = this.getService<any>("fileUtils");
+      const templateManager =
+        this.getService<TemplateManager>("templateManager");
+      const fileUtils =
+        this.getService<typeof import("../utils/FileUtils").FileUtils>(
+          "fileUtils"
+        );
 
       // 确定目标目录
       const targetPath = path.join(process.cwd(), projectName);
@@ -73,7 +79,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
         // 使用模板创建项目
         await this.createFromTemplate(
           projectName,
-          options.template,
+          options.template as string,
           targetPath,
           spinner,
           templateManager
@@ -102,13 +108,14 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     projectName: string,
     templateName: string,
     targetPath: string,
-    spinner: any,
-    templateManager: any
+    spinner: Ora,
+    templateManager: TemplateManager
   ): Promise<void> {
     spinner.text = "检查模板...";
 
     // 获取可用模板列表
     const availableTemplates = await templateManager.getAvailableTemplates();
+    const templateNames = availableTemplates.map((t) => t.name);
 
     if (availableTemplates.length === 0) {
       spinner.fail("找不到可用模板");
@@ -128,7 +135,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
       // 尝试找到相似的模板
       const similarTemplate = this.findSimilarTemplate(
         actualTemplateName,
-        availableTemplates
+        templateNames
       );
 
       if (similarTemplate) {
@@ -142,11 +149,11 @@ export class ProjectCommandHandler extends BaseCommandHandler {
         if (confirmed) {
           actualTemplateName = similarTemplate;
         } else {
-          this.showAvailableTemplates(availableTemplates);
+          this.showAvailableTemplates(templateNames);
           return;
         }
       } else {
-        this.showAvailableTemplates(availableTemplates);
+        this.showAvailableTemplates(templateNames);
         return;
       }
     }
@@ -176,14 +183,14 @@ export class ProjectCommandHandler extends BaseCommandHandler {
   private async createBasicProject(
     projectName: string,
     targetPath: string,
-    spinner: any,
-    templateManager: any
+    spinner: Ora,
+    templateManager: TemplateManager
   ): Promise<void> {
     spinner.text = `创建基本项目 "${projectName}"...`;
 
     // 使用模板管理器创建基本项目
     await templateManager.createProject({
-      templateName: null, // 表示创建基本项目
+      templateName: undefined, // 表示创建基本项目
       targetPath,
       projectName,
     });
@@ -219,13 +226,11 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     input: string,
     templates: string[]
   ): string | null {
-    const formatUtils = this.getService<any>("formatUtils");
-
     let bestMatch = null;
     let bestSimilarity = 0;
 
     for (const template of templates) {
-      const similarity = formatUtils.calculateSimilarity(
+      const similarity = this.calculateSimilarity(
         input.toLowerCase(),
         template.toLowerCase()
       );
@@ -236,6 +241,45 @@ export class ProjectCommandHandler extends BaseCommandHandler {
     }
 
     return bestMatch;
+  }
+
+  /**
+   * 计算字符串相似度（基于 Levenshtein 距离）
+   */
+  private calculateSimilarity(str1: string, str2: string): number {
+    const len1 = str1.length;
+    const len2 = str2.length;
+
+    if (len1 === 0) return len2 === 0 ? 1 : 0;
+    if (len2 === 0) return 0;
+
+    // 创建距离矩阵
+    const matrix: number[][] = [];
+
+    for (let i = 0; i <= len1; i++) {
+      matrix[i] = [i];
+    }
+
+    for (let j = 0; j <= len2; j++) {
+      matrix[0][j] = j;
+    }
+
+    // 计算距离
+    for (let i = 1; i <= len1; i++) {
+      for (let j = 1; j <= len2; j++) {
+        const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j - 1] + cost
+        );
+      }
+    }
+
+    const distance = matrix[len1][len2];
+    const maxLen = Math.max(len1, len2);
+
+    return 1 - distance / maxLen;
   }
 
   /**
