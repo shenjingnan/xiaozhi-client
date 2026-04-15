@@ -24,48 +24,6 @@ interface WebSocketMessage {
 }
 
 /**
- * NPM 安装日志事件数据
- */
-export interface NPMInstallLogEvent {
-  version: string;
-  installId: string;
-  type: "stdout" | "stderr";
-  message: string;
-  timestamp: number;
-}
-
-/**
- * NPM 安装开始事件数据
- */
-export interface NPMInstallStartedEvent {
-  version: string;
-  installId: string;
-  timestamp: number;
-}
-
-/**
- * NPM 安装完成事件数据
- */
-export interface NPMInstallCompletedEvent {
-  version: string;
-  installId: string;
-  success: boolean;
-  duration: number;
-  timestamp: number;
-}
-
-/**
- * NPM 安装失败事件数据
- */
-export interface NPMInstallFailedEvent {
-  version: string;
-  installId: string;
-  error: string;
-  duration: number;
-  timestamp: number;
-}
-
-/**
  * 事件总线事件类型
  */
 interface EventBusEvents {
@@ -75,12 +33,6 @@ interface EventBusEvents {
   "connection:disconnected": undefined;
   "connection:reconnecting": { attempt: number; maxAttempts: number };
   "connection:error": { error: Error; context?: string };
-
-  // NPM 安装事件
-  "data:npmInstallStarted": NPMInstallStartedEvent;
-  "data:npmInstallLog": NPMInstallLogEvent;
-  "data:npmInstallCompleted": NPMInstallCompletedEvent;
-  "data:npmInstallFailed": NPMInstallFailedEvent;
 
   // 系统事件
   "system:heartbeat": { timestamp: number };
@@ -469,42 +421,6 @@ export class WebSocketManager {
 
     try {
       switch (message.type) {
-        case "npm:install:started":
-          if (message.data) {
-            this.eventBus.emit(
-              "data:npmInstallStarted",
-              message.data as NPMInstallStartedEvent
-            );
-          }
-          break;
-
-        case "npm:install:log":
-          if (message.data) {
-            this.eventBus.emit(
-              "data:npmInstallLog",
-              message.data as NPMInstallLogEvent
-            );
-          }
-          break;
-
-        case "npm:install:completed":
-          if (message.data) {
-            this.eventBus.emit(
-              "data:npmInstallCompleted",
-              message.data as NPMInstallCompletedEvent
-            );
-          }
-          break;
-
-        case "npm:install:failed":
-          if (message.data) {
-            this.eventBus.emit(
-              "data:npmInstallFailed",
-              message.data as NPMInstallFailedEvent
-            );
-          }
-          break;
-
         case "heartbeatResponse":
           this.lastHeartbeat = Date.now();
           this.eventBus.emit("system:heartbeat", {
