@@ -93,7 +93,7 @@ function ConfigPanel() {
 虽然状态可以从 store 获取，但操作方法（如 `updateConfig`, `restartService`）通过 Provider Context 暴露：
 
 ```typescript
-import { useNetworkServiceActions } from '@/providers/WebSocketProvider';
+import { useNetworkServiceActions } from '@/providers/NetworkServiceProvider';
 
 function ConfigEditor() {
   const { updateConfig } = useNetworkServiceActions();

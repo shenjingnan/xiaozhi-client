@@ -1,12 +1,12 @@
 import { Toaster } from "@/components/ui/sonner";
 import { RestartNotificationProvider } from "@/hooks/useRestartNotifications";
 import DashboardPage from "@/pages/DashboardPage";
-import { WebSocketProvider } from "@/providers/WebSocketProvider";
+import { NetworkServiceProvider } from "@/providers/NetworkServiceProvider";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 function App() {
   return (
-    <WebSocketProvider>
+    <NetworkServiceProvider>
       {/* 重启通知管理器 - 全局监听重启状态变化 */}
       <RestartNotificationProvider />
 
@@ -37,7 +37,7 @@ function App() {
           },
         }}
       />
-    </WebSocketProvider>
+    </NetworkServiceProvider>
   );
 }
 

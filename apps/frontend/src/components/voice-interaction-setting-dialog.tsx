@@ -36,7 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { useWebSocketActions } from "@/providers/WebSocketProvider";
+import { useNetworkServiceActions } from "@/providers/NetworkServiceProvider";
 import { type PromptFileInfo, apiClient } from "@/services/api";
 import { useConfig } from "@/stores/config";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -93,7 +93,7 @@ export function VoiceInteractionSettingDialog() {
   const [voices, setVoices] = useState<VoiceInfo[]>([]);
   const [isLoadingVoices, setIsLoadingVoices] = useState(false);
   const config = useConfig();
-  const { updateConfig } = useWebSocketActions();
+  const { updateConfig } = useNetworkServiceActions();
 
   const form = useForm<VoiceInteractionFormValues>({
     resolver: zodResolver(voiceInteractionSchema),
