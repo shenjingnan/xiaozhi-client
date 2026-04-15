@@ -13,7 +13,7 @@ vi.mock("@/stores/config", () => ({
   useConfigActions: vi.fn(),
 }));
 
-vi.mock("@/providers/WebSocketProvider", () => ({
+vi.mock("@/providers/NetworkServiceProvider", () => ({
   useNetworkServiceActions: vi.fn(),
 }));
 
@@ -260,7 +260,7 @@ describe("McpServerList 组件", () => {
     // 使用动态导入设置模拟
     const configModule = await import("@/stores/config");
     const webSocketProviderModule = await import(
-      "@/providers/WebSocketProvider"
+      "@/providers/NetworkServiceProvider"
     );
     const apiModule = await import("@/services/api");
 

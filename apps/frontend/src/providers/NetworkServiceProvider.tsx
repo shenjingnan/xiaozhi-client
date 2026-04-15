@@ -10,7 +10,7 @@
  *
  * @example
  * ```tsx
- * import { NetworkServiceProvider, useNetworkServiceActions } from '@/providers/WebSocketProvider';
+ * import { NetworkServiceProvider, useNetworkServiceActions } from '@/providers/NetworkServiceProvider';
  *
  * function App() {
  *   return (
@@ -128,7 +128,3 @@ export function useNetworkServiceActions() {
   }
   return context;
 }
-
-// 向后兼容的别名
-export const WebSocketProvider = NetworkServiceProvider;
-export const useWebSocketActions = useNetworkServiceActions;

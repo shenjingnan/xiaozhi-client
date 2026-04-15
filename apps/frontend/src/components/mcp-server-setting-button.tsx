@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useNetworkServiceActions } from "@/providers/WebSocketProvider";
+import { useNetworkServiceActions } from "@/providers/NetworkServiceProvider";
 import { mcpFormSchema } from "@/schemas/mcp-form";
 import { useConfig } from "@/stores/config";
 import {

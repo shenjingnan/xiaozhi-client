@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   NetworkServiceProvider,
   useNetworkServiceActions,
-} from "../WebSocketProvider";
+} from "../NetworkServiceProvider";
 
 // Mock useNetworkService hook
 vi.mock("@/hooks/useNetworkService", () => ({

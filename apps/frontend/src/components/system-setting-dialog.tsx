@@ -24,7 +24,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useWebSocketActions } from "@/providers/WebSocketProvider";
+import { useNetworkServiceActions } from "@/providers/NetworkServiceProvider";
 import { useConfig } from "@/stores/config";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { AppConfig } from "@xiaozhi-client/shared-types";
@@ -65,7 +65,7 @@ export function SystemSettingDialog() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const config = useConfig();
-  const { updateConfig } = useWebSocketActions();
+  const { updateConfig } = useNetworkServiceActions();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

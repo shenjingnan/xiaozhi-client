@@ -17,8 +17,8 @@ vi.mock("@/stores/config", () => ({
   })),
 }));
 
-// Mock WebSocketProvider
-vi.mock("@/providers/WebSocketProvider", () => ({
+// Mock NetworkServiceProvider
+vi.mock("@/providers/NetworkServiceProvider", () => ({
   useNetworkServiceActions: () => ({
     updateConfig: vi.fn(),
   }),

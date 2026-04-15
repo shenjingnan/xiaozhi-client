@@ -65,7 +65,7 @@ vi.mock("react-hook-form", () => ({
 
 // 模拟 hooks
 const mockChangePort = vi.fn();
-vi.mock("@/providers/WebSocketProvider", () => ({
+vi.mock("@/providers/NetworkServiceProvider", () => ({
   useNetworkServiceActions: () => ({
     updateConfig: vi.fn(),
     changePort: mockChangePort,

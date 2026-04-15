@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useNetworkServiceActions } from "@/providers/WebSocketProvider";
+import { useNetworkServiceActions } from "@/providers/NetworkServiceProvider";
 import { useConfig } from "@/stores/config";
 import { useConnectionStatus } from "@/stores/status";
 import { zodResolver } from "@hookform/resolvers/zod";
