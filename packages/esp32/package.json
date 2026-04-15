@@ -56,7 +56,7 @@
     "zod": "^4.3.6"
   },
   "peerDependencies": {
-    "ws": "^8.16.0"
+    "ws": "^8.14.2"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
