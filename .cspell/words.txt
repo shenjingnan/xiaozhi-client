@@ -1,5 +1,6 @@
 1
 24
+ACMR
 acodec
 addgroup
 addre
@@ -53,6 +54,7 @@ ENOENT
 EPIPE
 eventsource
 EventSource
+eventstream
 Fapi
 fastapi
 fastmcp
@@ -152,6 +154,7 @@ shaonianzixin
 Shen
 shenjingnan
 shuangkuaisisi
+smol
 sonner
 sqlalchemy
 SSEMCP
@@ -205,5 +208,3 @@ yxxx
 zh_female_xiaohe_uranus_bigtts
 ZHIPU
 zread
-smol
-ACMR

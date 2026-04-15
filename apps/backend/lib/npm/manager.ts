@@ -21,29 +21,45 @@ import { logger } from "@/Logger.js";
 import type { EventBus } from "@/services/event-bus.service.js";
 import { getEventBus } from "@/services/event-bus.service.js";
 import semver from "semver";
+import type { InstallLogStream } from "./install-log-stream.js";
 
 const execAsync = promisify(exec);
 
 export class NPMManager {
   private eventBus: EventBus;
+  private logStream?: InstallLogStream;
 
-  constructor(eventBus?: EventBus) {
+  constructor(eventBus?: EventBus, logStream?: InstallLogStream) {
     this.eventBus = eventBus || getEventBus();
+    this.logStream = logStream;
   }
 
   /**
    * 安装指定版本 - 这是核心功能
+   *
+   * @param version 要安装的版本号
+   * @param installId 可选的外部传入的安装 ID（由调用方生成以确保能立即返回给前端）
+   * @returns Promise，在安装完成时 resolve（成功）或 reject（失败）
    */
-  async installVersion(version: string): Promise<void> {
-    const installId = `install-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  async installVersion(version: string, installId?: string): Promise<string> {
+    const resolvedInstallId =
+      installId ??
+      `install-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
 
-    logger.info("开始安装", { version, installId });
+    logger.info("开始安装", { version, installId: resolvedInstallId });
 
-    // 发射安装开始事件
+    // 初始化日志流会话
+    this.logStream?.startInstall({
+      version,
+      installId: resolvedInstallId,
+      timestamp: Date.now(),
+    });
+
+    // 发射安装开始事件（向后兼容 WebSocket）
     this.eventBus.emitEvent("npm:install:started", {
       version,
-      installId,
+      installId: resolvedInstallId,
       timestamp: Date.now(),
     });
 
@@ -67,7 +83,7 @@ export class NPMManager {
       npmProcess.stderr?.destroy();
     };
 
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       // 监听进程启动失败事件
       npmProcess.on("error", (error) => {
         const errorMessage = `进程启动失败: ${error.message}`;
@@ -76,10 +92,19 @@ export class NPMManager {
         // 清理资源
         cleanup();
 
-        // 发射安装失败事件
+        // 写入日志流（SSE）
+        this.logStream?.fail({
+          version,
+          installId: resolvedInstallId,
+          error: errorMessage,
+          duration: Date.now() - startTime,
+          timestamp: Date.now(),
+        });
+
+        // 发射安装失败事件（向后兼容 WebSocket）
         this.eventBus.emitEvent("npm:install:failed", {
           version,
-          installId,
+          installId: resolvedInstallId,
           error: errorMessage,
           duration: Date.now() - startTime,
           timestamp: Date.now(),
@@ -90,27 +115,39 @@ export class NPMManager {
 
       npmProcess.stdout.on("data", (data) => {
         const message = data.toString();
-
-        // 发射日志事件
-        this.eventBus.emitEvent("npm:install:log", {
-          version,
-          installId,
-          type: "stdout",
+        const logEntry = {
+          type: "stdout" as const,
           message,
           timestamp: Date.now(),
+        };
+
+        // 写入日志流（SSE）
+        this.logStream?.pushLog(resolvedInstallId, logEntry);
+
+        // 发射日志事件（向后兼容 WebSocket）
+        this.eventBus.emitEvent("npm:install:log", {
+          version,
+          installId: resolvedInstallId,
+          ...logEntry,
         });
       });
 
       npmProcess.stderr.on("data", (data) => {
         const message = data.toString();
-
-        // 发射日志事件
-        this.eventBus.emitEvent("npm:install:log", {
-          version,
-          installId,
-          type: "stderr",
+        const logEntry = {
+          type: "stderr" as const,
           message,
           timestamp: Date.now(),
+        };
+
+        // 写入日志流（SSE）
+        this.logStream?.pushLog(resolvedInstallId, logEntry);
+
+        // 发射日志事件（向后兼容 WebSocket）
+        this.eventBus.emitEvent("npm:install:log", {
+          version,
+          installId: resolvedInstallId,
+          ...logEntry,
         });
       });
 
@@ -121,24 +158,42 @@ export class NPMManager {
         cleanup();
 
         if (code === 0) {
-          // 发射安装完成事件
-          this.eventBus.emitEvent("npm:install:completed", {
+          // 写入日志流（SSE）
+          this.logStream?.complete({
             version,
-            installId,
+            installId: resolvedInstallId,
             success: true,
             duration,
             timestamp: Date.now(),
           });
 
-          resolve();
+          // 发射安装完成事件（向后兼容 WebSocket）
+          this.eventBus.emitEvent("npm:install:completed", {
+            version,
+            installId: resolvedInstallId,
+            success: true,
+            duration,
+            timestamp: Date.now(),
+          });
+
+          resolve(resolvedInstallId);
         } else {
           const error = `安装失败，退出码: ${code}`;
           logger.error("安装失败", { code });
 
-          // 发射安装失败事件
+          // 写入日志流（SSE）
+          this.logStream?.fail({
+            version,
+            installId: resolvedInstallId,
+            error,
+            duration,
+            timestamp: Date.now(),
+          });
+
+          // 发射安装失败事件（向后兼容 WebSocket）
           this.eventBus.emitEvent("npm:install:failed", {
             version,
-            installId,
+            installId: resolvedInstallId,
             error,
             duration,
             timestamp: Date.now(),

@@ -1,8 +1,12 @@
 /**
  * 更新 API HTTP 路由处理器
  * 提供版本更新和 NPM 包安装相关的 RESTful API 接口
+ *
+ * 支持两种模式：
+ * - POST /api/update：触发安装，返回 installId
+ * - GET /api/install/logs?installId=xxx：SSE 日志流式推送
  */
-import { NPMManager } from "@/lib/npm";
+import { InstallLogStream, NPMManager } from "@/lib/npm";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type { Context } from "hono";
@@ -21,16 +25,26 @@ export class UpdateApiHandler extends BaseHandler {
   private npmManager: NPMManager;
   private eventBus = getEventBus();
   private activeInstalls: Map<string, boolean> = new Map();
+  private logStream: InstallLogStream;
 
-  constructor() {
+  constructor(logStream?: InstallLogStream) {
     super();
-    this.npmManager = new NPMManager(this.eventBus);
+    this.logStream = logStream ?? new InstallLogStream();
+    this.npmManager = new NPMManager(this.eventBus, this.logStream);
+  }
+
+  /**
+   * 获取日志流实例（供外部访问）
+   */
+  getLogStream(): InstallLogStream {
+    return this.logStream;
   }
 
   /**
    * 执行版本更新
    * POST /api/update
    * Body: { version: string }
+   * Response: { success, data: { version, installId }, message }
    */
   async performUpdate(c: Context<AppContext>): Promise<Response> {
     try {
@@ -69,20 +83,81 @@ export class UpdateApiHandler extends BaseHandler {
       }
 
       const logger = c.get("logger");
-      // 立即返回响应，安装过程通过 WebSocket 推送
-      this.npmManager.installVersion(version).catch((error) => {
-        logger.error("安装过程失败:", error);
-      });
+
+      // 生成 installId（在 handler 层生成，确保能立即返回给前端）
+      const installId = `install-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      this.activeInstalls.set(installId, true);
+
+      // 异步启动安装（不阻塞响应）
+      this.npmManager
+        .installVersion(version, installId)
+        .then(() => {
+          // 安装成功，保持标记 1 分钟供 SSE 消费者连接
+          setTimeout(() => {
+            this.activeInstalls.delete(installId);
+          }, 60_000);
+        })
+        .catch((error) => {
+          logger.error("安装过程失败:", error);
+          this.activeInstalls.delete(installId);
+        });
 
       return c.success(
         {
-          version: version,
-          message: "安装已启动，请查看实时日志",
+          version,
+          installId,
+          message: "安装已启动，请通过 SSE 日志流查看进度",
         },
         "安装请求已接受"
       );
     } catch (error) {
       return this.handleError(c, error, "处理安装请求", "REQUEST_FAILED");
     }
+  }
+
+  /**
+   * SSE 安装日志流端点
+   * GET /api/install/logs?installId=xxx
+   *
+   * 返回 text/event-stream 格式的实时安装日志。
+   * 前端使用 EventSource API 订阅此端点。
+   */
+  async getInstallLogs(c: Context<AppContext>): Promise<Response> {
+    const installId = c.req.query("installId");
+
+    if (!installId) {
+      return c.fail(
+        "MISSING_INSTALL_ID",
+        "缺少 installId 参数",
+        undefined,
+        400
+      );
+    }
+
+    // 检查安装会话是否存在
+    if (!this.logStream.hasSession(installId)) {
+      return c.fail(
+        "INSTALL_NOT_FOUND",
+        "未找到对应的安装任务，请先发起安装请求",
+        undefined,
+        404
+      );
+    }
+
+    // 创建 SSE 流
+    const stream = this.logStream.createSSEStream(installId);
+    if (!stream) {
+      return c.fail("STREAM_ERROR", "无法创建日志流", undefined, 500);
+    }
+
+    // 返回 SSE 响应
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no", // 禁用 Nginx 缓冲
+      },
+    });
   }
 }
