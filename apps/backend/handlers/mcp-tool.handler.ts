@@ -23,7 +23,7 @@ import type { CustomMCPToolWithStats, JSONSchema } from "@/types/toolApi.js";
 import { type ToolSortField, sortTools } from "@/utils/toolSorters";
 import { configManager } from "@xiaozhi-client/config";
 import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
-import Ajv from "ajv";
+import Ajv, { type ValidateFunction } from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";
 
@@ -61,6 +61,8 @@ export class MCPToolHandler {
 
   private logger: Logger;
   private ajv: Ajv;
+  // 缓存已编译的验证函数，避免重复编译相同的 schema
+  private compiledValidators: Map<string, ValidateFunction> = new Map();
   private static readonly TOOL_TYPE_VALUES = Object.values(ToolType);
 
   constructor() {
@@ -431,8 +433,12 @@ export class MCPToolHandler {
         return;
       }
 
-      // 使用 AJV 验证参数
-      const validate = this.ajv.compile(targetTool.inputSchema);
+      // 使用 AJV 验证参数（使用缓存的验证函数避免重复编译）
+      let validate = this.compiledValidators.get(toolName);
+      if (!validate) {
+        validate = this.ajv.compile(targetTool.inputSchema);
+        this.compiledValidators.set(toolName, validate);
+      }
       const valid = validate(args);
 
       if (!valid) {
@@ -2739,5 +2745,23 @@ export class MCPToolHandler {
         `工具 "${toolName}" 在服务 "${serverName}" 中不存在或未配置`
       );
     }
+  }
+
+  /**
+   * 清除指定工具的验证器缓存
+   * 当工具配置更新时，需要调用此方法清除旧的验证器
+   * @param toolName 工具名称
+   */
+  public clearValidatorCache(toolName: string): void {
+    this.compiledValidators.delete(toolName);
+    this.logger.debug(`已清除工具 '${toolName}' 的验证器缓存`);
+  }
+
+  /**
+   * 清除所有验证器缓存
+   */
+  public clearAllValidatorCaches(): void {
+    this.compiledValidators.clear();
+    this.logger.debug("已清除所有验证器缓存");
   }
 }
