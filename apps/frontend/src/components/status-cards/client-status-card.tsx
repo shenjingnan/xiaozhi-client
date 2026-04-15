@@ -15,6 +15,7 @@ import {
 import { WebUrlSettingButton } from "@/components/web-url-setting-button";
 import { useConnectionStatus } from "@/stores/status";
 import { MiniCircularProgress } from "./mini-circular-progress";
+import { STATUS_COLOR_ERROR, STATUS_COLOR_SUCCESS } from "./status-colors";
 
 /**
  * 客户端连接状态卡片组件
@@ -38,8 +39,10 @@ export function ClientStatusCard() {
             showValue={false}
             value={1}
             maxValue={1}
-            activeColor={connected ? "#16a34a" : "#f87171"}
-            inactiveColor={connected ? "#16a34a" : "#f87171"}
+            activeColor={connected ? STATUS_COLOR_SUCCESS : STATUS_COLOR_ERROR}
+            inactiveColor={
+              connected ? STATUS_COLOR_SUCCESS : STATUS_COLOR_ERROR
+            }
             size={30}
             symbol=""
           />

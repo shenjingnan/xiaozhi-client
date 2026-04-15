@@ -16,6 +16,7 @@ import {
 import { useConfig } from "@/stores/config";
 import { useMemo } from "react";
 import { MiniCircularProgress } from "./mini-circular-progress";
+import { STATUS_COLOR_INACTIVE, getStatusColorByRate } from "./status-colors";
 
 /**
  * 系统配置项总数
@@ -57,14 +58,8 @@ export function SystemStatusCard() {
             showValue={true}
             value={configuredCount}
             maxValue={TOTAL_CONFIG_ITEMS}
-            activeColor={
-              completionRate >= 0.8
-                ? "#16a34a"
-                : completionRate >= 0.5
-                  ? "#f59e0b"
-                  : "#f87171"
-            }
-            inactiveColor="#e5e7eb"
+            activeColor={getStatusColorByRate(completionRate)}
+            inactiveColor={STATUS_COLOR_INACTIVE}
             size={30}
             symbol=""
           />

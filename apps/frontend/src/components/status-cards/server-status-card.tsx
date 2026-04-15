@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { useMcpServersWithStatus } from "@/stores/config";
 import { MiniCircularProgress } from "./mini-circular-progress";
+import { STATUS_COLOR_ERROR, STATUS_COLOR_SUCCESS } from "./status-colors";
 
 /**
  * MCP 服务状态卡片组件
@@ -40,8 +41,8 @@ export function ServerStatusCard() {
             showValue={false}
             value={connectedServers}
             maxValue={Math.max(totalServers, 1)}
-            activeColor="#16a34a"
-            inactiveColor="#f87171"
+            activeColor={STATUS_COLOR_SUCCESS}
+            inactiveColor={STATUS_COLOR_ERROR}
             size={30}
             symbol=""
           />

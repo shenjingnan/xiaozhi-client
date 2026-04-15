@@ -15,6 +15,7 @@ import { VoiceInteractionSettingDialog } from "@/components/voice-interaction-se
 import { useVoiceInteractionConfig } from "@/stores/config";
 import { useMemo } from "react";
 import { MiniCircularProgress } from "./mini-circular-progress";
+import { STATUS_COLOR_INACTIVE, getStatusColorByRate } from "./status-colors";
 
 /**
  * 检查 ASR 是否已配置
@@ -82,14 +83,8 @@ export function VoiceInteractionCard() {
             showValue={true}
             value={configuredCount}
             maxValue={totalItems}
-            activeColor={
-              completionRate >= 1
-                ? "#16a34a"
-                : completionRate >= 0.66
-                  ? "#f59e0b"
-                  : "#f87171"
-            }
-            inactiveColor="#e5e7eb"
+            activeColor={getStatusColorByRate(completionRate)}
+            inactiveColor={STATUS_COLOR_INACTIVE}
             size={30}
             symbol=""
           />
