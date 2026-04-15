@@ -1,15 +1,14 @@
 /**
- * useNPMInstall Hook - NPM 安装日志实时推送
+ * useNPMInstall Hook - NPM 安装日志实时推送（SSE 模式）
  *
  * 功能：
  * - 管理 NPM 安装状态
- * - 订阅 WebSocket 安装事件
+ * - 通过 SSE (EventSource) 订阅安装事件
  * - 提供安装日志实时更新
  * - 支持安装操作触发
  */
 
-import { webSocketManager } from "@/services/websocket";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * 安装日志接口
@@ -37,97 +36,24 @@ export interface InstallStatus {
  *
  * @returns 安装状态和操作方法
  */
-export function useNPMInstall() {
+function useNPMInstall() {
   const [installStatus, setInstallStatus] = useState<InstallStatus>({
     status: "idle",
     logs: [],
   });
 
+  // 使用 ref 追踪当前活跃的 EventSource，避免重复连接
+  const eventSourceRef = useRef<EventSource | null>(null);
+  // 使用 ref 追踪安装状态，供事件回调安全访问（避免闭包陷阱）
+  const installingRef = useRef(false);
+
   useEffect(() => {
-    // 订阅安装开始事件
-    const unsubscribeStarted = webSocketManager.subscribe(
-      "data:npmInstallStarted",
-      (data) => {
-        console.log("[useNPMInstall] 安装开始:", data);
-        setInstallStatus({
-          status: "installing",
-          version: data.version,
-          installId: data.installId,
-          logs: [],
-        });
-      }
-    );
-
-    // 订阅安装日志事件
-    const unsubscribeLog = webSocketManager.subscribe(
-      "data:npmInstallLog",
-      (data) => {
-        console.log("[useNPMInstall] 收到日志:", data);
-        setInstallStatus((prev) => {
-          // 只处理当前安装任务的日志
-          if (prev.installId === data.installId) {
-            return {
-              ...prev,
-              logs: [
-                ...prev.logs,
-                {
-                  type: data.type,
-                  message: data.message,
-                  timestamp: data.timestamp,
-                },
-              ],
-            };
-          }
-          return prev;
-        });
-      }
-    );
-
-    // 订阅安装完成事件
-    const unsubscribeCompleted = webSocketManager.subscribe(
-      "data:npmInstallCompleted",
-      (data) => {
-        console.log("[useNPMInstall] 安装完成:", data);
-        setInstallStatus((prev) => {
-          // 只处理当前安装任务的完成事件
-          if (prev.installId === data.installId) {
-            return {
-              ...prev,
-              status: "completed",
-              duration: data.duration,
-            };
-          }
-          return prev;
-        });
-      }
-    );
-
-    // 订阅安装失败事件
-    const unsubscribeFailed = webSocketManager.subscribe(
-      "data:npmInstallFailed",
-      (data) => {
-        console.log("[useNPMInstall] 安装失败:", data);
-        setInstallStatus((prev) => {
-          // 只处理当前安装任务的失败事件
-          if (prev.installId === data.installId) {
-            return {
-              ...prev,
-              status: "failed",
-              error: data.error,
-              duration: data.duration,
-            };
-          }
-          return prev;
-        });
-      }
-    );
-
-    // 清理函数：取消所有事件订阅
+    // 清理函数：组件卸载时关闭 SSE 连接
     return () => {
-      unsubscribeStarted();
-      unsubscribeLog();
-      unsubscribeCompleted();
-      unsubscribeFailed();
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
     };
   }, []);
 
@@ -140,6 +66,11 @@ export function useNPMInstall() {
   const startInstall = useCallback(async (version: string) => {
     try {
       console.log("[useNPMInstall] 开始安装版本:", version);
+
+      // 关闭之前的 SSE 连接（如果有）
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
 
       const response = await fetch("/api/update", {
         method: "POST",
@@ -155,7 +86,122 @@ export function useNPMInstall() {
         throw new Error(result.error?.message || "安装请求失败");
       }
 
-      console.log("[useNPMInstall] 安装请求已接受:", result);
+      const { installId } = result.data;
+
+      console.log("[useNPMInstall] 安装请求已接受:", { version, installId });
+
+      // 更新状态为安装中
+      installingRef.current = true;
+      setInstallStatus({
+        status: "installing",
+        version,
+        installId,
+        logs: [],
+      });
+
+      // 建立 SSE 连接获取实时日志
+      const eventSource = new EventSource(
+        `/api/install/logs?installId=${installId}`
+      );
+      eventSourceRef.current = eventSource;
+
+      // 监听日志事件
+      eventSource.addEventListener("log", (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          setInstallStatus((prev) => {
+            // 只处理当前安装任务的日志
+            if (prev.installId === data.installId) {
+              return {
+                ...prev,
+                logs: [
+                  ...prev.logs,
+                  {
+                    type: data.type,
+                    message: data.message,
+                    timestamp: data.timestamp,
+                  },
+                ],
+              };
+            }
+            return prev;
+          });
+        } catch (error) {
+          console.error("[useNPMInstall] 解析日志数据失败:", error);
+        }
+      });
+
+      // 监听完成事件
+      eventSource.addEventListener("completed", (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          console.log("[useNPMInstall] 安装完成:", data);
+
+          setInstallStatus((prev) => {
+            if (prev.installId === data.installId) {
+              return {
+                ...prev,
+                status: "completed",
+                duration: data.duration,
+              };
+            }
+            return prev;
+          });
+
+          // 关闭 SSE 连接
+          eventSource.close();
+          eventSourceRef.current = null;
+          installingRef.current = false;
+        } catch (error) {
+          console.error("[useNPMInstall] 解析完成数据失败:", error);
+        }
+      });
+
+      // 监听失败事件
+      eventSource.addEventListener("failed", (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          console.log("[useNPMInstall] 安装失败:", data);
+
+          setInstallStatus((prev) => {
+            if (prev.installId === data.installId) {
+              return {
+                ...prev,
+                status: "failed",
+                error: data.error,
+                duration: data.duration,
+              };
+            }
+            return prev;
+          });
+
+          // 关闭 SSE 连接
+          eventSource.close();
+          eventSourceRef.current = null;
+          installingRef.current = false;
+        } catch (error) {
+          console.error("[useNPMInstall] 解析失败数据失败:", error);
+        }
+      });
+
+      // 处理连接错误
+      eventSource.onerror = (error) => {
+        console.error("[useNPMInstall] SSE 连接错误:", error);
+
+        // 如果不是正常关闭（即非 completed/failed 导致的），标记为失败
+        if (installingRef.current) {
+          installingRef.current = false;
+          setInstallStatus((prev) => ({
+            ...prev,
+            status: "failed",
+            error: "SSE 连接中断，请刷新页面查看安装状态",
+          }));
+        }
+
+        eventSource.close();
+        eventSourceRef.current = null;
+      };
+
       return result;
     } catch (error) {
       console.error("[useNPMInstall] 安装请求失败:", error);
@@ -176,6 +222,14 @@ export function useNPMInstall() {
    */
   const clearStatus = useCallback(() => {
     console.log("[useNPMInstall] 清除安装状态");
+
+    // 关闭 SSE 连接
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+    installingRef.current = false;
+
     setInstallStatus({
       status: "idle",
       logs: [],
@@ -238,3 +292,7 @@ export function useNPMInstall() {
     canCloseDialog,
   };
 }
+
+export { useNPMInstall };
+// 默认导出 hook 实例
+export default useNPMInstall;

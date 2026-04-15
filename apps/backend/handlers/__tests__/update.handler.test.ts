@@ -126,12 +126,16 @@ describe("UpdateApiHandler", () => {
       await updateApiHandler.performUpdate(mockContext as unknown as Context);
 
       // 断言
-      expect(mockNPMManager.installVersion).toHaveBeenCalledWith("1.7.9");
+      expect(mockNPMManager.installVersion).toHaveBeenCalledWith(
+        "1.7.9",
+        expect.stringMatching(/^install-/)
+      );
       expect(mockContext.success).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           version: "1.7.9",
-          message: "安装已启动，请查看实时日志",
-        },
+          installId: expect.stringMatching(/^install-/),
+          message: "安装已启动，请通过 SSE 日志流查看进度",
+        }),
         "安装请求已接受"
       );
     });
@@ -238,10 +242,11 @@ describe("UpdateApiHandler", () => {
       );
       // 由于安装是异步的，响应应该仍然是成功的
       expect(mockContext.success).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           version: "1.7.9",
-          message: "安装已启动，请查看实时日志",
-        },
+          installId: expect.stringMatching(/^install-/),
+          message: "安装已启动，请通过 SSE 日志流查看进度",
+        }),
         "安装请求已接受"
       );
     });
@@ -295,10 +300,11 @@ describe("UpdateApiHandler", () => {
       );
       // 由于安装是异步的，响应应该仍然是成功的
       expect(mockContext.success).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           version: "1.7.9",
-          message: "安装已启动，请查看实时日志",
-        },
+          installId: expect.stringMatching(/^install-/),
+          message: "安装已启动，请通过 SSE 日志流查看进度",
+        }),
         "安装请求已接受"
       );
     });
