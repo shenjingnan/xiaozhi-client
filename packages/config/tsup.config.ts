@@ -1,4 +1,10 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { defineConfig } from "tsup";
 
@@ -28,15 +34,15 @@ function copyDirectory(src: string, dest: string): void {
 export default defineConfig({
   entry: ["src/index.ts"],
   format: ["esm"],
-  target: "node20",
+  target: "node22",
   outDir: "dist",
   clean: true,
   sourcemap: true,
   dts: {
-    entry: ['src/index.ts'],
+    entry: ["src/index.ts"],
     compilerOptions: {
-      composite: false
-    }
+      composite: false,
+    },
   },
   minify: process.env.NODE_ENV === "production",
   splitting: false,

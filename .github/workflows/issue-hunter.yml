@@ -60,7 +60,7 @@ jobs:
         if: github.event_name != 'schedule' || steps.check_time.outputs.should_run == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
           cache: 'pnpm'
 
       - name: 安装依赖
