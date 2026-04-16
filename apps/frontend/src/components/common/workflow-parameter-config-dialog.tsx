@@ -114,24 +114,24 @@ function extractParametersFromSchema(
   const properties = inputSchema.properties;
   const required = inputSchema.required || [];
 
-  return Object.entries(properties).map(
-    ([fieldName, schema]: [string, JSONSchema]) => {
-      let type: "string" | "number" | "boolean" = "string";
+  return Object.entries(properties).map(([fieldName, schema]) => {
+    // schema 从 properties 中取出，类型为 unknown，需要类型检查
+    const schemaObj = schema as JSONSchema;
+    let type: "string" | "number" | "boolean" = "string";
 
-      if (schema.type === "integer" || schema.type === "number") {
-        type = "number";
-      } else if (schema.type === "boolean") {
-        type = "boolean";
-      }
-
-      return {
-        fieldName,
-        description: schema.description || "",
-        type,
-        required: required.includes(fieldName),
-      };
+    if (schemaObj.type === "integer" || schemaObj.type === "number") {
+      type = "number";
+    } else if (schemaObj.type === "boolean") {
+      type = "boolean";
     }
-  );
+
+    return {
+      fieldName,
+      description: schemaObj.description || "",
+      type,
+      required: required.includes(fieldName),
+    };
+  });
 }
 
 /**

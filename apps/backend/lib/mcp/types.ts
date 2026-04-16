@@ -7,6 +7,26 @@ import type { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js
 import type { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type {
+  JSONSchema,
+  CustomMCPTool as SharedCustomMCPTool,
+} from "@xiaozhi-client/shared-types";
+
+// 重新导出 JSONSchema 和 CustomMCPTool 以保持向后兼容
+export type { JSONSchema } from "@xiaozhi-client/shared-types";
+
+// 重新导出 CustomMCPTool，使用本地扩展定义以保持兼容性
+// 注意：shared-types 的 CustomMCPTool 使用严格的 handler 类型定义
+// 本地版本保持宽松的 handler 类型以向后兼容
+export interface CustomMCPTool {
+  name: string;
+  description?: string;
+  inputSchema: JSONSchema;
+  handler?: {
+    type: string;
+    config?: Record<string, unknown>;
+  };
+}
 
 // =========================
 // 1. 基础传输类型
@@ -128,26 +148,10 @@ export interface ToolCallResult {
 }
 
 /**
- * JSON Schema 类型定义
- * 兼容 MCP SDK 的 JSON Schema 格式，同时支持更宽松的对象格式以保持向后兼容
- */
-export type JSONSchema =
-  | (Record<string, unknown> & {
-      type: "object";
-      properties?: Record<string, unknown>;
-      required?: string[];
-      additionalProperties?: boolean;
-    })
-  | Record<string, unknown>; // 允许更宽松的格式以保持向后兼容
-
-/**
  * 类型守卫：检查对象是否为有效的 MCP Tool JSON Schema
  */
-export function isValidToolJSONSchema(obj: unknown): obj is {
+export function isValidToolJSONSchema(obj: unknown): obj is JSONSchema & {
   type: "object";
-  properties?: Record<string, unknown>;
-  required?: string[];
-  additionalProperties?: boolean;
 } {
   return (
     typeof obj === "object" &&
@@ -161,41 +165,19 @@ export function isValidToolJSONSchema(obj: unknown): obj is {
  * 确保对象符合 MCP Tool JSON Schema 格式
  * 如果不符合，会返回一个默认的空对象 schema
  */
-export function ensureToolJSONSchema(schema: JSONSchema): {
+export function ensureToolJSONSchema(schema: JSONSchema): JSONSchema & {
   type: "object";
-  properties?: Record<string, object>;
-  required?: string[];
-  additionalProperties?: boolean;
 } {
   if (isValidToolJSONSchema(schema)) {
-    return schema as {
-      type: "object";
-      properties?: Record<string, object>;
-      required?: string[];
-      additionalProperties?: boolean;
-    };
+    return schema as JSONSchema & { type: "object" };
   }
 
   // 如果不符合标准格式，返回默认的空对象 schema
   return {
     type: "object",
-    properties: {} as Record<string, object>,
+    properties: {},
     required: [],
     additionalProperties: true,
-  };
-}
-
-/**
- * CustomMCP 工具类型定义
- * 统一了 manager.ts 和 configManager.ts 中的定义
- */
-export interface CustomMCPTool {
-  name: string;
-  description?: string;
-  inputSchema: JSONSchema;
-  handler?: {
-    type: string;
-    config?: Record<string, unknown>;
   };
 }
 

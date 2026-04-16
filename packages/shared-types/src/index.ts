@@ -13,7 +13,7 @@ export type {
   CozeWorkflowsParams,
 } from "./coze";
 
-// MCP 相关类型
+// MCP 相关类型 - 包括工具处理器配置和 CustomMCP 工具类型
 export type {
   ExtendedMCPToolsCache,
   EnhancedToolResultCache,
@@ -25,10 +25,35 @@ export type {
   CustomMCPToolWithStats,
   CustomMCPToolConfig,
   JSONSchema,
+  ToolHandlerConfig,
+  MCPHandlerConfig,
+  ProxyHandlerConfig,
+  HttpHandlerConfig,
+  FunctionHandlerConfig,
 } from "./mcp";
 
-// 工具API相关类型
-export type { ToolType, MCPToolData } from "./api";
+// 工具API相关类型 - 导出所有类型以消除跨包重复定义
+export type {
+  MCPToolData,
+  CozeWorkflowData,
+  HttpApiToolData,
+  FunctionToolData,
+  AddCustomToolRequest,
+  AddToolResponse,
+  ToolMetadata,
+  ToolConfigOptions,
+  ExtendedCustomMCPTool,
+  ToolValidationErrorDetail,
+} from "./api";
+
+export {
+  ToolType,
+  // 注意：ToolValidationError 在 api/index.ts 中被重命名为 ApiToolValidationError
+  // 如果需要原始名称，可以使用 ApiToolValidationError 并重命名
+} from "./api";
+
+// 导出 ToolValidationError 作为别名（向后兼容）
+export { ApiToolValidationError as ToolValidationError } from "./api";
 
 // 配置相关类型
 export type {
