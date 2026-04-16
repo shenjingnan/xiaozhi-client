@@ -1,3 +1,14 @@
+## 2.3.0-beta.4 (2026-04-16)
+
+### 🩹 Fixes
+
+- **ci:** 移除 npm-publish 工作流中破坏性的全局 npm 升级 ([#3284](https://github.com/shenjingnan/xiaozhi-client/pull/3284))
+
+### ❤️ Thank You
+
+- GLM-5.1
+- shenjingnan @shenjingnan
+
 ## 2.3.0-beta.3 (2026-04-16)
 
 This was a version bump only, there were no code changes.
