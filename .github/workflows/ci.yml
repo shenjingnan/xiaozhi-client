@@ -16,7 +16,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: ['22.x']
 
     steps:
     - name: 检出代码
@@ -35,7 +34,7 @@ jobs:
     - name: 设置 Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version-file: ".nvmrc"
         cache: 'pnpm'
 
     - name: 安装依赖
@@ -81,17 +80,17 @@ jobs:
         retry_on: error
         command: pnpm run test:coverage
 
-    # 上传覆盖率（仅 Ubuntu + Node 22.x）
+    # 上传覆盖率（仅 Ubuntu，Node 版本由 .nvmrc 决定）
     - name: 上传覆盖率报告
       uses: codecov/codecov-action@v4
-      if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.x'
+      if: matrix.os == 'ubuntu-latest'
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: |
           ./coverage/lcov.info
           ./apps/frontend/coverage/lcov.info
         flags: unittests
-        name: codecov-${{ matrix.os }}-node${{ matrix.node-version }}
+        name: codecov-${{ matrix.os }}
         fail_ci_if_error: true
         verbose: true
 
@@ -124,9 +123,9 @@ jobs:
     # 上传构建产物
     - name: 上传覆盖率报告
       uses: actions/upload-artifact@v4
-      if: always() && matrix.os == 'ubuntu-latest' && matrix.node-version == '22.x'
+      if: always() && matrix.os == 'ubuntu-latest'
       with:
-        name: coverage-report-${{ matrix.os }}-node${{ matrix.node-version }}
+        name: coverage-report-${{ matrix.os }}
         path: |
           coverage/
           apps/frontend/coverage/
@@ -136,7 +135,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: success()
       with:
-        name: build-artifacts-${{ matrix.os }}-node${{ matrix.node-version }}
+        name: build-artifacts-${{ matrix.os }}
         path: |
           dist/
         retention-days: 7
