@@ -67,10 +67,7 @@ export class MCPManager extends EventEmitter {
    * });
    * ```
    */
-  addServer(
-    name: string,
-    config: MCPServiceConfig
-  ): void {
+  addServer(name: string, config: MCPServiceConfig): void {
     if (this.configs.has(name)) {
       throw new Error(`服务 ${name} 已存在`);
     }
