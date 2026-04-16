@@ -573,7 +573,7 @@ export class ASRService implements IASRService {
     // 清理 ASR 客户端
     for (const wrapper of this.asrClients.values()) {
       wrapper.connected = false;
-      // listen 任务会因为 audioQueues/audioEnded 清理而自然退出
+      // listen 任务会因为 opusQueues/audioEnded 清理而自然退出
     }
     this.asrClients.clear();
     // 清理 V2 API 相关状态
