@@ -14,8 +14,10 @@
 import { EventEmitter } from "node:events";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
+import type { MCPServerAddResult } from "@/handlers/mcp-manage.handler.js";
 import type { ClientInfo } from "@/services/status.service.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { MCPServerConfig } from "@xiaozhi-client/config";
 
 /**
  * 事件类型定义
@@ -126,7 +128,7 @@ export interface EventBusEvents {
   };
   "mcp:server:added": {
     serverName: string;
-    config: any;
+    config: MCPServerConfig;
     tools: string[];
     timestamp: Date;
   };
@@ -160,7 +162,7 @@ export interface EventBusEvents {
     addedCount: number;
     failedCount: number;
     successfullyAddedServers: string[];
-    results: any[];
+    results: MCPServerAddResult[];
     timestamp: Date;
   };
   "mcp:server:rollback": {
