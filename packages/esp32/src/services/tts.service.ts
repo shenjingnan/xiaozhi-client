@@ -217,8 +217,18 @@ export class TTSService implements ITTSService {
    */
   private waitForBufferDrain(deviceId: string): void {
     const checkInterval = 50; // 每 50ms 检查一次
+    const maxWaitTime = 5000; // 最大等待时间 5 秒
+    const startTime = Date.now();
 
     const check = (): boolean => {
+      // 超时保护
+      if (Date.now() - startTime > maxWaitTime) {
+        this.logger.warn(
+          `[TTSService] 等待缓冲区排空超时: deviceId=${deviceId}`
+        );
+        return true; // 强制结束
+      }
+
       const buffer = this.opusPacketBuffer.get(deviceId);
       const isProcessing = this.isProcessingBuffer.get(deviceId);
 
@@ -239,7 +249,7 @@ export class TTSService implements ITTSService {
       if (check()) return;
     }
 
-    // 循环检查
+    // 循环检查，带超时保护
     const intervalId = setInterval(() => {
       if (check()) {
         clearInterval(intervalId);
