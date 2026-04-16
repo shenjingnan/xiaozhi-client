@@ -3,13 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import {
-  getMcpServerCommunicationType,
-  getMcpServerTypeDisplayName,
-  isSSEMcpServer,
-  isStdioMcpServer,
-  isStreamableHTTPMcpServer,
-} from "./mcpServerUtils";
+import { getMcpServerCommunicationType } from "./mcpServerUtils";
 
 describe("MCP Server Utils", () => {
   describe("getMcpServerCommunicationType", () => {
@@ -80,45 +74,6 @@ describe("MCP Server Utils", () => {
       expect(() => getMcpServerCommunicationType(invalidConfig)).toThrow(
         "无法识别的 MCP 服务配置类型"
       );
-    });
-  });
-
-  describe("类型检查函数", () => {
-    const stdioConfig = { command: "node", args: ["test.js"] };
-    const sseConfig = { type: "sse" as const, url: "https://example.com/sse" };
-    const httpConfig = { url: "https://example.com/http" };
-
-    it("isStdioMcpServer 应该正确识别 stdio 类型", () => {
-      expect(isStdioMcpServer(stdioConfig)).toBe(true);
-      expect(isStdioMcpServer(sseConfig)).toBe(false);
-      expect(isStdioMcpServer(httpConfig)).toBe(false);
-    });
-
-    it("isSSEMcpServer 应该正确识别 sse 类型", () => {
-      expect(isSSEMcpServer(stdioConfig)).toBe(false);
-      expect(isSSEMcpServer(sseConfig)).toBe(true);
-      expect(isSSEMcpServer(httpConfig)).toBe(false);
-    });
-
-    it("isStreamableHTTPMcpServer 应该正确识别 streamable-http 类型", () => {
-      expect(isStreamableHTTPMcpServer(stdioConfig)).toBe(false);
-      expect(isStreamableHTTPMcpServer(sseConfig)).toBe(false);
-      expect(isStreamableHTTPMcpServer(httpConfig)).toBe(true);
-    });
-  });
-
-  describe("getMcpServerTypeDisplayName", () => {
-    it("应该返回正确的显示名称", () => {
-      const stdioConfig = { command: "node", args: ["test.js"] };
-      const sseConfig = {
-        type: "sse" as const,
-        url: "https://example.com/sse",
-      };
-      const httpConfig = { url: "https://example.com/http" };
-
-      expect(getMcpServerTypeDisplayName(stdioConfig)).toBe("本地进程 (stdio)");
-      expect(getMcpServerTypeDisplayName(sseConfig)).toBe("服务器推送 (SSE)");
-      expect(getMcpServerTypeDisplayName(httpConfig)).toBe("流式 HTTP");
     });
   });
 

@@ -1,17 +1,12 @@
 /**
  * MCP 服务工具函数
- * 用于判断 MCP 服务的通信类型和其他相关操作
+ * 用于判断 MCP 服务的通信类型
  */
 
-import type {
-  LocalMCPServerConfig,
-  MCPServerConfig,
-  SSEMCPServerConfig,
-  StreamableHTTPMCPServerConfig,
-} from "@xiaozhi-client/shared-types";
+import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
 
-// 定义通信类型
-export type MCPCommunicationType = "stdio" | "sse" | "streamable-http";
+/** MCP 服务通信类型 */
+type MCPCommunicationType = "stdio" | "sse" | "streamable-http";
 
 /**
  * 判断 MCP 服务的通信类型
@@ -74,52 +69,4 @@ export function getMcpServerCommunicationType(
   throw new Error(
     "无法识别的 MCP 服务配置类型。配置必须包含 command 字段（stdio）、type: 'sse' 字段（sse）或 url 字段（streamable-http）"
   );
-}
-
-/**
- * 检查 MCP 服务配置是否为 stdio 类型
- */
-export function isStdioMcpServer(
-  serverConfig: MCPServerConfig | Record<string, any>
-): serverConfig is LocalMCPServerConfig {
-  return getMcpServerCommunicationType(serverConfig) === "stdio";
-}
-
-/**
- * 检查 MCP 服务配置是否为 sse 类型
- */
-export function isSSEMcpServer(
-  serverConfig: MCPServerConfig | Record<string, any>
-): serverConfig is SSEMCPServerConfig {
-  return getMcpServerCommunicationType(serverConfig) === "sse";
-}
-
-/**
- * 检查 MCP 服务配置是否为 streamable-http 类型
- */
-export function isStreamableHTTPMcpServer(
-  serverConfig: MCPServerConfig | Record<string, any>
-): serverConfig is StreamableHTTPMCPServerConfig {
-  return getMcpServerCommunicationType(serverConfig) === "streamable-http";
-}
-
-/**
- * 获取 MCP 服务配置的显示名称
- * 用于在 UI 中显示更友好的通信类型名称
- */
-export function getMcpServerTypeDisplayName(
-  serverConfig: MCPServerConfig | Record<string, any>
-): string {
-  const type = getMcpServerCommunicationType(serverConfig);
-
-  switch (type) {
-    case "stdio":
-      return "本地进程 (stdio)";
-    case "sse":
-      return "服务器推送 (SSE)";
-    case "streamable-http":
-      return "流式 HTTP";
-    default:
-      return "未知类型";
-  }
 }

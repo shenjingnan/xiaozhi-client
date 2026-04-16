@@ -55,18 +55,6 @@ const httpConfig = {
 console.log(getMcpServerCommunicationType(httpConfig)); // "streamable-http"
 ```
 
-### 辅助函数
-
-#### 类型检查函数
-
-- `isStdioMcpServer(serverConfig)`: 检查是否为 stdio 类型
-- `isSSEMcpServer(serverConfig)`: 检查是否为 sse 类型
-- `isStreamableHTTPMcpServer(serverConfig)`: 检查是否为 streamable-http 类型
-
-#### 显示名称函数
-
-- `getMcpServerTypeDisplayName(serverConfig)`: 获取用于 UI 显示的友好名称
-
 ### 使用场景
 
 1. **在 UI 中显示服务类型标签**
@@ -83,14 +71,6 @@ console.log(getMcpServerCommunicationType(httpConfig)); // "streamable-http"
      return <span>{config.command} {config.args?.join(" ")}</span>;
    } else if ((type === "sse" || type === "streamable-http") && "url" in config) {
      return <span>URL: {config.url}</span>;
-   }
-   ```
-
-3. **类型安全的配置处理**
-   ```typescript
-   if (isStdioMcpServer(config)) {
-     // TypeScript 知道 config 有 command 和 args 属性
-     console.log(config.command, config.args);
    }
    ```
 
