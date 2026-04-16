@@ -1,3 +1,14 @@
+## 2.3.0-beta.5 (2026-04-16)
+
+### 🩹 Fixes
+
+- **ci:** 统一 npm-publish 工作流 YAML 引号风格并固定 Node.js 版本 ([#3285](https://github.com/shenjingnan/xiaozhi-client/pull/3285), [#3283](https://github.com/shenjingnan/xiaozhi-client/issues/3283))
+
+### ❤️ Thank You
+
+- GLM-5.1
+- shenjingnan @shenjingnan
+
 ## 2.3.0-beta.4 (2026-04-16)
 
 ### 🩹 Fixes
