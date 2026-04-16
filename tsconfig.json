@@ -31,7 +31,6 @@
   "exclude": ["node_modules", "dist", "scripts/**/*", "templates/**/*"],
   "references": [
     { "path": "./apps/backend" },
-    { "path": "./packages/asr" },
     { "path": "./packages/config" },
     { "path": "./packages/mcp-core" },
     { "path": "./packages/shared-types" },

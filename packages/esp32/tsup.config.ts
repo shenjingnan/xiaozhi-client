@@ -40,7 +40,6 @@ export default defineConfig({
     "node:net",
     "node:crypto",
     // workspace 包（不打包）
-    "@xiaozhi-client/asr",
     "@xiaozhi-client/shared-types",
     // peerDependencies
     "openai",
