@@ -1,9 +1,7 @@
 /**
- * 错误处理中间件和统一响应格式
+ * 错误处理中间件
  *
- * 提供统一的 API 响应格式和错误处理中间件：
- * - ApiErrorResponse: 统一的错误响应格式
- * - ApiSuccessResponse: 统一的成功响应格式
+ * 提供：
  * - errorHandlerMiddleware: 全局错误处理中间件
  * - notFoundHandlerMiddleware: 404 处理中间件
  *
@@ -11,54 +9,6 @@
  */
 
 import type { Context } from "hono";
-
-// 统一错误响应格式
-export interface ApiErrorResponse {
-  error: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
-}
-
-export interface ApiSuccessResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-}
-
-/**
- * 创建统一的错误响应
- * @deprecated 请使用 c.fail() 方法代替
- */
-export const createErrorResponse = (
-  code: string,
-  message: string,
-  details?: unknown
-): ApiErrorResponse => {
-  return {
-    error: {
-      code,
-      message,
-      details,
-    },
-  };
-};
-
-/**
- * 创建统一的成功响应
- * @deprecated 请使用 c.success() 方法代替
- */
-export const createSuccessResponse = <T>(
-  data?: T,
-  message?: string
-): ApiSuccessResponse<T> => {
-  return {
-    success: true,
-    data,
-    message,
-  };
-};
 
 /**
  * 错误处理中间件

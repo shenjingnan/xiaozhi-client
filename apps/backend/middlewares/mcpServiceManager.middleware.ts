@@ -74,15 +74,3 @@ export const mcpServiceManagerMiddleware = async (
 
   await next();
 };
-
-/**
- * 类型守卫：检查 Context 中是否存在 MCPServiceManager 实例
- *
- * @param c Hono Context
- * @returns 是否存在 MCPServiceManager 实例
- */
-export const hasMCPServiceManager = (
-  c: Context<{ Variables: AppContextVariables }>
-): boolean => {
-  return c.get("mcpServiceManager") !== undefined;
-};

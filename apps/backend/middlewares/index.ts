@@ -12,10 +12,8 @@
  * - {@link endpointsMiddleware} - 小智端点处理器中间件
  *
  * 此外还导出辅助函数和类型：
- * - {@link hasMCPServiceManager} - 检查是否存在 MCP 服务管理器
  * - {@link getMCPServiceManager} - 获取 MCP 服务管理器
  * - {@link requireMCPServiceManager} - 获取 MCP 服务管理器（不存在则抛错）
- * - {@link ApiErrorResponse} / {@link ApiSuccessResponse} - API 响应类型
  *
  * @module middlewares
  *
@@ -50,16 +48,9 @@ export { corsMiddleware } from "./cors.middleware.js";
 export {
   errorHandlerMiddleware,
   notFoundHandlerMiddleware,
-  createErrorResponse,
-  createSuccessResponse,
-  ApiErrorResponse,
-  ApiSuccessResponse,
 } from "./error.middleware.js";
 export { responseEnhancerMiddleware } from "./response-enhancer.middleware.js";
-export {
-  mcpServiceManagerMiddleware,
-  hasMCPServiceManager,
-} from "./mcpServiceManager.middleware.js";
+export { mcpServiceManagerMiddleware } from "./mcpServiceManager.middleware.js";
 export { endpointManagerMiddleware } from "./endpointManager.middleware.js";
 export { endpointsMiddleware } from "./endpoints.middleware.js";
 

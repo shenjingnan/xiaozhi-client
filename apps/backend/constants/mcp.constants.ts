@@ -58,22 +58,6 @@ export const MCP_METHODS = {
 } as const;
 
 /**
- * JSON-RPC 错误码常量
- */
-export const JSONRPC_ERROR_CODES = {
-  /** 解析错误 */
-  PARSE_ERROR: -32700,
-  /** 无效请求 */
-  INVALID_REQUEST: -32600,
-  /** 方法未找到 */
-  METHOD_NOT_FOUND: -32601,
-  /** 无效参数 */
-  INVALID_PARAMS: -32602,
-  /** 内部错误 */
-  INTERNAL_ERROR: -32603,
-} as const;
-
-/**
  * JSON-RPC 错误消息常量
  */
 export const JSONRPC_ERROR_MESSAGES = {
@@ -101,18 +85,4 @@ export const MCP_CACHE_VERSIONS = {
   CACHE_VERSION: "1.0.0",
   /** 缓存条目版本 */
   CACHE_ENTRY_VERSION: "1.0.0",
-} as const;
-
-/**
- * MCP 服务状态类型常量
- */
-export const MCP_SERVICE_STATUS = {
-  /** 已连接 */
-  CONNECTED: "connected",
-  /** 断开连接 */
-  DISCONNECTED: "disconnected",
-  /** 连接中 */
-  CONNECTING: "connecting",
-  /** 错误 */
-  ERROR: "error",
 } as const;
