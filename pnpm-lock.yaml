@@ -82,9 +82,6 @@ importers:
       '@xiaozhi-client/esp32':
         specifier: workspace:*
         version: link:packages/esp32
-      '@xiaozhi-client/mcp-core':
-        specifier: workspace:*
-        version: link:packages/mcp-core
       ajv:
         specifier: ^8.18.0
         version: 8.18.0
@@ -254,9 +251,6 @@ importers:
       '@xiaozhi-client/esp32':
         specifier: workspace:*
         version: link:../../packages/esp32
-      '@xiaozhi-client/mcp-core':
-        specifier: workspace:*
-        version: link:../../packages/mcp-core
       ajv:
         specifier: ^8.18.0
         version: 8.18.0
@@ -614,9 +608,6 @@ importers:
 
   packages/config:
     dependencies:
-      '@xiaozhi-client/mcp-core':
-        specifier: workspace:*
-        version: link:../mcp-core
       comment-json:
         specifier: ^4.2.5
         version: 4.5.1
@@ -645,9 +636,6 @@ importers:
       '@xiaozhi-client/config':
         specifier: workspace:*
         version: link:../config
-      '@xiaozhi-client/mcp-core':
-        specifier: workspace:*
-        version: link:../mcp-core
       ws:
         specifier: ^8.14.2
         version: 8.19.0
@@ -704,34 +692,6 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.33)(esbuild@0.27.3)(happy-dom@20.8.9)(jiti@2.6.1)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.3)
-
-  packages/mcp-core:
-    dependencies:
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.26.0
-        version: 1.26.0(zod@4.3.6)
-      eventsource:
-        specifier: ^4.0.0
-        version: 4.1.0
-      ws:
-        specifier: ^8.14.2
-        version: 8.19.0
-    devDependencies:
-      '@types/node':
-        specifier: ^24.3.0
-        version: 24.10.9
-      '@types/ws':
-        specifier: ^8.5.0
-        version: 8.18.1
-      tsup:
-        specifier: ^8.3.5
-        version: 8.5.1(jiti@2.6.1)(postcss@8.5.9)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(esbuild@0.27.3)(happy-dom@20.8.9)(jiti@2.6.1)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.3)
 
 packages:
 
