@@ -88,9 +88,6 @@ importers:
       '@xiaozhi-client/shared-types':
         specifier: workspace:*
         version: link:packages/shared-types
-      '@xiaozhi-client/version':
-        specifier: workspace:*
-        version: link:packages/version
       ajv:
         specifier: ^8.18.0
         version: 8.18.0
@@ -266,9 +263,6 @@ importers:
       '@xiaozhi-client/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
-      '@xiaozhi-client/version':
-        specifier: workspace:*
-        version: link:../../packages/version
       ajv:
         specifier: ^8.18.0
         version: 8.18.0
@@ -762,21 +756,6 @@ importers:
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
-
-  packages/version:
-    devDependencies:
-      '@types/node':
-        specifier: ^24.3.0
-        version: 24.10.9
-      tsup:
-        specifier: ^8.3.5
-        version: 8.5.1(jiti@2.6.1)(postcss@8.5.9)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(esbuild@0.27.3)(happy-dom@20.8.9)(jiti@2.6.1)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.3)
 
 packages:
 
