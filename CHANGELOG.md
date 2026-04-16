@@ -1,3 +1,7 @@
+## 2.3.0-beta.3 (2026-04-16)
+
+This was a version bump only, there were no code changes.
+
 ## 2.3.0-beta.2 (2026-04-13)
 
 ### 🩹 Fixes
