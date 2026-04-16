@@ -3,27 +3,31 @@
  * 测试 ASRService 的语音识别生命周期管理
  */
 
-import { createASR } from "univoice";
+import { createASR } from "univoice/asr";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ASRService } from "../asr.service.js";
 
-// Mock @xiaozhi-client/asr（仅保留 OpusDecoder 用于 Opus→PCM 解码）
-vi.mock("@xiaozhi-client/asr", () => ({
-  OpusDecoder: {
-    toPcm: vi.fn().mockResolvedValue(Buffer.from([0x01, 0x02, 0x03])),
-  },
-}));
-
-// Mock univoice（ASR 引擎替换为 univoice）
+// Mock univoice/asr（ASR 引擎 + decodeOpusStream 流式解码）
 const mockListenGenerator = (async function* () {
   // 默认不产生任何结果（空生成器）
 })();
 
-vi.mock("univoice", () => ({
+vi.mock("univoice/asr", () => ({
   createASR: vi.fn().mockImplementation(() => ({
     listen: vi.fn().mockReturnValue(mockListenGenerator),
   })),
+  // 模拟 decodeOpusStream：透传 Opus 包并输出模拟 PCM 数据
+  decodeOpusStream: vi.fn().mockImplementation(async function* (
+    opusStream: AsyncIterable<Buffer>
+  ) {
+    for await (const _packet of opusStream) {
+      yield Buffer.from([0x01, 0x02, 0x03]); // 模拟 PCM 输出
+    }
+  }),
 }));
+
+// Mock univoice 类型导入（BaseASR 类型，无需实际实现）
+vi.mock("univoice", () => ({}));
 
 describe("ASRService", () => {
   let service: ASRService;
@@ -144,19 +148,16 @@ describe("ASRService", () => {
       // 不应抛错，数据被忽略
     });
 
-    it("正常数据解码推入队列", async () => {
+    it("正常数据推入 Opus 队列（不做本地解码）", async () => {
       await service.prepare("device-1");
 
       const audioData = new Uint8Array([0x07, 0x08]);
       await service.handleAudioData("device-1", audioData);
 
-      // OpusDecoder.toPcm 应该被调用（代码内部用 Buffer.from 包装了 audioData）
-      const { OpusDecoder } = await import("@xiaozhi-client/asr");
-      expect(OpusDecoder.toPcm).toHaveBeenCalled();
-      // 验证传入的是 Buffer 类型（代码中 Buffer.from(audioData)）
-      const calledArg = (OpusDecoder.toPcm as ReturnType<typeof vi.fn>).mock
-        .calls[0][0];
-      expect(Buffer.isBuffer(calledArg)).toBe(true);
+      // 验证 handleAudioData 不抛错，原始 Opus 数据已推入内部队列
+      // 实际解码由 decodeOpusStream 在 startListenTask 中统一处理
+      const { decodeOpusStream } = await import("univoice/asr");
+      expect(decodeOpusStream).not.toHaveBeenCalled(); // 尚未 connect，不会触发解码
     });
   });
 
@@ -295,6 +296,53 @@ describe("ASRService", () => {
         "测试完成",
         true
       );
+    });
+
+    it("验证 Opus→PCM 解码链路：decodeOpusStream 以正确参数调用，listen 接收 PCM 流", async () => {
+      // 捕获传给 listen 的第一个参数（应为 decodeOpusStream 的返回值）
+      let capturedListenArg: unknown = null;
+
+      const mockChainGenerator = (async function* () {
+        yield { text: "链路测试", isFinal: true };
+      })();
+
+      vi.mocked(createASR).mockImplementation(
+        () =>
+          ({
+            listen: vi.fn().mockImplementation((stream: unknown) => {
+              capturedListenArg = stream;
+              return mockChainGenerator;
+            }),
+          }) as unknown as ReturnType<typeof createASR>
+      );
+
+      await service.prepare("device-chain");
+      await service.connect("device-chain");
+
+      // 发送音频数据触发解码链路
+      const audioData = new Uint8Array([0xaa, 0xbb, 0xcc]);
+      await service.handleAudioData("device-chain", audioData);
+
+      // 等待 listen 任务消费数据
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // 验证 decodeOpusStream 被以 sampleRate=16000 调用
+      const { decodeOpusStream } = await import("univoice/asr");
+      expect(decodeOpusStream).toHaveBeenCalledTimes(1);
+      expect(decodeOpusStream).toHaveBeenCalledWith(
+        expect.anything(), // AsyncIterable<Buffer> (opus stream)
+        { sampleRate: 16000 }
+      );
+
+      // 验证 asrClient.listen 接收到的参数是 decodeOpusStream 的返回值
+      // （即一个 AsyncIterable<Buffer>，而非原始的 opusStream）
+      expect(capturedListenArg).not.toBeNull();
+      // 确认 listen 参数是可迭代的（PCM 流）
+      expect(
+        typeof (capturedListenArg as AsyncIterable<Buffer>)[
+          Symbol.asyncIterator
+        ]
+      ).toBe("function");
     });
 
     it("无segment信息的chunk正常处理不受影响", async () => {
