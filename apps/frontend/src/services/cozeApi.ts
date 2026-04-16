@@ -68,22 +68,31 @@ export class CozeApiClient {
       },
     };
 
-    const response = await fetch(url, { ...defaultOptions, ...options });
+    try {
+      const response = await fetch(url, { ...defaultOptions, ...options });
 
-    if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
 
-      try {
-        const errorData: ApiErrorResponse = await response.json();
-        errorMessage = errorData.error?.message || errorMessage;
-      } catch {
-        // 如果无法解析错误响应，使用默认错误消息
+        try {
+          const errorData: ApiErrorResponse = await response.json();
+          errorMessage = errorData.error?.message || errorMessage;
+        } catch {
+          // 如果无法解析错误响应，使用默认错误消息
+        }
+
+        throw new Error(errorMessage);
       }
 
-      throw new Error(errorMessage);
+      return response.json();
+    } catch (error) {
+      // 处理网络错误（DNS 解析失败、CORS 错误、网络断开等）
+      if (error instanceof TypeError) {
+        throw new Error("网络连接失败，无法访问服务器，请检查网络连接");
+      }
+      // 重新抛出其他类型的错误（如已处理的 HTTP 错误）
+      throw error;
     }
-
-    return response.json();
   }
 
   /**
