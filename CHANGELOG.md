@@ -1,3 +1,14 @@
+## 2.3.0-beta.6 (2026-04-16)
+
+### 🩹 Fixes
+
+- **ci:** 统一所有工作流从 .nvmrc 获取 Node.js 版本 ([#3286](https://github.com/shenjingnan/xiaozhi-client/pull/3286))
+
+### ❤️ Thank You
+
+- GLM-5.1
+- shenjingnan @shenjingnan
+
 ## 2.3.0-beta.5 (2026-04-16)
 
 ### 🩹 Fixes
