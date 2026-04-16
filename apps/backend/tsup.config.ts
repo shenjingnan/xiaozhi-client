@@ -123,8 +123,13 @@ export default defineConfig({
           (args) => {
             const subPath = args.path.replace("@xiaozhi-client/mcp-core", "");
             if (subPath) {
+              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
+              const normalizedSubPath = subPath.replace(
+                /\.(?:[cm]?js|ts)$/,
+                ""
+              );
               return {
-                path: resolve(`../../src/mcp-core${subPath}.ts`),
+                path: resolve(`../../src/mcp-core${normalizedSubPath}.ts`),
               };
             }
             return {
@@ -144,8 +149,13 @@ export default defineConfig({
           (args) => {
             const subPath = args.path.replace("@xiaozhi-client/config", "");
             if (subPath) {
+              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
+              const normalizedSubPath = subPath.replace(
+                /\.(?:[cm]?js|ts)$/,
+                ""
+              );
               return {
-                path: resolve(`../../src/config${subPath}.ts`),
+                path: resolve(`../../src/config${normalizedSubPath}.ts`),
               };
             }
             return {
