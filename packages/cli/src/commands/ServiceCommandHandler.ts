@@ -176,7 +176,7 @@ export class ServiceCommandHandler extends BaseCommandHandler {
     console.log("小智客户端已迁移到纯 HTTP 架构，请使用以下方式：\n");
 
     console.log("1. 启动 Web 服务：");
-    console.log("   xiaozhi start\n");
+    console.log("   xiaozhi service start\n");
 
     console.log("2. 在 Cursor 中配置 HTTP 端点：");
     console.log('   "mcpServers": {');
