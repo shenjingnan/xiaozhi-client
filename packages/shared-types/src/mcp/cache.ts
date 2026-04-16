@@ -6,6 +6,7 @@ import type { TaskStatus } from "./task";
 
 /**
  * 工具调用结果接口（简化版）
+ * 支持其他未知字段，保持向后兼容性
  */
 export interface ToolCallResult {
   content: Array<{
@@ -13,6 +14,7 @@ export interface ToolCallResult {
     text: string;
   }>;
   isError?: boolean;
+  [key: string]: unknown; // 支持其他未知字段，保持向后兼容
 }
 
 /**
