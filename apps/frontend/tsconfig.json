@@ -22,7 +22,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@xiaozhi-client/shared-types": ["../../packages/shared-types/src"]
+      "@xiaozhi-client/shared-types": ["../../src/types/index.ts"]
     }
   },
   "include": ["src"],

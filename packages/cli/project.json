@@ -71,5 +71,5 @@
     }
   },
   "tags": ["type:lib", "scope:cli"],
-  "implicitDependencies": ["backend", "shared-types"]
+  "implicitDependencies": ["backend"]
 }

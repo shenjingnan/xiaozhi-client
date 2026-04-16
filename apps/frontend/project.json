@@ -11,7 +11,7 @@
         "cwd": "apps/frontend"
       },
       "outputs": ["{workspaceRoot}/dist/frontend"],
-      "dependsOn": ["shared-types:build"]
+      "dependsOn": []
     },
     "serve": {
       "executor": "@nx/vite:dev-server",
@@ -74,5 +74,5 @@
     }
   },
   "tags": ["type:app", "platform:web"],
-  "implicitDependencies": ["shared-types"]
+  "implicitDependencies": []
 }

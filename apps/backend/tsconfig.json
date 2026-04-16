@@ -10,10 +10,15 @@
     "types": ["vitest/globals"],
     "paths": {
       "@/*": ["./*"],
-      "@xiaozhi-client/version": ["../../src/utils/version.ts"]
+      "@xiaozhi-client/version": ["../../src/utils/version.ts"],
+      "@xiaozhi-client/shared-types": ["../../src/types/index.ts"]
     }
   },
-  "include": ["./**/*.ts", "../../src/utils/version.ts"],
+  "include": [
+    "./**/*.ts",
+    "../../src/utils/version.ts",
+    "../../src/types/**/*"
+  ],
   "exclude": [
     "node_modules",
     "dist",

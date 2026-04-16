@@ -90,6 +90,27 @@ export default defineConfig({
       },
     });
 
+    // shared-types 已迁移到 src/types/，添加 alias 解析
+    options.plugins.push({
+      name: "shared-types-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/shared-types(\/.*)?$/ },
+          (args) => {
+            const subPath = args.path.replace("@xiaozhi-client/shared-types", "");
+            if (subPath) {
+              return {
+                path: resolve(`../../src/types${subPath}/index.ts`),
+              };
+            }
+            return {
+              path: resolve("../../src/types/index.ts"),
+            };
+          }
+        );
+      },
+    });
+
     // 确保能够解析路径别名
     if (!options.external) {
       options.external = [];
@@ -140,7 +161,6 @@ export default defineConfig({
     "@xiaozhi-client/config.js",
     "@xiaozhi-client/endpoint",
     "@xiaozhi-client/mcp-core",
-    "@xiaozhi-client/shared-types",
     "@xiaozhi-client/esp32",
     "@xiaozhi-client/esp32.js",
     "univoice",
