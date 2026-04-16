@@ -104,12 +104,12 @@ export interface MCPServerListResponse {
 
 /**
  * 统一响应格式接口
- * 从 @middlewares/index.js 导入，保持类型一致性
+ * 从 types/api.response 导入，保持类型一致性
  */
 export type {
   ApiErrorResponse,
   ApiSuccessResponse,
-} from "@/middlewares/index.js";
+} from "@/types/api.response.js";
 
 /**
  * 配置验证结果接口
