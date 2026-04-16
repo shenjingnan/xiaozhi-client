@@ -3,27 +3,31 @@
  * 测试 ASRService 的语音识别生命周期管理
  */
 
-import { createASR } from "univoice";
+import { createASR } from "univoice/asr";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ASRService } from "../asr.service.js";
 
-// Mock @xiaozhi-client/asr（仅保留 OpusDecoder 用于 Opus→PCM 解码）
-vi.mock("@xiaozhi-client/asr", () => ({
-  OpusDecoder: {
-    toPcm: vi.fn().mockResolvedValue(Buffer.from([0x01, 0x02, 0x03])),
-  },
-}));
-
-// Mock univoice（ASR 引擎替换为 univoice）
+// Mock univoice/asr（ASR 引擎 + decodeOpusStream 流式解码）
 const mockListenGenerator = (async function* () {
   // 默认不产生任何结果（空生成器）
 })();
 
-vi.mock("univoice", () => ({
+vi.mock("univoice/asr", () => ({
   createASR: vi.fn().mockImplementation(() => ({
     listen: vi.fn().mockReturnValue(mockListenGenerator),
   })),
+  // 模拟 decodeOpusStream：透传 Opus 包并输出模拟 PCM 数据
+  decodeOpusStream: vi.fn().mockImplementation(async function* (
+    opusStream: AsyncIterable<Buffer>
+  ) {
+    for await (const _packet of opusStream) {
+      yield Buffer.from([0x01, 0x02, 0x03]); // 模拟 PCM 输出
+    }
+  }),
 }));
+
+// Mock univoice 类型导入（BaseASR 类型，无需实际实现）
+vi.mock("univoice", () => ({}));
 
 describe("ASRService", () => {
   let service: ASRService;
@@ -144,19 +148,16 @@ describe("ASRService", () => {
       // 不应抛错，数据被忽略
     });
 
-    it("正常数据解码推入队列", async () => {
+    it("正常数据推入 Opus 队列（不做本地解码）", async () => {
       await service.prepare("device-1");
 
       const audioData = new Uint8Array([0x07, 0x08]);
       await service.handleAudioData("device-1", audioData);
 
-      // OpusDecoder.toPcm 应该被调用（代码内部用 Buffer.from 包装了 audioData）
-      const { OpusDecoder } = await import("@xiaozhi-client/asr");
-      expect(OpusDecoder.toPcm).toHaveBeenCalled();
-      // 验证传入的是 Buffer 类型（代码中 Buffer.from(audioData)）
-      const calledArg = (OpusDecoder.toPcm as ReturnType<typeof vi.fn>).mock
-        .calls[0][0];
-      expect(Buffer.isBuffer(calledArg)).toBe(true);
+      // 验证 handleAudioData 不抛错，原始 Opus 数据已推入内部队列
+      // 实际解码由 decodeOpusStream 在 startListenTask 中统一处理
+      const { decodeOpusStream } = await import("univoice/asr");
+      expect(decodeOpusStream).not.toHaveBeenCalled(); // 尚未 connect，不会触发解码
     });
   });
 
