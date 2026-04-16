@@ -16,6 +16,7 @@ import path from "node:path";
 import { FileError, ValidationError } from "../errors/index";
 import type {
   TemplateManager as ITemplateManager,
+  TemplateConfig,
   TemplateCreateOptions,
   TemplateInfo,
 } from "../interfaces/Service";
@@ -90,12 +91,12 @@ export class TemplateManagerImpl implements ITemplateManager {
 
       // 读取模板配置文件
       const configPath = path.join(templatePath, "template.json");
-      let config: any = {};
+      let config: TemplateConfig = {};
 
       if (FileUtils.exists(configPath)) {
         try {
           const configContent = FileUtils.readFile(configPath);
-          config = JSON.parse(configContent);
+          config = JSON.parse(configContent) as TemplateConfig;
         } catch (error) {
           console.warn(`模板配置文件解析失败: ${templateName}`);
         }
