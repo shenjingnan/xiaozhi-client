@@ -42,7 +42,6 @@
     "projects": [
       "cli",
       "config",
-      "mcp-core",
       "endpoint",
       "esp32",
       "calculator-mcp",

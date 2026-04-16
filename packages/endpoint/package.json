@@ -32,7 +32,6 @@
   },
   "dependencies": {
     "ws": "^8.14.2",
-    "@xiaozhi-client/mcp-core": "workspace:*",
     "@xiaozhi-client/config": "workspace:*"
   },
   "peerDependencies": {

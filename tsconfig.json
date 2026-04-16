@@ -28,7 +28,8 @@
     "resolveJsonModule": true,
     "paths": {
       "@xiaozhi-client/version": ["./src/utils/version.ts"],
-      "@xiaozhi-client/shared-types": ["./src/types/index.ts"]
+      "@xiaozhi-client/shared-types": ["./src/types/index.ts"],
+      "@xiaozhi-client/mcp-core": ["./src/mcp-core/index.ts"]
     }
   },
   "include": ["apps/backend/**/*", "packages/**/*", "mcps/**/*", "src/**/*"],
@@ -36,7 +37,6 @@
   "references": [
     { "path": "./apps/backend" },
     { "path": "./packages/config" },
-    { "path": "./packages/mcp-core" },
     { "path": "./packages/cli" },
     { "path": "./packages/endpoint" },
     { "path": "./mcps/calculator-mcp" },

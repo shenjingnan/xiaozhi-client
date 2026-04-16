@@ -1,23 +1,27 @@
-import { dirname } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
-// ESM 兼容的 __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default defineConfig({
   test: {
-    globals: true,
     environment: "node",
-    testTimeout: 10000,
-    hookTimeout: 10000,
-    include: ["src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-    exclude: ["**/node_modules", "dist"],
   },
   resolve: {
     alias: {
-      "@": __dirname,
+      "@xiaozhi-client/mcp-core": resolve(
+        __dirname,
+        "../../src/mcp-core/index.ts"
+      ),
+    },
+  },
+  esbuild: {
+    define: {
+      // 构建时注入的版本号常量（测试环境使用固定值）
+      __VERSION__: JSON.stringify("2.3.0-beta.6"),
+      __APP_NAME__: JSON.stringify("xiaozhi-client"),
     },
   },
 });
