@@ -9,8 +9,8 @@
  * - CustomMCPHandler: 自定义 MCP 处理器，处理 Coze 工作流等自定义工具
  * - ToolCallLogger: 工具调用记录器，提供 JSONL 格式的记录功能
  * - ToolCallLogService: 工具调用日志服务，提供查询功能
- * - 类型定义: MCP 相关的所有 TypeScript 类型定义
- * - 工具函数: MCP 工具调用的辅助函数
+ * - 类型定义: MCP 相关的所有 TypeScript 类型定义（从 @xiaozhi-client/mcp-core 重新导出）
+ * - 工具函数: MCP 工具调用的辅助函数（从 @xiaozhi-client/mcp-core 重新导出）
  *
  * @packageDocumentation
  *
@@ -29,11 +29,32 @@
  * const result = await manager.callTool('tool-name', { param: 'value' });
  * ```
  */
+
+// =========================
+// 本地实现模块导出
+// =========================
+
 export * from "@/lib/mcp/manager.js";
 export * from "@/lib/mcp/connection.js";
-export * from "@/lib/mcp/types.js";
-export * from "@/lib/mcp/utils.js";
 export * from "./message.js";
 export * from "@/lib/mcp/cache.js";
 export * from "./custom.js";
 export * from "./log.js";
+
+// =========================
+// 从本地 types.ts 导出
+// =========================
+
+export * from "@/lib/mcp/types.js";
+
+// =========================
+// 从 @xiaozhi-client/mcp-core 重新导出工具函数
+// =========================
+
+export {
+  inferTransportTypeFromUrl,
+  inferTransportTypeFromConfig,
+  validateToolCallParams,
+  TypeFieldNormalizer,
+  normalizeTypeField,
+} from "@xiaozhi-client/mcp-core";
