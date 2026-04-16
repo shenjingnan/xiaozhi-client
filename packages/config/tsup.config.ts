@@ -98,6 +98,9 @@ export default defineConfig({
     "http",
     "https",
     "child_process",
+    // 外部依赖 - 防止将 MCP SDK 及其 CJS 依赖（如 cross-spawn）打包进 ESM 产物
+    "@modelcontextprotocol/sdk",
+    "cross-spawn",
   ],
   onSuccess: async () => {
     // 复制构建产物到 dist/config
