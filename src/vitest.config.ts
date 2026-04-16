@@ -6,7 +6,8 @@ export default defineConfig({
   },
   esbuild: {
     define: {
-      __VERSION__: JSON.stringify("1.9.7"),
+      // 构建时注入的版本号常量（测试环境使用固定值）
+      __VERSION__: JSON.stringify("2.3.0-beta.6"),
       __APP_NAME__: JSON.stringify("xiaozhi-client"),
     },
   },

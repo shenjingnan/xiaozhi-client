@@ -29,7 +29,6 @@
     "@xiaozhi-client/mcp-core": "workspace:*",
     "@xiaozhi-client/shared-types": "workspace:*",
     "univoice": "^0.10.0",
-    "@xiaozhi-client/version": "workspace:*",
     "ajv": "^8.18.0",
     "chalk": "^5.6.0",
     "comment-json": "^4.2.5",

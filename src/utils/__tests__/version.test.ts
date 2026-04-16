@@ -3,7 +3,7 @@
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { VersionUtils } from "../VersionUtils.js";
+import { VersionUtils } from "../version.js";
 
 describe("VersionUtils", () => {
   beforeEach(() => {

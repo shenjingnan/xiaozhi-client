@@ -5,14 +5,15 @@
     "declaration": true,
     "declarationMap": true,
     "outDir": "../../dist/backend",
-    "rootDir": ".",
+    "rootDir": "../../",
     "baseUrl": ".",
     "types": ["vitest/globals"],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@xiaozhi-client/version": ["../../src/utils/version.ts"]
     }
   },
-  "include": ["./**/*.ts"],
+  "include": ["./**/*.ts", "../../src/utils/version.ts"],
   "exclude": [
     "node_modules",
     "dist",
