@@ -15,15 +15,15 @@ export default defineConfig({
     index: resolve(__dirname, "src/index.ts"),
   },
   format: ["esm"],
-  target: "node20",
+  target: "node22",
   outDir: "dist",
   clean: true,
   sourcemap: true,
   dts: {
-    entry: ['src/index.ts'],
+    entry: ["src/index.ts"],
     compilerOptions: {
-      composite: false
-    }
+      composite: false,
+    },
   },
   minify: false,
   splitting: false,

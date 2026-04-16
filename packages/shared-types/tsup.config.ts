@@ -10,12 +10,12 @@ export default defineConfig({
     utils: "src/utils/index.ts",
   },
   format: ["esm"],
-  target: "node20",
+  target: "node22",
   outDir: "./dist",
   dts: {
     compilerOptions: {
-      composite: false
-    }
+      composite: false,
+    },
   }, // 启用 DTS 生成
   clean: true,
   sourcemap: true,
