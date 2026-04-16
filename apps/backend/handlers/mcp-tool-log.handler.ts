@@ -85,9 +85,9 @@ const ToolCallQuerySchema = z
 export class MCPToolLogHandler extends BaseHandler {
   private toolCallLogService: ToolCallLogService;
 
-  constructor() {
+  constructor(toolCallLogService?: ToolCallLogService) {
     super();
-    this.toolCallLogService = new ToolCallLogService();
+    this.toolCallLogService = toolCallLogService ?? new ToolCallLogService();
   }
 
   /**
