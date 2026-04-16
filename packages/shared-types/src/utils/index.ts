@@ -3,14 +3,9 @@
  */
 
 // 超时处理相关类型
-export { TimeoutError } from "./timeout";
+export { TimeoutError, isTimeoutResponse, isTimeoutError } from "./timeout";
 
 export type { TimeoutResponse } from "./timeout";
-
-export {
-  isTimeoutResponse as utilsIsTimeoutResponse,
-  isTimeoutError,
-} from "./timeout";
 
 // 性能监控相关类型
 export type {

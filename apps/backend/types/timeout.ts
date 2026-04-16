@@ -1,39 +1,31 @@
 /**
- * 超时错误类型
+ * 超时处理相关类型定义（backend 专用）
+ *
+ * 本模块从 @xiaozhi-client/shared-types 重新导出共享的超时类型，
+ * 并添加 backend 特有的功能函数。
+ *
+ * 共享类型：
+ * - TimeoutError: 超时错误类型
+ * - TimeoutResponse: 超时响应接口
+ * - isTimeoutResponse: 类型守卫函数
+ * - isTimeoutError: 类型守卫函数
+ *
+ * backend 特有：
+ * - createTimeoutResponse: 创建超时响应的工具函数
+ * - getToolSpecificTimeoutMessage: 获取工具特定的超时提示信息
+ * - getDefaultTimeoutMessage: 获取默认超时提示信息
  */
-export class TimeoutError extends Error {
-  public override readonly name = "TimeoutError" as const;
 
-  constructor(message: string) {
-    super(message);
-    this.name = "TimeoutError";
-    Error.captureStackTrace(this, TimeoutError);
-  }
+// 从 shared-types 重新导出共享类型定义
+export {
+  TimeoutError,
+  isTimeoutResponse,
+  isTimeoutError,
+} from "@xiaozhi-client/shared-types";
 
-  toJSON() {
-    return {
-      name: this.name,
-      message: this.message,
-      stack: this.stack,
-    };
-  }
-}
+export type { TimeoutResponse } from "@xiaozhi-client/shared-types";
 
-/**
- * 超时响应接口
- */
-export interface TimeoutResponse {
-  content: Array<{
-    type: "text";
-    text: string;
-  }>;
-  isError: boolean;
-  taskId: string;
-  status: "timeout";
-  message: string;
-  nextAction: string;
-  [key: string]: unknown; // 支持其他未知字段，与 ToolCallResult 保持兼容
-}
+import type { TimeoutResponse } from "@xiaozhi-client/shared-types";
 
 /**
  * 创建超时响应的工具函数
@@ -70,7 +62,7 @@ function getToolSpecificTimeoutMessage(
 ): string {
   const toolMessages: Record<string, string> = {
     coze_workflow: `⏱️ 扣子工作流执行超时，正在后台处理中...
-    
+
 📋 任务信息：
 - 任务ID: ${taskId}
 - 工具类型: 扣子工作流
@@ -81,11 +73,9 @@ function getToolSpecificTimeoutMessage(
 1. 使用相同参数重新调用工具
 2. 系统会自动返回已完成的任务结果
 3. 复杂工作流可能需要更长时间处理`,
-
-    default: getDefaultTimeoutMessage(taskId),
   };
 
-  return toolMessages[toolName] || toolMessages.default;
+  return toolMessages[toolName] || getDefaultTimeoutMessage(taskId);
 }
 
 /**
@@ -93,7 +83,7 @@ function getToolSpecificTimeoutMessage(
  */
 function getDefaultTimeoutMessage(taskId: string): string {
   return `⏱️ 工具调用超时，正在后台处理中...
-    
+
 📋 任务信息：
 - 任务ID: ${taskId}
 - 状态: 处理中
@@ -103,29 +93,4 @@ function getDefaultTimeoutMessage(taskId: string): string {
 1. 使用相同的参数重新调用工具
 2. 系统会自动返回已完成的任务结果
 3. 如果长时间未完成，请联系管理员`;
-}
-
-/**
- * 验证是否为超时响应
- */
-export function isTimeoutResponse(response: any): response is TimeoutResponse {
-  return !!(
-    response &&
-    response.status === "timeout" &&
-    typeof response.taskId === "string" &&
-    Array.isArray(response.content) &&
-    response.content.length > 0 &&
-    response.content[0].type === "text"
-  );
-}
-
-/**
- * 验证是否为超时错误
- */
-export function isTimeoutError(error: any): error is TimeoutError {
-  return !!(
-    error &&
-    error.name === "TimeoutError" &&
-    error instanceof TimeoutError
-  );
 }
