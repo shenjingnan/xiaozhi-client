@@ -2,12 +2,9 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "src",
+    "rootDir": "../../",
     "composite": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"],
-  "references": [
-    { "path": "../mcp-core" }
-  ]
+  "include": ["src/**/*", "../../src/mcp-core/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { defineConfig } from "tsup";
 
 export default defineConfig({
@@ -24,6 +25,28 @@ export default defineConfig({
       options.drop = ["console", "debugger"];
     }
     options.resolveExtensions = [".ts", ".js", ".json"];
+
+    // mcp-core 已迁移到 src/mcp-core/，添加 alias 解析
+    options.plugins = options.plugins || [];
+    options.plugins.push({
+      name: "mcp-core-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/mcp-core(\/.*)?$/ },
+          (args) => {
+            const subPath = args.path.replace("@xiaozhi-client/mcp-core", "");
+            if (subPath) {
+              return {
+                path: resolve(`../../src/mcp-core${subPath}.ts`),
+              };
+            }
+            return {
+              path: resolve("../../src/mcp-core/index.ts"),
+            };
+          }
+        );
+      },
+    });
   },
   external: [
     // Node.js 内置模块

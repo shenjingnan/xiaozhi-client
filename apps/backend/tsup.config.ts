@@ -114,6 +114,27 @@ export default defineConfig({
       },
     });
 
+    // mcp-core 已迁移到 src/mcp-core/，添加 alias 解析
+    options.plugins.push({
+      name: "mcp-core-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/mcp-core(\/.*)?$/ },
+          (args) => {
+            const subPath = args.path.replace("@xiaozhi-client/mcp-core", "");
+            if (subPath) {
+              return {
+                path: resolve(`../../src/mcp-core${subPath}.ts`),
+              };
+            }
+            return {
+              path: resolve("../../src/mcp-core/index.ts"),
+            };
+          }
+        );
+      },
+    });
+
     // 确保能够解析路径别名
     if (!options.external) {
       options.external = [];
