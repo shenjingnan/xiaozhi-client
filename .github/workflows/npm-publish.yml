@@ -88,7 +88,6 @@ jobs:
 
       - name: 安装依赖
         run: |
-          npm install -g npm@latest
           pnpm install --frozen-lockfile
 
       - name: 发布到 npm
