@@ -80,7 +80,7 @@ jobs:
         retry_on: error
         command: pnpm run test:coverage
 
-    # 上传覆盖率（仅 Ubuntu + Node 22.x）
+    # 上传覆盖率（仅 Ubuntu，Node 版本由 .nvmrc 决定）
     - name: 上传覆盖率报告
       uses: codecov/codecov-action@v4
       if: matrix.os == 'ubuntu-latest'
