@@ -1175,6 +1175,27 @@ export class ConfigManager {
   }
 
   /**
+   * 更新心跳检测间隔（毫秒）
+   */
+  public updateHeartbeatInterval(interval: number): void {
+    this.updateConnectionConfig({ heartbeatInterval: interval });
+  }
+
+  /**
+   * 更新心跳超时时间（毫秒）
+   */
+  public updateHeartbeatTimeout(timeout: number): void {
+    this.updateConnectionConfig({ heartbeatTimeout: timeout });
+  }
+
+  /**
+   * 更新重连间隔（毫秒）
+   */
+  public updateReconnectInterval(interval: number): void {
+    this.updateConnectionConfig({ reconnectInterval: interval });
+  }
+
+  /**
    * 更新工具使用统计信息（MCP 服务工具）
    * @param serverName 服务名称
    * @param toolName 工具名称

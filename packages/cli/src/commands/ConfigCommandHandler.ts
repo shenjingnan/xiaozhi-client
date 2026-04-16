@@ -4,14 +4,38 @@
 
 import path from "node:path";
 import chalk from "chalk";
-import ora from "ora";
+import ora, { type Ora } from "ora";
+import type {
+  LocalMCPServerConfig,
+  SSEMCPServerConfig,
+} from "@xiaozhi-client/shared-types";
 import type { SubCommand } from "../interfaces/Command";
 import { BaseCommandHandler } from "../interfaces/Command";
 import type {
   CommandArguments,
   CommandOptions,
 } from "../interfaces/CommandTypes";
-import type { IDIContainer } from "../interfaces/Config";
+import type {
+  CLIConfigManager,
+  CLIMCPServerConfig,
+  IDIContainer,
+} from "../interfaces/Config";
+
+/**
+ * 检查是否是 SSE 类型服务器配置（类型守卫）
+ */
+function isSSEConfig(config: CLIMCPServerConfig): config is SSEMCPServerConfig {
+  return "type" in config && config.type === "sse";
+}
+
+/**
+ * 检查配置是否有 command 字段（类型守卫）
+ */
+function hasCommand(
+  config: CLIMCPServerConfig
+): config is LocalMCPServerConfig {
+  return "command" in config;
+}
 
 /**
  * 配置管理命令处理器
@@ -79,7 +103,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
         throw new Error("格式必须是 json, json5 或 jsonc");
       }
 
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<CLIConfigManager>("configManager");
 
       if (configManager.configExists()) {
         spinner.warn("配置文件已存在");
@@ -113,8 +137,8 @@ export class ConfigCommandHandler extends BaseCommandHandler {
   /**
    * 确保配置文件存在，如果不存在则显示提示并返回 false
    */
-  private async ensureConfigExists(spinner: ora.Ora): Promise<boolean> {
-    const configManager = this.getService<any>("configManager");
+  private async ensureConfigExists(spinner: Ora): Promise<boolean> {
+    const configManager = this.getService<CLIConfigManager>("configManager");
 
     if (!configManager.configExists()) {
       spinner.fail("配置文件不存在");
@@ -138,7 +162,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
         return;
       }
 
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<CLIConfigManager>("configManager");
       const config = configManager.getConfig();
 
       switch (key) {
@@ -163,14 +187,14 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           for (const [name, serverConfig] of Object.entries(
             config.mcpServers
           )) {
-            const server = serverConfig as any;
+            const server = serverConfig as CLIMCPServerConfig;
             // 检查是否是 SSE 类型
-            if ("type" in server && server.type === "sse") {
+            if (isSSEConfig(server)) {
               console.log(chalk.gray(`  ${name}: [SSE] ${server.url}`));
-            } else {
+            } else if (hasCommand(server)) {
               console.log(
                 chalk.gray(
-                  `  ${name}: ${server.command} ${server.args.join(" ")}`
+                  `  ${name}: ${server.command} ${(server.args || []).join(" ")}`
                 )
               );
             }
@@ -242,7 +266,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
         return;
       }
 
-      const configManager = this.getService<any>("configManager");
+      const configManager = this.getService<CLIConfigManager>("configManager");
 
       switch (key) {
         case "mcpEndpoint":

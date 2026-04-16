@@ -3,7 +3,10 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IDIContainer } from "../../interfaces/Config";
+import type {
+  CLIConfigManager,
+  IDIContainer,
+} from "../../interfaces/Config";
 import { ConfigCommandHandler } from "../ConfigCommandHandler";
 
 // Mock ora
@@ -33,7 +36,7 @@ vi.mock("chalk", () => ({
 }));
 
 // Mock dependencies
-const mockConfigManager = {
+const mockConfigManager: CLIConfigManager = {
   configExists: vi.fn(),
   initConfig: vi.fn(),
   getConfig: vi.fn(),
