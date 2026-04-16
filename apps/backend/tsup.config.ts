@@ -123,12 +123,43 @@ export default defineConfig({
           (args) => {
             const subPath = args.path.replace("@xiaozhi-client/mcp-core", "");
             if (subPath) {
+              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
+              const normalizedSubPath = subPath.replace(
+                /\.(?:[cm]?js|ts)$/,
+                ""
+              );
               return {
-                path: resolve(`../../src/mcp-core${subPath}.ts`),
+                path: resolve(`../../src/mcp-core${normalizedSubPath}.ts`),
               };
             }
             return {
               path: resolve("../../src/mcp-core/index.ts"),
+            };
+          }
+        );
+      },
+    });
+
+    // config 已迁移到 src/config/，添加 alias 解析
+    options.plugins.push({
+      name: "config-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/config(\/.*)?$/ },
+          (args) => {
+            const subPath = args.path.replace("@xiaozhi-client/config", "");
+            if (subPath) {
+              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
+              const normalizedSubPath = subPath.replace(
+                /\.(?:[cm]?js|ts)$/,
+                ""
+              );
+              return {
+                path: resolve(`../../src/config${normalizedSubPath}.ts`),
+              };
+            }
+            return {
+              path: resolve("../../src/config/index.ts"),
             };
           }
         );
@@ -181,8 +212,6 @@ export default defineConfig({
     "@modelcontextprotocol/*",
     "prism-media",
     // @xiaozhi-client 内部包（运行时从 dist 读取）
-    "@xiaozhi-client/config",
-    "@xiaozhi-client/config.js",
     "@xiaozhi-client/endpoint",
     "@xiaozhi-client/mcp-core",
     "@xiaozhi-client/esp32",

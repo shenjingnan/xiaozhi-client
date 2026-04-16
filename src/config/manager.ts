@@ -44,6 +44,7 @@ import { createJson5Writer, parseJson5 } from "./json5-adapter.js";
 import { ConfigResolver } from "./resolver.js";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
+// 迁移后：src/config/manager.ts → __dirname = src/config/
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // 默认连接配置
@@ -159,7 +160,7 @@ export interface ProxyHandlerConfig {
     timeout?: number;
     retry_count?: number;
     retry_delay?: number;
-    headers?: Record<string, string>;
+    headers?: Record<string, unknown>;
     params?: Record<string, unknown>;
   };
 }
@@ -316,12 +317,20 @@ export class ConfigManager {
   private constructor() {
     // 使用模板目录中的默认配置文件
     // 在不同环境中尝试不同的路径
+    //
+    // 迁移后 __dirname = src/config/（开发环境）或 dist/config/（构建后）
+    // 项目根目录的 templates/default/ 在 __dirname 的上两级
     const possiblePaths = [
-      // 构建后的环境：dist/configManager.js -> dist/templates/default/xiaozhi.config.json
-      resolve(__dirname, "templates", "default", "xiaozhi.config.json"),
-      // 开发环境：src/configManager.ts -> templates/default/xiaozhi.config.json
-      resolve(__dirname, "..", "templates", "default", "xiaozhi.config.json"),
-      // 测试环境或其他情况
+      // src/config/ 或 dist/config/ → 项目根 templates/default/xiaozhi.config.json
+      resolve(
+        __dirname,
+        "..",
+        "..",
+        "templates",
+        "default",
+        "xiaozhi.config.json"
+      ),
+      // 从 CWD 查找（兼容各种启动场景）
       resolve(process.cwd(), "templates", "default", "xiaozhi.config.json"),
     ];
 
@@ -2209,8 +2218,8 @@ export class ConfigManager {
     const timeout = this.statsUpdateLockTimeouts.get(toolKey);
     if (timeout) {
       clearTimeout(timeout);
-      this.statsUpdateLockTimeouts.delete(toolKey);
     }
+    this.statsUpdateLockTimeouts.delete(toolKey);
 
     console.log("已释放工具的统计更新锁", { toolKey });
   }

@@ -8,6 +8,10 @@
     "declaration": true,
     "declarationMap": true
   },
-  "include": ["src/**/*.ts", "../../src/mcp-core/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "../../src/mcp-core/**/*.ts",
+    "../../src/config/**/*.ts"
+  ],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

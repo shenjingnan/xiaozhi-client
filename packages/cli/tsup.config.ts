@@ -49,6 +49,58 @@ export default defineConfig({
         );
       },
     });
+
+    // config 已迁移到 src/config/，添加 alias 解析
+    options.plugins.push({
+      name: "config-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/config(\/.*)?$/ },
+          (args) => {
+            const subPath = args.path.replace("@xiaozhi-client/config", "");
+            if (subPath) {
+              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
+              const normalizedSubPath = subPath.replace(
+                /\.(?:[cm]?js|ts)$/,
+                ""
+              );
+              return {
+                path: resolve(`../../src/config${normalizedSubPath}.ts`),
+              };
+            }
+            return {
+              path: resolve("../../src/config/index.ts"),
+            };
+          }
+        );
+      },
+    });
+
+    // mcp-core 已迁移到 src/mcp-core/，添加 alias 解析
+    options.plugins.push({
+      name: "mcp-core-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/mcp-core(\/.*)?$/ },
+          (args) => {
+            const subPath = args.path.replace("@xiaozhi-client/mcp-core", "");
+            if (subPath) {
+              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
+              const normalizedSubPath = subPath.replace(
+                /\.(?:[cm]?js|ts)$/,
+                ""
+              );
+              return {
+                path: resolve(`../../src/mcp-core${normalizedSubPath}.ts`),
+              };
+            }
+            return {
+              path: resolve("../../src/mcp-core/index.ts"),
+            };
+          }
+        );
+      },
+    });
   },
   external: [
     // Node.js 内置模块
@@ -73,10 +125,15 @@ export default defineConfig({
     "ora",
     "express",
     "cli-table3",
-    // @xiaozhi-client/config 包（运行时从 dist/config 读取）
-    "@xiaozhi-client/config",
-    "@xiaozhi-client/config.js",
+    // config 已迁移到 src/config/，通过 alias 解析（不再 external）
     // version 已迁移到 src/utils/version.ts，通过 alias 解析（不再 external）
+    // src/config/ 依赖的第三方包（不打包，运行时从 node_modules 加载）
+    "comment-json",
+    "core-util-is",
+    "dayjs",
+    // src/mcp-core/ 依赖的第三方包（不打包，运行时从 node_modules 加载）
+    "@modelcontextprotocol/sdk",
+    "eventsource",
     // Backend 模块（运行时从 dist/backend 读取）
     "@/WebServer",
     "@/WebServer.js",

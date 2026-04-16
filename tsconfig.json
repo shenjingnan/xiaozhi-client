@@ -29,14 +29,14 @@
     "paths": {
       "@xiaozhi-client/version": ["./src/utils/version.ts"],
       "@xiaozhi-client/shared-types": ["./src/types/index.ts"],
-      "@xiaozhi-client/mcp-core": ["./src/mcp-core/index.ts"]
+      "@xiaozhi-client/mcp-core": ["./src/mcp-core/index.ts"],
+      "@xiaozhi-client/config": ["./src/config/index.ts"]
     }
   },
   "include": ["apps/backend/**/*", "packages/**/*", "mcps/**/*", "src/**/*"],
   "exclude": ["node_modules", "dist", "scripts/**/*", "templates/**/*"],
   "references": [
     { "path": "./apps/backend" },
-    { "path": "./packages/config" },
     { "path": "./packages/cli" },
     { "path": "./packages/endpoint" },
     { "path": "./mcps/calculator-mcp" },

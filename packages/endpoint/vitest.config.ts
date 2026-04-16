@@ -22,6 +22,7 @@ export default defineConfig({
         __dirname,
         "../../src/mcp-core/index.ts"
       ),
+      "@xiaozhi-client/config": resolve(__dirname, "../../src/config/index.ts"),
     },
   },
 });

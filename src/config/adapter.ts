@@ -4,6 +4,10 @@
  */
 
 import { dirname, isAbsolute, resolve } from "node:path";
+import {
+  MCPTransportType,
+  inferTransportTypeFromUrl,
+} from "@xiaozhi-client/mcp-core";
 import type {
   HTTPMCPServerConfig,
   LocalMCPServerConfig,
@@ -11,7 +15,6 @@ import type {
   SSEMCPServerConfig,
 } from "./manager.js";
 import { ConfigResolver } from "./resolver.js";
-import { MCPTransportType, inferTransportTypeFromUrl } from "@xiaozhi-client/mcp-core";
 
 // 从外部导入 MCP 类型（这些类型将在运行时从 backend 包解析）
 // 为了避免循环依赖，这里使用动态导入的方式
@@ -172,7 +175,7 @@ function convertLocalConfig(config: MCPServerConfig): MCPServiceConfig {
     type: MCPTransportType.STDIO,
     command: resolvedCommand,
     args: resolvedArgs,
-    ...(env !== undefined && { env }), // 只在 env 存在时添加该字段
+    ...(env !== undefined && { env }), // 只在 env 存在时添加该属性
   };
 }
 
@@ -304,7 +307,7 @@ function isURLConfig(
 
 /**
  * 检查是否为 ModelScope URL
- * 使用 URL hostname 检查而非简单的字符串包含检查，防止安全绕过
+ * 使用 URL hostname 检测而非简单的字符串包含检查，防止安全绕过
  */
 export function isModelScopeURL(url: string): boolean {
   try {
@@ -394,7 +397,7 @@ export function getConfigTypeDescription(config: MCPServerConfig): string {
     return `HTTP (${config.url})`;
   }
 
-  return "未知类型";
+  return "未知";
 }
 
 // 重新导出 MCPTransportType 以保持向后兼容

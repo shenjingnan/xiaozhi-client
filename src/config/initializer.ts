@@ -3,8 +3,14 @@
  * 负责在用户家目录创建默认配置
  */
 
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+} from "node:fs";
 import path from "node:path";
-import { mkdirSync, existsSync, rmSync, readdirSync, statSync, copyFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -41,19 +47,17 @@ export class ConfigInitializer {
     mkdirSync(xiaozhiClientDir, { recursive: true });
 
     // 获取默认模板目录路径
-    const defaultTemplateDir = this.getDefaultTemplateDir();
+    const defaultTemplateDir = ConfigInitializer.getDefaultTemplateDir();
     if (!defaultTemplateDir) {
-      throw new Error(
-        "默认配置模板不存在，请检查项目模板文件是否存在"
-      );
+      throw new Error("默认配置模板不存在，请检查项目模板文件是否存在");
     }
 
     // 复制整个模板目录
-    this.copyDirectoryRecursive(defaultTemplateDir, xiaozhiClientDir, [
-      "template.json",
-      ".git",
-      "node_modules",
-    ]);
+    ConfigInitializer.copyDirectoryRecursive(
+      defaultTemplateDir,
+      xiaozhiClientDir,
+      ["template.json", ".git", "node_modules"]
+    );
 
     return xiaozhiClientDir;
   }
@@ -85,7 +89,7 @@ export class ConfigInitializer {
       if (stat.isDirectory()) {
         // 递归复制子目录
         mkdirSync(destPath, { recursive: true });
-        this.copyDirectoryRecursive(srcPath, destPath, exclude);
+        ConfigInitializer.copyDirectoryRecursive(srcPath, destPath, exclude);
       } else {
         // 复制文件
         copyFileSync(srcPath, destPath);
@@ -102,16 +106,10 @@ export class ConfigInitializer {
    */
   private static getDefaultTemplateDir(): string | null {
     const possiblePaths = [
-      // 开发环境：packages/config/src 目录
-      resolve(__dirname, "templates", "default"),
-      // 开发环境：packages/config 目录
-      resolve(__dirname, "..", "templates", "default"),
-      // 项目根目录的 templates
+      // 迁移后：src/config/ 或 dist/config/ → 项目根 templates/default/
+      resolve(__dirname, "..", "..", "templates", "default"),
+      // 从 CWD 查找（兼容各种启动场景）
       resolve(process.cwd(), "templates", "default"),
-      // dist 目录（从 packages/config/dist 配置目录）
-      resolve(__dirname, "..", "..", "..", "templates", "default"),
-      // 全局安装的 node_modules 目录
-      resolve(__dirname, "..", "..", "..", "..", "templates", "default"),
     ];
 
     for (const p of possiblePaths) {
