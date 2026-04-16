@@ -45,7 +45,6 @@
       "shared-types",
       "mcp-core",
       "endpoint",
-      "version",
       "esp32",
       "calculator-mcp",
       "datetime-mcp",

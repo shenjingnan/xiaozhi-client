@@ -35,6 +35,20 @@ export default defineConfig({
       __VERSION__: JSON.stringify(pkg.version),
       __APP_NAME__: JSON.stringify(pkg.name),
     };
+
+    // version 已迁移到 src/utils/version.ts，添加 alias 解析
+    options.plugins = options.plugins || [];
+    options.plugins.push({
+      name: "version-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/version(\/.*)?$/ },
+          () => ({
+            path: resolve("../../src/utils/version.ts"),
+          })
+        );
+      },
+    });
   },
   external: [
     // Node.js 内置模块
@@ -62,9 +76,7 @@ export default defineConfig({
     // @xiaozhi-client/config 包（运行时从 dist/config 读取）
     "@xiaozhi-client/config",
     "@xiaozhi-client/config.js",
-    // @xiaozhi-client/version 包（运行时从 dist/version 读取）
-    "@xiaozhi-client/version",
-    "@xiaozhi-client/version.js",
+    // version 已迁移到 src/utils/version.ts，通过 alias 解析（不再 external）
     // Backend 模块（运行时从 dist/backend 读取）
     "@/WebServer",
     "@/WebServer.js",

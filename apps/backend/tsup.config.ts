@@ -2,12 +2,16 @@ import {
   copyFileSync,
   existsSync,
   mkdirSync,
+  readFileSync,
   readdirSync,
   statSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { defineConfig } from "tsup";
+
+// 读取根目录 package.json 获取版本号
+const rootPkg = JSON.parse(readFileSync(resolve("../../package.json"), "utf8"));
 
 /**
  * 递归复制目录 - 跨平台实现
@@ -64,6 +68,27 @@ export default defineConfig({
 
     // 添加路径别名支持
     options.resolveExtensions = [".ts", ".js", ".json"];
+
+    // 构建时注入版本号常量
+    options.define = {
+      ...options.define,
+      __VERSION__: JSON.stringify(rootPkg.version),
+      __APP_NAME__: JSON.stringify(rootPkg.name),
+    };
+
+    // version 已迁移到 src/utils/version.ts，添加 alias 解析
+    options.plugins = options.plugins || [];
+    options.plugins.push({
+      name: "version-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/version(\/.*)?$/ },
+          () => ({
+            path: resolve("../../src/utils/version.ts"),
+          })
+        );
+      },
+    });
 
     // 确保能够解析路径别名
     if (!options.external) {

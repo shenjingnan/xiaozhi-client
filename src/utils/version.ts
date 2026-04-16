@@ -1,4 +1,23 @@
 /**
+ * 全局常量类型声明
+ *
+ * 这些常量由构建工具在构建时注入
+ */
+declare global {
+  const __VERSION__: string;
+  const __APP_NAME__: string;
+}
+
+/**
+ * 版本号常量（构建时注入）
+ *
+ * 如果构建时能读取到 package.json，则为真实版本号
+ * 否则为占位符，运行时从 package.json 读取
+ */
+export const VERSION = __VERSION__;
+export const APP_NAME = __APP_NAME__;
+
+/**
  * 版本管理工具
  *
  * 提供版本号获取、比较、验证等功能
@@ -7,7 +26,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { APP_NAME, VERSION } from "./version-constants.js";
 
 /**
  * 版本信息接口
@@ -113,10 +131,10 @@ export class VersionUtils {
     const currentDir = path.dirname(__filename);
 
     const possiblePaths = [
-      // 从 packages/version/dist/version/index.js 到项目根目录的 package.json
-      path.join(currentDir, "..", "..", "..", "package.json"),
-      // 从 dist/version/index.js 到项目根目录的 package.json
+      // 从 src/utils/version.js 到项目根目录的 package.json
       path.join(currentDir, "..", "..", "package.json"),
+      // 从 dist/utils/version.js 到项目根目录的 package.json
+      path.join(currentDir, "..", "..", "..", "package.json"),
       // 全局安装环境
       path.join(currentDir, "..", "..", "..", "..", "package.json"),
     ];
