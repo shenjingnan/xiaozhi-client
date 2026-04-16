@@ -85,9 +85,6 @@ importers:
       '@xiaozhi-client/mcp-core':
         specifier: workspace:*
         version: link:packages/mcp-core
-      '@xiaozhi-client/shared-types':
-        specifier: workspace:*
-        version: link:packages/shared-types
       ajv:
         specifier: ^8.18.0
         version: 8.18.0
@@ -260,9 +257,6 @@ importers:
       '@xiaozhi-client/mcp-core':
         specifier: workspace:*
         version: link:../../packages/mcp-core
-      '@xiaozhi-client/shared-types':
-        specifier: workspace:*
-        version: link:../../packages/shared-types
       ajv:
         specifier: ^8.18.0
         version: 8.18.0
@@ -399,9 +393,6 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@xiaozhi-client/shared-types':
-        specifier: workspace:*
-        version: link:../../packages/shared-types
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -682,9 +673,6 @@ importers:
 
   packages/esp32:
     dependencies:
-      '@xiaozhi-client/shared-types':
-        specifier: workspace:*
-        version: link:../shared-types
       openai:
         specifier: ^4.73.0
         version: 4.104.0(ws@8.19.0)(zod@4.3.6)
@@ -744,18 +732,6 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(esbuild@0.27.3)(happy-dom@20.8.9)(jiti@2.6.1)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.3)
-
-  packages/shared-types:
-    devDependencies:
-      '@types/node':
-        specifier: ^24.3.0
-        version: 24.10.9
-      tsup:
-        specifier: ^8.3.5
-        version: 8.5.1(jiti@2.6.1)(postcss@8.5.9)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
 
 packages:
 

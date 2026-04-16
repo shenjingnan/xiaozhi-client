@@ -64,7 +64,6 @@
     "@xiaozhi-client/endpoint": "workspace:*",
     "@xiaozhi-client/esp32": "workspace:*",
     "@xiaozhi-client/mcp-core": "workspace:*",
-    "@xiaozhi-client/shared-types": "workspace:*",
     "ajv": "^8.18.0",
     "chalk": "^5.6.0",
     "cli-table3": "^0.6.5",

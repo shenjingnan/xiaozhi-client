@@ -2,9 +2,12 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] },
+    "paths": {
+      "@/*": ["src/*"],
+      "@xiaozhi-client/shared-types": ["../../src/types/index.ts"]
+    },
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "../../",
     "composite": true,
     "lib": ["ES2022"],
     "noUnusedLocals": true,
@@ -12,6 +15,6 @@
     "noPropertyAccessFromIndexSignature": false,
     "allowJs": false
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../../src/types/**/*"],
   "exclude": ["node_modules", "dist", "__tests__"]
 }

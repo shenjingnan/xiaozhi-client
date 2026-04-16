@@ -2,7 +2,7 @@
  * 扣子工作流相关类型定义
  */
 
-import type { JSONSchema } from "../mcp/schema.js";
+import type { JSONSchema } from "../mcp/index.js";
 
 /**
  * 扣子工作流创建者信息

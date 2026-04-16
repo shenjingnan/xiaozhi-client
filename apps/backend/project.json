@@ -10,7 +10,7 @@
         "command": "pnpm --filter backend run build"
       },
       "outputs": ["{workspaceRoot}/dist/backend"],
-      "dependsOn": ["shared-types:build", "config:build"]
+      "dependsOn": ["config:build"]
     },
     "test": {
       "executor": "nx:run-commands",
@@ -65,5 +65,5 @@
     }
   },
   "tags": ["type:app", "platform:node"],
-  "implicitDependencies": ["shared-types"]
+  "implicitDependencies": []
 }

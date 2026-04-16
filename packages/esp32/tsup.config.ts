@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { defineConfig } from "tsup";
 
 export default defineConfig({
@@ -24,6 +25,27 @@ export default defineConfig({
       options.drop = ["console", "debugger"];
     }
     options.resolveExtensions = [".ts", ".js", ".json"];
+
+    // shared-types 已迁移到 src/types/，添加 alias 解析
+    options.plugins = options.plugins || [];
+    options.plugins.push({
+      name: "shared-types-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/shared-types(\/.*)?$/ },
+          (args) => {
+            const subPath = args.path.replace(
+              "@xiaozhi-client/shared-types",
+              ""
+            );
+            if (subPath) {
+              return { path: resolve(`../src/types${subPath}/index.ts`) };
+            }
+            return { path: resolve("../src/types/index.ts") };
+          }
+        );
+      },
+    });
   },
   external: [
     // Node.js 内置模块
@@ -39,8 +61,6 @@ export default defineConfig({
     "node:https",
     "node:net",
     "node:crypto",
-    // workspace 包（不打包）
-    "@xiaozhi-client/shared-types",
     // peerDependencies
     "openai",
     "prism-media",
