@@ -81,6 +81,18 @@ export interface DaemonManager {
 }
 
 /**
+ * 模板配置文件（template.json）结构定义
+ */
+export interface TemplateConfig {
+  /** 模板描述 */
+  description?: string;
+  /** 模板版本 */
+  version?: string;
+  /** 模板作者 */
+  author?: string;
+}
+
+/**
  * 模板信息接口
  */
 export interface TemplateInfo {
