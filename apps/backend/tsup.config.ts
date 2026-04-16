@@ -97,7 +97,10 @@ export default defineConfig({
         build.onResolve(
           { filter: /^@xiaozhi-client\/shared-types(\/.*)?$/ },
           (args) => {
-            const subPath = args.path.replace("@xiaozhi-client/shared-types", "");
+            const subPath = args.path.replace(
+              "@xiaozhi-client/shared-types",
+              ""
+            );
             if (subPath) {
               return {
                 path: resolve(`../../src/types${subPath}/index.ts`),
