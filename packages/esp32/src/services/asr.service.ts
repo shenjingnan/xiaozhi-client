@@ -63,6 +63,9 @@ export class ASRService implements IASRService {
   /** 每个设备的 Opus 数据包队列（用于 decodeOpusStream 流式解码） */
   private readonly opusQueues = new Map<string, Buffer[]>();
 
+  /** 每个设备的队列读取索引（用于避免 shift() 的 O(n) 开销） */
+  private readonly queueIndices = new Map<string, number>();
+
   /** 每个设备的是否已结束音频输入 */
   private readonly audioEnded = new Map<string, boolean>();
 
@@ -347,6 +350,10 @@ export class ASRService implements IASRService {
    * 服务端收到结束标记后才会发出 isLastPackage=true（isFinal=true）
    *
    * 产出的 Opus 包流将由 decodeOpusStream 统一解码为 PCM 流
+   *
+   * 性能优化：使用索引指针代替 shift()，避免每次操作的 O(n) 数组移动开销
+   * 定期清理已处理的元素，使整体复杂度变为摊还 O(1)
+   *
    * @param deviceId - 设备 ID
    * @returns 异步生成器，产出原始 Opus Buffer
    */
@@ -354,14 +361,23 @@ export class ASRService implements IASRService {
     deviceId: string
   ): AsyncGenerator<Buffer, void, unknown> {
     const queue = this.opusQueues.get(deviceId) || [];
+    // 使用索引指针避免 shift() 的 O(n) 开销
+    let queueIndex = this.queueIndices.get(deviceId) || 0;
+    // 清理阈值：每处理 50 个包后清理一次
+    const CLEANUP_THRESHOLD = 50;
 
     while (true) {
       // 等待队列中有数据（带超时检测）
       let lastDataTime = Date.now();
 
-      while (queue.length === 0) {
+      while (queueIndex >= queue.length) {
         // 检查是否已通过 end() 手动标记结束
         if (this.audioEnded.get(deviceId)) {
+          // 清理已处理的所有元素
+          if (queueIndex > 0) {
+            queue.splice(0, queueIndex);
+            this.queueIndices.set(deviceId, 0);
+          }
           this.logger.debug(`[ASRService] 音频流结束: deviceId=${deviceId}`);
           return;
         }
@@ -369,6 +385,11 @@ export class ASRService implements IASRService {
         // 静音超时检测：超过阈值无新数据则自动结束音频流
         const elapsed = Date.now() - lastDataTime;
         if (elapsed >= ASRService.SILENCE_TIMEOUT_MS) {
+          // 清理已处理的所有元素
+          if (queueIndex > 0) {
+            queue.splice(0, queueIndex);
+            this.queueIndices.set(deviceId, 0);
+          }
           this.logger.info(
             `[ASRService] 静音超时（${elapsed}ms），自动结束音频流: deviceId=${deviceId}`
           );
@@ -384,10 +405,19 @@ export class ASRService implements IASRService {
         );
       }
 
-      // 从队列取出数据，更新最后数据时间
+      // 从队列读取数据（使用索引指针，O(1) 操作）
       lastDataTime = Date.now();
-      const opusData = queue.shift()!;
+      const opusData = queue[queueIndex];
+      queueIndex++;
+      this.queueIndices.set(deviceId, queueIndex);
       yield opusData;
+
+      // 定期清理已处理的元素（摊还 O(1) 操作）
+      if (queueIndex >= CLEANUP_THRESHOLD) {
+        queue.splice(0, queueIndex);
+        queueIndex = 0;
+        this.queueIndices.set(deviceId, 0);
+      }
     }
   }
 
@@ -469,6 +499,7 @@ export class ASRService implements IASRService {
 
       // 重置音频缓冲区状态，准备下一次识别
       this.opusQueues.set(deviceId, []);
+      this.queueIndices.delete(deviceId);
       this.audioEnded.set(deviceId, false);
       this.logger.info(
         `[ASRService] 音频缓冲区已重置，准备下一次识别: deviceId=${deviceId}`
@@ -535,6 +566,7 @@ export class ASRService implements IASRService {
     // 清理资源
     this.asrClients.delete(deviceId);
     this.opusQueues.delete(deviceId);
+    this.queueIndices.delete(deviceId);
     this.audioEnded.delete(deviceId);
     this.listenTasks.delete(deviceId);
 
@@ -578,6 +610,7 @@ export class ASRService implements IASRService {
     this.asrClients.clear();
     // 清理 V2 API 相关状态
     this.opusQueues.clear();
+    this.queueIndices.clear();
     this.audioEnded.clear();
     this.listenTasks.clear();
     this.deviceStates.clear();

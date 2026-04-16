@@ -52,6 +52,9 @@ export class TTSService implements ITTSService {
   /** 每个设备的 Opus 包缓冲区 */
   private readonly opusPacketBuffer = new Map<string, Buffer[]>();
 
+  /** 每个设备的缓冲区读取索引（用于避免 shift() 的 O(n) 开销） */
+  private readonly bufferIndices = new Map<string, number>();
+
   /** 每个设备是否正在处理缓冲区 */
   private readonly isProcessingBuffer = new Map<string, boolean>();
 
@@ -122,6 +125,7 @@ export class TTSService implements ITTSService {
       this.packetIndices.set(deviceId, 0);
       this.ttsStarted.set(deviceId, false);
       this.opusPacketBuffer.set(deviceId, []);
+      this.bufferIndices.set(deviceId, 0);
       this.isProcessingBuffer.set(deviceId, false);
       this.deviceConnections.set(deviceId, connection);
 
@@ -220,13 +224,17 @@ export class TTSService implements ITTSService {
 
     const check = (): boolean => {
       const buffer = this.opusPacketBuffer.get(deviceId);
+      const bufferIndex = this.bufferIndices.get(deviceId) || 0;
       const isProcessing = this.isProcessingBuffer.get(deviceId);
 
-      // 缓冲区已清空且不在处理中
+      // 缓冲区已清空（或已全部处理）且不在处理中
+      // 使用 bufferIndex 检查确保所有元素已处理，不仅仅是 buffer.length 为 0
+      const isBufferDrained =
+        !buffer || (bufferIndex >= buffer.length && buffer.length === 0);
       this.logger.info(
-        `[TTSService] 缓冲区排空检查: deviceId=${deviceId}, buffer=${buffer?.length}, isProcessing=${isProcessing}`
+        `[TTSService] 缓冲区排空检查: deviceId=${deviceId}, buffer=${buffer?.length}, bufferIndex=${bufferIndex}, isProcessing=${isProcessing}`
       );
-      if ((!buffer || buffer.length === 0) && !isProcessing) {
+      if (isBufferDrained && !isProcessing) {
         this.sendStopAndCleanup(deviceId);
         return true;
       }
@@ -250,6 +258,10 @@ export class TTSService implements ITTSService {
   /**
    * 处理缓冲区中的 Opus 包
    * 使用顺序处理避免并发问题
+   *
+   * 性能优化：使用索引指针代替 shift()，避免每次操作的 O(n) 数组移动开销
+   * 处理完成后一次性清空数组，整体复杂度为 O(n)（仅一次清理）而非 O(n²)
+   *
    * @param deviceId - 设备 ID
    */
   private async processBuffer(deviceId: string): Promise<void> {
@@ -267,8 +279,11 @@ export class TTSService implements ITTSService {
 
     this.isProcessingBuffer.set(deviceId, true);
 
+    // 使用索引指针避免 shift() 的 O(n) 开销
+    let bufferIndex = this.bufferIndices.get(deviceId) || 0;
+
     try {
-      while (buffer.length > 0) {
+      while (bufferIndex < buffer.length) {
         // 首次收到 Opus 包时发送 start 消息
         if (!this.ttsStarted.get(deviceId)) {
           await connection.send({
@@ -282,8 +297,9 @@ export class TTSService implements ITTSService {
           );
         }
 
-        // 从缓冲区取出第一个包
-        const opusPacket = buffer.shift()!;
+        // 从缓冲区读取当前包（使用索引指针，O(1) 操作）
+        const opusPacket = buffer[bufferIndex];
+        bufferIndex++;
 
         // 计算时间戳和时长
         const timestamp = this.cumulativeTimestamps.get(deviceId) || 0;
@@ -300,6 +316,10 @@ export class TTSService implements ITTSService {
         // 流控：按实时速率发送，避免发送过快导致硬件端缓冲区积压
         await new Promise((resolve) => setTimeout(resolve, duration));
       }
+
+      // 所有包处理完成后，一次性清空缓冲区（O(n) 操作，但仅执行一次）
+      buffer.length = 0;
+      this.bufferIndices.set(deviceId, 0);
     } finally {
       this.isProcessingBuffer.set(deviceId, false);
     }
@@ -361,6 +381,7 @@ export class TTSService implements ITTSService {
     this.ttsStarted.delete(deviceId);
     this.ttsTriggered.delete(deviceId);
     this.opusPacketBuffer.delete(deviceId);
+    this.bufferIndices.delete(deviceId);
     this.isProcessingBuffer.delete(deviceId);
     this.deviceConnections.delete(deviceId);
     // 注意：不删除 ttsCompleted，让它保持标记防止重复触发
@@ -462,15 +483,22 @@ export class TTSService implements ITTSService {
       // 使用 Promise 队列确保串行处理
       let isProcessing = false;
       const packetQueue: Buffer[] = [];
+      // 使用索引指针避免 shift() 的 O(n) 开销
+      let packetQueueIndex = 0;
 
       const processQueue = async (): Promise<void> => {
-        if (isProcessing || packetQueue.length === 0) return;
+        if (isProcessing || packetQueueIndex >= packetQueue.length) return;
 
         isProcessing = true;
-        while (packetQueue.length > 0) {
-          const packet = packetQueue.shift()!;
+        while (packetQueueIndex < packetQueue.length) {
+          // 使用索引指针读取（O(1) 操作）
+          const packet = packetQueue[packetQueueIndex];
+          packetQueueIndex++;
           await processPacket(packet);
         }
+        // 所有包处理完成后，一次性清空队列（O(n) 操作，但仅执行一次）
+        packetQueue.length = 0;
+        packetQueueIndex = 0;
         isProcessing = false;
       };
 
@@ -485,7 +513,8 @@ export class TTSService implements ITTSService {
         .on("end", () => {
           // 等待所有包处理完成
           const checkEnd = (): void => {
-            if (packetQueue.length > 0 || isProcessing) {
+            // 使用索引检查确保所有元素已处理
+            if (packetQueueIndex < packetQueue.length || isProcessing) {
               setTimeout(checkEnd, 10);
             } else {
               this.logger.info(
@@ -514,6 +543,7 @@ export class TTSService implements ITTSService {
     this.ttsStarted.clear();
     this.ttsCompleted.clear();
     this.opusPacketBuffer.clear();
+    this.bufferIndices.clear();
     this.isProcessingBuffer.clear();
     this.deviceConnections.clear();
     this.logger.debug("[TTSService] 服务已销毁");
