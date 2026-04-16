@@ -13,6 +13,11 @@ export default defineConfig({
     // 添加 tsconfig 路径解析插件
     tsconfigPaths(),
   ],
+  // 定义构建时注入的常量，测试环境中使用占位符（version.ts 会自动回退到运行时读取）
+  define: {
+    __VERSION__: JSON.stringify("__VERSION__"),
+    __APP_NAME__: JSON.stringify("__APP_NAME__"),
+  },
   test: {
     globals: true,
     environment: "node",
