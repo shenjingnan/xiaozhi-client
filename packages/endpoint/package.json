@@ -31,8 +31,7 @@
     "start:shared": "tsx examples/shared-mcp-to-multi-endpoints.ts"
   },
   "dependencies": {
-    "ws": "^8.14.2",
-    "@xiaozhi-client/config": "workspace:*"
+    "ws": "^8.14.2"
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0"

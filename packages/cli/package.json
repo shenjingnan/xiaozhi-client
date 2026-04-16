@@ -21,7 +21,6 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@xiaozhi-client/config": "workspace:*",
     "chalk": "^5.6.0",
     "cli-table3": "^0.6.5",
     "commander": "^14.0.0",

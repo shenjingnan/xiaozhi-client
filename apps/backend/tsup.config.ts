@@ -135,6 +135,27 @@ export default defineConfig({
       },
     });
 
+    // config 已迁移到 src/config/，添加 alias 解析
+    options.plugins.push({
+      name: "config-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/config(\/.*)?$/ },
+          (args) => {
+            const subPath = args.path.replace("@xiaozhi-client/config", "");
+            if (subPath) {
+              return {
+                path: resolve(`../../src/config${subPath}.ts`),
+              };
+            }
+            return {
+              path: resolve("../../src/config/index.ts"),
+            };
+          }
+        );
+      },
+    });
+
     // 确保能够解析路径别名
     if (!options.external) {
       options.external = [];
@@ -181,8 +202,6 @@ export default defineConfig({
     "@modelcontextprotocol/*",
     "prism-media",
     // @xiaozhi-client 内部包（运行时从 dist 读取）
-    "@xiaozhi-client/config",
-    "@xiaozhi-client/config.js",
     "@xiaozhi-client/endpoint",
     "@xiaozhi-client/mcp-core",
     "@xiaozhi-client/esp32",

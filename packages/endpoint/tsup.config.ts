@@ -47,6 +47,27 @@ export default defineConfig({
         );
       },
     });
+
+    // config 已迁移到 src/config/，添加 alias 解析
+    options.plugins.push({
+      name: "config-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/config(\/.*)?$/ },
+          (args) => {
+            const subPath = args.path.replace("@xiaozhi-client/config", "");
+            if (subPath) {
+              return {
+                path: resolve(`../../src/config${subPath}.ts`),
+              };
+            }
+            return {
+              path: resolve("../../src/config/index.ts"),
+            };
+          }
+        );
+      },
+    });
   },
   external: [
     // Node.js 内置模块
@@ -55,8 +76,7 @@ export default defineConfig({
     "node:events",
     // 外部依赖（peer dependencies）
     "@modelcontextprotocol/sdk",
-    // 工作区依赖
-    "@xiaozhi-client/config",
+    // 工作区依赖（config 已迁移到 src/config/，通过 alias 解析）
     "@xiaozhi-client/mcp-core",
   ],
   outExtension() {
