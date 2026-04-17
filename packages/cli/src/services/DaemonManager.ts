@@ -23,6 +23,7 @@ import type {
 } from "../interfaces/Service";
 import { PathUtils } from "../utils/PathUtils";
 import { PlatformUtils } from "../utils/PlatformUtils";
+import { SignalHandlerManager } from "../utils/SignalHandlerManager";
 
 /**
  * 守护进程选项
@@ -161,12 +162,14 @@ export class DaemonManagerImpl implements IDaemonManager {
       const { command, args } = PlatformUtils.getTailCommand(logFilePath);
       const tail = spawn(command, args, { stdio: "inherit" });
 
-      // 处理中断信号
-      process.once("SIGINT", () => {
+      // 使用信号处理器管理器注册清理函数
+      const signalManager = SignalHandlerManager.getInstance();
+      const cleanup = () => {
         console.log("\n断开连接，服务继续在后台运行");
         tail.kill();
-        process.exit(0);
-      });
+      };
+
+      signalManager.registerHandler("SIGINT", "attach-logs", cleanup);
 
       tail.on("exit", () => {
         process.exit(0);
