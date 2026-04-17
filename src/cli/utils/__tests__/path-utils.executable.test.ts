@@ -113,7 +113,7 @@ describe("PathUtils - 可执行文件路径", () => {
 
         for (const name of testCases) {
           const result = PathUtils.getExecutablePath(name);
-          expect(result).toContain(`dist/${name}.js`);
+          expect(result).toContain(path.join("dist", `${name}.js`));
         }
       });
     });
@@ -174,7 +174,7 @@ describe("PathUtils - 可执行文件路径", () => {
         npmRealPath.replace("/dist/cli/index.js", "/src/cli/utils/PathUtils.js")
       );
       const webServerPath = PathUtils.getWebServerLauncherPath();
-      expect(webServerPath).toContain("dist/WebServerLauncher.js");
+      expect(webServerPath).toContain(path.join("dist", "WebServerLauncher.js"));
     });
 
     it("应该确保多次调用结果一致", () => {

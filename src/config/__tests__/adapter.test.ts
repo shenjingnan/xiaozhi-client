@@ -1,3 +1,4 @@
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
 import {
@@ -165,8 +166,8 @@ describe("ConfigAdapter 配置适配器测试", () => {
       const result = normalizeServiceConfig(config);
       // 验证 args 已被解析为绝对路径
       expect(result.args).toBeDefined();
-      expect(result.args![0]).toMatch(/\/script\.py$/);
-      expect(result.args![1]).toMatch(/\/config\.json$/);
+      expect(result.args![0]).toMatch(/[\\/]script\.py$/);
+      expect(result.args![1]).toMatch(/[\\/]config\.json$/);
     });
   });
 
