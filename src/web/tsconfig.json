@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "types": ["vitest/globals"],
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@xiaozhi-client/shared-types": ["../types/index.ts"]
+    }
+  },
+  "include": ["."],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "*.config.*",
+    "tailwind.config.js"
+  ],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

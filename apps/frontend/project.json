@@ -1,15 +1,12 @@
 {
   "name": "frontend",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/frontend/src",
+  "sourceRoot": "src/web",
   "projectType": "application",
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc && vite build",
-        "cwd": "apps/frontend"
-      },
+      "options": { "command": "tsc && vite build", "cwd": "src/web" },
       "outputs": ["{workspaceRoot}/dist/frontend"],
       "dependsOn": []
     },
@@ -17,60 +14,43 @@
       "executor": "@nx/vite:dev-server",
       "options": {
         "buildTarget": "frontend:build",
-        "configPath": "apps/frontend/vite.config.ts"
+        "configPath": "src/web/vite.config.ts"
       }
     },
     "dev": {
       "executor": "@nx/vite:dev-server",
       "options": {
         "buildTarget": "frontend:build",
-        "configPath": "apps/frontend/vite.config.ts"
+        "configPath": "src/web/vite.config.ts"
       }
     },
     "preview": {
       "executor": "@nx/vite:preview",
-      "options": {
-        "configPath": "apps/frontend/vite.config.ts"
-      }
+      "options": { "configPath": "src/web/vite.config.ts" }
     },
     "test": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "vitest run",
-        "cwd": "apps/frontend"
-      }
+      "options": { "command": "vitest run", "cwd": "src/web" }
     },
     "test:coverage": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "vitest run --coverage",
-        "cwd": "apps/frontend"
-      }
+      "options": { "command": "vitest run --coverage", "cwd": "src/web" }
     },
     "lint": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "biome check apps/frontend/src"
-      }
+      "options": { "command": "biome check src/web" }
     },
     "lint:fix": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "biome check --write apps/frontend/src"
-      }
+      "options": { "command": "biome check --write src/web" }
     },
     "format": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "biome format --write apps/frontend/src"
-      }
+      "options": { "command": "biome format --write src/web" }
     },
     "type-check": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc --noEmit",
-        "cwd": "apps/frontend"
-      }
+      "options": { "command": "tsc --noEmit", "cwd": "src/web" }
     }
   },
   "tags": ["type:app", "platform:web"],
