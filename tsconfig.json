@@ -30,7 +30,8 @@
       "@xiaozhi-client/version": ["./src/utils/version.ts"],
       "@xiaozhi-client/shared-types": ["./src/types/index.ts"],
       "@xiaozhi-client/mcp-core": ["./src/mcp-core/index.ts"],
-      "@xiaozhi-client/config": ["./src/config/index.ts"]
+      "@xiaozhi-client/config": ["./src/config/index.ts"],
+      "@xiaozhi-client/endpoint": ["./src/endpoint/index.ts"]
     }
   },
   "include": ["apps/backend/**/*", "packages/**/*", "mcps/**/*", "src/**/*"],
@@ -38,7 +39,6 @@
   "references": [
     { "path": "./apps/backend" },
     { "path": "./packages/cli" },
-    { "path": "./packages/endpoint" },
     { "path": "./mcps/calculator-mcp" },
     { "path": "./mcps/datetime-mcp" }
   ]

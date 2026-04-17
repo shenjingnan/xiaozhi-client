@@ -15,8 +15,8 @@
  */
 
 import type {
-  IMCPServiceManager,
   EnhancedToolInfo,
+  IMCPServiceManager,
   ToolCallResult,
 } from "./types.js";
 

@@ -13,7 +13,8 @@
       "@xiaozhi-client/version": ["../../src/utils/version.ts"],
       "@xiaozhi-client/shared-types": ["../../src/types/index.ts"],
       "@xiaozhi-client/mcp-core": ["../../src/mcp-core/index.ts"],
-      "@xiaozhi-client/config": ["../../src/config/index.ts"]
+      "@xiaozhi-client/config": ["../../src/config/index.ts"],
+      "@xiaozhi-client/endpoint": ["../../src/endpoint/index.ts"]
     }
   },
   "include": [
@@ -21,13 +22,15 @@
     "../../src/utils/version.ts",
     "../../src/types/**/*",
     "../../src/mcp-core/**/*",
-    "../../src/config/**/*"
+    "../../src/config/**/*",
+    "../../src/endpoint/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "scripts/**/*",
     "templates/**/*",
-    "**/*.config.ts"
+    "**/*.config.ts",
+    "../../src/endpoint/__tests__/**/*"
   ]
 }
