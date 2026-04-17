@@ -655,14 +655,14 @@ describe("WebServer 集成测试", () => {
         reject(new Error("WebSocket test timeout"));
       }, 4000);
 
-      ws.on("close", (code, reason) => {
+      ws.on("close", (code: number, reason: Buffer) => {
         // Web 客户端连接应被服务端关闭（非 /ws 路径被拒绝）
         clearTimeout(timeout);
         expect(code).toBe(1000);
         resolve();
       });
 
-      ws.on("error", (err) => {
+      ws.on("error", (err: Error) => {
         // 连接错误也是可接受的行为
         clearTimeout(timeout);
         resolve();
@@ -868,7 +868,7 @@ describe("WebServer 集成测试", () => {
         ws.on("open", resolve);
       });
 
-      ws.on("message", (data) => {
+      ws.on("message", (data: Buffer) => {
         messages.push(JSON.parse(data.toString()));
       });
 
@@ -1096,7 +1096,7 @@ describe("WebServer 集成测试", () => {
           reject(new Error("WebSocket connection timeout"));
         }, 3000);
 
-        ws.on("close", (code) => {
+        ws.on("close", (code: number) => {
           // 非 /ws 路径的连接应被拒绝
           clearTimeout(timeout);
           expect(code).toBe(1000);
