@@ -127,7 +127,9 @@ describe("ProjectCommandHandler", () => {
 
       // Mock 服务以避免依赖问题
       mockFileUtils.exists.mockResolvedValue(false);
-      mockTemplateManager.getAvailableTemplates.mockResolvedValue(["basic"]);
+      mockTemplateManager.getAvailableTemplates.mockResolvedValue([
+        { name: "basic", path: "/templates/basic", files: [] },
+      ]);
       mockTemplateManager.validateTemplate.mockResolvedValue(true);
       mockTemplateManager.createProject.mockResolvedValue(undefined);
 
@@ -199,8 +201,8 @@ describe("ProjectCommandHandler", () => {
       // Mock 服务
       mockFileUtils.exists.mockResolvedValue(false);
       mockTemplateManager.getAvailableTemplates.mockResolvedValue([
-        "react",
-        "vue",
+        { name: "react", path: "/templates/react", files: [] },
+        { name: "vue", path: "/templates/vue", files: [] },
       ]);
       mockTemplateManager.validateTemplate.mockResolvedValue(false);
       mockFormatUtils.calculateSimilarity.mockReturnValue(0.3);
@@ -218,7 +220,9 @@ describe("ProjectCommandHandler", () => {
 
       // Mock 服务
       mockFileUtils.exists.mockResolvedValue(false);
-      mockTemplateManager.getAvailableTemplates.mockResolvedValue(["react"]);
+      mockTemplateManager.getAvailableTemplates.mockResolvedValue([
+        { name: "react", path: "/templates/react", files: [] },
+      ]);
       mockTemplateManager.validateTemplate.mockRejectedValue(error);
 
       await handler.testHandleCreate(projectName, options);

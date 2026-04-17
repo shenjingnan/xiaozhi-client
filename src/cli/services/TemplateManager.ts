@@ -138,19 +138,12 @@ export class TemplateManagerImpl implements ITemplateManager {
 
   /**
    * 创建项目
+   * 当 templateName 为 undefined 时使用默认模板，为 null 时创建基本项目（仅配置文件）
    */
   async createProject(options: TemplateCreateOptions): Promise<void> {
     try {
       // 验证输入参数
       this.validateCreateOptions(options);
-
-      // 获取模板信息
-      const templateName = options.templateName || "default";
-      const templateInfo = await this.getTemplateInfo(templateName);
-
-      if (!templateInfo) {
-        throw new FileError(`模板不存在: ${templateName}`, "");
-      }
 
       // 检查目标路径
       const targetPath = path.resolve(options.targetPath);
@@ -161,11 +154,26 @@ export class TemplateManagerImpl implements ITemplateManager {
       // 创建项目目录
       FileUtils.ensureDir(targetPath);
 
-      // 复制模板文件
-      await this.copyTemplateFiles(templateInfo, targetPath, options);
+      // 判断是否为基本项目模式（无模板）
+      const templateName = options.templateName ?? "default";
 
-      // 处理模板变量替换
-      await this.processTemplateVariables(targetPath, options);
+      if (options.templateName === null) {
+        // 基本项目模式：仅创建基础配置文件
+        await this.createBasicProjectFiles(targetPath, options);
+      } else {
+        // 模板模式：使用指定或默认模板
+        const templateInfo = await this.getTemplateInfo(templateName);
+
+        if (!templateInfo) {
+          throw new FileError(`模板不存在: ${templateName}`, "");
+        }
+
+        // 复制模板文件
+        await this.copyTemplateFiles(templateInfo, targetPath, options);
+
+        // 处理模板变量替换
+        await this.processTemplateVariables(targetPath, options);
+      }
 
       console.log(`✅ 项目创建成功: ${targetPath}`);
     } catch (error) {
@@ -246,9 +254,34 @@ export class TemplateManagerImpl implements ITemplateManager {
     Validation.validateRequired(options.projectName, "projectName");
     Validation.validateProjectName(options.projectName);
 
-    if (options.templateName) {
+    // 仅当 templateName 有值时验证（null 表示基本项目模式，不验证）
+    if (options.templateName !== undefined && options.templateName !== null) {
       Validation.validateTemplateName(options.templateName);
     }
+  }
+
+  /**
+   * 创建基本项目文件（无模板，仅基础配置文件）
+   */
+  private async createBasicProjectFiles(
+    targetPath: string,
+    options: TemplateCreateOptions
+  ): Promise<void> {
+    // 创建基本配置文件
+    const configContent = JSON.stringify(
+      {
+        name: options.projectName,
+        version: "1.0.0",
+        description: `${options.projectName} 项目`,
+      },
+      null,
+      2
+    );
+    FileUtils.writeFile(
+      path.join(targetPath, "xiaozhi.config.json"),
+      configContent,
+      { overwrite: true }
+    );
   }
 
   /**

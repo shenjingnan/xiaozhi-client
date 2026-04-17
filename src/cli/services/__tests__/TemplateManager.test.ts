@@ -45,6 +45,9 @@ vi.mock("node:path", () => ({
     join: vi.fn((...args) => args.join("/")),
     resolve: vi.fn((p) => `/resolved/${p}`),
     relative: vi.fn((from, to) => String(to).replace(`${String(from)}/`, "")),
+    normalize: vi.fn((p: string) => p),
+    sep: "/",
+    isAbsolute: vi.fn((p: string) => p.startsWith("/")),
   },
 }));
 
@@ -284,6 +287,43 @@ describe("TemplateManagerImpl", () => {
         '{"name": "MyProject"}',
         { overwrite: true }
       );
+    });
+
+    it("应该创建基本项目（无模板）当 templateName 为 null", async () => {
+      (FileUtils.exists as any).mockImplementation((path: string) => {
+        return path !== "/resolved/my-project";
+      });
+
+      await templateManager.createProject({
+        ...defaultOptions,
+        templateName: null,
+      });
+
+      // 应该调用 createBasicProjectFiles 而非 copyTemplateFiles
+      expect(FileUtils.ensureDir).toHaveBeenCalledWith("/resolved/my-project");
+      expect(FileUtils.writeFile).toHaveBeenCalledWith(
+        "/resolved/my-project/xiaozhi.config.json",
+        expect.stringContaining("MyProject"),
+        { overwrite: true }
+      );
+      // 不应调用 copyDirectory（模板复制）
+      expect(FileUtils.copyDirectory).not.toHaveBeenCalled();
+    });
+
+    it("undefined templateName 应使用默认模板", async () => {
+      (PathUtils.getTemplatePath as any).mockReturnValue("/templates/default");
+      (FileUtils.exists as any).mockImplementation((path: string) => {
+        return path !== "/resolved/my-project";
+      });
+      (FileUtils.listDirectory as any).mockReturnValue([
+        "/templates/default/index.js",
+      ]);
+
+      // 不传 templateName，应回退到默认模板
+      await templateManager.createProject(defaultOptions);
+
+      expect(PathUtils.getTemplatePath).toHaveBeenCalledWith("default");
+      expect(FileUtils.copyDirectory).toHaveBeenCalled();
     });
   });
 

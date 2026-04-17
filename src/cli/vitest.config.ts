@@ -36,6 +36,10 @@ export default defineConfig({
         "**/*.d.ts",
         "**/*.config.{js,ts}",
         "coverage/**",
+        // 排除测试文件，避免将测试代码计入覆盖率统计
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "**/__tests__/**",
       ],
       include: [resolve(__dirname, "**/*.ts")],
       all: true,

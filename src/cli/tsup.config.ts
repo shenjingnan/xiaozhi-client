@@ -166,17 +166,6 @@ export default defineConfig({
     writeFileSync(filePath, content);
     console.log("✅ 已修复 dist/cli/index.js 中的导入路径");
 
-    // 同步根 package.json 版本到与 CLI 包一致
-    const cliPkgPath = resolve("../../packages/cli/package.json");
-    const rootPkgPath2 = resolve("../../package.json");
-
-    const cliPkg = JSON.parse(readFileSync(cliPkgPath, "utf-8"));
-    const rootPkg = JSON.parse(readFileSync(rootPkgPath2, "utf-8"));
-
-    if (cliPkg.version !== rootPkg.version) {
-      rootPkg.version = cliPkg.version;
-      writeFileSync(rootPkgPath2, `${JSON.stringify(rootPkg, null, 2)}\n`);
-      console.log(`✅ 已同步根 package.json 版本到 ${cliPkg.version}`);
-    }
+    // 版本同步已移至发布脚本（scripts/release.ts），避免构建产生工作区脏改动
   },
 });

@@ -12,6 +12,7 @@ import type {
   CommandOptions,
 } from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
+import type { TemplateInfo } from "../interfaces/Service";
 
 /**
  * 项目管理命令处理器
@@ -205,10 +206,14 @@ export class ProjectCommandHandler extends BaseCommandHandler {
   /**
    * 显示可用模板
    */
-  private showAvailableTemplates(templates: string[]): void {
+  private showAvailableTemplates(templates: TemplateInfo[]): void {
     console.log(chalk.yellow("可用的模板:"));
     for (const template of templates) {
-      console.log(chalk.gray(`  - ${template}`));
+      console.log(
+        chalk.gray(
+          `  - ${template.name}${template.description ? ` - ${template.description}` : ""}`
+        )
+      );
     }
   }
 
@@ -217,21 +222,21 @@ export class ProjectCommandHandler extends BaseCommandHandler {
    */
   private findSimilarTemplate(
     input: string,
-    templates: string[]
+    templates: TemplateInfo[]
   ): string | null {
     const formatUtils = this.getService<any>("formatUtils");
 
-    let bestMatch = null;
+    let bestMatch: string | null = null;
     let bestSimilarity = 0;
 
     for (const template of templates) {
       const similarity = formatUtils.calculateSimilarity(
         input.toLowerCase(),
-        template.toLowerCase()
+        template.name.toLowerCase()
       );
       if (similarity > bestSimilarity && similarity > 0.6) {
         bestSimilarity = similarity;
-        bestMatch = template;
+        bestMatch = template.name;
       }
     }
 

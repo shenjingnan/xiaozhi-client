@@ -169,20 +169,27 @@ export class PathUtils {
 
   /**
    * 验证路径安全性（防止路径遍历攻击）
+   * 通过路径段判断是否存在严格等于 ".." 的段，避免误杀包含 ".." 子串的合法文件名
+   * 同时支持 Unix (/) 和 Windows (\) 分隔符
    */
   static validatePath(inputPath: string): boolean {
     const normalizedPath = path.normalize(inputPath);
-    return !normalizedPath.includes("..");
+    // 按多种分隔符拆分路径段，检查是否包含严格等于 ".." 的段
+    const segments = normalizedPath.split(/[/\\]/);
+    return !segments.includes("..");
   }
 
   /**
    * 确保路径在指定目录内
+   * 使用 path.relative 判断，避免前缀匹配被绕过（如 /safe/base2 匹配 /safe/base）
    */
   static ensurePathWithin(inputPath: string, baseDir: string): string {
     const resolvedPath = path.resolve(baseDir, inputPath);
     const resolvedBase = path.resolve(baseDir);
 
-    if (!resolvedPath.startsWith(resolvedBase)) {
+    // 使用 path.relative 检查相对路径是否以 ".." 开头或为绝对路径
+    const relativePath = path.relative(resolvedBase, resolvedPath);
+    if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
       throw new Error(`路径 ${inputPath} 超出了允许的范围`);
     }
 
@@ -191,47 +198,48 @@ export class PathUtils {
 
   /**
    * 获取可执行文件路径
+   * 对于 CLI 自身复用，直接返回当前脚本路径；其他名称从项目根目录的 dist 中查找
    */
   static getExecutablePath(name: string): string {
-    // 获取当前执行的 CLI 脚本路径
-    const cliPath = process.argv[1];
-
-    // 处理 cliPath 为 undefined 的情况
-    if (!cliPath) {
-      // 如果没有脚本路径，使用当前工作目录
-      return path.join(process.cwd(), `${name}.js`);
+    // CLI 自身复用：直接返回当前执行的脚本路径
+    if (name === "cli") {
+      const cliPath = process.argv[1];
+      if (cliPath) {
+        try {
+          return realpathSync(cliPath);
+        } catch {
+          return cliPath;
+        }
+      }
+      // 回退：无法获取时抛出明确错误
+      throw new Error("无法确定 CLI 脚本路径");
     }
 
-    // 解析符号链接，获取真实路径
-    let realCliPath: string;
-    try {
-      realCliPath = realpathSync(cliPath);
-    } catch (error) {
-      // 如果无法解析符号链接，使用原路径
-      realCliPath = cliPath;
-    }
-
-    // 获取 dist 目录
-    const distDir = path.dirname(realCliPath);
-    return path.join(distDir, `${name}.js`);
+    // 其他可执行文件：从项目根目录的 dist 中查找
+    const projectRoot = PathUtils.getProjectRoot();
+    return path.join(projectRoot, "dist", `${name}.js`);
   }
 
   /**
    * 获取 Web 服务器启动器路径
+   * 返回项目根目录 dist 下的 WebServerLauncher.js（向后兼容包装脚本）
    */
   static getWebServerLauncherPath(): string {
-    return PathUtils.getExecutablePath("WebServerLauncher");
+    const projectRoot = PathUtils.getProjectRoot();
+    return path.join(projectRoot, "dist", "WebServerLauncher.js");
   }
 
   /**
    * 创建安全的文件路径
+   * 通过路径段判断是否存在严格等于 ".." 的段，避免误杀合法文件名
    */
   static createSafePath(...segments: string[]): string {
     const joinedPath = path.join(...segments);
     const normalizedPath = path.normalize(joinedPath);
 
-    // 检查路径是否包含危险字符
-    if (normalizedPath.includes("..") || normalizedPath.includes("~")) {
+    // 按多种分隔符拆分路径段检查是否包含危险字符
+    const hasTraversal = normalizedPath.split(/[/\\]/).includes("..");
+    if (hasTraversal || normalizedPath.includes("~")) {
       throw new Error(`不安全的路径: ${normalizedPath}`);
     }
 

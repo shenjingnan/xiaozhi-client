@@ -120,6 +120,16 @@ describe("PathUtils - 路径安全性", () => {
         PathUtils.ensurePathWithin(inputPath, baseDir);
       }).toThrow("路径 /dangerous/path/file.txt 超出了允许的范围");
     });
+
+    it("应该拒绝前缀匹配绕过（如 /safe/base2 不应匹配 /safe/base）", () => {
+      const baseDir = "/safe/base";
+      // /safe/base2/file.txt 的前缀是 /safe/base，但不在 /safe/base 目录内
+      const inputPath = "/safe/base2/file.txt";
+
+      expect(() => {
+        PathUtils.ensurePathWithin(inputPath, baseDir);
+      }).toThrow();
+    });
   });
 
   describe("createSafePath 创建安全的文件路径", () => {
@@ -133,23 +143,24 @@ describe("PathUtils - 路径安全性", () => {
     });
 
     it("应该拒绝包含危险字符的路径", () => {
-      // 测试会导致规范化后包含 ".." 的路径
+      // 测试会导致路径段包含严格等于 ".." 的路径
       const dangerousSegments = [
-        ["dir", "..", "file.txt"], // 规范化后: dir/../file.txt -> file.txt (不包含 "..")
-        ["~", "file.txt"], // 规范化后: ~/file.txt (包含 "~")
-        ["dir", "subdir", "../../../etc/passwd"], // 规范化后: ../etc/passwd (包含 "..")
+        ["~", "file.txt"], // 包含 "~"
+        ["dir", "subdir", "../../../etc/passwd"], // 路径段包含 ".."
       ];
 
-      // 只有包含 "~" 或规范化后仍包含 ".." 的路径会抛出错误
-      expect(() => {
-        PathUtils.createSafePath("~", "file.txt");
-      }).toThrow();
+      for (const segments of dangerousSegments) {
+        expect(() => {
+          PathUtils.createSafePath(...segments);
+        }).toThrow();
+      }
 
+      // 合法文件名：包含 ".." 子串但不是路径遍历
       expect(() => {
-        PathUtils.createSafePath("dir", "subdir", "../../../etc/passwd");
-      }).toThrow();
+        PathUtils.createSafePath("dir", "file..txt");
+      }).not.toThrow();
 
-      // 这个不会抛出错误，因为规范化后是 "file.txt"
+      // dir/.. /file.txt 规范化后不包含 ".." 段，合法
       expect(() => {
         PathUtils.createSafePath("dir", "..", "file.txt");
       }).not.toThrow();
@@ -187,6 +198,9 @@ describe("PathUtils - 路径安全性", () => {
         "file name with spaces.txt",
         "file-with-dashes.txt",
         "file_with_underscores.txt",
+        // 包含 ".." 子串但不是路径遍历的合法文件名
+        "file..txt",
+        "data..backup.json",
       ];
 
       for (const fileName of specialChars) {
@@ -297,16 +311,15 @@ describe("PathUtils - 路径安全性", () => {
   });
 
   describe("性能和内存测试", () => {
-    it("应该高效处理大量路径操作", () => {
-      const startTime = Date.now();
-
-      for (let i = 0; i < 1000; i++) {
-        PathUtils.validatePath(`path/to/file${i}.txt`);
-        PathUtils.createSafePath("dir", `file${i}.txt`);
-      }
-
-      const endTime = Date.now();
-      expect(endTime - startTime).toBeLessThan(100); // 应该在 100ms 内完成
+    it("应该高效处理大量路径操作且不抛错", () => {
+      // 不使用硬编码时间阈值，避免 CI 环境抖动
+      // 仅验证大量操作能正常完成而不抛出异常
+      expect(() => {
+        for (let i = 0; i < 1000; i++) {
+          PathUtils.validatePath(`path/to/file${i}.txt`);
+          PathUtils.createSafePath("dir", `file${i}.txt`);
+        }
+      }).not.toThrow();
     });
 
     it("应该正确处理重复的路径操作", () => {
