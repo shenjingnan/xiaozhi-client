@@ -23,7 +23,6 @@
     "@discordjs/opus": "^0.10.0",
     "@hono/node-server": "^1.19.10",
     "@modelcontextprotocol/sdk": "^1.26.0",
-    "@xiaozhi-client/esp32": "workspace:*",
     "univoice": "^0.10.0",
     "ajv": "^8.18.0",
     "chalk": "^5.6.0",

@@ -31,7 +31,8 @@
       "@xiaozhi-client/shared-types": ["./src/types/index.ts"],
       "@xiaozhi-client/mcp-core": ["./src/mcp-core/index.ts"],
       "@xiaozhi-client/config": ["./src/config/index.ts"],
-      "@xiaozhi-client/endpoint": ["./src/endpoint/index.ts"]
+      "@xiaozhi-client/endpoint": ["./src/endpoint/index.ts"],
+      "@xiaozhi-client/esp32": ["./src/esp32/index.ts"]
     }
   },
   "include": ["apps/backend/**/*", "packages/**/*", "mcps/**/*", "src/**/*"],

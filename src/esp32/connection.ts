@@ -453,8 +453,8 @@ export class ESP32Connection implements IDeviceConnection {
 
     // 如果连接已断开，直接返回
     if (
-      this.ws.readyState !== this.ws.OPEN &&
-      this.ws.readyState !== this.ws.CONNECTING
+      this.ws.readyState !== 1 /* WebSocket.OPEN */ &&
+      this.ws.readyState !== 0 /* WebSocket.CONNECTING */
     ) {
       this.state = "disconnected";
       return;

@@ -192,6 +192,32 @@ export default defineConfig({
       },
     });
 
+    // esp32 已迁移到 src/esp32/，添加 alias 解析
+    options.plugins.push({
+      name: "esp32-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/esp32(\/.*)?$/ },
+          (args) => {
+            const subPath = args.path.replace("@xiaozhi-client/esp32", "");
+            if (subPath) {
+              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
+              const normalizedSubPath = subPath.replace(
+                /\.(?:[cm]?js|ts)$/,
+                ""
+              );
+              return {
+                path: resolve(`../../src/esp32${normalizedSubPath}.ts`),
+              };
+            }
+            return {
+              path: resolve("../../src/esp32/index.ts"),
+            };
+          }
+        );
+      },
+    });
+
     // 确保能够解析路径别名
     if (!options.external) {
       options.external = [];
@@ -238,9 +264,7 @@ export default defineConfig({
     "@modelcontextprotocol/*",
     "prism-media",
     // @xiaozhi-client 内部包（运行时从 dist 读取）
-    // 注意：mcp-core、config、endpoint 已迁移至 src/ 目录，通过 alias 插件内联打包，不再 external
-    "@xiaozhi-client/esp32",
-    "@xiaozhi-client/esp32.js",
+    // 注意：mcp-core、config、endpoint、esp32 已迁移至 src/ 目录，通过 alias 插件内联打包，不再 external
     "univoice",
   ],
   onSuccess: async () => {

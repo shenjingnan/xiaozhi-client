@@ -39,13 +39,7 @@
     }
   },
   "release": {
-    "projects": [
-      "cli",
-      "esp32",
-      "calculator-mcp",
-      "datetime-mcp",
-      "xiaozhi-client"
-    ],
+    "projects": ["cli", "calculator-mcp", "datetime-mcp", "xiaozhi-client"],
     "projectsRelationship": "fixed",
     "git": {
       "commit": true,
