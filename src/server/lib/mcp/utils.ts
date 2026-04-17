@@ -6,7 +6,7 @@
  * - 工具调用参数验证
  */
 
-import { TypeFieldNormalizer } from "../../../mcp-core/index.js";
+import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
 import { MCPTransportType, ToolCallError, ToolCallErrorCode } from "./types.js";
 import type {
   MCPServiceConfig,

@@ -23,7 +23,6 @@ import {
   MCP_CACHE_VERSIONS,
   TOOL_NAME_SEPARATORS,
 } from "../../constants/index.js";
-import type { MCPServiceConfig } from "../../lib/mcp/types";
 import type {
   CacheStatistics,
   EnhancedToolResultCache,
@@ -32,6 +31,7 @@ import type {
   ToolCallResult,
 } from "../../types/index.js";
 import { generateCacheKey, shouldCleanupCache } from "../../types/index.js";
+import type { MCPServiceConfig } from "./types.js";
 
 // 缓存条目接口
 export interface MCPToolsCacheEntry {

@@ -1,10 +1,10 @@
 /**
  * 向后兼容的 MCPService 类
- * 包装 ../../../../../mcp-core/index.js 的 MCPConnection，使用 EventBus 发射事件
+ * 包装 @xiaozhi-client/mcp-core 的 MCPConnection，使用 EventBus 发射事件
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { MCPConnection } from "../../../mcp-core/index.js";
+import { MCPConnection } from "@xiaozhi-client/mcp-core";
 import { MCP_SERVICE_EVENTS } from "../../constants/index.js";
 import { getEventBus } from "../../services/event-bus.service.js";
 import type { InternalMCPServiceConfig } from "./types.js";

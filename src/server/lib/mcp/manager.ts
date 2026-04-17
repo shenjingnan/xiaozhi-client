@@ -6,13 +6,18 @@
 
 import { EventEmitter } from "node:events";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { isModelScopeURL } from "../../../config/index.js";
-import type { MCPToolConfig } from "../../../config/index.js";
-import { configManager } from "../../../config/index.js";
+import { isModelScopeURL } from "@xiaozhi-client/config";
+import type { MCPToolConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 import { logger } from "../../Logger.js";
-import { MCPService } from "../../lib/mcp";
-import { MCPCacheManager } from "../../lib/mcp";
-import { ConnectionState } from "../../lib/mcp/types";
+import { getEventBus } from "../../services/event-bus.service.js";
+import type { MCPMessage } from "../../types/mcp.js";
+import { CustomMCPHandler } from "./custom.js";
+import { MCPService } from "./index.js";
+import { MCPCacheManager } from "./index.js";
+import { ToolCallLogger } from "./log.js";
+import { MCPMessageHandler } from "./message.js";
+import { ConnectionState } from "./types.js";
 import type {
   CustomMCPTool,
   EnhancedToolInfo,
@@ -24,12 +29,7 @@ import type {
   ToolStatusFilter,
   UnifiedServerConfig,
   UnifiedServerStatus,
-} from "../../lib/mcp/types";
-import { getEventBus } from "../../services/event-bus.service.js";
-import type { MCPMessage } from "../../types/mcp.js";
-import { CustomMCPHandler } from "./custom.js";
-import { ToolCallLogger } from "./log.js";
-import { MCPMessageHandler } from "./message.js";
+} from "./types.js";
 export class MCPServiceManager extends EventEmitter {
   private services: Map<string, MCPService> = new Map();
   private configs: Record<string, MCPServiceConfig> = {};

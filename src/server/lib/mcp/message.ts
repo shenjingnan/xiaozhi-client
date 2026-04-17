@@ -17,9 +17,9 @@ import {
   MCP_SERVER_INFO,
   MCP_SUPPORTED_PROTOCOL_VERSIONS,
 } from "../../constants/index.js";
-import type { EnhancedToolInfo, MCPServiceManager } from "../../lib/mcp";
-import { validateToolCallParams } from "../../lib/mcp";
 import type { MCPMessage, MCPResponse } from "../../types/mcp.js";
+import type { EnhancedToolInfo, MCPServiceManager } from "./index.js";
+import { validateToolCallParams } from "./index.js";
 
 // 初始化参数接口
 interface InitializeParams {
