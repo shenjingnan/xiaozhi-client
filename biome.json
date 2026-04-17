@@ -58,7 +58,12 @@
   },
   "overrides": [
     {
-      "include": ["packages/cli/**", "src/cli/**", "src/web/**"],
+      "include": [
+        "packages/cli/**",
+        "src/cli/**",
+        "src/web/**",
+        "src/server/**"
+      ],
       "linter": {
         "rules": {
           "nursery": {

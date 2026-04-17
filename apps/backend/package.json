@@ -1,6 +1,7 @@
 {
   "name": "@xiaozhi-client/backend",
   "version": "1.0.0",
+  "deprecated": "DEPRECATED: 已迁移至 src/server/。此包仅保留作为 Nx 项目配置壳。",
   "private": true,
   "type": "module",
   "scripts": {

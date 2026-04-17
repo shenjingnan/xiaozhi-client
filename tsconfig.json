@@ -40,6 +40,7 @@
   "exclude": ["node_modules", "dist", "scripts/**/*", "templates/**/*"],
   "references": [
     { "path": "./apps/backend" },
+    { "path": "./src/server" },
     { "path": "./src/cli" },
     { "path": "./src/web" },
     { "path": "./mcps/calculator-mcp" },
