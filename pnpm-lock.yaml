@@ -73,9 +73,6 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
         version: 1.26.0(zod@4.3.6)
-      '@xiaozhi-client/endpoint':
-        specifier: workspace:*
-        version: link:packages/endpoint
       '@xiaozhi-client/esp32':
         specifier: workspace:*
         version: link:packages/esp32
@@ -239,9 +236,6 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
         version: 1.26.0(zod@4.3.6)
-      '@xiaozhi-client/endpoint':
-        specifier: workspace:*
-        version: link:../../packages/endpoint
       '@xiaozhi-client/esp32':
         specifier: workspace:*
         version: link:../../packages/esp32
@@ -596,34 +590,6 @@ importers:
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
-
-  packages/endpoint:
-    dependencies:
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.26.0
-        version: 1.26.0(zod@4.3.6)
-      ws:
-        specifier: ^8.14.2
-        version: 8.19.0
-    devDependencies:
-      '@types/node':
-        specifier: ^24.3.0
-        version: 24.10.9
-      '@types/ws':
-        specifier: ^8.5.0
-        version: 8.18.1
-      tsup:
-        specifier: ^8.3.5
-        version: 8.5.1(jiti@2.6.1)(postcss@8.5.9)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
-      tsx:
-        specifier: ^4.19.2
-        version: 4.21.0
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(esbuild@0.27.3)(happy-dom@20.8.9)(jiti@2.6.1)(sass@1.97.3)(tsx@4.21.0)(yaml@2.8.3)
 
   packages/esp32:
     dependencies:

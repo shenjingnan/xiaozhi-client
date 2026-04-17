@@ -4,11 +4,11 @@
  * 使用 @xiaozhi-client/mcp-core 的 MCPManager 实现真实的 MCP 功能
  */
 
+import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { MCPManager } from "@xiaozhi-client/mcp-core";
 import type { EnhancedToolInfo, ToolCallResult } from "./types.js";
 import type { IMCPServiceManager } from "./types.js";
 import type { EndpointConfig } from "./types.js";
-import { normalizeServiceConfig } from "@xiaozhi-client/config";
 
 /**
  * 内部 MCP 服务管理器适配器

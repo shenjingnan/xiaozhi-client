@@ -166,6 +166,32 @@ export default defineConfig({
       },
     });
 
+    // endpoint 已迁移到 src/endpoint/，添加 alias 解析
+    options.plugins.push({
+      name: "endpoint-alias",
+      setup(build) {
+        build.onResolve(
+          { filter: /^@xiaozhi-client\/endpoint(\/.*)?$/ },
+          (args) => {
+            const subPath = args.path.replace("@xiaozhi-client/endpoint", "");
+            if (subPath) {
+              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
+              const normalizedSubPath = subPath.replace(
+                /\.(?:[cm]?js|ts)$/,
+                ""
+              );
+              return {
+                path: resolve(`../../src/endpoint${normalizedSubPath}.ts`),
+              };
+            }
+            return {
+              path: resolve("../../src/endpoint/index.ts"),
+            };
+          }
+        );
+      },
+    });
+
     // 确保能够解析路径别名
     if (!options.external) {
       options.external = [];

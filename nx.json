@@ -41,7 +41,6 @@
   "release": {
     "projects": [
       "cli",
-      "endpoint",
       "esp32",
       "calculator-mcp",
       "datetime-mcp",
