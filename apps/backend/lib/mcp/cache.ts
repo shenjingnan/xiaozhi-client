@@ -21,7 +21,7 @@ import {
   MCP_CACHE_VERSIONS,
   TOOL_NAME_SEPARATORS,
 } from "@/constants/index.js";
-import type { MCPServiceConfig } from "@/lib/mcp/types";
+import type { MCPServiceConfig } from "@/lib/mcp/types.js";
 import type {
   CacheStatistics,
   EnhancedToolResultCache,
