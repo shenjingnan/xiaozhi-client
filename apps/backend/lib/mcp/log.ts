@@ -303,52 +303,52 @@ export class ToolCallLogService {
 
   /**
    * 过滤工具调用记录
+   * 使用单次遍历完成所有过滤条件，避免多次遍历数组
    */
   private filterRecords(
     records: ToolCallRecord[],
     query: ToolCallQuery
   ): ToolCallRecord[] {
-    let filtered = [...records];
+    // 计算时间范围边界（提前计算避免重复计算）
+    const startTime = query.startDate ? new Date(query.startDate).getTime() : 0;
+    const endTime = query.endDate
+      ? new Date(query.endDate).getTime()
+      : Date.now();
 
-    // 按工具名称过滤
-    if (query.toolName) {
-      filtered = filtered.filter((record) =>
-        record.toolName
-          .toLowerCase()
-          .includes(query.toolName?.toLowerCase() ?? "")
-      );
-    }
+    return records.filter((record) => {
+      // 按工具名称过滤
+      if (
+        query.toolName &&
+        !record.toolName.toLowerCase().includes(query.toolName.toLowerCase())
+      ) {
+        return false;
+      }
 
-    // 按服务器名称过滤
-    if (query.serverName) {
-      filtered = filtered.filter((record) =>
-        record.serverName
+      // 按服务器名称过滤
+      if (
+        query.serverName &&
+        !record.serverName
           ?.toLowerCase()
-          .includes(query.serverName?.toLowerCase() ?? "")
-      );
-    }
+          .includes(query.serverName.toLowerCase())
+      ) {
+        return false;
+      }
 
-    // 按成功状态过滤
-    if (query.success !== undefined) {
-      filtered = filtered.filter((record) => record.success === query.success);
-    }
+      // 按成功状态过滤
+      if (query.success !== undefined && record.success !== query.success) {
+        return false;
+      }
 
-    // 按时间范围过滤
-    if (query.startDate || query.endDate) {
-      const startTime = query.startDate
-        ? new Date(query.startDate).getTime()
-        : 0;
-      const endTime = query.endDate
-        ? new Date(query.endDate).getTime()
-        : Date.now();
-
-      filtered = filtered.filter((record) => {
+      // 按时间范围过滤
+      if (query.startDate || query.endDate) {
         const recordTime = record.timestamp || 0;
-        return recordTime >= startTime && recordTime <= endTime;
-      });
-    }
+        if (recordTime < startTime || recordTime > endTime) {
+          return false;
+        }
+      }
 
-    return filtered;
+      return true;
+    });
   }
 
   /**
