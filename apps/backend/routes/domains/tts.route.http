@@ -1,9 +1,0 @@
-@baseUrl = http://localhost:9999
-
-### 语音合成
-POST {{baseUrl}}/api/tts
-Content-Type: application/json
-
-{
-  "text": "演示一次性获取完整音频的场景"
-}

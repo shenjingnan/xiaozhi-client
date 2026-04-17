@@ -8,7 +8,7 @@ const pkg = JSON.parse(readFileSync(rootPkgPath, "utf-8"));
 
 export default defineConfig({
   entry: {
-    index: "src/index.ts",
+    index: "../../src/cli/index.ts",
   },
   format: ["esm"],
   target: "node22",

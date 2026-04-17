@@ -21,13 +21,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    testTimeout: 10000, // 减少默认测试超时时间
-    hookTimeout: 10000, // 减少默认 hook 超时时间
+    testTimeout: 10000,
+    hookTimeout: 10000,
+    root: "../../src/server",
     include: ["**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     exclude: ["**/node_modules", "dist", "templates/**/*"],
-    // 分组配置，将超时测试分离
-    // 超时测试：包含"timeout"字样的测试文件
-    // 普通测试：其他所有测试
     coverage: {
       enabled: true,
       provider: "v8",
@@ -41,7 +39,7 @@ export default defineConfig({
         "**/*.config.{js,ts}",
         "coverage/**",
       ],
-      include: [resolve(__dirname, "**/*.ts")],
+      include: [resolve(__dirname, "../../src/server/**/*.ts")],
       all: true,
       thresholds: {
         global: {
