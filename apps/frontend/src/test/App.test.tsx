@@ -26,18 +26,21 @@ describe("App Routing", () => {
     // Reset all mocks
     vi.clearAllMocks();
 
-    // Mock successful API responses
+    // Mock successful API responses（符合 ApiResponse<T> 格式）
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
-        mcpEndpoint: "http://localhost:3000/mcp",
-        mcpServers: {},
-        connection: {
-          heartbeatInterval: 30000,
-          heartbeatTimeout: 10000,
-          reconnectInterval: 5000,
+        success: true,
+        data: {
+          mcpEndpoint: "http://localhost:3000/mcp",
+          mcpServers: {},
+          connection: {
+            heartbeatInterval: 30000,
+            heartbeatTimeout: 10000,
+            reconnectInterval: 5000,
+          },
+          webUI: { port: 3000 },
         },
-        webUI: { port: 3000 },
       }),
     });
 

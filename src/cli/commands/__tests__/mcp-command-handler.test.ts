@@ -138,6 +138,20 @@ vi.mock("@xiaozhi-client/config", () => ({
   },
 }));
 
+// Mock consola（消除测试中的 stderr 干扰输出）
+vi.mock("consola", () => ({
+  default: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    success: vi.fn(),
+    log: vi.fn(),
+    start: vi.fn().mockReturnThis(),
+    fail: vi.fn().mockReturnThis(),
+    succeed: vi.fn().mockReturnThis(),
+  },
+}));
+
 // Mock ProcessManager
 const mockGetServiceStatus = vi
   .fn()
