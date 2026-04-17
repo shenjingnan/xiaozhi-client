@@ -36,10 +36,9 @@
       "@xiaozhi-client/cli": ["./src/cli/index.ts"]
     }
   },
-  "include": ["apps/backend/**/*", "packages/**/*", "mcps/**/*", "src/**/*"],
+  "include": ["mcps/**/*", "src/**/*"],
   "exclude": ["node_modules", "dist", "scripts/**/*", "templates/**/*"],
   "references": [
-    { "path": "./apps/backend" },
     { "path": "./src/server" },
     { "path": "./src/cli" },
     { "path": "./src/web" },

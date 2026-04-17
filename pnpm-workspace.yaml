@@ -1,4 +1,6 @@
 packages:
+  # 以下为迁移壳目录（sourceRoot 已指向 src/），保留供 pnpm --filter 和 Nx 使用
+  # 待彻底移除 Nx 后可清理
   - apps/*
   - packages/*
   - src/web

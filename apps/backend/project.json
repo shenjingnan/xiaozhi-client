@@ -1,67 +1,49 @@
 {
   "name": "backend",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/backend",
+  "sourceRoot": "src/server",
   "projectType": "application",
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm --filter backend run build"
-      },
+      "options": { "command": "pnpm --filter backend run build" },
       "outputs": ["{workspaceRoot}/dist/backend"],
       "dependsOn": ["config:build"]
     },
     "test": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm --filter backend run test"
-      },
+      "options": { "command": "pnpm --filter backend run test" },
       "outputs": ["{workspaceRoot}/coverage"]
     },
     "test:watch": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm --filter backend run test:watch"
-      }
+      "options": { "command": "pnpm --filter backend run test:watch" }
     },
     "test:coverage": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm --filter backend run test:coverage"
-      },
+      "options": { "command": "pnpm --filter backend run test:coverage" },
       "outputs": ["{workspaceRoot}/coverage"]
     },
     "lint": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm --filter backend run lint"
-      }
+      "options": { "command": "pnpm --filter backend run lint" }
     },
     "lint:fix": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm --filter backend run lint:fix"
-      }
+      "options": { "command": "pnpm --filter backend run lint:fix" }
     },
     "format": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm --filter backend run format"
-      }
+      "options": { "command": "pnpm --filter backend run format" }
     },
     "type-check": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm --filter backend run typecheck"
-      },
+      "options": { "command": "pnpm --filter backend run typecheck" },
       "dependsOn": ["config:build", "endpoint:build", "version:build"]
     },
     "dev": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm --filter backend run dev"
-      }
+      "options": { "command": "pnpm --filter backend run dev" }
     }
   },
   "tags": ["type:app", "platform:node"],

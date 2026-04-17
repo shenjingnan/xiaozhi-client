@@ -47,13 +47,17 @@ function copyDirectory(
 }
 
 export default defineConfig({
-  entry: ["./WebServer.ts", "./WebServerLauncher.ts", "./Logger.ts"],
+  entry: [
+    "../../src/server/WebServer.ts",
+    "../../src/server/WebServerLauncher.ts",
+    "../../src/server/Logger.ts",
+  ],
   format: ["esm"],
   target: "node22",
   outDir: "../../dist/backend",
   clean: true,
   sourcemap: true,
-  dts: false, // 禁用 DTS 以避免类型错误
+  dts: false,
   minify: process.env.NODE_ENV === "production",
   splitting: false,
   bundle: true,
@@ -66,7 +70,6 @@ export default defineConfig({
       options.drop = ["console", "debugger"];
     }
 
-    // 添加路径别名支持
     options.resolveExtensions = [".ts", ".js", ".json"];
 
     // 构建时注入版本号常量
@@ -75,153 +78,6 @@ export default defineConfig({
       __VERSION__: JSON.stringify(rootPkg.version),
       __APP_NAME__: JSON.stringify(rootPkg.name),
     };
-
-    // version 已迁移到 src/utils/version.ts，添加 alias 解析
-    options.plugins = options.plugins || [];
-    options.plugins.push({
-      name: "version-alias",
-      setup(build) {
-        build.onResolve(
-          { filter: /^@xiaozhi-client\/version(\/.*)?$/ },
-          () => ({
-            path: resolve("../../src/utils/version.ts"),
-          })
-        );
-      },
-    });
-
-    // shared-types 已迁移到 src/types/，添加 alias 解析
-    options.plugins.push({
-      name: "shared-types-alias",
-      setup(build) {
-        build.onResolve(
-          { filter: /^@xiaozhi-client\/shared-types(\/.*)?$/ },
-          (args) => {
-            const subPath = args.path.replace(
-              "@xiaozhi-client/shared-types",
-              ""
-            );
-            if (subPath) {
-              return {
-                path: resolve(`../../src/types${subPath}/index.ts`),
-              };
-            }
-            return {
-              path: resolve("../../src/types/index.ts"),
-            };
-          }
-        );
-      },
-    });
-
-    // mcp-core 已迁移到 src/mcp-core/，添加 alias 解析
-    options.plugins.push({
-      name: "mcp-core-alias",
-      setup(build) {
-        build.onResolve(
-          { filter: /^@xiaozhi-client\/mcp-core(\/.*)?$/ },
-          (args) => {
-            const subPath = args.path.replace("@xiaozhi-client/mcp-core", "");
-            if (subPath) {
-              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
-              const normalizedSubPath = subPath.replace(
-                /\.(?:[cm]?js|ts)$/,
-                ""
-              );
-              return {
-                path: resolve(`../../src/mcp-core${normalizedSubPath}.ts`),
-              };
-            }
-            return {
-              path: resolve("../../src/mcp-core/index.ts"),
-            };
-          }
-        );
-      },
-    });
-
-    // config 已迁移到 src/config/，添加 alias 解析
-    options.plugins.push({
-      name: "config-alias",
-      setup(build) {
-        build.onResolve(
-          { filter: /^@xiaozhi-client\/config(\/.*)?$/ },
-          (args) => {
-            const subPath = args.path.replace("@xiaozhi-client/config", "");
-            if (subPath) {
-              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
-              const normalizedSubPath = subPath.replace(
-                /\.(?:[cm]?js|ts)$/,
-                ""
-              );
-              return {
-                path: resolve(`../../src/config${normalizedSubPath}.ts`),
-              };
-            }
-            return {
-              path: resolve("../../src/config/index.ts"),
-            };
-          }
-        );
-      },
-    });
-
-    // endpoint 已迁移到 src/endpoint/，添加 alias 解析
-    options.plugins.push({
-      name: "endpoint-alias",
-      setup(build) {
-        build.onResolve(
-          { filter: /^@xiaozhi-client\/endpoint(\/.*)?$/ },
-          (args) => {
-            const subPath = args.path.replace("@xiaozhi-client/endpoint", "");
-            if (subPath) {
-              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
-              const normalizedSubPath = subPath.replace(
-                /\.(?:[cm]?js|ts)$/,
-                ""
-              );
-              return {
-                path: resolve(`../../src/endpoint${normalizedSubPath}.ts`),
-              };
-            }
-            return {
-              path: resolve("../../src/endpoint/index.ts"),
-            };
-          }
-        );
-      },
-    });
-
-    // esp32 已迁移到 src/esp32/，添加 alias 解析
-    options.plugins.push({
-      name: "esp32-alias",
-      setup(build) {
-        build.onResolve(
-          { filter: /^@xiaozhi-client\/esp32(\/.*)?$/ },
-          (args) => {
-            const subPath = args.path.replace("@xiaozhi-client/esp32", "");
-            if (subPath) {
-              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
-              const normalizedSubPath = subPath.replace(
-                /\.(?:[cm]?js|ts)$/,
-                ""
-              );
-              return {
-                path: resolve(`../../src/esp32${normalizedSubPath}.ts`),
-              };
-            }
-            return {
-              path: resolve("../../src/esp32/index.ts"),
-            };
-          }
-        );
-      },
-    });
-
-    // 确保能够解析路径别名
-    if (!options.external) {
-      options.external = [];
-    }
   },
   outExtension() {
     return {
@@ -263,8 +119,6 @@ export default defineConfig({
     "@coze/api",
     "@modelcontextprotocol/*",
     "prism-media",
-    // @xiaozhi-client 内部包（运行时从 dist 读取）
-    // 注意：mcp-core、config、endpoint、esp32 已迁移至 src/ 目录，通过 alias 插件内联打包，不再 external
     "univoice",
   ],
   onSuccess: async () => {
