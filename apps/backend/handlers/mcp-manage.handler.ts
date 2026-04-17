@@ -20,7 +20,11 @@ import type { MCPService } from "@/lib/mcp";
 import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { ConfigManager, MCPServerConfig } from "@xiaozhi-client/config";
+import type {
+  AppConfig,
+  ConfigManager,
+  MCPServerConfig,
+} from "@xiaozhi-client/config";
 import { normalizeServiceConfig } from "@xiaozhi-client/config";
 import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
 import type { Context } from "hono";
@@ -404,10 +408,16 @@ export class MCPHandler {
 
   /**
    * 获取服务状态信息
+   * @param serverName 服务名称
+   * @param config 可选的配置对象，避免在循环中重复调用 getConfig()
    */
-  private getServiceStatus(serverName: string): MCPServerStatus {
-    const config = this.configManager.getConfig();
-    const serverConfig = config.mcpServers[serverName];
+  private getServiceStatus(
+    serverName: string,
+    config?: AppConfig
+  ): MCPServerStatus {
+    // 使用传入的 config 或获取新的配置（向后兼容）
+    const actualConfig = config || this.configManager.getConfig();
+    const serverConfig = actualConfig.mcpServers[serverName];
 
     if (!serverConfig) {
       return {
@@ -747,7 +757,7 @@ export class MCPHandler {
       const servers: MCPServerStatus[] = [];
 
       for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
-        const serviceStatus = this.getServiceStatus(serverName);
+        const serviceStatus = this.getServiceStatus(serverName, config);
         servers.push(serviceStatus);
       }
 
