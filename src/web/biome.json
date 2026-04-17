@@ -1,0 +1,26 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "extends": ["../../biome.json"],
+  "files": {
+    "include": ["**/*.ts", "**/*.tsx", "*.ts", "*.js"],
+    "ignore": ["node_modules/**", "dist/**", "coverage/**"]
+  },
+  "linter": {
+    "rules": {
+      "a11y": {
+        "useValidAnchor": "off",
+        "noSvgWithoutTitle": "off"
+      },
+      "style": {
+        "useImportType": "error"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "es5"
+    }
+  }
+}

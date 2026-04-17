@@ -41,6 +41,7 @@
   "references": [
     { "path": "./apps/backend" },
     { "path": "./src/cli" },
+    { "path": "./src/web" },
     { "path": "./mcps/calculator-mcp" },
     { "path": "./mcps/datetime-mcp" }
   ]
