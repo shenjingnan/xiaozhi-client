@@ -1,14 +1,14 @@
 {
   "name": "cli",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/cli/src",
+  "sourceRoot": "src/cli",
   "projectType": "library",
   "targets": {
     "build": {
       "executor": "nx:run-commands",
       "options": {
         "command": "tsup",
-        "cwd": "packages/cli"
+        "cwd": "src/cli"
       },
       "outputs": ["{workspaceRoot}/dist/cli"],
       "dependsOn": ["backend:build", "config:build"]
@@ -17,7 +17,7 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "vitest run --coverage.enabled=false",
-        "cwd": "packages/cli"
+        "cwd": "src/cli"
       },
       "outputs": ["{workspaceRoot}/coverage"]
     },
@@ -25,27 +25,27 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "vitest",
-        "cwd": "packages/cli"
+        "cwd": "src/cli"
       }
     },
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
         "command": "vitest run --coverage",
-        "cwd": "packages/cli"
+        "cwd": "src/cli"
       },
       "outputs": ["{workspaceRoot}/coverage"]
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check packages/cli"
+        "command": "biome check src/cli"
       }
     },
     "lint:fix": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "biome check --write packages/cli"
+        "command": "biome check --write src/cli"
       }
     },
     "type-check": {
@@ -58,7 +58,7 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "tsup --watch",
-        "cwd": "packages/cli"
+        "cwd": "src/cli"
       },
       "dependsOn": ["backend:build"]
     },
@@ -66,7 +66,7 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "../../scripts/publish-with-tag.sh",
-        "cwd": "packages/cli"
+        "cwd": "src/cli"
       }
     }
   },

@@ -32,14 +32,15 @@
       "@xiaozhi-client/mcp-core": ["./src/mcp-core/index.ts"],
       "@xiaozhi-client/config": ["./src/config/index.ts"],
       "@xiaozhi-client/endpoint": ["./src/endpoint/index.ts"],
-      "@xiaozhi-client/esp32": ["./src/esp32/index.ts"]
+      "@xiaozhi-client/esp32": ["./src/esp32/index.ts"],
+      "@xiaozhi-client/cli": ["./src/cli/index.ts"]
     }
   },
   "include": ["apps/backend/**/*", "packages/**/*", "mcps/**/*", "src/**/*"],
   "exclude": ["node_modules", "dist", "scripts/**/*", "templates/**/*"],
   "references": [
     { "path": "./apps/backend" },
-    { "path": "./packages/cli" },
+    { "path": "./src/cli" },
     { "path": "./mcps/calculator-mcp" },
     { "path": "./mcps/datetime-mcp" }
   ]
