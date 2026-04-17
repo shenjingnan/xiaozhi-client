@@ -1,0 +1,27 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "../../dist/backend",
+    "rootDir": "../../",
+    "baseUrl": "../../",
+    "types": ["vitest/globals"]
+  },
+  "include": [
+    "./**/*.ts",
+    "../../src/utils/**/*.ts",
+    "../../src/types/**/*.ts",
+    "../../src/mcp-core/**/*.ts",
+    "../../src/config/**/*.ts",
+    "../../src/endpoint/**/*.ts",
+    "../../src/esp32/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.config.ts",
+    "../../src/endpoint/__tests__/**/*"
+  ]
+}
