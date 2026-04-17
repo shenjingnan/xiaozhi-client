@@ -97,6 +97,24 @@ describe("CozeWorkflowIntegration - 集成测试", () => {
       writable: true,
       value: true,
     });
+    // 确保 ResizeObserver 可用（jsdom 不支持，Radix UI 依赖它）
+    const _ResizeObserverMock = vi.fn(function (
+      this: {
+        observe: ReturnType<typeof vi.fn>;
+        unobserve: ReturnType<typeof vi.fn>;
+        disconnect: ReturnType<typeof vi.fn>;
+      },
+      _callback: (...args: unknown[]) => void
+    ) {
+      this.observe = vi.fn();
+      this.unobserve = vi.fn();
+      this.disconnect = vi.fn();
+    });
+    Object.defineProperty(window, "ResizeObserver", {
+      writable: true,
+      configurable: true,
+      value: _ResizeObserverMock,
+    });
   });
 
   afterEach(() => {

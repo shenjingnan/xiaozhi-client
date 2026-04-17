@@ -1,41 +1,82 @@
-import "@testing-library/jest-dom";
 import { vi } from "vitest";
 
-// Mock window.matchMedia
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: vi.fn().mockImplementation((query) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
+// 仅在浏览器环境（jsdom）下执行以下设置
+const isBrowserEnvironment =
+  typeof window !== "undefined" && typeof document !== "undefined";
 
-// Mock window.open
-Object.defineProperty(window, "open", {
-  writable: true,
-  value: vi.fn(),
-});
+if (isBrowserEnvironment) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("@testing-library/jest-dom");
 
-// Mock document.execCommand
-Object.defineProperty(document, "execCommand", {
-  value: vi.fn(),
-  writable: true,
-});
+  // Polyfill jsdom 缺少的浏览器 API
+  if (!HTMLElement.prototype.hasPointerCapture) {
+    HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
+  }
+  if (!HTMLElement.prototype.setPointerCapture) {
+    HTMLElement.prototype.setPointerCapture = vi.fn();
+  }
+  if (!Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = vi.fn();
+  }
 
-// Global test setup and cleanup
+  // Polyfill ResizeObserver（jsdom 不支持，Radix UI 等库依赖它）
+  // 使用 class 形式确保 new ResizeObserver() 返回正确结构的实例
+  const _ResizeObserverMock = vi.fn(function (
+    this: {
+      observe: ReturnType<typeof vi.fn>;
+      unobserve: ReturnType<typeof vi.fn>;
+      disconnect: ReturnType<typeof vi.fn>;
+    },
+    _callback: (...args: unknown[]) => void
+  ) {
+    this.observe = vi.fn();
+    this.unobserve = vi.fn();
+    this.disconnect = vi.fn();
+  });
+  Object.defineProperty(window, "ResizeObserver", {
+    writable: true,
+    configurable: true,
+    value: _ResizeObserverMock,
+  });
+
+  // Mock window.matchMedia
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(), // deprecated
+      removeListener: vi.fn(), // deprecated
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+
+  // Mock window.open
+  Object.defineProperty(window, "open", {
+    writable: true,
+    value: vi.fn(),
+  });
+
+  // Mock document.execCommand
+  Object.defineProperty(document, "execCommand", {
+    value: vi.fn(),
+    writable: true,
+  });
+}
+
+// Global test setup and cleanup（仅在浏览器环境下执行 DOM 操作）
 beforeEach(() => {
+  if (!isBrowserEnvironment) return;
+
   // Clean up clipboard before each test to avoid conflicts with userEvent.setup()
   try {
     if (navigator && "clipboard" in navigator) {
       (navigator as any).clipboard = undefined;
     }
-  } catch (e) {
+  } catch {
     // Ignore errors when cleaning up clipboard
   }
 
@@ -88,7 +129,6 @@ beforeEach(() => {
       value: string,
       priority?: string
     ) {
-      // 使用类型断言来访问 parentElement
       const parentElement = (this as any).parentElement as
         | HTMLElement
         | undefined;
@@ -132,7 +172,6 @@ beforeEach(() => {
   } else {
     const root = document.createElement("div");
     root.id = "root";
-    // 确保容器可以被 React 使用
     root.style.pointerEvents = "auto";
     root.style.visibility = "visible";
     root.style.position = "relative";
@@ -145,7 +184,6 @@ beforeEach(() => {
   } else {
     const modalRoot = document.createElement("div");
     modalRoot.id = "modal-root";
-    // 确保容器可以被 React 使用
     modalRoot.style.pointerEvents = "auto";
     modalRoot.style.visibility = "visible";
     modalRoot.style.position = "relative";
@@ -172,7 +210,6 @@ beforeEach(() => {
       ) {
         el.remove();
       }
-      // 重置可能导致问题的属性和样式
       if (el.hasAttribute("data-scroll-locked")) {
         el.removeAttribute("data-scroll-locked");
       }
@@ -197,12 +234,14 @@ beforeEach(() => {
         }
       }
     }
-  } catch (e) {
+  } catch {
     // Ignore errors during cleanup
   }
 });
 
 afterEach(() => {
+  if (!isBrowserEnvironment) return;
+
   // Clean up all dynamically created elements after each test
   try {
     const elementsToRemove = document.querySelectorAll("*");
@@ -216,7 +255,6 @@ afterEach(() => {
       ) {
         el.remove();
       }
-      // 重置可能导致问题的属性和样式
       if (el.hasAttribute("data-scroll-locked")) {
         el.removeAttribute("data-scroll-locked");
       }
@@ -267,7 +305,7 @@ afterEach(() => {
     if (document.body.style) {
       document.body.style.pointerEvents = "auto";
     }
-  } catch (e) {
+  } catch {
     // Ignore errors during cleanup
   }
 });

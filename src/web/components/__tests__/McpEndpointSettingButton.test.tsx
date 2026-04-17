@@ -28,6 +28,15 @@ Object.defineProperty(document, "execCommand", {
 const originalConsoleError = console.error;
 beforeEach(() => {
   console.error = vi.fn();
+
+  // Mock navigator.clipboard 以确保复制功能走主路径（而非降级方案）
+  Object.defineProperty(navigator, "clipboard", {
+    value: {
+      writeText: vi.fn().mockResolvedValue(undefined),
+    },
+    writable: true,
+    configurable: true,
+  });
 });
 
 afterEach(() => {
