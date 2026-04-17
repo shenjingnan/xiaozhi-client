@@ -34,17 +34,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { apiClient } from "@/services/api";
 import {
   formatDuration,
   formatJson,
   formatTimestamp,
   generateStableKey,
 } from "@/utils/formatUtils";
-import type {
-  ApiResponse,
-  ToolCallLogsResponse,
-  ToolCallRecord,
-} from "@xiaozhi-client/shared-types";
+import type { ToolCallRecord } from "@xiaozhi-client/shared-types";
 import {
   CheckCircle,
   CheckIcon,
@@ -79,17 +76,11 @@ export function ToolCallLogsDialog() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/tool-calls/logs?limit=${limit}`);
-        const data: ApiResponse<ToolCallLogsResponse> = await response.json();
-
-        if (data.success && data.data) {
-          setLogs(data.data.records);
-          setTotal(data.data.total);
-        } else {
-          setError(data.error?.message || "获取日志失败");
-        }
+        const data = await apiClient.getToolCallLogs(limit);
+        setLogs(data.records);
+        setTotal(data.total);
       } catch (err) {
-        setError("网络请求失败");
+        setError(err instanceof Error ? err.message : "获取日志失败");
         console.error("获取工具调用日志失败:", err);
       } finally {
         if (isRefresh) {

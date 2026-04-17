@@ -14,6 +14,7 @@ import type {
   MCPServerConfig,
   MCPServerListResponse,
   MCPServerStatus,
+  ToolCallLogsResponse,
   VoicesResponse,
 } from "@xiaozhi-client/shared-types";
 
@@ -1190,6 +1191,26 @@ export class ApiClient {
 
     if (!response.success || !response.data) {
       throw new Error(response.error?.message || "获取 MCP 工具列表失败");
+    }
+
+    return response.data;
+  }
+
+  // ==================== 工具调用日志 API ====================
+
+  /**
+   * 获取工具调用日志
+   * GET /api/tool-calls/logs
+   * @param limit 返回的最大记录数量（默认 50）
+   * @returns 工具调用日志响应
+   */
+  async getToolCallLogs(limit = 50): Promise<ToolCallLogsResponse> {
+    const response: ApiResponse<ToolCallLogsResponse> = await this.request(
+      `/api/tool-calls/logs?limit=${limit}`
+    );
+
+    if (!response.success || !response.data) {
+      throw new Error(response.error?.message || "获取工具调用日志失败");
     }
 
     return response.data;
