@@ -14,7 +14,6 @@
       "*.d.ts",
       "pnpm-lock.yaml",
       "templates/**/*.js",
-      "apps/backend/tsup.config.ts",
       "package.json",
       "worktrees/**"
     ]
@@ -58,12 +57,7 @@
   },
   "overrides": [
     {
-      "include": [
-        "packages/cli/**",
-        "src/cli/**",
-        "src/web/**",
-        "src/server/**"
-      ],
+      "include": ["src/cli/**", "src/web/**", "src/server/**"],
       "linter": {
         "rules": {
           "nursery": {

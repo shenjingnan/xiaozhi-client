@@ -7,9 +7,9 @@ import type { Context } from "hono";
 import { createTTS } from "univoice";
 import { configManager } from "../../config/index.js";
 import { mapClusterToResourceId } from "../../esp32/index.js";
+import type { VoiceInfo, VoicesResponse } from "../../types/tts/index.js";
 import { TTS_VOICES, getVoiceScenes } from "../constants/voices.js";
 import type { AppContext } from "../types/hono.context.js";
-import type { VoiceInfo, VoicesResponse } from "../types/index.js";
 import { BaseHandler } from "./base.handler.js";
 
 /**

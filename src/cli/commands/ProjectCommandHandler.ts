@@ -74,7 +74,7 @@ export class ProjectCommandHandler extends BaseCommandHandler {
         // 使用模板创建项目
         await this.createFromTemplate(
           projectName,
-          options.template,
+          options.template as string,
           targetPath,
           spinner,
           templateManager

@@ -159,7 +159,7 @@ export default defineConfig({
         'import("../backend/WebServer.js")'
       )
       .replace(
-        /import\(["']@\/WebServer["']\)/g,
+        /import\(["']@\/\/WebServer["']\)/g,
         'import("../backend/WebServer.js")'
       );
 

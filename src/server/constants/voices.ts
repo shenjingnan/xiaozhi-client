@@ -3,7 +3,7 @@
  * 来源于火山引擎豆包语音合成模型 2.0
  */
 
-import type { VoiceInfo } from "../types/index.js";
+import type { VoiceInfo } from "../../types/tts/voice.js";
 
 /**
  * TTS 音色列表

@@ -20,10 +20,6 @@
     "noImplicitOverride": true,
     "useUnknownInCatchVariables": true,
     "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "removeComments": false,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "paths": {
@@ -33,16 +29,21 @@
       "@xiaozhi-client/config": ["./src/config/index.ts"],
       "@xiaozhi-client/endpoint": ["./src/endpoint/index.ts"],
       "@xiaozhi-client/esp32": ["./src/esp32/index.ts"],
-      "@xiaozhi-client/cli": ["./src/cli/index.ts"]
+      "@xiaozhi-client/cli": ["./src/cli/index.ts"],
+      "@/*": ["./src/server/*"],
+      "@": ["./src/server/index.ts"]
     }
   },
   "include": ["mcps/**/*", "src/**/*"],
-  "exclude": ["node_modules", "dist", "scripts/**/*", "templates/**/*"],
-  "references": [
-    { "path": "./src/server" },
-    { "path": "./src/cli" },
-    { "path": "./src/web" },
-    { "path": "./mcps/calculator-mcp" },
-    { "path": "./mcps/datetime-mcp" }
+  "exclude": [
+    "node_modules",
+    "dist",
+    "mcps/*/dist",
+    "src/web",
+    "scripts/**/*",
+    "templates/**/*",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/__tests__/**"
   ]
 }
