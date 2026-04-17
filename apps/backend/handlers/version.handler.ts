@@ -3,6 +3,7 @@
  * 提供版本信息查询、可用版本列表获取、版本检查等相关的 RESTful API 接口
  */
 import { NPMManager } from "@/lib/npm";
+import { getEventBus } from "@/services/event-bus.service.js";
 import type { AppContext } from "@/types/hono.context.js";
 import { VersionUtils } from "@xiaozhi-client/version";
 import type { Context } from "hono";
@@ -12,6 +13,17 @@ import { BaseHandler } from "./base.handler.js";
  * 版本 API 处理器
  */
 export class VersionApiHandler extends BaseHandler {
+  private npmManager: NPMManager;
+
+  /**
+   * 构造函数
+   * @param npmManager - NPM 管理器实例（可选，用于依赖注入）
+   */
+  constructor(npmManager?: NPMManager) {
+    super();
+    // 使用传入的实例或创建新实例（向后兼容）
+    this.npmManager = npmManager || new NPMManager(getEventBus());
+  }
   /**
    * 获取版本信息
    * GET /api/version
@@ -87,8 +99,10 @@ export class VersionApiHandler extends BaseHandler {
         );
       }
 
-      const npmManager = new NPMManager();
-      const versions = await npmManager.getAvailableVersions(type as string);
+      // 使用注入的 NPMManager 实例
+      const versions = await this.npmManager.getAvailableVersions(
+        type as string
+      );
 
       c.get("logger").debug(
         `获取到 ${versions.length} 个可用版本 (类型: ${type})`
@@ -117,8 +131,8 @@ export class VersionApiHandler extends BaseHandler {
     try {
       c.get("logger").debug("处理检查最新版本请求");
 
-      const npmManager = new NPMManager();
-      const result = await npmManager.checkForLatestVersion();
+      // 使用注入的 NPMManager 实例
+      const result = await this.npmManager.checkForLatestVersion();
 
       c.get("logger").debug("版本检查结果:", result);
 
