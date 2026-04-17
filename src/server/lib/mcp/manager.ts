@@ -437,22 +437,21 @@ export class MCPServiceManager extends EventEmitter {
   getAllTools(status: ToolStatusFilter = "all"): EnhancedToolInfo[] {
     const allTools: EnhancedToolInfo[] = [];
 
+    // 在循环开始前获取配置，避免循环中重复深拷贝
+    const mcpServerConfig = configManager.getMcpServerConfig();
+
     // 1. 收集所有已连接服务的工具（包含启用状态过滤）
     for (const [serviceName, service] of this.services) {
       try {
         if (service.isConnected()) {
           const serviceTools = service.getTools();
+          const serviceToolsConfig = mcpServerConfig[serviceName]?.tools || {};
+
           for (const tool of serviceTools) {
             try {
-              // 检查工具启用状态 - 这个调用可能会抛出异常
-              const isEnabled = configManager.isToolEnabled(
-                serviceName,
-                tool.name
-              );
-              const toolConfig =
-                configManager.getMcpServerConfig()[serviceName].tools[
-                  tool.name
-                ];
+              // 检查工具启用状态 - 使用缓存的配置
+              const toolConfig = serviceToolsConfig[tool.name];
+              const isEnabled = toolConfig?.enable !== false; // 默认启用
 
               // 根据 status 参数过滤工具
               if (status === "enabled" && !isEnabled) {
@@ -470,8 +469,8 @@ export class MCPServiceManager extends EventEmitter {
                 serviceName,
                 originalName: tool.name,
                 enabled: isEnabled,
-                usageCount: toolConfig.usageCount ?? 0,
-                lastUsedTime: toolConfig.lastUsedTime ?? "",
+                usageCount: toolConfig?.usageCount ?? 0,
+                lastUsedTime: toolConfig?.lastUsedTime ?? "",
               });
             } catch (toolError) {
               logger.warn(
