@@ -1080,6 +1080,13 @@ export class MCPServiceManager extends EventEmitter {
   }
 
   /**
+   * 检查服务是否存在
+   */
+  hasService(name: string): boolean {
+    return this.services.has(name);
+  }
+
+  /**
    * 获取所有已连接的服务名称
    */
   getConnectedServices(): string[] {
