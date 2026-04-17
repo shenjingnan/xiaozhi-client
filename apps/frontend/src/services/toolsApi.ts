@@ -79,7 +79,7 @@ export class ToolsApiService {
         );
       });
 
-      return result;
+      return result as AddToolResponse;
     } catch (error) {
       throw this.handleApiError(error, "添加工具");
     }
