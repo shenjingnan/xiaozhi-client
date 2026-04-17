@@ -169,6 +169,9 @@ export class MCPServiceManager extends EventEmitter {
       // 获取最新的工具列表
       const service = this.services.get(data.serviceName);
       if (service) {
+        // 先更新工具缓存
+        await this.refreshToolsCache();
+
         // 重新初始化CustomMCPHandler
         await this.refreshCustomMCPHandlerPublic();
 
