@@ -26,7 +26,7 @@ export default defineConfig({
       "@xiaozhi-client/version": resolve(__dirname, "./utils/version.ts"),
       "@xiaozhi-client/cli": resolve(__dirname, "./cli"),
       // Web 前端路径别名
-      "@/*": [resolve(__dirname, "./web/*")],
+      "@/*": resolve(__dirname, "./web"),
     },
   },
 });
