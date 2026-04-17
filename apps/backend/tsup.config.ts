@@ -238,8 +238,7 @@ export default defineConfig({
     "@modelcontextprotocol/*",
     "prism-media",
     // @xiaozhi-client 内部包（运行时从 dist 读取）
-    "@xiaozhi-client/endpoint",
-    "@xiaozhi-client/mcp-core",
+    // 注意：mcp-core、config、endpoint 已迁移至 src/ 目录，通过 alias 插件内联打包，不再 external
     "@xiaozhi-client/esp32",
     "@xiaozhi-client/esp32.js",
     "univoice",
