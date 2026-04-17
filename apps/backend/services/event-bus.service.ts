@@ -14,8 +14,10 @@
 import { EventEmitter } from "node:events";
 import type { Logger } from "@/Logger.js";
 import { logger } from "@/Logger.js";
+import type { MCPServerAddResult } from "@/handlers/mcp-manage.handler.js";
 import type { ClientInfo } from "@/services/status.service.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { MCPServerConfig } from "@xiaozhi-client/config";
 
 /**
  * 事件类型定义
@@ -102,10 +104,14 @@ export interface EventBusEvents {
   // WebSocket 相关事件
   "websocket:client:connected": { clientId: string; timestamp: number };
   "websocket:client:disconnected": { clientId: string; timestamp: number };
-  "websocket:message:received": { type: string; data: any; clientId: string };
+  "websocket:message:received": {
+    type: string;
+    data: unknown;
+    clientId: string;
+  };
 
   // 通知相关事件
-  "notification:broadcast": { type: string; data: any; target?: string };
+  "notification:broadcast": { type: string; data: unknown; target?: string };
   "notification:error": { error: Error; type: string };
 
   // MCP服务相关事件
@@ -126,7 +132,7 @@ export interface EventBusEvents {
   };
   "mcp:server:added": {
     serverName: string;
-    config: any;
+    config: MCPServerConfig;
     tools: string[];
     timestamp: Date;
   };
@@ -160,7 +166,7 @@ export interface EventBusEvents {
     addedCount: number;
     failedCount: number;
     successfullyAddedServers: string[];
-    results: any[];
+    results: MCPServerAddResult[];
     timestamp: Date;
   };
   "mcp:server:rollback": {
@@ -217,7 +223,7 @@ export interface EventBusEvents {
     timestamp: number;
   };
   "large-data-test": {
-    data: any;
+    data: unknown;
     timestamp: number;
   };
   "destroy-test": {
@@ -237,7 +243,7 @@ export interface EventBusEvents {
     timestamp: number;
   };
   "performance-test": {
-    data: any;
+    data: unknown;
     timestamp: number;
   };
   "test:performance": {
