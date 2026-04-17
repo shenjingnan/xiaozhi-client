@@ -3,11 +3,11 @@
  * 处理通过 HTTP API 调用 MCP 工具的请求
  */
 
+import type { CustomMCPTool, ProxyHandlerConfig } from "@xiaozhi-client/config";
+import { configManager } from "@xiaozhi-client/config";
 import Ajv from "ajv";
 import dayjs from "dayjs";
 import type { Context } from "hono";
-import { configManager } from "../../config/index.js";
-import type { CustomMCPTool, ProxyHandlerConfig } from "../../config/index.js";
 import type { Logger } from "../Logger.js";
 import { logger } from "../Logger.js";
 import { HTTP_TIMEOUTS } from "../constants/timeout.constants.js";

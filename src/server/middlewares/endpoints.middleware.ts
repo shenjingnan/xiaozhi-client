@@ -3,9 +3,9 @@
  * 负责创建和管理 EndpointHandler 实例
  */
 
+import { configManager } from "@xiaozhi-client/config";
+import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { MiddlewareHandler } from "hono";
-import { configManager } from "../../config/index.js";
-import type { EndpointManager } from "../../endpoint/index.js";
 import { EndpointHandler } from "../handlers/endpoint.handler.js";
 import type { AppContext } from "../types/hono.context.js";
 

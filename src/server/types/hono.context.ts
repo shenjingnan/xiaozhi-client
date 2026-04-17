@@ -3,9 +3,9 @@
  * 为 Hono Context 添加项目特定的变量类型定义
  */
 
+import type { EndpointManager } from "@xiaozhi-client/endpoint";
 import type { Context } from "hono";
 import { Hono } from "hono";
-import type { EndpointManager } from "../../endpoint/index.js";
 import type { Logger } from "../Logger.js";
 import type { EndpointHandler } from "../handlers/index.js";
 import type { MCPServiceManager } from "../lib/mcp";

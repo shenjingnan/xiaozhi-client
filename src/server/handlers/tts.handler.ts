@@ -3,11 +3,11 @@
  * 提供语音合成 RESTful API 接口
  */
 
+import { configManager } from "@xiaozhi-client/config";
+import { mapClusterToResourceId } from "@xiaozhi-client/esp32";
+import type { VoiceInfo, VoicesResponse } from "@xiaozhi-client/shared-types";
 import type { Context } from "hono";
 import { createTTS } from "univoice";
-import { configManager } from "../../config/index.js";
-import { mapClusterToResourceId } from "../../esp32/index.js";
-import type { VoiceInfo, VoicesResponse } from "../../types/tts/index.js";
 import { TTS_VOICES, getVoiceScenes } from "../constants/voices.js";
 import type { AppContext } from "../types/hono.context.js";
 import { BaseHandler } from "./base.handler.js";

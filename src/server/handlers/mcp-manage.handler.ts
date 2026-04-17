@@ -13,10 +13,10 @@
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import type { ConfigManager, MCPServerConfig } from "@xiaozhi-client/config";
+import { normalizeServiceConfig } from "@xiaozhi-client/config";
+import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
 import type { Context } from "hono";
-import type { ConfigManager, MCPServerConfig } from "../../config/index.js";
-import { normalizeServiceConfig } from "../../config/index.js";
-import { TypeFieldNormalizer } from "../../mcp-core/index.js";
 import type { Logger } from "../Logger.js";
 import { logger } from "../Logger.js";
 import { ErrorCategory, MCPError, MCPErrorCode } from "../errors/mcp-errors.js";
