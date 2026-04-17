@@ -391,3 +391,14 @@ export class ToolCallError extends Error {
     this.name = "ToolCallError";
   }
 }
+
+// =========================
+// 向后兼容性别名
+// =========================
+
+/**
+ * 向后兼容：ServiceStatus 别名
+ * 为了与现有代码保持兼容，暂时保留此别名
+ * @deprecated 请使用 MCPServiceConnectionStatus
+ */
+export type ServiceStatus = MCPServiceConnectionStatus;
