@@ -51,7 +51,14 @@ function isErrorWithCode(error: unknown): error is ErrorWithCode {
 }
 
 /**
- * 获取扣子 API 服务实例
+ * 扣子 API 服务单例实例
+ * 用于缓存管理，确保所有操作使用同一个实例
+ */
+let cozeApiServiceInstance: CozeApiService | null = null;
+
+/**
+ * 获取扣子 API 服务实例（单例模式）
+ * 如果实例不存在或 token 变化，则创建新实例
  */
 function getCozeApiService(): CozeApiService {
   const token = configManager.getCozeToken();
@@ -62,7 +69,12 @@ function getCozeApiService(): CozeApiService {
     );
   }
 
-  return new CozeApiService(token);
+  // 如果实例不存在或 token 变化，创建新实例
+  if (!cozeApiServiceInstance || cozeApiServiceInstance.getToken() !== token) {
+    cozeApiServiceInstance = new CozeApiService(token);
+  }
+
+  return cozeApiServiceInstance;
 }
 
 /**
