@@ -48,7 +48,7 @@ vi.mock("@/stores/config", () => ({
  * 切换到高级模式（JSON 输入）
  */
 async function switchToAdvancedMode() {
-  const advancedTab = screen.getByRole("tab", { name: "高级模式" });
+  const advancedTab = screen.getByRole("tab", { name: /高级模式/ });
   await userEvent.click(advancedTab);
 
   // 等待 JSON textarea 出现
