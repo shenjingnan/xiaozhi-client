@@ -5,6 +5,7 @@
 
 import type { JSONSchema as LibJSONSchema } from "@/lib/mcp/types.js";
 import type { CozeWorkflow, WorkflowParameterConfig } from "./coze.js";
+import type { CustomMCPTool } from "@xiaozhi-client/config";
 
 /**
  * JSON Schema 类型
@@ -234,6 +235,19 @@ export enum ToolValidationError {
 }
 
 /**
+ * 错误详情结构
+ * 用于提供具体的错误信息
+ */
+export interface ErrorDetail {
+  /** 错误相关的字段名 */
+  field: string;
+  /** 字段的值 */
+  value: unknown;
+  /** 错误原因 */
+  reason: string;
+}
+
+/**
  * 工具验证错误详情
  */
 export interface ToolValidationErrorDetail {
@@ -242,7 +256,7 @@ export interface ToolValidationErrorDetail {
   /** 错误消息 */
   message: string;
   /** 错误详情 */
-  details?: any;
+  details?: Record<string, unknown> | string | ErrorDetail[];
   /** 建议的解决方案 */
   suggestions?: string[];
 }
@@ -252,7 +266,7 @@ export interface ToolValidationErrorDetail {
  */
 export interface AddToolResponse {
   /** 成功添加的工具 */
-  tool: any;
+  tool: CustomMCPTool;
   /** 工具名称 */
   toolName: string;
   /** 工具类型 */
