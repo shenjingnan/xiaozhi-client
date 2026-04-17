@@ -74,6 +74,15 @@ export default defineConfig({
       __VERSION__: JSON.stringify(rootPkg.version),
       __APP_NAME__: JSON.stringify(rootPkg.name),
     };
+
+    // 注入 require polyfill：让打包的 CJS 依赖中的 require() 在 ESM 环境下正常工作
+    options.banner = {
+      js: [
+        "import { createRequire } from 'node:module';",
+        "const require = createRequire(import.meta.url);",
+        "var __require = require;",
+      ].join("\n"),
+    };
   },
   outExtension() {
     return {
@@ -103,10 +112,8 @@ export default defineConfig({
     "express",
     "pino",
     "pino-*",
-    "zod",
     "comment-json",
     "dayjs",
-    "ajv",
     "eventsource",
     "hono",
     "@hono/*",

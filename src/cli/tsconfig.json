@@ -7,5 +7,5 @@
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"],
-  "references": [{ "path": "../../apps/backend" }]
+  "references": [{ "path": "../server" }]
 }
