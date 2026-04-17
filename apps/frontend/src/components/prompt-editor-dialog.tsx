@@ -4,6 +4,16 @@
  * 提供查看、编辑、新建提示词文件的功能
  */
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +71,7 @@ export function PromptEditorDialog({
   const [originalContent, setOriginalContent] = useState("");
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   // 加载提示词文件内容
   const loadPromptContent = useCallback(async (path: string) => {
@@ -146,15 +157,17 @@ export function PromptEditorDialog({
     }
   };
 
-  // 删除提示词
-  const handleDelete = async () => {
+  // 删除提示词 - 打开确认对话框
+  const handleDelete = () => {
+    if (!selectedPath) return;
+    setDeleteConfirmOpen(true);
+  };
+
+  // 确认删除提示词
+  const confirmDelete = async () => {
     if (!selectedPath) return;
 
-    // 确认删除
-    if (!window.confirm(`确定要删除文件 "${fileName}" 吗？此操作无法撤销。`)) {
-      return;
-    }
-
+    setDeleteConfirmOpen(false);
     setIsSaving(true);
     setError(null);
     try {
@@ -193,136 +206,154 @@ export function PromptEditorDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="size-5" />
-            {getTitle()}
-          </DialogTitle>
-          <DialogDescription>{getDescription()}</DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="size-5" />
+              {getTitle()}
+            </DialogTitle>
+            <DialogDescription>{getDescription()}</DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="size-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+          <div className="space-y-4 py-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="size-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          {mode === "create" && (
-            <div className="space-y-2">
-              <Label htmlFor="fileName">文件名</Label>
-              <Input
-                id="fileName"
-                placeholder="例如：custom-prompt.md"
-                value={fileName}
-                onChange={(e) => setFileName(e.target.value)}
-                disabled={isSaving}
-              />
-            </div>
-          )}
+            {mode === "create" && (
+              <div className="space-y-2">
+                <Label htmlFor="fileName">文件名</Label>
+                <Input
+                  id="fileName"
+                  placeholder="例如：custom-prompt.md"
+                  value={fileName}
+                  onChange={(e) => setFileName(e.target.value)}
+                  disabled={isSaving}
+                />
+              </div>
+            )}
 
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="size-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">加载中...</span>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="content">提示词内容</Label>
-              <Textarea
-                id="content"
-                placeholder="请输入系统提示词内容..."
-                className="min-h-[300px] font-mono text-sm"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                disabled={isSaving || (mode === "view" && !isSaving)}
-              />
-            </div>
-          )}
-        </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-muted-foreground">加载中...</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="content">提示词内容</Label>
+                <Textarea
+                  id="content"
+                  placeholder="请输入系统提示词内容..."
+                  className="min-h-[300px] font-mono text-sm"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  disabled={isSaving || (mode === "view" && !isSaving)}
+                />
+              </div>
+            )}
+          </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          {mode === "view" && selectedPath && (
-            <>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                disabled={isSaving}
-                className="mr-auto"
-              >
-                <Trash2 className="size-4 mr-1" />
-                删除
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setMode("edit")}
-                disabled={isSaving}
-              >
-                编辑
-              </Button>
-              <DialogClose asChild>
-                <Button variant="secondary">关闭</Button>
-              </DialogClose>
-            </>
-          )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            {mode === "view" && selectedPath && (
+              <>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={isSaving}
+                  className="mr-auto"
+                >
+                  <Trash2 className="size-4 mr-1" />
+                  删除
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setMode("edit")}
+                  disabled={isSaving}
+                >
+                  编辑
+                </Button>
+                <DialogClose asChild>
+                  <Button variant="secondary">关闭</Button>
+                </DialogClose>
+              </>
+            )}
 
-          {mode === "edit" && (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setMode("view");
-                  setContent(originalContent);
-                  setError(null);
-                }}
-                disabled={isSaving}
-              >
-                取消
-              </Button>
-              <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
-                {isSaving ? (
-                  <>
-                    <Loader2 className="size-4 mr-1 animate-spin" />
-                    保存中...
-                  </>
-                ) : (
-                  "保存"
-                )}
-              </Button>
-            </>
-          )}
-
-          {mode === "create" && (
-            <>
-              <DialogClose asChild>
-                <Button variant="outline" disabled={isSaving}>
+            {mode === "edit" && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMode("view");
+                    setContent(originalContent);
+                    setError(null);
+                  }}
+                  disabled={isSaving}
+                >
                   取消
                 </Button>
-              </DialogClose>
-              <Button
-                onClick={handleSave}
-                disabled={isSaving || !content.trim() || !fileName.trim()}
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="size-4 mr-1 animate-spin" />
-                    创建中...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="size-4 mr-1" />
-                    创建
-                  </>
-                )}
-              </Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="size-4 mr-1 animate-spin" />
+                      保存中...
+                    </>
+                  ) : (
+                    "保存"
+                  )}
+                </Button>
+              </>
+            )}
+
+            {mode === "create" && (
+              <>
+                <DialogClose asChild>
+                  <Button variant="outline" disabled={isSaving}>
+                    取消
+                  </Button>
+                </DialogClose>
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving || !content.trim() || !fileName.trim()}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="size-4 mr-1 animate-spin" />
+                      创建中...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="size-4 mr-1" />
+                      创建
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除确认对话框 */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除文件 "{fileName}" 吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>删除</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
