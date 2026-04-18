@@ -10,6 +10,7 @@ import { isModelScopeURL } from "../../../config/index.js";
 import type { MCPToolConfig } from "../../../config/index.js";
 import { configManager } from "../../../config/index.js";
 import { logger } from "../../Logger.js";
+import { HTTP_TIMEOUTS } from "../../constants/timeout.constants.js";
 import { MCPService } from "../../lib/mcp";
 import { MCPCacheManager } from "../../lib/mcp";
 import { ConnectionState } from "../../lib/mcp/types";
@@ -1430,8 +1431,8 @@ export class MCPServiceManager extends EventEmitter {
     // 记录重试安排
     logger.info(`[MCPManager] 安排 ${failedServices.length} 个失败服务的重试`);
 
-    // 初始重试延迟：30秒
-    const initialDelay = 30000;
+    // 初始重试延迟：使用 HTTP_TIMEOUTS.DEFAULT 常量
+    const initialDelay = HTTP_TIMEOUTS.DEFAULT;
 
     for (const serviceName of failedServices) {
       this.failedServices.add(serviceName);
@@ -1512,7 +1513,7 @@ export class MCPServiceManager extends EventEmitter {
     const hash = serviceName
       .split("")
       .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return 30000 + (hash % 60000); // 30-90秒之间的初始延迟
+    return HTTP_TIMEOUTS.DEFAULT + (hash % 60000); // 30-90秒之间的初始延迟
   }
 
   /**
