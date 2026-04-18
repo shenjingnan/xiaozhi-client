@@ -8,7 +8,7 @@
  * - 支持复制日志内容
  * - 显示调用状态和耗时
  *
- * @module apps/frontend/src/components/tool-call-logs-dialog
+ * @module src/web/components/tool-call-logs-dialog
  */
 
 "use client";

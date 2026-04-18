@@ -70,8 +70,8 @@ export default defineConfig({
     "@modelcontextprotocol/sdk",
     "eventsource",
     // Backend 模块（运行时从 dist/backend 读取）
-    "@/WebServer",
-    "@/WebServer.js",
+    "@/server/WebServer",
+    "@/server/WebServer.js",
   ],
   outExtension: () => ({
     js: ".js",
@@ -81,20 +81,19 @@ export default defineConfig({
     const filePath = resolve("../../dist/cli/index.js");
     let content = readFileSync(filePath, "utf-8");
 
-    // 替换 @/* 为指向正确位置的相对路径
+    // 替换 @/server/WebServer 为指向正确位置的相对路径
     content = content
       .replace(
-        /from\s*["']@\/WebServer\.js["']/g,
+        /from\s*["']@\/server\/WebServer\.js["']/g,
         'from "../backend/WebServer.js"'
       )
-      .replace(/from\s*["']@\/WebServer["']/g, 'from "../backend/WebServer.js"')
-      // 替换动态导入中的 @/WebServer.js
       .replace(
-        /import\(["']@\/WebServer\.js["']\)/g,
-        'import("../backend/WebServer.js")'
+        /from\s*["']@\/server\/WebServer["']/g,
+        'from "../backend/WebServer.js"'
       )
+      // 替换动态导入中的 @/server/WebServer.js
       .replace(
-        /import\(["']@\/\/WebServer["']\)/g,
+        /import\(["']@\/server\/WebServer\.js["']\)/g,
         'import("../backend/WebServer.js")'
       );
 

@@ -7,7 +7,7 @@
  * - 配置验证和初始化
  * - 多种运行模式支持（normal、mcp-server）
  *
- * @module packages/cli/src/services/ServiceManager
+ * @module src/cli/services/ServiceManager
  */
 
 import consola from "consola";
@@ -277,7 +277,7 @@ export class ServiceManagerImpl implements IServiceManager {
       process.exit(0);
     } else {
       // 前台模式 - 直接启动 Web Server
-      const { WebServer } = await import("@/WebServer.js");
+      const { WebServer } = await import("@/server/WebServer.js");
       const server = new WebServer(port);
 
       // 处理退出信号
@@ -336,7 +336,7 @@ export class ServiceManagerImpl implements IServiceManager {
    * 前台模式启动 WebServer
    */
   private async startWebServerInForeground(): Promise<void> {
-    const { WebServer } = await import("@/WebServer.js");
+    const { WebServer } = await import("@/server/WebServer.js");
     const server = new WebServer();
 
     // 处理退出信号

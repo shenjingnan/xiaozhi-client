@@ -7,7 +7,7 @@
  * - 参数类型（string/number/boolean）
  * - 是否必填
  *
- * @module apps/frontend/src/components/common/workflow-parameter-config-dialog
+ * @module src/web/components/common/workflow-parameter-config-dialog
  */
 
 import { Button } from "@/components/ui/button";

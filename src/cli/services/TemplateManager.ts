@@ -8,7 +8,7 @@
  * - 模板变量替换
  * - 模板验证
  *
- * @module packages/cli/src/services/TemplateManager
+ * @module src/cli/services/TemplateManager
  */
 
 import fs from "node:fs";

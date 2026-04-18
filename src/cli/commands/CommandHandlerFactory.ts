@@ -8,7 +8,7 @@
  * - MCP 命令处理器
  * - 端点命令处理器
  *
- * @module packages/cli/src/commands/CommandHandlerFactory
+ * @module src/cli/commands/CommandHandlerFactory
  */
 
 import type {

@@ -7,13 +7,13 @@
  * - 进程状态监控
  * - 支持手动重启
  *
- * @module packages/cli/src/services/DaemonManager
+ * @module src/cli/services/DaemonManager
  */
 
 import type { ChildProcess } from "node:child_process";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import type { WebServer } from "@/WebServer";
+import type { WebServer } from "@/server/WebServer";
 import consola from "consola";
 import { RETRY_CONSTANTS } from "../Constants";
 import { ProcessError, ServiceError } from "../errors/index";

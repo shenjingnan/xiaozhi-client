@@ -1,7 +1,7 @@
 /**
  * 后端类型定义统一导出模块
  *
- * 此文件作为 apps/backend/types 的入口点，统一导出所有类型定义、工具函数和常量。
+ * 此文件作为 src/server/types 的入口点，统一导出所有类型定义、工具函数和常量。
  * 主要包括：
  *
  * - **MCP 核心类型**：
@@ -55,7 +55,7 @@
  * import { DEFAULT_CONFIG } from '../types';
  * ```
  *
- * @module apps/backend/types
+ * @module src/server/types
  */
 export type {
   MCPMessage,

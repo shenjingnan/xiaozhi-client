@@ -7,9 +7,9 @@
 
 /**
  * WebServer 类型声明
- * 对应 apps/backend/WebServer.ts
+ * 对应 src/server/WebServer.ts
  */
-declare module "@/WebServer.js" {
+declare module "@/server/WebServer.js" {
 	/**
 	 * WebServer - Web 服务器主控制器
 	 */
