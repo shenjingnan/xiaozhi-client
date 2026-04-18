@@ -1,5 +1,5 @@
 /**
- * @xiaozhi-client/config
+ * @/config
  *
  * 小智客户端配置管理库
  *
@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { configManager } from '@xiaozhi-client/config';
+ * import { configManager } from '@/config';
  *
  * // 获取配置
  * const config = configManager.getConfig();

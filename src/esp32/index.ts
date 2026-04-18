@@ -1,5 +1,5 @@
 /**
- * @xiaozhi-client/esp32
+ * @/esp32
  * ESP32 硬件设备通信 SDK
  *
  * 提供设备连接管理 + 语音交互全流程（ASR → LLM → TTS）+ 二进制音频协议处理

@@ -78,8 +78,8 @@ export class ToolCallError extends Error {
 // =========================
 
 // 从 mcp-core 重新导出 JSONSchema 类型和相关函数，避免重复定义
-import type { JSONSchema } from "@xiaozhi-client/mcp-core";
-import { ensureToolJSONSchema } from "@xiaozhi-client/mcp-core";
+import type { JSONSchema } from "@/mcp-core";
+import { ensureToolJSONSchema } from "@/mcp-core";
 
 // 重新导出供外部使用
 export type { JSONSchema };

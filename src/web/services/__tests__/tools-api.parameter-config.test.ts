@@ -3,11 +3,8 @@
  * 测试第二阶段新增的参数配置功能
  */
 
-import type {
-  CozeWorkflow,
-  WorkflowParameterConfig,
-} from "@xiaozhi-client/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { CozeWorkflow, WorkflowParameterConfig } from "../../../types";
 import { ToolsApiService } from "../toolsApi";
 
 // Mock apiClient

@@ -8,9 +8,9 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import type { AppConfig } from "@xiaozhi-client/shared-types";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { AppConfig } from "../../../types";
 
 // Mock modules
 vi.mock("@/stores/config");

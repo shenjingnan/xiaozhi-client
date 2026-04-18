@@ -19,14 +19,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // 映射 @xiaozhi-client/* 包名到实际 src/ 目录
-      "@xiaozhi-client/mcp-core": resolve(__dirname, "./mcp-core"),
-      "@xiaozhi-client/config": resolve(__dirname, "./config"),
-      "@xiaozhi-client/shared-types": resolve(__dirname, "./types"),
-      "@xiaozhi-client/endpoint": resolve(__dirname, "./endpoint"),
-      "@xiaozhi-client/esp32": resolve(__dirname, "./esp32"),
-      "@xiaozhi-client/version": resolve(__dirname, "./utils/version.ts"),
-      "@xiaozhi-client/cli": resolve(__dirname, "./cli"),
+      // 统一的 @/ 跨模块路径别名
+      // 注意：@/config 和 @/utils 与 Web 前端路径冲突，非 Web 代码使用相对路径
+      "@/types": resolve(__dirname, "./types"),
+      "@/mcp-core": resolve(__dirname, "./mcp-core"),
+      "@/endpoint": resolve(__dirname, "./endpoint"),
+      "@/esp32": resolve(__dirname, "./esp32"),
+      "@/cli": resolve(__dirname, "./cli"),
+      "@/server": resolve(__dirname, "./server"),
       // Web 前端路径别名（与 src/web/vitest.config.ts 保持一致）
       "@": resolve(__dirname, "./web"),
       "@components": resolve(__dirname, "./web/components"),
@@ -39,6 +39,15 @@ export default defineConfig({
       "@pages": resolve(__dirname, "./web/pages"),
       "@providers": resolve(__dirname, "./web/providers"),
       "@ui": resolve(__dirname, "./web/components/ui"),
+      // 兼容层：旧的 @xiaozhi-client/* 包名路径别名（与 tsconfig.json paths 保持一致）
+      // 注意：vitest.config.ts 位于 src/ 目录下，__dirname 为 src/，故路径相对 src/
+      "@xiaozhi-client/version": resolve(__dirname, "./utils/version.ts"),
+      "@xiaozhi-client/shared-types": resolve(__dirname, "./types/index.ts"),
+      "@xiaozhi-client/mcp-core": resolve(__dirname, "./mcp-core/index.ts"),
+      "@xiaozhi-client/config": resolve(__dirname, "./config/index.ts"),
+      "@xiaozhi-client/endpoint": resolve(__dirname, "./endpoint/index.ts"),
+      "@xiaozhi-client/esp32": resolve(__dirname, "./esp32/index.ts"),
+      "@xiaozhi-client/cli": resolve(__dirname, "./cli/index.ts"),
     },
   },
 });

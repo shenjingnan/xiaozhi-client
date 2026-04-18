@@ -23,6 +23,16 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "paths": {
+      // 统一的 @/ 路径别名体系（新）
+      "@/types": ["./src/types"],
+      "@/config": ["./src/config"],
+      "@/mcp-core": ["./src/mcp-core"],
+      "@/endpoint": ["./src/endpoint"],
+      "@/esp32": ["./src/esp32"],
+      "@/cli": ["./src/cli"],
+      "@/utils": ["./src/utils"],
+      "@/server": ["./src/server"],
+      // 兼容层：旧的 @xiaozhi-client/* 包名（逐步废弃）
       "@xiaozhi-client/version": ["./src/utils/version.ts"],
       "@xiaozhi-client/shared-types": ["./src/types/index.ts"],
       "@xiaozhi-client/mcp-core": ["./src/mcp-core/index.ts"],
@@ -30,6 +40,7 @@
       "@xiaozhi-client/endpoint": ["./src/endpoint/index.ts"],
       "@xiaozhi-client/esp32": ["./src/esp32/index.ts"],
       "@xiaozhi-client/cli": ["./src/cli/index.ts"],
+      // Server 模块专用别名（保留现有行为）
       "@/*": ["./src/server/*"],
       "@": ["./src/server/index.ts"]
     }

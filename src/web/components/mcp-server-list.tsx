@@ -31,6 +31,9 @@ import {
   useMcpServers,
 } from "@/stores/config";
 import { getMcpServerCommunicationType } from "@/utils/mcpServerUtils";
+import { CoffeeIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import type {
   AppConfig,
   CozeWorkflow,
@@ -38,10 +41,7 @@ import type {
   JSONSchema,
   MCPServerConfig,
   WorkflowParameter,
-} from "@xiaozhi-client/shared-types";
-import { CoffeeIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+} from "../../types";
 import { AddMcpServerButton } from "./add-mcp-server-button";
 import { CozeWorkflowIntegration } from "./coze-workflow-integration";
 import { McpServerSettingButton } from "./mcp-server-setting-button";

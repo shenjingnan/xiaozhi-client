@@ -40,11 +40,6 @@ import {
   formatTimestamp,
   generateStableKey,
 } from "@/utils/formatUtils";
-import type {
-  ApiResponse,
-  ToolCallLogsResponse,
-  ToolCallRecord,
-} from "@xiaozhi-client/shared-types";
 import {
   CheckCircle,
   CheckIcon,
@@ -57,6 +52,11 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type {
+  ApiResponse,
+  ToolCallLogsResponse,
+  ToolCallRecord,
+} from "../../types";
 
 export function ToolCallLogsDialog() {
   const [open, setOpen] = useState(false);

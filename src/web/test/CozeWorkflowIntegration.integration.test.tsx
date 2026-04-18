@@ -6,9 +6,9 @@
 import { CozeWorkflowIntegration } from "@/components/coze-workflow-integration";
 import { apiClient } from "@/services/api";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { CozeWorkflow } from "@xiaozhi-client/shared-types";
 import { toast } from "sonner";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CozeWorkflow } from "../../types";
 
 // Mock dependencies
 vi.mock("sonner", () => ({

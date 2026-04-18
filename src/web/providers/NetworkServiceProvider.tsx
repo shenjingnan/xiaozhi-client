@@ -29,7 +29,6 @@
  */
 import { useNetworkService } from "@/hooks/useNetworkService";
 import { initializeStores } from "@/stores/index";
-import type { AppConfig } from "@xiaozhi-client/shared-types";
 import {
   type ReactNode,
   createContext,
@@ -37,6 +36,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import type { AppConfig } from "../../types";
 
 interface NetworkServiceContextType {
   // HTTP API 方法

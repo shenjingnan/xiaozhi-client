@@ -13,7 +13,7 @@ import type {
   CozeWorkflow,
   JSONSchema,
   WorkflowParameterConfig,
-} from "@xiaozhi-client/shared-types";
+} from "../../types";
 import { apiClient } from "./api";
 
 /**

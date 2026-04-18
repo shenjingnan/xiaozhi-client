@@ -10,9 +10,9 @@
  * @module packages/cli/src/services/ServiceManager
  */
 
-import type { ConfigManager } from "@xiaozhi-client/config";
-import { ConfigInitializer } from "@xiaozhi-client/config";
 import consola from "consola";
+import type { ConfigManager } from "../../config";
+import { ConfigInitializer } from "../../config";
 import { RETRY_CONSTANTS } from "../Constants";
 import { ConfigError, ServiceError } from "../errors/index";
 import type {

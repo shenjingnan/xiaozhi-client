@@ -1,5 +1,5 @@
 /**
- * @xiaozhi-client/endpoint
+ * @/endpoint
  *
  * 小智接入点 WebSocket 连接管理库
  *
@@ -11,8 +11,8 @@
  * @example
  * ```typescript
  * // 新的使用方式（推荐）
- * import { EndpointManager } from '@xiaozhi-client/endpoint';
- * import { MCPManager } from '@xiaozhi-client/mcp-core';
+ * import { EndpointManager } from '@/endpoint';
+ * import { MCPManager } from '@/mcp-core';
  *
  * // 1. 先创建并配置 MCPManager
  * const mcpManager = new MCPManager();

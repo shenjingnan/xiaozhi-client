@@ -1,5 +1,5 @@
 /**
- * @xiaozhi-client/mcp-core
+ * @/mcp-core
  *
  * MCP 协议核心实现库
  * 提供 MCP 服务管理、连接和工具调用的核心功能

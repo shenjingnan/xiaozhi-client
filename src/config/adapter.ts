@@ -4,10 +4,7 @@
  */
 
 import { dirname, isAbsolute, resolve } from "node:path";
-import {
-  MCPTransportType,
-  inferTransportTypeFromUrl,
-} from "@xiaozhi-client/mcp-core";
+import { MCPTransportType, inferTransportTypeFromUrl } from "@/mcp-core";
 import type {
   HTTPMCPServerConfig,
   LocalMCPServerConfig,

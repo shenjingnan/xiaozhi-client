@@ -9,7 +9,7 @@ import type {
   SseFormData,
   StdioFormData,
 } from "@/types/mcp-form";
-import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
+import type { MCPServerConfig } from "../../types";
 
 // ============ 表单 → API 配置 ============
 
