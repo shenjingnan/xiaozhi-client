@@ -5,13 +5,256 @@ description: "xiaozhi-client 命令行工具的常用命令参考。"
 
 # 常用命令
 
-| 命令                                          | 说明                        |
-| --------------------------------------------- | --------------------------- |
-| xiaozhi help                                  | 帮助信息                    |
-| xiaozhi create                                | 创建应用                    |
-| xiaozhi start                                 | 启动服务                    |
-| xiaozhi stop                                  | 停止服务                    |
-| xiaozhi status                                | 查看服务状态                |
-| xiaozhi config mcpEndpoint \<小智接入点地址\> | 设置小智接入点              |
-| xiaozhi mcp list                              | 列出所有 MCP 服务           |
-| xiaozhi mcp list --tools                      | 列出所有正在使用的 MCP 工具 |
+## 命令速查表
+
+| 命令                                           | 说明                          |
+| ---------------------------------------------- | ----------------------------- |
+| `xiaozhi init`                                 | 初始化配置文件                |
+| `xiaozhi help`                                 | 帮助信息                      |
+| `xiaozhi create <projectName>`                 | 创建项目                      |
+| `xiaozhi start`                                | 启动服务                      |
+| `xiaozhi start -d`                             | 后台启动服务                  |
+| `xiaozhi stop`                                 | 停止服务                      |
+| `xiaozhi restart`                              | 重启服务                      |
+| `xiaozhi restart -d`                           | 后台重启服务                  |
+| `xiaozhi status`                               | 查看服务状态                  |
+| `xiaozhi attach`                               | 连接到后台服务查看日志        |
+| `xiaozhi service start --debug`                | 启用调试模式                  |
+| `xiaozhi config get <key>`                     | 查看配置值                    |
+| `xiaozhi config set <key> <value>`             | 设置配置值                    |
+| `xiaozhi mcp list`                             | 列出所有 MCP 服务             |
+| `xiaozhi mcp list --tools`                     | 列出所有正在使用的 MCP 工具   |
+| `xiaozhi mcp call <service> <tool> --args`     | 调用 MCP 工具                 |
+
+## 服务管理命令
+
+### 基本服务命令
+
+以下命令可以在顶级直接使用，也可以通过 `xiaozhi service` 子命令使用。
+
+#### 启动服务
+
+```bash
+# 前台启动服务（包含 Web UI）
+xiaozhi start
+
+# 后台启动服务
+xiaozhi start -d
+
+# 启用调试模式（输出 DEBUG 级别日志）
+xiaozhi service start --debug
+```
+
+#### 停止和重启服务
+
+```bash
+# 停止服务
+xiaozhi stop
+
+# 重启服务
+xiaozhi restart
+
+# 后台重启服务
+xiaozhi restart -d
+```
+
+#### 查看服务状态
+
+```bash
+# 检查服务状态
+xiaozhi status
+```
+
+输出示例：
+```
+✅ 服务正在运行 (PID: 12345)
+⏱️  运行时间: 2小时30分钟
+🔧 运行模式: Web UI
+```
+
+#### 查看后台服务日志
+
+```bash
+# 连接到后台服务查看日志
+xiaozhi attach
+```
+
+此命令用于查看后台运行服务的实时日志输出。
+
+### 选项说明
+
+| 选项        | 说明                                 |
+| ----------- | ------------------------------------ |
+| `-d`        | 在后台运行服务（daemon 模式）        |
+| `--debug`   | 启用调试模式，输出 DEBUG 级别日志    |
+
+## 配置管理命令
+
+### 初始化配置
+
+```bash
+# 初始化配置文件（默认 JSON 格式）
+xiaozhi init
+# 或
+xiaozhi config init
+
+# 使用其他格式初始化
+xiaozhi config init -f json5
+xiaozhi config init -f jsonc
+```
+
+### 查看配置
+
+```bash
+# 查看 MCP 端点配置
+xiaozhi config get mcpEndpoint
+
+# 查看 MCP 服务配置
+xiaozhi config get mcpServers
+
+# 查看连接配置
+xiaozhi config get connection
+```
+
+支持的配置项：
+- `mcpEndpoint` - MCP 端点地址
+- `mcpServers` - MCP 服务配置
+- `connection` - 连接参数（心跳、超时等）
+- `heartbeatInterval` - 心跳检测间隔
+- `heartbeatTimeout` - 心跳超时时间
+- `reconnectInterval` - 重连间隔
+
+### 设置配置
+
+```bash
+# 设置 MCP 端点
+xiaozhi config set mcpEndpoint https://your-endpoint-url
+
+# 设置心跳检测间隔（毫秒）
+xiaozhi config set heartbeatInterval 30000
+
+# 设置心跳超时时间（毫秒）
+xiaozhi config set heartbeatTimeout 10000
+```
+
+## MCP 管理命令
+
+### 列出 MCP 服务
+
+```bash
+# 列出所有 MCP 服务
+xiaozhi mcp list
+
+# 列出所有 MCP 工具
+xiaozhi mcp list --tools
+```
+
+### 管理特定服务
+
+```bash
+# 查看指定服务的工具列表
+xiaozhi mcp server <serverName>
+
+# 启用工具
+xiaozhi mcp tool <serverName> <toolName> enable
+
+# 禁用工具
+xiaozhi mcp tool <serverName> <toolName> disable
+```
+
+### 调用 MCP 工具
+
+```bash
+# 调用工具（无参数）
+xiaozhi mcp call <serviceName> <toolName>
+
+# 调用工具（带参数）
+xiaozhi mcp call <serviceName> <toolName> --args '{"param": "value"}'
+```
+
+## 项目管理命令
+
+### 创建项目
+
+```bash
+# 创建基本项目
+xiaozhi create my-project
+
+# 使用模板创建项目
+xiaozhi create my-project -t <templateName>
+```
+
+## 使用场景示例
+
+### 开发调试场景
+
+```bash
+# 1. 初始化项目
+xiaozhi init
+
+# 2. 启用调试模式查看详细日志
+xiaozhi service start --debug
+
+# 3. 查看 MCP 服务配置
+xiaozhi mcp list --tools
+
+# 4. 测试工具调用
+xiaozhi mcp call myService myTool --args '{"input": "test"}'
+```
+
+### 服务管理场景
+
+```bash
+# 后台启动服务并查看日志
+xiaozhi start -d
+xiaozhi attach
+
+# 查看服务状态
+xiaozhi status
+
+# 重启服务（后台模式）
+xiaozhi restart -d
+
+# 停止服务
+xiaozhi stop
+```
+
+### 配置管理场景
+
+```bash
+# 初始化配置文件
+xiaozhi config init
+
+# 设置 MCP 端点
+xiaozhi config set mcpEndpoint https://api.example.com
+
+# 查看当前配置
+xiaozhi config get mcpEndpoint
+```
+
+## 注意事项
+
+### stdio 模式已废弃
+
+`xiaozhi service start --stdio` 命令已废弃。小智客户端已迁移到纯 HTTP 架构，请使用以下方式：
+
+1. 启动 Web 服务：`xiaozhi start`
+2. 在 Cursor 等客户端中配置 HTTP 端点：
+```json
+{
+  "mcpServers": {
+    "xiaozhi-client": {
+      "type": "streamableHttp",
+      "url": "http://localhost:9999/mcp"
+    }
+  }
+}
+```
+
+### 服务启动要求
+
+在使用 MCP 管理命令（如 `xiaozhi mcp call`）之前，需要先启动服务：
+```bash
+xiaozhi start        # 前台启动
+xiaozhi start -d     # 后台启动
+```
