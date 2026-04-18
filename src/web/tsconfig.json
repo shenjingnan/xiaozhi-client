@@ -21,8 +21,7 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@xiaozhi-client/shared-types": ["../types/index.ts"]
+      "@/*": ["./*"]
     }
   },
   "include": ["."],

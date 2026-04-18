@@ -4,8 +4,8 @@
 
 import { networkService } from "@/services/index";
 import { renderHook } from "@testing-library/react";
-import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { AppConfig, ClientStatus } from "../../../types";
 import { useNetworkService } from "../useNetworkService";
 
 // Mock 依赖

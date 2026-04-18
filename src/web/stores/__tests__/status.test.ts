@@ -1,6 +1,6 @@
 import { apiClient } from "@/services/api";
-import type { ClientStatus } from "@xiaozhi-client/shared-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ClientStatus } from "../../../types";
 import { useStatusStore } from "../status";
 
 // 导入 API 中的 FullStatus 类型

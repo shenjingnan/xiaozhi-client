@@ -3,11 +3,7 @@
  * 定义日志、配置提供者、设备连接等抽象接口，实现解耦
  */
 
-import type {
-  ASRConfig,
-  LLMConfig,
-  TTSConfig,
-} from "@xiaozhi-client/shared-types";
+import type { ASRConfig, LLMConfig, TTSConfig } from "@/types";
 import type { ESP32WSMessage } from "./types.js";
 
 /**

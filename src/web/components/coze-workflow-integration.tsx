@@ -28,10 +28,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCozeWorkflows } from "@/hooks/useCozeWorkflows";
 import { apiClient } from "@/services/api";
-import type {
-  CozeWorkflow,
-  WorkflowParameter,
-} from "@xiaozhi-client/shared-types";
 import {
   AlertCircle,
   ChevronLeft,
@@ -43,6 +39,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import type { CozeWorkflow, WorkflowParameter } from "../../types";
 
 interface CozeWorkflowIntegrationProps {
   onToolAdded?: () => void;

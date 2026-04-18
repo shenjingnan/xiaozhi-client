@@ -7,7 +7,7 @@ import type {
   CozeWorkflowsParams,
   CozeWorkflowsResult,
   CozeWorkspace,
-} from "@xiaozhi-client/shared-types";
+} from "../../types";
 
 /**
  * API 响应格式

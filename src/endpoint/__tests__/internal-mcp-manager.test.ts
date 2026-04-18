@@ -7,11 +7,11 @@ import { InternalMCPManagerAdapter } from "../internal-mcp-manager.js";
 import type { EnhancedToolInfo, ToolCallResult } from "../types.js";
 
 // Mock 依赖
-vi.mock("@xiaozhi-client/mcp-core", () => ({
+vi.mock("@/mcp-core", () => ({
   MCPManager: vi.fn(),
 }));
 
-vi.mock("@xiaozhi-client/config", () => ({
+vi.mock("../../config", () => ({
   normalizeServiceConfig: vi.fn(),
 }));
 
@@ -23,10 +23,10 @@ describe("InternalMCPManagerAdapter", () => {
     vi.clearAllMocks();
 
     // 获取 mock 函数
-    const mcpCore = await import("@xiaozhi-client/mcp-core");
+    const mcpCore = await import("@/mcp-core");
     const MCPManagerMock = mcpCore.MCPManager;
 
-    const configModule = await import("@xiaozhi-client/config");
+    const configModule = await import("../../config");
     mockConvertLegacyToNew = configModule.normalizeServiceConfig as any;
 
     // 设置 mock MCPManager

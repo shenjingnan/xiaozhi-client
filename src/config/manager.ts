@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { configManager } from '@xiaozhi-client/config';
+ * import { configManager } from '../config';
  *
  * // 获取配置
  * const config = configManager.getConfig();
@@ -234,7 +234,7 @@ export type HandlerConfig =
   | MCPHandlerConfig;
 
 // CustomMCP 工具接口
-// TODO: 注意：此定义应与 @xiaozhi-client/shared-types 中的 CustomMCPToolConfig 保持一致
+// TODO: 注意：此定义应与 @/types 中的 CustomMCPToolConfig 保持一致
 // 未来将迁移到从 shared-types 导入
 export interface CustomMCPTool {
   // 确保必填字段

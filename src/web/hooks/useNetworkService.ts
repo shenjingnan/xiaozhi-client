@@ -7,8 +7,8 @@
 import { networkService } from "@/services/index";
 import { useConfigStore } from "@/stores/config";
 import { useStatusStore } from "@/stores/status";
-import type { AppConfig } from "@xiaozhi-client/shared-types";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { AppConfig } from "../../types";
 
 interface PortChangeStatus {
   status:

@@ -3,7 +3,6 @@
  * 测试网络服务管理器的功能，基于 HTTP API
  */
 
-import type { AppConfig, ClientStatus } from "@xiaozhi-client/shared-types";
 import {
   afterEach,
   beforeAll,
@@ -13,6 +12,7 @@ import {
   it,
   vi,
 } from "vitest";
+import type { AppConfig, ClientStatus } from "../../../types";
 import { NetworkService } from "../index";
 
 // Mock API 客户端

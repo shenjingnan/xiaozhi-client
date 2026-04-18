@@ -1,11 +1,11 @@
 /**
  * 内部 MCP 服务管理器适配器
  * 将 mcpServers 配置转换为 IMCPServiceManager 接口
- * 使用 @xiaozhi-client/mcp-core 的 MCPManager 实现真实的 MCP 功能
+ * 使用 @/mcp-core 的 MCPManager 实现真实的 MCP 功能
  */
 
-import { normalizeServiceConfig } from "@xiaozhi-client/config";
-import { MCPManager } from "@xiaozhi-client/mcp-core";
+import { MCPManager } from "@/mcp-core";
+import { normalizeServiceConfig } from "../config";
 import type { EnhancedToolInfo, ToolCallResult } from "./types.js";
 import type { IMCPServiceManager } from "./types.js";
 import type { EndpointConfig } from "./types.js";

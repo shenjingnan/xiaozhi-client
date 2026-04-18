@@ -3,7 +3,7 @@
  * 用于验证高级模式下的 JSON 配置
  */
 
-import type { MCPServerConfig } from "@xiaozhi-client/shared-types";
+import type { MCPServerConfig } from "../../types";
 
 // 验证结果接口
 export interface ValidationResult {

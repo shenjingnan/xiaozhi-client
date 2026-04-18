@@ -1,11 +1,11 @@
-import { configManager } from "@xiaozhi-client/config";
+import ora from "ora";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { configManager } from "../../../config";
 import type {
   MCPServerConfig,
   MCPServerToolsConfig,
   MCPToolConfig,
-} from "@xiaozhi-client/config";
-import ora from "ora";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+} from "../../../config";
 import type { IDIContainer } from "../../interfaces/Config.js";
 import { McpCommandHandler } from "../McpCommandHandler.js";
 
@@ -127,7 +127,7 @@ vi.mock("ora", () => ({
   })),
 }));
 
-vi.mock("@xiaozhi-client/config", () => ({
+vi.mock("../../../config", () => ({
   configManager: {
     getMcpServers: vi.fn(),
     getMcpServerConfig: vi.fn(),

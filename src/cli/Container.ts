@@ -10,8 +10,8 @@
  * @module packages/cli/src/Container
  */
 
-import { configManager } from "@xiaozhi-client/config";
-import { VersionUtils } from "@xiaozhi-client/version";
+import { configManager } from "../config";
+import { VersionUtils } from "../utils/version";
 import { ErrorHandler } from "./errors/ErrorHandlers";
 import type { IDIContainer } from "./interfaces/Config";
 import { FileUtils } from "./utils/FileUtils";
