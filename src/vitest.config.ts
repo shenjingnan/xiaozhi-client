@@ -39,16 +39,6 @@ export default defineConfig({
       "@pages": resolve(__dirname, "./web/pages"),
       "@providers": resolve(__dirname, "./web/providers"),
       "@ui": resolve(__dirname, "./web/components/ui"),
-      // 兼容层：旧的 @xiaozhi-client/* 包名路径别名（逐步废弃，源码已全部迁移至 @/）
-      // 注意：vitest.config.ts 位于 src/ 目录下，__dirname 为 src/，故路径相对 src/
-      // TODO: 当确认无外部消费者后，移除以下兼容层别名
-      "@xiaozhi-client/version": resolve(__dirname, "./utils/version.ts"),
-      "@xiaozhi-client/shared-types": resolve(__dirname, "./types/index.ts"),
-      "@xiaozhi-client/mcp-core": resolve(__dirname, "./mcp-core/index.ts"),
-      "@xiaozhi-client/config": resolve(__dirname, "./config/index.ts"),
-      "@xiaozhi-client/endpoint": resolve(__dirname, "./endpoint/index.ts"),
-      "@xiaozhi-client/esp32": resolve(__dirname, "./esp32/index.ts"),
-      "@xiaozhi-client/cli": resolve(__dirname, "./cli/index.ts"),
     },
   },
 });

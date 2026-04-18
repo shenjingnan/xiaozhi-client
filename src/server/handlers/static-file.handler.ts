@@ -36,37 +36,20 @@ export class StaticFileHandler extends BaseHandler {
       logger.debug(`当前文件目录: ${__dirname}`);
 
       // 确定web目录路径
-      // 支持 Nx 构建的 dist/frontend 目录结构
+      // Vite 构建产物输出到 dist/frontend/ 目录
+      // 注意：由于 tsup 以 bundle=true 打包，当前模块可能被内联到入口文件中，
+      // import.meta.url 对应的目录可能是 dist/backend、dist 等位置，因此需要尝试多种可能的相对路径
       const possibleWebPaths = [
-        // Nx 构建的主要路径：dist/frontend/
-        // 对于 dist/backend/handlers/StaticFileHandler.js -> ../../../frontend
-        // 对于 dist/backend/cli.js -> ../../frontend
-        // 对于 dist/cli.js -> ../frontend
+        // 生产环境：从 dist/backend/handlers/ 查找 dist/frontend/
         join(__dirname, "..", "..", "..", "frontend"),
+        // 生产环境：从 dist/backend/ 查找 dist/frontend/
         join(__dirname, "..", "..", "frontend"),
+        // 生产环境：从 dist/ 查找 dist/frontend/
         join(__dirname, "..", "frontend"),
 
-        // 兼容旧构建路径：从 dist 目录向上查找 apps/frontend/dist
-        join(__dirname, "..", "..", "apps", "frontend", "dist"),
-        join(__dirname, "..", "apps", "frontend", "dist"),
-
-        // 备用路径：查找未构建的 apps/frontend 目录（开发模式）
-        join(__dirname, "..", "..", "apps", "frontend"),
-        join(__dirname, "..", "apps", "frontend"),
-
-        // 兼容路径：保持对旧 web 目录的支持（向后兼容）
-        join(__dirname, "..", "..", "web", "dist"),
-        join(__dirname, "..", "web", "dist"),
-
-        // 备用兼容路径：查找未构建的 web 目录（开发模式）
-        join(__dirname, "..", "..", "web"),
-        join(__dirname, "..", "web"),
-
-        // 兜底路径：从源码目录查找（开发模式下的源码执行）
-        join(__dirname, "..", "..", "..", "apps", "frontend", "dist"),
-        join(__dirname, "..", "..", "..", "apps", "frontend"),
-        join(__dirname, "..", "..", "..", "web", "dist"),
-        join(__dirname, "..", "..", "..", "web"),
+        // 开发模式：从源码目录查找 src/web/
+        join(__dirname, "..", "..", "..", "src", "web"),
+        join(__dirname, "..", "..", "src", "web"),
       ];
 
       // 查找第一个存在的路径
@@ -262,9 +245,7 @@ export class StaticFileHandler extends BaseHandler {
         <div class="info">
           <p><strong>解决方案：</strong></p>
           <p>请先构建前端项目：</p>
-          <pre>cd apps/frontend && pnpm install && pnpm build</pre>
-          <p><em>如果上面的路径不存在，可以尝试旧路径：</em></p>
-          <pre>cd web && pnpm install && pnpm build</pre>
+          <pre>pnpm run build:web</pre>
           <p>然后重新启动服务器。</p>
         </div>
       </body>
