@@ -36,71 +36,8 @@ export default defineConfig({
       __APP_NAME__: JSON.stringify(pkg.name),
     };
 
-    // version 已迁移到 src/utils/version.ts，添加 alias 解析
-    options.plugins = options.plugins || [];
-    options.plugins.push({
-      name: "version-alias",
-      setup(build) {
-        build.onResolve(
-          { filter: /^@xiaozhi-client\/version(\/.*)?$/ },
-          () => ({
-            path: resolve("../../utils/version.ts"),
-          })
-        );
-      },
-    });
-
-    // config 已迁移到 src/config/，添加 alias 解析
-    options.plugins.push({
-      name: "config-alias",
-      setup(build) {
-        build.onResolve(
-          { filter: /^@xiaozhi-client\/config(\/.*)?$/ },
-          (args) => {
-            const subPath = args.path.replace("@xiaozhi-client/config", "");
-            if (subPath) {
-              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
-              const normalizedSubPath = subPath.replace(
-                /\.(?:[cm]?js|ts)$/,
-                ""
-              );
-              return {
-                path: resolve(`../../config${normalizedSubPath}.ts`),
-              };
-            }
-            return {
-              path: resolve("../../config/index.ts"),
-            };
-          }
-        );
-      },
-    });
-
-    // mcp-core 已迁移到 src/mcp-core/，添加 alias 解析
-    options.plugins.push({
-      name: "mcp-core-alias",
-      setup(build) {
-        build.onResolve(
-          { filter: /^@xiaozhi-client\/mcp-core(\/.*)?$/ },
-          (args) => {
-            const subPath = args.path.replace("@xiaozhi-client/mcp-core", "");
-            if (subPath) {
-              // 剥离可能的文件扩展名，避免 xxx.js.ts 这类错误路径
-              const normalizedSubPath = subPath.replace(
-                /\.(?:[cm]?js|ts)$/,
-                ""
-              );
-              return {
-                path: resolve(`../../mcp-core${normalizedSubPath}.ts`),
-              };
-            }
-            return {
-              path: resolve("../../mcp-core/index.ts"),
-            };
-          }
-        );
-      },
-    });
+    // 注意：旧的 @xiaozhi-client/* alias 插件已移除
+    // 所有源码已迁移至 @/ 路径别名体系
   },
   external: [
     // Node.js 内置模块
@@ -125,8 +62,6 @@ export default defineConfig({
     "ora",
     "express",
     "cli-table3",
-    // config 已迁移到 src/config/，通过 alias 解析（不再 external）
-    // version 已迁移到 src/utils/version.ts，通过 alias 解析（不再 external）
     // src/config/ 依赖的第三方包（不打包，运行时从 node_modules 加载）
     "comment-json",
     "core-util-is",

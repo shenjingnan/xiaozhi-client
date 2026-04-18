@@ -1,5 +1,5 @@
-import type { AppConfig } from "@xiaozhi-client/config";
-import { configManager } from "@xiaozhi-client/config";
+import type { AppConfig } from "@/config";
+import { configManager } from "@/config";
 import type { Context } from "hono";
 /**
  * 配置 API HTTP 路由处理器

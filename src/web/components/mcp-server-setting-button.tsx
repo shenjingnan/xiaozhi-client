@@ -20,7 +20,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useNetworkServiceActions } from "@/providers/NetworkServiceProvider";
-import { mcpFormSchema } from "@/schemas/mcp-form";
 import { useConfig } from "@/stores/config";
 import {
   apiConfigToForm,
@@ -36,6 +35,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 import type { MCPServerConfig } from "../../types";
+import { mcpFormSchema } from "../schemas/mcp-form";
 
 // 高级模式的 JSON 表单 schema
 const jsonFormSchema = z.object({

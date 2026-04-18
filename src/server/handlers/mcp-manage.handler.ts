@@ -12,10 +12,10 @@
  * 并通过 EventBus 发布（发射）服务状态变化事件。
  */
 
+import type { ConfigManager, MCPServerConfig } from "@/config";
+import { normalizeServiceConfig } from "@/config";
+import { TypeFieldNormalizer } from "@/mcp-core";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import type { ConfigManager, MCPServerConfig } from "@xiaozhi-client/config";
-import { normalizeServiceConfig } from "@xiaozhi-client/config";
-import { TypeFieldNormalizer } from "@xiaozhi-client/mcp-core";
 import type { Context } from "hono";
 import type { Logger } from "../Logger.js";
 import { logger } from "../Logger.js";

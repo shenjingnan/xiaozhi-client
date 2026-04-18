@@ -5,11 +5,8 @@
  * 作为薄适配层，将 Hono 请求委托给 ESP32DeviceManager 处理
  */
 
-import type {
-  ESP32DeviceManager,
-  ESP32DeviceReport,
-} from "@xiaozhi-client/esp32";
-import { ESP32ErrorCode } from "@xiaozhi-client/esp32";
+import type { ESP32DeviceManager, ESP32DeviceReport } from "@/esp32";
+import { ESP32ErrorCode } from "@/esp32";
 import type { Context } from "hono";
 import type { AppContext } from "../types/hono.context.js";
 import { BaseHandler } from "./base.handler.js";
