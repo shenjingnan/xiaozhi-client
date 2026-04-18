@@ -138,48 +138,48 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 
 ### 核心组件
 
-1. **CLI 层** (`packages/cli/`) - 使用 Commander.js 的命令行界面
+1. **CLI 层** (`src/cli/`) - 使用 Commander.js 的命令行界面
 
-   - 入口点：`packages/cli/src/index.ts` → `dist/cli/index.js`
-   - 依赖注入容器：`packages/cli/src/Container.ts`
-   - 命令注册和处理：`packages/cli/src/commands/`
-   - 服务管理：`packages/cli/src/services/`
-   - 工具类：`packages/cli/src/utils/`
-   - 错误处理：`packages/cli/src/errors/`
+   - 入口点：`src/cli/index.ts` → `dist/cli/index.js`
+   - 依赖注入容器：`src/cli/Container.ts`
+   - 命令注册和处理：`src/cli/commands/`
+   - 服务管理：`src/cli/services/`
+   - 工具类：`src/cli/utils/`
+   - 错误处理：`src/cli/errors/`
 
-2. **MCP 核心库** (`apps/backend/lib/mcp/`) - MCP 协议核心实现
+2. **MCP 核心库** (`src/server/lib/mcp/`) - MCP 协议核心实现
 
    - `connection.ts` - **MCP 服务连接管理**，负责单个 MCP 服务的连接和工具管理
    - `manager.ts` - **MCP 服务管理器**，统一管理多个 MCP 服务
    - `types.ts` - MCP 相关类型定义
    - `index.ts` - 统一导出接口
 
-3. **服务层** (`apps/backend/services/`) - 业务服务和工具
+3. **服务层** (`src/server/services/`) - 业务服务和工具
 
    - `MCPServiceManager.ts` - **重新导出**，指向 `@/lib/mcp/manager.js`（向后兼容）
    - `MCPService.ts` - **重新导出**，指向 `@/lib/mcp/connection.js`（向后兼容）
    - `MCPServer.ts` - 兼容性包装器，提供向后兼容的 API
    - 其他业务服务和工具类
 
-3. **处理器层** (`apps/backend/handlers/`) - 请求处理器
+4. **处理器层** (`src/server/handlers/`) - 请求处理器
 
    - 处理各种 API 请求和业务逻辑
 
-4. **路由层** (`apps/backend/routes/`) - 路由定义
+5. **路由层** (`src/server/routes/`) - 路由定义
 
    - API 路由配置和映射
 
-5. **中间件层** (`apps/backend/middlewares/`) - 中间件
+6. **中间件层** (`src/server/middlewares/`) - 中间件
 
    - 请求/响应处理中间件
 
-6. **工具层** (`apps/backend/utils/`) - 共享工具和辅助函数
+7. **工具层** (`src/server/utils/`) - 共享工具和辅助函数
 
-7. **类型定义** (`apps/backend/types/`) - TypeScript 类型定义
+8. **类型定义** (`src/server/types/`) - TypeScript 类型定义
 
-8. **错误处理** (`apps/backend/errors/`) - 统一错误定义和处理
+9. **错误处理** (`src/server/errors/`) - 统一错误定义和处理
 
-9. **常量定义** (`apps/backend/constants/`) - 常量定义
+10. **常量定义** (`src/server/constants/`) - 常量定义
 
 ### 主要功能
 
@@ -235,8 +235,8 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 
 **核心原则**：
 - **单元测试**：应在被测试代码所在的模块中进行
-  - 核心库（如 `packages/mcp-core`）的单元测试应在其 own `__tests__` 目录中
-  - 消费者模块（如 `apps/backend/handlers`）不应重复测试外部依赖的单元功能
+  - 核心库（如 `src/mcp-core`）的单元测试应在其 own `__tests__` 目录中
+  - 消费者模块（如 `src/server/handlers`）不应重复测试外部依赖的单元功能
 - **集成测试**：应在消费者模块中验证多个模块协作的正确性
   - 测试外部依赖在实际业务场景中的使用
   - 验证模块间的接口和数据流
@@ -373,53 +373,65 @@ xiaozhi-client 是一个务实的开源 MCP 客户端：
 
 ### 路径别名系统
 
-项目使用简单的路径别名系统以实现清晰的模块导入和代码组织。
+项目使用统一的路径别名系统以实现清晰的模块导入和代码组织。所有源码位于 `src/` 目录下，通过根 `tsconfig.json` 的 `paths` 配置进行模块解析。
 
 #### 实际路径别名配置
 
-根据 `apps/backend/tsconfig.json`，项目仅定义了一个路径别名：
+根据根 `tsconfig.json`，项目定义了以下路径别名：
 
 ```json
 {
-  "@/*": ["./*"]
+  "@/types": ["./src/types"],
+  "@/config": ["./src/config"],
+  "@/mcp-core": ["./src/mcp-core"],
+  "@/endpoint": ["./src/endpoint"],
+  "@/esp32": ["./src/esp32"],
+  "@/cli": ["./src/cli"],
+  "@/utils": ["./src/utils"],
+  "@/server": ["./src/server"]
 }
 ```
-
-这意味着在 `apps/backend/` 目录下，可以使用 `@/` 来引用该目录下的文件。
 
 #### 实际目录结构
 
 ```
-apps/backend/
-├── handlers/        # 请求处理器
-├── services/        # 业务服务
-├── lib/            # 核心库（mcp、coze、npm）
-├── routes/         # 路由定义
-├── middlewares/    # 中间件
-├── types/          # 类型定义
-├── utils/          # 工具函数
-├── errors/         # 错误定义
-└── constants/      # 常量定义
+src/
+├── cli/              # CLI 命令行工具
+│   ├── commands/     # 命令定义
+│   ├── services/     # 服务层
+│   ├── utils/        # 工具函数
+│   ├── errors/       # 错误处理
+│   └── types/        # 类型定义
+├── server/           # 后端服务
+│   ├── handlers/     # 请求处理器
+│   ├── services/     # 业务服务
+│   ├── lib/          # 核心库（mcp、coze）
+│   ├── routes/       # 路由定义
+│   ├── middlewares/  # 中间件
+│   ├── types/        # 类型定义
+│   ├── utils/        # 工具函数
+│   ├── errors/       # 错误定义
+│   └── constants/    # 常量定义
+├── config/           # 配置管理
+├── endpoint/         # 端点处理
+├── esp32/            # ESP32 硬件相关
+├── mcp-core/         # MCP 协议核心
+├── types/            # 共享类型定义
+├── utils/            # 通用工具（含 version 内联）
+└── web/              # 前端 Web 应用（独立 workspace）
 ```
 
 #### 推荐导入方式
 
-**在 apps/backend/ 内部**：
+**跨模块引用**：
 ```typescript
-// 使用 @/ 别名引用同目录下的模块
-import { HandlerManager } from "@/handlers/HandlerManager";
-import { ConfigService } from "@/services/ConfigService";
+// 使用 @/ 别名引用其他模块
+import { HandlerManager } from "@/server/handlers/HandlerManager";
+import { ConfigService } from "@/config";
 import type { AppConfig } from "@/types";
 
-// 使用相对路径引用同层级的文件
+// 使用相对路径引用同层级文件
 import { helperFunction } from "./helpers";
-```
-
-**从其他包引用 backend 模块**：
-```typescript
-// 使用 workspace 包名引用
-import { someExport } from "@xiaozhi-client/mcp-core";
-import { getConfig } from "@xiaozhi-client/config";
 ```
 
 #### 导入顺序最佳实践
@@ -433,31 +445,13 @@ import { path } from "node:path";
 import express from "express";
 import { Command } from "commander";
 
-// 3. Workspace 包依赖
-import { MCPService } from "@xiaozhi-client/mcp-core";
-import { getConfig } from "@xiaozhi-client/config";
+// 3. 路径别名（@/）引用其他 src/ 模块
+import { MCPService } from "@/mcp-core";
+import { getConfig } from "@/config";
 
-// 4. 本地路径别名（@/）
-import { HandlerManager } from "@/handlers/HandlerManager";
-import type { AppConfig } from "@/types";
-
-// 5. 相对路径（仅在必要时）
+// 4. 相对路径（同模块内引用）
 import { helperFunction } from "./helpers";
 ```
-
-#### 新架构说明（2024年12月迁移）
-
-**CLI 迁移到 packages/cli**：
-- CLI 代码已从 `apps/backend/cli/` 迁移到 `packages/cli/`
-- CLI 包使用相对路径进行内部导入
-- CLI 包通过 external 依赖引用 `@xiaozhi-client/*` workspace 包
-- 构建产物：`packages/cli` → `dist/cli/index.js`
-- CLI 包是项目入口点，不是独立发布的 npm 包
-
-**MCP 核心库迁移**：
-- MCP 核心功能已迁移至 `@xiaozhi-client/mcp-core` 包
-- 原路径通过重新导出保持向后兼容
-- 建议新代码直接使用 `@xiaozhi-client/mcp-core` 包
 
 ## Claude Code 技能和命令
 

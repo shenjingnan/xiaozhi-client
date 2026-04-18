@@ -22,7 +22,7 @@ export type JSONSchema = LibJSONSchema;
  * TODO：将 toolApi.ts 的类型迁移为从 shared-types 导入，消除重复定义
  * 目前保持本地定义以避免 TypeScript 子路径解析问题（影响 tts、asr 等其他包）
  *
- * 权威定义位置：packages/shared-types/src/mcp/tool-definition.ts
+ * 权威定义位置：src/types/mcp/tool-definition.ts
  */
 export type ToolHandlerConfig =
   | MCPHandlerConfig

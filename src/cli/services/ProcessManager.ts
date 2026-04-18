@@ -7,7 +7,7 @@
  * - 进程状态查询
  * - 优雅关闭进程
  *
- * @module packages/cli/src/services/ProcessManager
+ * @module src/cli/services/ProcessManager
  */
 
 import { FileError, ProcessError } from "../errors/index";

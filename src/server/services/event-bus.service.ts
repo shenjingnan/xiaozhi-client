@@ -8,7 +8,7 @@
  * - 事件类型的类型安全检查
  * - 统一的事件命名规范
  *
- * @module apps/backend/services/event-bus.service
+ * @module src/server/services/event-bus.service
  */
 
 import { EventEmitter } from "node:events";

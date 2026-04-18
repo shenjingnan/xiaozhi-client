@@ -113,7 +113,7 @@
  * logger.info('服务启动成功');
  * ```
  *
- * @module apps/backend/Logger
+ * @module src/server/Logger
  *
  * @example
  * ```typescript

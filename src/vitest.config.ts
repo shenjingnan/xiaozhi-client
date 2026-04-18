@@ -27,6 +27,9 @@ export default defineConfig({
       "@/esp32": resolve(__dirname, "./esp32"),
       "@/cli": resolve(__dirname, "./cli"),
       "@/server": resolve(__dirname, "./server"),
+      // 跨模块显式别名（CLI → Server）
+      "@/server/WebServer": resolve(__dirname, "./server/WebServer"),
+      "@/server/WebServer.js": resolve(__dirname, "./server/WebServer.ts"),
       // Web 前端路径别名（与 src/web/vitest.config.ts 保持一致）
       "@": resolve(__dirname, "./web"),
       "@components": resolve(__dirname, "./web/components"),

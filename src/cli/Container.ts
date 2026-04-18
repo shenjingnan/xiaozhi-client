@@ -7,7 +7,7 @@
  * - 单例模式管理
  * - 默认服务配置
  *
- * @module packages/cli/src/Container
+ * @module src/cli/Container
  */
 
 import { configManager } from "../config";

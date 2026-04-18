@@ -23,7 +23,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "paths": {
-      // 统一的 @/ 路径别名体系（新）
+      // 统一的 @/ 路径别名体系
       "@/types": ["./src/types"],
       "@/config": ["./src/config"],
       "@/mcp-core": ["./src/mcp-core"],
@@ -32,9 +32,9 @@
       "@/cli": ["./src/cli"],
       "@/utils": ["./src/utils"],
       "@/server": ["./src/server"],
-      // Server 模块专用别名（保留现有行为）
-      "@/*": ["./src/server/*"],
-      "@": ["./src/server/index.ts"]
+      // 跨模块显式别名（CLI → Server）
+      "@/server/WebServer": ["./src/server/WebServer"],
+      "@/server/WebServer.js": ["./src/server/WebServer.ts"]
     }
   },
   "include": ["mcps/**/*", "src/**/*"],
