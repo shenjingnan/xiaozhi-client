@@ -88,7 +88,6 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: |
           ./coverage/lcov.info
-          ./apps/frontend/coverage/lcov.info
         flags: unittests
         name: codecov-${{ matrix.os }}
         fail_ci_if_error: true
@@ -128,7 +127,6 @@ jobs:
         name: coverage-report-${{ matrix.os }}
         path: |
           coverage/
-          apps/frontend/coverage/
         retention-days: 30
 
     - name: 上传构建产物
