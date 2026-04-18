@@ -391,7 +391,7 @@ describe("StaticFileHandler", () => {
         expect.stringContaining("小智配置管理")
       );
       expect(mockContext.html).toHaveBeenCalledWith(
-        expect.stringContaining("cd src/web && pnpm install && pnpm build")
+        expect.stringContaining("pnpm run build:web")
       );
     });
 

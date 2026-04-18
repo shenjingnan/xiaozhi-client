@@ -37,6 +37,8 @@ export class StaticFileHandler extends BaseHandler {
 
       // 确定web目录路径
       // Vite 构建产物输出到 dist/frontend/ 目录
+      // 注意：由于 tsup 以 bundle=true 打包，当前模块可能被内联到入口文件中，
+      // import.meta.url 对应的目录可能是 dist/backend、dist 等位置，因此需要尝试多种可能的相对路径
       const possibleWebPaths = [
         // 生产环境：从 dist/backend/handlers/ 查找 dist/frontend/
         join(__dirname, "..", "..", "..", "frontend"),
@@ -243,7 +245,7 @@ export class StaticFileHandler extends BaseHandler {
         <div class="info">
           <p><strong>解决方案：</strong></p>
           <p>请先构建前端项目：</p>
-          <pre>cd src/web && pnpm install && pnpm build</pre>
+          <pre>pnpm run build:web</pre>
           <p>然后重新启动服务器。</p>
         </div>
       </body>
