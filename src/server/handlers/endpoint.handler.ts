@@ -1,8 +1,5 @@
-import type { ConfigManager } from "@xiaozhi-client/config";
-import type {
-  ConnectionStatus,
-  EndpointManager,
-} from "@xiaozhi-client/endpoint";
+import type { ConfigManager } from "@/config";
+import type { ConnectionStatus, EndpointManager } from "@/endpoint";
 import type { Context } from "hono";
 /**
  * 接入点管理 Handler

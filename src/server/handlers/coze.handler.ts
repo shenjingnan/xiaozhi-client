@@ -3,7 +3,7 @@
  * 提供扣子工作空间和工作流相关的 RESTful API 接口
  */
 
-import { configManager } from "@xiaozhi-client/config";
+import { configManager } from "@/config";
 import type { Context } from "hono";
 import { CozeApiService } from "../lib/coze";
 import type { CozeWorkflowsParams } from "../types/coze";

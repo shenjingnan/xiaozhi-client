@@ -3,9 +3,9 @@
  * 提供语音合成 RESTful API 接口
  */
 
-import { configManager } from "@xiaozhi-client/config";
-import { mapClusterToResourceId } from "@xiaozhi-client/esp32";
-import type { VoiceInfo, VoicesResponse } from "@xiaozhi-client/shared-types";
+import { configManager } from "@/config";
+import { mapClusterToResourceId } from "@/esp32";
+import type { VoiceInfo, VoicesResponse } from "@/types";
 import type { Context } from "hono";
 import { createTTS } from "univoice";
 import { TTS_VOICES, getVoiceScenes } from "../constants/voices.js";

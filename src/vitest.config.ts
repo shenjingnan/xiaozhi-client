@@ -20,7 +20,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // 统一的 @/ 跨模块路径别名
-      // 注意：@/config 和 @/utils 与 Web 前端路径冲突，非 Web 代码使用相对路径
+      "@/config": resolve(__dirname, "./config"),
       "@/types": resolve(__dirname, "./types"),
       "@/mcp-core": resolve(__dirname, "./mcp-core"),
       "@/endpoint": resolve(__dirname, "./endpoint"),
@@ -39,8 +39,9 @@ export default defineConfig({
       "@pages": resolve(__dirname, "./web/pages"),
       "@providers": resolve(__dirname, "./web/providers"),
       "@ui": resolve(__dirname, "./web/components/ui"),
-      // 兼容层：旧的 @xiaozhi-client/* 包名路径别名（与 tsconfig.json paths 保持一致）
+      // 兼容层：旧的 @xiaozhi-client/* 包名路径别名（逐步废弃，源码已全部迁移至 @/）
       // 注意：vitest.config.ts 位于 src/ 目录下，__dirname 为 src/，故路径相对 src/
+      // TODO: 当确认无外部消费者后，移除以下兼容层别名
       "@xiaozhi-client/version": resolve(__dirname, "./utils/version.ts"),
       "@xiaozhi-client/shared-types": resolve(__dirname, "./types/index.ts"),
       "@xiaozhi-client/mcp-core": resolve(__dirname, "./mcp-core/index.ts"),
