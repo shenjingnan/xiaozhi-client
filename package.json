@@ -171,7 +171,8 @@
       "mathjs@<15.2.0": ">=15.2.0",
       "picomatch": ">=4.0.4",
       "yaml": ">=2.8.3",
-      "cosmiconfig": ">=7.1.0"
+      "cosmiconfig": ">=7.1.0",
+      "undici": ">=6.24.0"
     }
   },
   "lint-staged": {
