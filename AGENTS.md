@@ -1,0 +1,513 @@
+# CLAUDE.md
+
+本文件为 Claude Code (claude.ai/code) 在此代码仓库中工作时提供指导。
+
+## 开发理念
+
+### 核心原则
+- **功能驱动**：如无必要勿增实体，需要什么功能就实现什么功能
+- **优雅实现**：代码要清晰、可维护、结构合理
+- **避免过度设计**：不提前考虑竞态、并发、互斥锁、缓存等复杂概念
+- **架构合理**：整体架构要有逻辑性，但不引入不必要的抽象层
+- **确认优先**：当不确认时询问用户，不做自作主张的决策
+
+### 开发哲学
+- **先实现，后优化**：先把功能做好，再考虑性能优化
+- **实用主义**：解决实际问题比理论完美更重要
+- **简单直接**：避免为了工程化而工程化
+- **渐进改进**：遇到问题再优化，不过度预防
+
+## 开发命令
+
+### 构建和测试
+
+- `pnpm build` - 构建项目（包括 Web 构建和 TypeScript 编译）
+- `pnpm dev` - 开发模式（带监视功能）
+- `pnpm test` - 运行一次测试
+- `pnpm test:coverage` - 运行测试并生成覆盖率报告
+
+### 代码质量
+
+- `pnpm lint` - 运行 Biome linter
+- `pnpm lint:fix` - 运行 Biome linter 并自动修复（包括格式化）
+- `pnpm typecheck` - 运行 TypeScript 类型检查
+- `pnpm check:all` - 运行所有质量检查（lint、typecheck、spellcheck、duplicate check）
+
+### 其他质量工具
+
+- `pnpm spellcheck` - 使用 cspell 检查拼写
+- `pnpm check:cpd` - 使用 jscpd 检查重复代码
+- `pnpm dev:docs` - 启动文档开发服务器
+
+### Git Hooks（Pre-commit）
+
+项目配置了 **husky** + **lint-staged** + **commitlint**，在 `git commit` 时自动执行以下检查：
+
+- **pre-commit**: 对暂存的文件自动执行 lint 和格式化
+  - `*.{ts,tsx,json}` → `biome check --write`（自动修复并重新暂存）
+  - `*.{md,mdx}` → `cspell` 拼写检查
+- **commit-msg**: 校验 commit message 符合 Conventional Commits 规范
+
+> **注意**: 紧急情况下可使用 `git commit --no-verify` 跳过 hooks，但不建议日常使用。
+
+### 发布
+
+项目使用 [release-it](https://github.com/release-it/release-it) 进行版本发布，配合 `@release-it/conventional-changelog` 自动生成 CHANGELOG。
+
+#### 标准发布流程
+
+```bash
+# 发布指定版本（正式版）
+pnpm release 2.4.0 --ci
+
+# 发布 Beta 版本
+pnpm release:beta
+
+# 或指定预发布版本号
+pnpm release 2.4.0-beta.0 --preRelease=beta --ci
+
+# 快捷发布（自动 bump patch/minor/major）
+pnpm release:patch    # 2.3.0 → 2.3.1
+pnpm release:minor    # 2.3.0 → 2.4.0
+pnpm release:major    # 2.3.0 → 3.0.0
+```
+
+#### 自动执行
+
+- 验证工作目录是否干净
+- 更新 package.json 版本号
+- 生成/更新 CHANGELOG.md（基于 Conventional Commits）
+- 创建 Git commit 和 tag
+- 推送代码和 tag 到远程仓库（`--ci` 模式）
+- 创建 GitHub Release
+- GitHub Actions 自动执行 npm publish
+
+#### 预演模式
+
+```bash
+# 预演发布流程（不实际执行任何操作）
+pnpm release:dry
+```
+
+#### 仅本地更新（不推送）
+
+```bash
+# 显式关闭 push 和 GitHub release，避免交互过程中误推送
+pnpm release 2.4.0 --git.push=false --github.release=false
+```
+
+#### 版本格式
+
+- **正式版**：`v2.4.0`
+- **Beta 版**：`v2.4.0-beta.0`
+- **RC 版**：`v2.4.0-rc.0`
+
+#### 可用命令
+
+| 命令 | 说明 |
+|------|------|
+| `pnpm release <version> --ci` | 发布指定版本并推送到远程 |
+| `pnpm release:beta` | 发布 beta 预发布版本 |
+| `pnpm release:patch --ci` | 自动 bump patch 版本 |
+| `pnpm release:minor --ci` | 自动 bump minor 版本 |
+| `pnpm release:major --ci` | 自动 bump major 版本 |
+| `pnpm release:dry` | 预演模式 |
+
+### 文档开发
+
+- **文档系统**：使用 Nextra (Next.js)，支持 MDX 格式
+- **文档创建**：使用 `/docs-create [document-type] [document-title]` 命令
+- **文档更新**：使用 `/docs-update [scope] [target]` 批量更新
+- **文档验证**：
+  - 本地运行 `pnpm dev:docs` 验证文档渲染
+  - 执行代码示例测试确保可运行性
+  - 检查路径别名使用是否正确
+- **支持文档类型**：
+  - `mcp-tool` - MCP 工具文档
+  - `arch-doc` - 架构设计文档
+  - `api-doc` - API 参考文档
+  - `user-guide` - 用户指南
+  - `dev-guide` - 开发指南
+
+## 项目定位
+
+xiaozhi-client 是一个务实的开源 MCP 客户端：
+
+- **功能优先**：专注实现用户需要的核心功能
+- **简洁设计**：架构合理但不复杂，代码优雅但不过度抽象
+- **务实开发**：先实现功能，遇到问题再解决
+- **维护友好**：代码清晰易懂，便于贡献者参与
+
+## 架构概览
+
+这是一个基于 TypeScript 的 MCP（Model Context Protocol）客户端，用于连接小智 AI 服务。项目采用模块化架构，具有清晰的关注点分离，最新版本采用独立多接入点架构。
+
+### 核心组件
+
+1. **CLI 层** (`src/cli/`) - 使用 Commander.js 的命令行界面
+
+   - 入口点：`src/cli/index.ts` → `dist/cli/index.js`
+   - 依赖注入容器：`src/cli/Container.ts`
+   - 命令注册和处理：`src/cli/commands/`
+   - 服务管理：`src/cli/services/`
+   - 工具类：`src/cli/utils/`
+   - 错误处理：`src/cli/errors/`
+
+2. **MCP 核心库** (`src/server/lib/mcp/`) - MCP 协议核心实现
+
+   - `connection.ts` - **MCP 服务连接管理**，负责单个 MCP 服务的连接和工具管理
+   - `manager.ts` - **MCP 服务管理器**，统一管理多个 MCP 服务
+   - `types.ts` - MCP 相关类型定义
+   - `index.ts` - 统一导出接口
+
+3. **服务层** (`src/server/services/`) - 业务服务和工具
+
+   - `MCPServiceManager.ts` - **重新导出**，指向 `@/lib/mcp/manager.js`（向后兼容）
+   - `MCPService.ts` - **重新导出**，指向 `@/lib/mcp/connection.js`（向后兼容）
+   - `MCPServer.ts` - 兼容性包装器，提供向后兼容的 API
+   - 其他业务服务和工具类
+
+4. **处理器层** (`src/server/handlers/`) - 请求处理器
+
+   - 处理各种 API 请求和业务逻辑
+
+5. **路由层** (`src/server/routes/`) - 路由定义
+
+   - API 路由配置和映射
+
+6. **中间件层** (`src/server/middlewares/`) - 中间件
+
+   - 请求/响应处理中间件
+
+7. **工具层** (`src/server/utils/`) - 共享工具和辅助函数
+
+8. **类型定义** (`src/server/types/`) - TypeScript 类型定义
+
+9. **错误处理** (`src/server/errors/`) - 统一错误定义和处理
+
+10. **常量定义** (`src/server/constants/`) - 常量定义
+
+### 主要功能
+
+- **独立多端点支持**：每个端点完全独立管理，无负载均衡，无故障转移
+- **MCP 服务器聚合**：可聚合多个 MCP 服务器
+- **Web UI**：提供基于 Web 的配置界面
+- **Docker 支持**：完整的容器化，支持 Docker Compose
+- **多种传输协议**：WebSocket、HTTP 和 Stdio
+- **ModelScope 集成**：支持 ModelScope 托管的 MCP 服务
+- **固定间隔重连**：连接失败时采用固定间隔重连策略
+- **直接端点访问**：应用程序可以直接访问任何端点，无需路由
+
+### 独立架构特点
+
+- **完全独立**：每个端点拥有独立的连接和状态管理
+- **无负载均衡**：移除所有负载均衡逻辑和算法
+- **无故障转移**：端点失败时不自动切换到其他端点
+- **简单重连**：固定间隔重连，避免指数退避复杂性
+- **直接访问**：应用程序可以直接指定和访问特定端点
+
+### 配置
+
+主配置文件是 `xiaozhi.config.json`，支持：
+
+- `mcpEndpoint` - 单个端点字符串或端点数组
+- `mcpServers` - MCP 服务器配置对象
+- `modelscope` - ModelScope API 配置
+- `connection` - 连接参数（心跳、超时等）
+- `webUI` - Web UI 配置
+
+### 入口点
+
+项目构建两个主要入口点：
+
+- `dist/cli.js` - CLI 工具（主入口点）
+- `dist/WebServerStandalone.js` - 独立 Web 服务器，提供 /mcp 端点
+
+### 测试策略
+
+- 使用 Vitest 进行测试
+- 覆盖率目标：分支、函数、行、语句均达到 80%
+- 测试文件位于源文件旁的 `__tests__` 目录中
+- 支持多种测试类型：
+  - **单元测试** (`unit`) - 独立函数和类的测试
+  - **集成测试** (`integration`) - 多模块协作测试
+  - **CLI 命令测试** (`cli-command`) - 命令行功能测试
+  - **传输层测试** (`transport`) - 适配器通信测试
+  - **核心功能测试** (`mcp-core`) - MCP 协议实现测试
+- 传输适配器和服务器功能的集成测试
+- 使用 `/test-create` 命令快速生成测试用例
+
+### 测试职责范围规范
+
+**核心原则**：
+- **单元测试**：应在被测试代码所在的模块中进行
+  - 核心库（如 `src/mcp-core`）的单元测试应在其 own `__tests__` 目录中
+  - 消费者模块（如 `src/server/handlers`）不应重复测试外部依赖的单元功能
+- **集成测试**：应在消费者模块中验证多个模块协作的正确性
+  - 测试外部依赖在实际业务场景中的使用
+  - 验证模块间的接口和数据流
+
+**禁止的测试模式**：
+- ❌ 在 handler 测试中直接测试 utils 函数的各种输入组合
+- ❌ 在 service 测试中测试外部库的内部实现
+- ❌ 重复测试已在提供者模块中覆盖的单元功能
+
+**正确的测试模式**：
+- ✅ 在 utils 模块中测试各种边界情况和错误处理
+- ✅ 在 handler 测试中验证 utils 函数在业务流程中的正确调用
+- ✅ 在集成测试中验证多个组件协作的端到端行为
+
+**测试用例价值评估**：
+在编写测试前，问自己：
+1. 这个测试是否验证了**当前模块**的职责？
+2. 这个测试是否在**其他地方**已经被覆盖？
+3. 这个测试是否提供了**独特的价值**？
+如果答案是否定的，则不应添加此测试。
+
+### 测试编写检查清单
+
+在添加新的测试用例前，请确保：
+- [ ] 测试目标清晰且属于当前模块职责范围
+- [ ] 未在依赖模块中重复相同的单元测试
+- [ ] 集成测试有明确的业务场景验证
+- [ ] 测试用例描述使用中文且清晰易懂
+- [ ] Mock 策略合理，不测试实现细节
+
+### 构建过程
+
+- 使用 tsup 进行打包
+- 输出 Node.js 20+ 的 ESM 格式
+- 包含源映射和 TypeScript 声明文件
+- 将模板和配置文件复制到 dist 目录
+
+### 代码风格
+
+- 使用 Biome 进行 linting 和格式化
+- 启用 TypeScript 严格模式
+- 双引号、分号、ES5 尾随逗号
+- 2 空格缩进
+- 行结尾：LF
+
+### 代码质量要求（务实版）
+
+**核心要求**：
+- **功能正确性**：核心功能必须正确实现
+- **代码可读性**：代码要清晰，便于理解和维护
+- **基本安全性**：避免明显的安全漏洞
+- **架构合理性**：整体设计要有逻辑性
+
+**质量标准**：
+- **类型安全**：尽量使用具体类型，优先实用而非理论完美
+- **本地化要求**：用户界面和面向用户的文本必须使用中文
+- **路径别名**：使用项目路径别名系统，保持一致性
+- **错误处理**：关键操作必须有适当的错误处理
+
+### 避免的过度设计
+- 不要为了"未来可能需要"而增加复杂度
+- 不要过度使用设计模式和抽象
+- 不要提前优化不存在的性能问题
+- 不要引入复杂的并发控制，除非确实需要
+
+## 务实开发指导
+
+### 何时考虑复杂设计
+- **实际遇到问题**：当确实出现性能瓶颈时
+- **功能需求**：当用户明确需要相关功能时
+- **维护困难**：当代码确实难以维护时
+- **团队协作**：当多人协作需要统一接口时
+
+### 何时保持简单
+- **预防性设计**：为了"可能的需要"而增加复杂度
+- **理论完美**：为了代码的"优雅"而过度抽象
+- **过度优化**：在没有性能问题时优化性能
+- **设计模式**：为了使用设计模式而使用
+
+### 务实开发最佳实践
+- **功能驱动**：需要什么功能就实现什么功能
+- **渐进改进**：遇到问题再优化，不过度预防
+- **优雅实现**：代码要清晰、可维护、结构合理
+- **架构合理**：整体架构要有逻辑性，但不引入不必要的抽象层
+
+### 案例分析
+**MCPServiceManagerSingleton 简化**：
+- **原始实现**：340行，复杂的状态管理和互斥锁
+- **简化后**：133行，直接的单例实现
+- **效果**：保持功能完整，大幅降低维护成本
+- **结论**：优先考虑简单直接的实现方式
+
+### 代码审查检查清单
+
+在提交代码前，请确保：
+- [ ] 所有路径别名使用正确
+- [ ] 没有 `any` 类型（包括测试文件，除非有充分理由并通过审查）
+- [ ] 测试文件中使用具体的 React 组件属性类型而非 `any`
+- [ ] 所有导入语句符合最佳实践
+- [ ] **本地化检查**：
+  - [ ] 所有代码注释使用中文
+  - [ ] 所有测试用例描述使用中文（describe, it）
+  - [ ] 用户界面中没有硬编码英文字符串
+  - [ ] 面向用户的错误信息使用中文
+- [ ] 代码能通过 `pnpm check:all` 检查
+- [ ] 测试覆盖率达到 80% 要求
+- [ ] 错误处理完善且有意义
+- [ ] **执行开发流程检查**：修改代码后必须运行相应的检查命令
+  - 前端代码：`pnpm typecheck && pnpm lint && pnpm test`
+  - 后端代码：`pnpm typecheck && pnpm lint && pnpm test`
+  - 全面检查：`pnpm check:all`
+  - **注意**: Git hooks 已自动处理 lint/format 与 commit message 规范校验，typecheck 和测试仍需手动运行
+
+### 本地化规范
+
+- **注释信息**：请使用中文编写所有代码注释，禁止使用英文注释
+- **测试用例描述**：`describe` 和 `it` 函数的参数必须使用中文描述，禁止英文描述
+- **用户界面字符串**：所有面向用户的文本必须使用中文，硬编码英文字符串应提取为常量
+- **错误信息**：所有面向用户的错误信息必须使用中文
+- **文档和说明**：README、技术文档等说明性内容优先使用中文
+- **变量和函数名**：继续使用英文命名（符合编程惯例）
+- **技术标识符例外**：API 标识符、服务名称等技术标识符可保持英文
+- **目的**：有助于中国开发团队的持续维护和代码理解，降低沟通成本
+
+### 本地化检查清单
+
+在提交代码前，请确保：
+- [ ] 所有代码注释使用中文
+- [ ] 所有测试用例描述使用中文
+- [ ] 用户界面中没有硬编码英文字符串
+- [ ] 错误信息已中文化
+- [ ] 技术文档已中文化
+- [ ] 使用本地化验证技能检查代码质量
+
+### 路径别名系统
+
+项目使用统一的路径别名系统以实现清晰的模块导入和代码组织。所有源码位于 `src/` 目录下，通过根 `tsconfig.json` 的 `paths` 配置进行模块解析。
+
+#### 实际路径别名配置
+
+根据根 `tsconfig.json`，项目定义了以下路径别名：
+
+```json
+{
+  "@/types": ["./src/types"],
+  "@/config": ["./src/config"],
+  "@/mcp-core": ["./src/mcp-core"],
+  "@/endpoint": ["./src/endpoint"],
+  "@/esp32": ["./src/esp32"],
+  "@/cli": ["./src/cli"],
+  "@/utils": ["./src/utils"],
+  "@/server": ["./src/server"]
+}
+```
+
+#### 实际目录结构
+
+```
+src/
+├── cli/              # CLI 命令行工具
+│   ├── commands/     # 命令定义
+│   ├── services/     # 服务层
+│   ├── utils/        # 工具函数
+│   ├── errors/       # 错误处理
+│   └── types/        # 类型定义
+├── server/           # 后端服务
+│   ├── handlers/     # 请求处理器
+│   ├── services/     # 业务服务
+│   ├── lib/          # 核心库（mcp、coze）
+│   ├── routes/       # 路由定义
+│   ├── middlewares/  # 中间件
+│   ├── types/        # 类型定义
+│   ├── utils/        # 工具函数
+│   ├── errors/       # 错误定义
+│   └── constants/    # 常量定义
+├── config/           # 配置管理
+├── endpoint/         # 端点处理
+├── esp32/            # ESP32 硬件相关
+├── mcp-core/         # MCP 协议核心
+├── types/            # 共享类型定义
+├── utils/            # 通用工具（含 version 内联）
+└── web/              # 前端 Web 应用（独立 workspace）
+```
+
+#### 推荐导入方式
+
+**跨模块引用**：
+```typescript
+// 使用 @/ 别名引用其他模块
+import { HandlerManager } from "@/server/handlers/HandlerManager";
+import { ConfigService } from "@/config";
+import type { AppConfig } from "@/types";
+
+// 使用相对路径引用同层级文件
+import { helperFunction } from "./helpers";
+```
+
+#### 导入顺序最佳实践
+
+```typescript
+// 1. Node.js 内置模块
+import { fs } from "node:fs";
+import { path } from "node:path";
+
+// 2. 外部依赖
+import express from "express";
+import { Command } from "commander";
+
+// 3. 路径别名（@/）引用其他 src/ 模块
+import { MCPService } from "@/mcp-core";
+import { getConfig } from "@/config";
+
+// 4. 相对路径（同模块内引用）
+import { helperFunction } from "./helpers";
+```
+
+## Claude Code 技能和命令
+
+项目配置了专门的 Claude Code 技能和斜杠命令来提升开发效率：
+
+### 斜杠命令
+- `/docs-create [document-type] [document-title]` - 标准化文档创建流程
+- `/docs-update [scope] [target]` - 文档批量更新和路径别名修复
+- `/test-create [test-type] [target-file-or-module]` - 测试用例生成流程
+- `/test-cleanup [指定路径]` - 分析并清理超出测试范围或低价值的测试用例
+- `/tool-create [tool-name] [tool-description]` - MCP工具开发流程
+
+### Claude 技能
+- **路径别名验证器** - 检查和修复路径别名使用问题
+- **类型验证器** - TypeScript 严格模式检查和修复
+- **CI 验证器** - 完整代码质量检查和 CI 标准验证
+- **API 文档生成器** - 从源码自动生成 Nextra 格式文档
+- **开发流程检查器** - 确保代码修改后执行必要的质量检查命令
+
+### GitHub Issue 工作流
+
+项目支持通过 GitHub Issue 评论触发 Claude Code 自动修复问题：
+
+- **触发方式**：在 GitHub Issue 或 PR 评论中使用 `@claude`
+- **工作流文件**：`.github/workflows/claude.yml`
+- **修复流程**：
+  1. 在 Issue 中描述问题并提及 `@claude`
+  2. Claude Code 分析问题并修复代码
+  3. 修复完成后，使用 `./scripts/create-pr.ts` 创建 PR
+
+**创建 PR 的步骤**：
+```bash
+# 设置 GitHub Token（必需）
+export GITHUB_TOKEN=$(gh auth token)
+
+# 使用脚本创建 PR
+tsx scripts/create-pr.ts
+
+# 或使用自定义标题
+tsx scripts/create-pr.ts --title "fix: 修复 xxx 问题"
+
+# 创建草稿 PR
+tsx scripts/create-pr.ts --draft
+```
+
+### 重要说明
+
+- 项目完全使用 ESM 模块
+- 使用复杂的路径别名系统（见上表）进行模块导入
+- 外部依赖不打包（ws、express、commander 等）
+- 模板目录复制到 dist 用于项目脚手架
+- Web UI 在 `web/` 目录中单独构建
+- 文档系统使用 Nextra (Next.js)，支持 MDX 格式
