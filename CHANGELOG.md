@@ -2,6 +2,12 @@
 
 本文档记录项目的所有重要变更。
 
+## [2.3.0-beta.9](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.0-beta.8...v2.3.0-beta.9) (2026-04-19)
+
+### Bug Fixes
+
+* **ci:** 移除 workflow 中冗余的 pnpm 版本配置 ([#3376](https://github.com/shenjingnan/xiaozhi-client/issues/3376)) ([aceac87](https://github.com/shenjingnan/xiaozhi-client/commit/aceac87b4a9a4288d8afca5ae4caf6a68cae39b0))
+
 ## [2.3.0-beta.8](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.0-beta.7...v2.3.0-beta.8) (2026-04-19)
 
 ## [2.3.0-beta.7](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.0-beta.6...v2.3.0-beta.7) (2026-04-19)
