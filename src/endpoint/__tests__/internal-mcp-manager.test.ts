@@ -39,6 +39,7 @@ describe("InternalMCPManagerAdapter", () => {
         content: [{ type: "text", text: "Success" }],
       }),
       on: vi.fn(),
+      off: vi.fn(),
     };
 
     MCPManagerMock.mockImplementation(() => mockMCPManager);
@@ -369,6 +370,27 @@ describe("InternalMCPManagerAdapter", () => {
       await adapter.cleanup();
 
       expect(mockMCPManager.disconnect).toHaveBeenCalled();
+    });
+
+    it("应该移除事件监听器", async () => {
+      const adapter = new InternalMCPManagerAdapter({
+        mcpServers: {
+          "test-service": { command: "node", args: ["server.js"] },
+        },
+      });
+
+      await adapter.initialize();
+      await adapter.cleanup();
+
+      // 验证移除了事件监听器
+      expect(mockMCPManager.off).toHaveBeenCalledWith(
+        "connected",
+        expect.any(Function)
+      );
+      expect(mockMCPManager.off).toHaveBeenCalledWith(
+        "error",
+        expect.any(Function)
+      );
     });
 
     it("清理后应该清空工具列表", async () => {
