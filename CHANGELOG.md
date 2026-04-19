@@ -2,6 +2,8 @@
 
 本文档记录项目的所有重要变更。
 
+## [2.3.0-beta.8](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.0-beta.7...v2.3.0-beta.8) (2026-04-19)
+
 ## [2.3.0-beta.7](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.0-beta.6...v2.3.0-beta.7) (2026-04-19)
 
 ### Bug Fixes
