@@ -148,6 +148,7 @@ xiaozhi.cache.json
 tool-calls.jsonl
 .nx
 .claude/settings.local.json
+.agents/settings.local.json
 .worktrees
 worktrees
 .playwright-cli
