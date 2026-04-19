@@ -36,8 +36,7 @@ export default defineConfig({
       __APP_NAME__: JSON.stringify(pkg.name),
     };
 
-    // 注意：旧的 @xiaozhi-client/* alias 插件已移除
-    // 所有源码已迁移至 @/ 路径别名体系
+    // 源码使用 @/ 路径别名体系（见根 tsconfig.json paths 配置）
   },
   external: [
     // Node.js 内置模块

@@ -7,7 +7,7 @@ import { Callout, Tabs } from "nextra/components";
 
 # ESP32 SDK 概览
 
-`@xiaozhi-client/esp32` 是一个独立的 npm 包，负责 **ESP32 硬件设备**的全部通信逻辑。它从 `apps/backend` 中抽取出来，使设备通信能力可以被任何 Node.js 项目独立使用。
+`@xiaozhi-client/esp32` 是一个独立的 npm 包，负责 **ESP32 硬件设备**的全部通信逻辑。它从 `src/server` 中抽取出来，使设备通信能力可以被任何 Node.js 项目独立使用。
 
 <Callout type="info">
   本包不绑定任何 HTTP 框架（Express、Hono、Fastify 等），通过接口注入实现解耦，可灵活集成到各类服务端项目中。

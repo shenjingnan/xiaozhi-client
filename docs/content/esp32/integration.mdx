@@ -7,7 +7,7 @@ import { Callout, Steps, Tabs } from "nextra/components";
 
 # 集成指南
 
-本文档以 `apps/backend`（项目的 Web 服务器）为实际案例，详细说明如何在自己的项目中完整集成 `@xiaozhi-client/esp32`。
+本文档以 `src/server`（项目的 Web 服务器）为实际案例，详细说明如何在自己的项目中完整集成 `@xiaozhi-client/esp32`。
 
 <Callout type="info">
   在开始之前，建议先阅读 [快速上手](/esp32/quick-start) 了解基本概念。
@@ -116,7 +116,7 @@ export const esp32ConfigProvider = new Esp32ConfigProvider();
 ```
 
 <Callout type="info">
-  以上代码来自 `apps/backend/WebServer.ts` 中的实际实现。如果你不使用 `@xiaozhi-client/config`，可以从任何来源返回配置对象——文件、数据库、环境变量均可。
+  以上代码来自 `src/server/WebServer.ts` 中的实际实现。如果你不使用 `@xiaozhi-client/config`，可以从任何来源返回配置对象——文件、数据库、环境变量均可。
 </Callout>
 
 ## 步骤 3：创建 ESP32DeviceManager 实例
@@ -142,7 +142,7 @@ const esp32Manager = new ESP32DeviceManager({
 ESP32 设备上电后的第一个动作是向 OTA 接口发送 HTTP POST 请求。你需要一个**薄适配层**将 HTTP 请求转化为 SDK 方法调用：
 
 ```typescript
-// apps/backend/handlers/esp32.handler.ts（简化版）
+// src/server/handlers/esp32.handler.ts（简化版）
 import type { Context } from "hono";
 import type { ESP32DeviceManager, ESP32DeviceReport } from "@xiaozhi-client/esp32";
 import { ESP32ErrorCode } from "@xiaozhi-client/esp32";
