@@ -22,12 +22,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "happy-dom",
-    setupFiles: "./test/setup.ts",
+    setupFiles: "./__tests__/setup.ts",
     include: ["**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     exclude: ["node_modules", "dist", "templates/**/*"],
     coverage: {
       reporter: ["text", "json", "html"],
-      exclude: ["node_modules/", "src/test/", "*.config.*"],
+      exclude: ["node_modules/", "**/__tests__/**", "*.config.*"],
     },
   },
 });

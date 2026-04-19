@@ -10,7 +10,7 @@ export default defineConfig({
     // Web 前端测试使用 jsdom 环境
     environmentMatchGlobs: [["src/web/**", "jsdom"]],
     // 全局 setup 文件（内部会根据环境条件执行）
-    setupFiles: [resolve(__dirname, "./web/test/setup.ts")],
+    setupFiles: [resolve(__dirname, "./web/__tests__/setup.ts")],
   },
   // 顶层 define 用于替换全局常量（Vitest 3.x 使用 oxc 而非 esbuild）
   define: {
