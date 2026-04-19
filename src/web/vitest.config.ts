@@ -27,7 +27,7 @@ export default defineConfig({
     exclude: ["node_modules", "dist", "templates/**/*"],
     coverage: {
       reporter: ["text", "json", "html"],
-      exclude: ["node_modules/", "src/__tests__/", "*.config.*"],
+      exclude: ["node_modules/", "**/__tests__/**", "*.config.*"],
     },
   },
 });
