@@ -1,3 +1,39 @@
+# 更新日志
+
+本文档记录项目的所有重要变更。
+
+## [2.3.0-beta.7](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.0-beta.6...v2.3.0-beta.7) (2026-04-19)
+
+### Bug Fixes
+
+* **build:** 移除已迁移包的 external 配置，修复运行时找不到模块 ([#3313](https://github.com/shenjingnan/xiaozhi-client/issues/3313)) ([3ead2c4](https://github.com/shenjingnan/xiaozhi-client/commit/3ead2c42a1dc7e79aacd80e262f35c6b895d8129))
+* **test:** 修复 Web 前端测试路径别名解析和浏览器 API polyfill 问题 ([#3320](https://github.com/shenjingnan/xiaozhi-client/issues/3320)) ([042b4f6](https://github.com/shenjingnan/xiaozhi-client/commit/042b4f6ccf2d9df0e66348b75d8be18fd36ecc10))
+
+### Code Refactoring
+
+* **migrate:** 将 apps/backend 迁移至 src/server/ 并废弃原包 ([#3317](https://github.com/shenjingnan/xiaozhi-client/issues/3317)) ([7816297](https://github.com/shenjingnan/xiaozhi-client/commit/78162976e3fc562e9afe1c8255c856718521746e))
+* **migrate:** 将 apps/frontend 迁移至 src/web/ 并废弃原包 ([#3316](https://github.com/shenjingnan/xiaozhi-client/issues/3316)) ([ac35d6a](https://github.com/shenjingnan/xiaozhi-client/commit/ac35d6aeb48a2f6af5cf6d81ef0982deef87509b))
+* **migrate:** 将 packages/cli 迁移至 src/cli/ ([#3315](https://github.com/shenjingnan/xiaozhi-client/issues/3315)) ([640d19a](https://github.com/shenjingnan/xiaozhi-client/commit/640d19ac95adc920c82bd9f3e8140223ff5120e7))
+* **migrate:** 将 packages/config 迁移至 src/config/ 并废弃原包 ([#3290](https://github.com/shenjingnan/xiaozhi-client/issues/3290)) ([5f6e86c](https://github.com/shenjingnan/xiaozhi-client/commit/5f6e86cf0e951a1a398abeb3d99c2a827cd2aa53))
+* **migrate:** 将 packages/endpoint 迁移至 src/endpoint/ 并废弃原包 ([#3312](https://github.com/shenjingnan/xiaozhi-client/issues/3312)) ([3d10742](https://github.com/shenjingnan/xiaozhi-client/commit/3d107424b4ea62de7302c31e2ac1aee515eb00b9))
+* **migrate:** 将 packages/esp32 迁移至 src/esp32/ 并废弃原包 ([#3314](https://github.com/shenjingnan/xiaozhi-client/issues/3314)) ([#3314](https://github.com/shenjingnan/xiaozhi-client/issues/3314)) ([608925e](https://github.com/shenjingnan/xiaozhi-client/commit/608925e0fd83b092b74df173c356bcf20f26214f))
+* **migrate:** 将 packages/mcp-core 迁移至 src/mcp-core/ 并废弃原包 ([#3289](https://github.com/shenjingnan/xiaozhi-client/issues/3289)) ([e74d943](https://github.com/shenjingnan/xiaozhi-client/commit/e74d943d9d82ebd1ae357a850c1034848b6dd968))
+* **migrate:** 将 packages/shared-types 迁移至 src/types/ 并废弃原包 ([#3288](https://github.com/shenjingnan/xiaozhi-client/issues/3288)) ([4ad6f1c](https://github.com/shenjingnan/xiaozhi-client/commit/4ad6f1cc1dcafc065479c33ed310501e28856d30))
+* **migrate:** 将 packages/version 迁移至 src/utils/version.ts 并废弃原包 ([#3287](https://github.com/shenjingnan/xiaozhi-client/issues/3287)) ([0a84739](https://github.com/shenjingnan/xiaozhi-client/commit/0a84739ae58bb5dd0e49110d139030b0dd158c0a))
+* **migrate:** 将 src/server/ 的 @xiaozhi-client/* 导入迁移至 @/ 路径别名体系 ([#3343](https://github.com/shenjingnan/xiaozhi-client/issues/3343)) ([119663e](https://github.com/shenjingnan/xiaozhi-client/commit/119663e7a6427cc6b7e36ac21c10683a3f093ae8))
+* **migrate:** 清理 monorepo 迁移后的遗留引用和兼容层配置 ([#3344](https://github.com/shenjingnan/xiaozhi-client/issues/3344)) ([377170b](https://github.com/shenjingnan/xiaozhi-client/commit/377170b1fda07677bf1d0330505bdb72659e7c41))
+* **migrate:** 清理已迁移至 src/ 的废弃 monorepo 目录 ([#3318](https://github.com/shenjingnan/xiaozhi-client/issues/3318)) ([e139ce6](https://github.com/shenjingnan/xiaozhi-client/commit/e139ce6f8299b793c0d33064637aca4c9549adfe))
+* **migrate:** 移除 Nx monorepo 基础设施，完成单体架构迁移 ([#3319](https://github.com/shenjingnan/xiaozhi-client/issues/3319)) ([0e0cd9b](https://github.com/shenjingnan/xiaozhi-client/commit/0e0cd9b6077aec9d85911e7bc1b65d9b788961e0))
+* 修复 handlers 目录中的三层相对路径导入 ([#3340](https://github.com/shenjingnan/xiaozhi-client/issues/3340)) ([8200f60](https://github.com/shenjingnan/xiaozhi-client/commit/8200f6080aa5a29faddc2747a092fd86cf240a8b)), closes [#3338](https://github.com/shenjingnan/xiaozhi-client/issues/3338) [#3338](https://github.com/shenjingnan/xiaozhi-client/issues/3338)
+* 将 @xiaozhi-client/* 工作区包导入迁移至统一的 @/ 路径别名体系 ([#3342](https://github.com/shenjingnan/xiaozhi-client/issues/3342)) ([6f1ec00](https://github.com/shenjingnan/xiaozhi-client/commit/6f1ec001b9cc1a75f358667b1565e7a6cb41474a))
+* 清理 monorepo 迁移后的残留引用和配置 ([#3374](https://github.com/shenjingnan/xiaozhi-client/issues/3374)) ([e8381e9](https://github.com/shenjingnan/xiaozhi-client/commit/e8381e9169cef5d1343ae7625820e400d3b570bd))
+* 清理 monorepo 迁移残留并修复路径别名体系 ([#3345](https://github.com/shenjingnan/xiaozhi-client/issues/3345)) ([4770ec9](https://github.com/shenjingnan/xiaozhi-client/commit/4770ec941acd4ce8cb2ff81cf5ea3bb05a33f5ba))
+* 用 release-it 替代自定义发布脚本和 nx 依赖 ([#3375](https://github.com/shenjingnan/xiaozhi-client/issues/3375)) ([f0c32e7](https://github.com/shenjingnan/xiaozhi-client/commit/f0c32e7f6394a60d7c115d31bdae046859b0393e))
+
+### Documentation
+
+* 清理 monorepo 迁移后的文档和代码残留引用 ([#3373](https://github.com/shenjingnan/xiaozhi-client/issues/3373)) ([a10e329](https://github.com/shenjingnan/xiaozhi-client/commit/a10e3296134064653b90a1297f8a45bf7f51c59a))
+
 ## 2.3.0-beta.6 (2026-04-16)
 
 ### 🩹 Fixes
