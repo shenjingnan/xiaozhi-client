@@ -3,7 +3,7 @@
  * 用于判断 MCP 服务的通信类型
  */
 
-import type { MCPServerConfig } from "../../types";
+import type { MCPServerConfig } from "@/types";
 
 /** MCP 服务通信类型 */
 type MCPCommunicationType = "stdio" | "sse" | "streamable-http";
