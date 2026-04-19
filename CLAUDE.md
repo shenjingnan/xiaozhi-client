@@ -92,8 +92,8 @@ pnpm release:dry
 #### 仅本地更新（不推送）
 
 ```bash
-# 不加 --ci 即可仅做本地变更
-pnpm release 2.4.0
+# 显式关闭 push 和 GitHub release，避免交互过程中误推送
+pnpm release 2.4.0 --git.push=false --github.release=false
 ```
 
 #### 版本格式

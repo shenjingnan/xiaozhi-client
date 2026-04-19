@@ -108,7 +108,7 @@
     "jscpd": "^4.0.5",
     "jsdom": "^29.0.2",
     "lint-staged": "^16.4.0",
-    "release-it": "^20.0.0",
+    "release-it": "^19.0.0",
     "rimraf": "^6.1.2",
     "semver": "^7.7.2",
     "ts-node": "^10.9.2",
