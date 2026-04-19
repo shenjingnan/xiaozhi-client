@@ -33,14 +33,11 @@ import { Callout, Steps, Tabs } from "nextra/components";
 
 ## 发布的包
 
-项目采用多包发布策略，每次发布会同时发布以下包：
+项目采用单包发布策略，每次发布会发布以下包：
 
-- `xiaozhi-client` - 主包，CLI 工具
-- `@xiaozhi-client/cli` - CLI 核心库
-- `@xiaozhi-client/config` - 配置管理库
-- `@xiaozhi-client/shared-types` - 共享类型定义
+- `xiaozhi-client` - 主包（包含 CLI 工具、Web 服务器、全部功能模块）
 
-所有包使用相同的版本号，由 nx release 自动管理。
+版本号由 `scripts/release.ts` 脚本统一管理。
 
 ## 发布步骤
 
@@ -155,9 +152,6 @@ ls -la dist/
 ```bash
 # 标记包为已废弃
 npm deprecate xiaozhi-client@VERSION "This version has issues"
-npm deprecate @xiaozhi-client/cli@VERSION "This version has issues"
-npm deprecate @xiaozhi-client/config@VERSION "This version has issues"
-npm deprecate @xiaozhi-client/shared-types@VERSION "This version has issues"
 ```
 
 ### Git 标签回滚
@@ -174,10 +168,9 @@ git push origin :refs/tags/vVERSION
 
 ```bash
 # 恢复 package.json 版本到上一个提交
-git checkout HEAD~1 -- package.json packages/*/package.json
+git checkout HEAD~1 -- package.json
 
-# 或者使用 nx release 重新指定正确的版本
-nx release version --version 1.9.4
+# 或者手动编辑 package.json 中的 version 字段后重新提交
 ```
 
 ## 常见问题
@@ -195,7 +188,7 @@ nx release version --version 1.9.4
 
 <Callout type="info" emoji="ℹ️">
   **版本同步**
-  nx release 会自动同步所有包的版本号，所有包将使用相同的版本号（固定版本模式）。
+  `pnpm release` 脚本会自动更新 package.json 的版本号并生成 CHANGELOG。
 </Callout>
 
 ## 手动触发发布（备用）
@@ -209,5 +202,5 @@ nx release version --version 1.9.4
 
 <Callout type="info">
   **推荐使用标准流程**
-  标准流程（本地命令 + 自动发布）更符合 Nx 最佳实践，可以预览版本变更后再推送。
+  标准流程（本地命令 + 自动发布）可以预览版本变更后再推送，简单可靠。
 </Callout>
