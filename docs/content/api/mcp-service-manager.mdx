@@ -1,0 +1,318 @@
+---
+title: "MCPServiceManager - Xiaozhi Client"
+description: "MCP 服务管理器的 API 参考文档，负责管理多个 MCP 服务的连接、工具聚合和路由调用。"
+---
+
+# MCPServiceManager
+
+MCPServiceManager 是 MCP 服务管理器，负责管理多个 MCP 服务的连接、工具聚合和路由调用。它是项目核心 API 之一。
+
+## 类定义
+
+```typescript
+import { MCPServiceManager } from "@/server/lib/mcp/manager.js";
+```
+
+## 构造函数
+
+### constructor
+
+创建 MCPServiceManager 实例。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| configs | `Record<string, MCPServiceConfig>` 或 `UnifiedServerConfig` | 否 | 可选的初始服务配置或服务器配置 |
+
+**示例：**
+
+```typescript
+// 使用服务配置
+const manager = new MCPServiceManager({
+  "weather-service": {
+    url: "http://localhost:3000/mcp",
+    type: "http"
+  }
+});
+
+// 使用 UnifiedServerConfig 格式
+const manager = new MCPServiceManager({
+  name: "MCPServiceManager",
+  enableLogging: true,
+  logLevel: "info",
+  configs: {
+    "weather-service": { url: "http://localhost:3000/mcp" }
+  }
+});
+```
+
+## 主要方法
+
+### startAllServices
+
+启动所有 MCP 服务。
+
+**返回值：** `Promise<void>`
+
+**示例：**
+
+```typescript
+await manager.startAllServices();
+```
+
+### startService
+
+启动单个 MCP 服务。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| serviceName | string | 是 | 服务名称 |
+
+**返回值：** `Promise<void>`
+
+**示例：**
+
+```typescript
+await manager.startService("weather-service");
+```
+
+### stopService
+
+停止单个服务。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| serviceName | string | 是 | 服务名称 |
+
+**返回值：** `Promise<void>`
+
+### stopAllServices
+
+停止所有服务。
+
+**返回值：** `Promise<void>`
+
+### addServiceConfig
+
+添加服务配置。
+
+**参数（两参数版本）：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| name | string | 是 | 服务名称 |
+| config | MCPServiceConfig | 是 | 服务配置对象 |
+
+**参数（单参数版本）：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| config | InternalMCPServiceConfig | 是 | 包含 name 的完整配置对象 |
+
+**示例：**
+
+```typescript
+// 两参数版本
+manager.addServiceConfig("weather-service", {
+  url: "http://localhost:3000/mcp",
+  type: "http"
+});
+
+// 单参数版本
+manager.addServiceConfig({
+  name: "weather-service",
+  url: "http://localhost:3000/mcp",
+  type: "http"
+});
+```
+
+### getAllTools
+
+获取所有可用工具。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|------|--------|------|
+| status | `'enabled'` \| `'disabled'` \| `'all'` | 否 | `'all'` | 工具状态过滤 |
+
+**返回值：** `EnhancedToolInfo[]`
+
+**示例：**
+
+```typescript
+// 获取所有工具
+const allTools = manager.getAllTools();
+
+// 仅获取已启用的工具
+const enabledTools = manager.getAllTools("enabled");
+
+// 仅获取已禁用的工具
+const disabledTools = manager.getAllTools("disabled");
+```
+
+### callTool
+
+调用 MCP 工具（支持标准 MCP 工具和 customMCP 工具）。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| toolName | string | 是 | 工具名称 |
+| arguments_ | `Record<string, unknown>` | 是 | 工具参数 |
+| options | `{ timeout?: number }` | 否 | 可选配置 |
+
+**返回值：** `Promise<ToolCallResult>`
+
+**示例：**
+
+```typescript
+const result = await manager.callTool("weather-service__get_weather", {
+  city: "北京"
+});
+```
+
+### hasTool
+
+检查是否存在指定工具。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| toolName | string | 是 | 工具名称 |
+
+**返回值：** `boolean`
+
+### getService
+
+获取指定服务实例。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| name | string | 是 | 服务名称 |
+
+**返回值：** `MCPService | undefined`
+
+### getConnectedServices
+
+获取所有已连接的服务名称。
+
+**返回值：** `string[]`
+
+### getStatus
+
+获取服务器状态（兼容 UnifiedServerStatus 格式）。
+
+**返回值：** `UnifiedServerStatus`
+
+**返回值结构：**
+
+```typescript
+interface UnifiedServerStatus {
+  isRunning: boolean;
+  serviceStatus: ManagerStatus;
+  activeConnections: number;
+  config: UnifiedServerConfig;
+  services: Record<string, ServiceInfo>;
+  totalTools: number;
+  availableTools: string[];
+}
+```
+
+### getRetryStats
+
+获取重试统计信息。
+
+**返回值：**
+
+```typescript
+{
+  failedServices: string[];
+  activeRetries: string[];
+  totalFailed: number;
+  totalActiveRetries: number;
+}
+```
+
+### getCustomMCPTools
+
+获取所有 customMCP 工具列表。
+
+**返回值：** `Tool[]`
+
+### getCustomMCPHandler
+
+获取 CustomMCP 处理器实例。
+
+**返回值：** `CustomMCPHandler`
+
+## 生命周期方法
+
+### start
+
+启动管理器。
+
+**返回值：** `Promise<void>`
+
+### stop
+
+停止管理器。
+
+**返回值：** `Promise<void>`
+
+### cleanup
+
+清理资源（实现 IMCPServiceManager 接口）。
+
+**返回值：** `Promise<void>`
+
+## 相关类型
+
+### MCPServiceConfig
+
+```typescript
+type MCPServiceConfig =
+  | LocalMCPServerConfig    // 本地 MCP 服务
+  | SSEMCPServerConfig      // SSE MCP 服务
+  | HTTPMCPServerConfig;    // HTTP MCP 服务
+```
+
+### EnhancedToolInfo
+
+```typescript
+interface EnhancedToolInfo {
+  name: string;           // 工具名称（格式：服务名__工具名）
+  description: string;    // 工具描述
+  inputSchema: object;    // 输入参数 Schema
+  serviceName: string;    // 所属服务名
+  originalName: string;   // 原始工具名
+  enabled: boolean;       // 是否启用
+  usageCount: number;     // 使用次数
+  lastUsedTime: string;   // 最后使用时间
+}
+```
+
+## 事件系统
+
+MCPServiceManager 通过 EventBus 发射以下事件：
+
+| 事件名 | 说明 |
+|--------|------|
+| `mcp:service:connected` | 服务连接成功 |
+| `mcp:service:disconnected` | 服务断开连接 |
+| `mcp:service:connection:failed` | 服务连接失败 |
+| `mcp:server:added` | MCP 服务添加 |
+| `mcp:server:removed` | MCP 服务移除 |
+
+## 源码位置
+
+`src/server/lib/mcp/manager.ts`

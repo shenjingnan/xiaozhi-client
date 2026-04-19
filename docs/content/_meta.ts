@@ -4,6 +4,7 @@ const meta: MetaRecord = {
   index: "介绍",
   quickstart: "快速上手",
   usage: "使用姿势",
+  api: "API 参考",
   esp32: "ESP32 SDK",
   reference: "参考手册",
   release: "发布方法",

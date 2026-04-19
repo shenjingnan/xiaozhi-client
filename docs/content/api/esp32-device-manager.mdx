@@ -1,0 +1,291 @@
+---
+title: "ESP32DeviceManager - Xiaozhi Client"
+description: "ESP32 设备管理器的 API 参考文档，负责管理所有 ESP32 设备的连接和消息路由。"
+---
+
+# ESP32DeviceManager
+
+ESP32DeviceManager 是 ESP32 设备管理器，负责所有 ESP32 设备的连接管理和消息路由（编排层）。这是 ESP32 SDK 的核心导出类，整合了 OTA 配置下发、WebSocket 连接管理、ASR → LLM → TTS 语音交互流水线。
+
+## 类定义
+
+```typescript
+import { ESP32DeviceManager } from "@/esp32/esp32-manager.js";
+```
+
+## 构造函数
+
+### constructor
+
+创建 ESP32DeviceManager 实例。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| options | ESP32DeviceManagerOptions | 否 | 配置选项 |
+
+**配置选项结构：**
+
+```typescript
+interface ESP32DeviceManagerOptions {
+  logger?: ILogger;                   // 日志器（可选）
+  configProvider?: IESP32ConfigProvider; // 配置提供者（可选）
+  buildWebSocketUrl?: (host: string) => string; // 自定义 WebSocket URL 构建函数
+  firmwareVersion?: string;           // 固件版本（默认：2.2.2）
+  firmwareUrl?: string;               // 固件下载 URL
+  forceUpdate?: boolean;              // 是否强制更新固件
+}
+```
+
+**示例：**
+
+```typescript
+import { ESP32DeviceManager } from "@/esp32/esp32-manager.js";
+
+const manager = new ESP32DeviceManager({
+  firmwareVersion: "2.2.2",
+  forceUpdate: false
+});
+```
+
+## 主要方法
+
+### handleOTARequest
+
+处理 OTA 请求。设备首次连接时自动激活，直接返回 WebSocket 配置。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| deviceId | string | 是 | 设备 ID（MAC 地址） |
+| clientId | string | 是 | 客户端 ID（设备 UUID） |
+| report | ESP32DeviceReport | 是 | 设备上报信息 |
+| headerInfo | `{ deviceModel?, deviceVersion? }` | 否 | 从请求头获取的设备信息 |
+| host | string | 否 | 请求的 Host 头 |
+
+**返回值：** `Promise<ESP32OTAResponse>`
+
+**返回值结构：**
+
+```typescript
+interface ESP32OTAResponse {
+  websocket: {
+    url: string;      // WebSocket URL
+    token: string;    // 认证 Token（空字符串）
+    version: number;  // 协议版本
+  };
+  server_time: {
+    timestamp: number;      // 服务器时间戳
+    timezone_offset: number; // 时区偏移
+  };
+  firmware: {
+    version: string;  // 固件版本
+    url: string;      // 固件下载 URL
+    force: boolean;   // 是否强制更新
+  };
+}
+```
+
+**示例：**
+
+```typescript
+const response = await manager.handleOTARequest(
+  "AA:BB:CC:DD:EE:FF",
+  "device-uuid-123",
+  { board_type: "esp32-s3", app_version: "2.0.0" },
+  { deviceModel: "ESP32-S3" },
+  "192.168.1.100:8080"
+);
+
+console.log("WebSocket URL:", response.websocket.url);
+```
+
+### handleWebSocketConnection
+
+处理 WebSocket 连接。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| ws | WebSocket | 是 | WebSocket 实例 |
+| deviceId | string | 是 | 设备 ID |
+| clientId | string | 是 | 客户端 ID |
+| token | string | 否 | 认证 Token（向后兼容） |
+
+**返回值：** `Promise<void>`
+
+**示例：**
+
+```typescript
+import WebSocket from "ws";
+
+// 当 WebSocket 连接建立时调用
+manager.handleWebSocketConnection(ws, deviceId, clientId);
+```
+
+### getConnection
+
+获取设备连接。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| deviceId | string | 是 | 设备 ID |
+
+**返回值：** `ESP32Connection | undefined`
+
+### getDevice
+
+获取设备信息。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| deviceId | string | 是 | 设备 ID |
+
+**返回值：** `ESP32Device | null`
+
+**返回值结构：**
+
+```typescript
+interface ESP32Device {
+  id: string;         // 设备 ID
+  boardType: string;  // 板卡类型
+  appVersion: string; // 应用版本
+  status: "active" | "offline"; // 设备状态
+  lastSeen: Date;     // 最后活跃时间
+}
+```
+
+### getASRService
+
+获取 ASR 服务实例。
+
+**返回值：** `ASRService`
+
+### destroy
+
+销毁服务，断开所有设备连接。
+
+**返回值：** `Promise<void>`
+
+**示例：**
+
+```typescript
+await manager.destroy();
+console.log("设备管理器已销毁");
+```
+
+## 使用示例
+
+### 基础使用
+
+```typescript
+import { ESP32DeviceManager } from "@/esp32/esp32-manager.js";
+import { createServer } from "http";
+import WebSocket from "ws";
+
+// 创建设备管理器
+const manager = new ESP32DeviceManager({
+  firmwareVersion: "2.2.2"
+});
+
+// 创建 HTTP 服务器处理 OTA 请求
+const server = createServer(async (req, res) => {
+  if (req.url?.startsWith("/ota")) {
+    const deviceId = req.headers["x-device-id"] as string;
+    const clientId = req.headers["x-client-id"] as string;
+
+    const response = await manager.handleOTARequest(
+      deviceId,
+      clientId,
+      { board_type: "esp32-s3" },
+      {},
+      req.headers.host
+    );
+
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(response));
+  }
+});
+
+// 创建 WebSocket 服务器
+const wsServer = new WebSocket.Server({ server });
+
+wsServer.on("connection", async (ws, req) => {
+  const deviceId = req.headers["x-device-id"] as string;
+  const clientId = req.headers["x-client-id"] as string;
+
+  await manager.handleWebSocketConnection(ws, deviceId, clientId);
+});
+```
+
+### 配置语音服务
+
+```typescript
+import { ESP32DeviceManager } from "@/esp32/esp32-manager.js";
+
+// 配置提供者实现
+class MyConfigProvider implements IESP32ConfigProvider {
+  getASRConfig() {
+    return {
+      appid: "your-appid",
+      accessToken: "your-token",
+      cluster: "volcengine_streaming_common"
+    };
+  }
+
+  getLLMConfig() {
+    return {
+      model: "gpt-4",
+      apiKey: "your-api-key",
+      baseURL: "https://api.openai.com/v1"
+    };
+  }
+
+  getTTSConfig() {
+    return {
+      appid: "your-appid",
+      accessToken: "your-token",
+      voice_type: "zh_female_tianmeixiaoyuan_moon_bigtts"
+    };
+  }
+}
+
+const manager = new ESP32DeviceManager({
+  configProvider: new MyConfigProvider()
+});
+```
+
+## 消息类型处理
+
+ESP32DeviceManager 处理以下设备消息类型：
+
+| 消息类型 | 说明 | 处理方式 |
+|----------|------|----------|
+| `hello` | 初始化消息 | 建立 ASR 连接 |
+| `listen` | 监听状态消息 | 处理唤醒词检测和监听状态 |
+| `audio` | 音频数据 | 传递给 ASR 服务处理 |
+| `text` | 文本消息 | 日志记录 |
+| `stt` | STT 结果 | 发送到设备端 |
+| `tts` | TTS 结果 | 日志记录 |
+
+## 语音交互流水线
+
+ESP32DeviceManager 实现完整的语音交互流水线：
+
+1. **唤醒词检测**：设备检测到唤醒词后发送 `listen` 消息（state: "detect"）
+2. **ASR 初始化**：管理器初始化 ASR 服务连接
+3. **音频传输**：设备发送音频数据，管理器转发给 ASR 服务
+4. **语音识别**：ASR 服务返回文本结果
+5. **LLM 处理**：管理器调用 LLM 服务生成回复
+6. **TTS 输出**：管理器调用 TTS 服务将回复转换为语音并发送给设备
+
+## 源码位置
+
+`src/esp32/esp32-manager.ts`
