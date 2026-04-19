@@ -119,30 +119,29 @@ type LightControlParams = z.infer<typeof lightControlSchema>;
 
 #### 别名一致性检查
 ```typescript
-// 检查别名导入的类型定义（xiaozhi-client 项目标准）
-import { UnifiedMCPServer } from "@core/unified-server";
-import { IndependentXiaozhiConnectionManager } from "@managers";
-import { StartCommand } from "@cli/commands/start";
-import { WebSocketAdapter } from "@transports/websocket";
-import type { XiaozhiConfig } from "@/types";
+// 检查别名导入的类型定义（xiaozhi-client 项目 @/ 路径别名体系）
+import { MCPConnection } from "@/mcp-core";
+import { Container } from "@/cli";
+import { StartCommand } from "@/cli/commands/start";
+import { HandlerManager } from "@/server/handlers/HandlerManager";
+import type { XiaozhiConfig, AppConfig } from "@/types";
 
 // 验证导入的模块是否具有正确的类型定义
-// 确保所有别名指向 apps/backend/ 下的正确文件
+// 确保所有 @/ 别名指向 src/ 下的正确文件
 ```
 
 #### 类型别名映射验证
 ```typescript
-// 确保 xiaozhi-client 项目别名映射不会导致类型冲突
+// 确保 xiaozhi-client 项目 @/ 路径别名映射不会导致类型冲突
 interface XiaozhiClientTypeMapping {
-  "@/*": "./apps/backend/*";
-  "@cli/*": "./apps/backend/cli/*";
-  "@cli/commands/*": "./apps/backend/cli/commands/*";
-  "@core/*": "./apps/backend/core/*";
-  "@transports/*": "./apps/backend/transports/*";
-  "@managers/*": "./apps/backend/managers/*";
-  "@services/*": "./apps/backend/services/*";
-  "@types/*": "./apps/backend/types/*";
-  "@utils/*": "./apps/backend/utils/*";
+  "@/types":    "./src/types";      // 共享类型定义
+  "@/config":   "./src/config";     // 配置管理
+  "@/mcp-core": "./src/mcp-core";   // MCP 协议核心
+  "@/endpoint": "./src/endpoint";   // 端点处理
+  "@/esp32":    "./src/esp32";      // ESP32 硬件相关
+  "@/cli":      "./src/cli";        // CLI 命令行工具
+  "@/utils":    "./src/utils";      // 通用工具
+  "@/server":   "./src/server";     // 后端服务
 }
 
 // 验证映射的正确性和类型完整性

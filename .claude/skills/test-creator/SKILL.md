@@ -120,7 +120,7 @@ describe("测试描述", () => {
 pnpm test
 
 # 运行特定测试文件
-pnpm test apps/backend/{module}/{target}.test.ts
+pnpm test src/server/{module}/{target}.test.ts
 
 # 生成覆盖率报告
 pnpm test:coverage

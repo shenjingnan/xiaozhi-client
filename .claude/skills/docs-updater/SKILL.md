@@ -71,19 +71,16 @@ description: 文档更新技能，用于批量更新文档和修复路径别名
 基于 xiaozhi-client 项目的路径别名系统：
 
 ```typescript
-// xiaozhi-client 项目别名映射
+// xiaozhi-client 项目别名映射（单体架构，统一 @/ 路径别名体系）
 {
-  "@/*": ["apps/backend/*"],                    // 后端根目录快速访问
-  "@cli/*": ["packages/cli/*"],                 // CLI 相关代码
-  "@handlers/*": ["apps/backend/handlers/*"],     // 请求处理器
-  "@services/*": ["apps/backend/services/*"],     // 业务服务
-  "@errors/*": ["apps/backend/errors/*"],         // 错误定义
-  "@utils/*": ["apps/backend/utils/*"],           // 工具函数
-  "@core/*": ["apps/backend/core/*"],             // 核心 MCP 功能
-  "@transports/*": ["apps/backend/transports/*"], // 传输层适配器
-  "@adapters/*": ["apps/backend/adapters/*"],     // 适配器模式
-  "@managers/*": ["apps/backend/managers/*"],     // 管理器服务
-  "@types/*": ["apps/backend/types/*"]            // 类型定义
+  "@/types":    ["./src/types"],      // 共享类型定义
+  "@/config":   ["./src/config"],     // 配置管理
+  "@/mcp-core": ["./src/mcp-core"],   // MCP 协议核心
+  "@/endpoint": ["./src/endpoint"],   // 端点处理
+  "@/esp32":    ["./src/esp32"],      // ESP32 硬件相关
+  "@/cli":      ["./src/cli"],        // CLI 命令行工具
+  "@/utils":    ["./src/utils"],      // 通用工具
+  "@/server":   ["./src/server"]      // 后端服务（含 handlers、services、routes 等）
 }
 ```
 
@@ -95,16 +92,12 @@ import { Service } from "../services/file";
 import { Command } from "./commands/help";
 import { Type } from "../../types/interface";
 import { util } from "./utils/helper";
-import { Transport } from "../transports/websocket";
-import { Core } from "../../core/unified-server";
 
-// ✅ 修复后的别名路径（xiaozhi-client 项目）
-import { Service } from "@/services/file";
-import { Command } from "@cli/commands/help";
+// ✅ 修复后的别名路径（xiaozhi-client @/ 路径别名体系）
+import { Service } from "@/server/services/file";
+import { Command } from "@/cli/commands/start";
 import { Type } from "@/types/interface";
 import { util } from "@/utils/helper";
-import { Transport } from "@transports/websocket";
-import { Core } from "@/core/unified-server";
 ```
 
 ## 更新流程

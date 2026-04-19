@@ -21,8 +21,8 @@ description: 测试修复技能，用于分析和修复失败的测试用例
 使用格式：`/fix-test [测试文件路径]`
 
 **示例**：
-- `/fix-test apps/backend/handlers/__tests__/mcp-manage.handler.test.ts`
-- `/fix-test packages/cli/src/commands/__tests__/start.test.ts`
+- `/fix-test src/server/handlers/__tests__/mcp-manage.handler.test.ts`
+- `/fix-test src/cli/commands/__tests__/start.test.ts`
 
 ## 修复流程
 
