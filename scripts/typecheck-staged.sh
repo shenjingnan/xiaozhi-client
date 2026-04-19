@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# typecheck-staged.sh — 仅对包含暂存 .ts/.tsx 文件的包运行类型检查
+# typecheck-staged.sh — 仅对包含暂存 .ts/.tsx 文件的模块运行类型检查
 # 用法：在 lint-staged 中对 *.{ts,tsx} 文件调用
 # 触发 cspell 检查验证
 
@@ -12,26 +12,33 @@ if [ -z "$STAGED_FILES" ]; then
   exit 0
 fi
 
-# 根据文件路径提取所属的包目录（去重）
-PACKAGES=$(echo "$STAGED_FILES" | grep -E '^(packages|apps|mcps)/' | sed 's#/.*##' | sort -u)
+# 根据文件路径提取所属的模块目录（去重）
+# 匹配 src/（单体架构主代码）和 mcps/（MCP 插件工作区）
+MODULES=$(echo "$STAGED_FILES" | grep -E '^(src|mcps)/' | sed 's#/.*##' | sort -u)
 
-if [ -z "$PACKAGES" ]; then
+if [ -z "$MODULES" ]; then
   exit 0
 fi
 
-echo "🔍 对以下包运行 TypeScript 类型检查："
-echo "$PACKAGES" | sed 's/^/  - /'
+echo "🔍 对以下模块运行 TypeScript 类型检查："
+echo "$MODULES" | sed 's/^/  - /'
 echo ""
 
 FAILED=0
 
-for pkg in $PACKAGES; do
-  TSCONFIG="${pkg}/tsconfig.json"
+for mod in $MODULES; do
+  # src/ 模块使用根 tsconfig.json，mcps/ 模块使用各自的 tsconfig.json
+  if [ "$mod" = "src" ]; then
+    TSCONFIG="tsconfig.json"
+  else
+    TSCONFIG="${mod}/tsconfig.json"
+  fi
+
   if [ ! -f "$TSCONFIG" ]; then
     continue
   fi
 
-  echo "  检查 ${pkg}..."
+  echo "  检查 ${mod}..."
   if ! npx tsc --noEmit -p "$TSCONFIG" 2>&1; then
     FAILED=1
   fi

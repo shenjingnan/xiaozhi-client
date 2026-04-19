@@ -48,9 +48,9 @@ allowed-tools:
    - 测试文件本身：`**/*.test.ts`, `**/*.spec.ts`, `tests/**`, `__tests__/**`
 
    **保留**以下类型的文件作为核心逻辑文件：
-   - `apps/frontend/src/**` 下的组件、页面、hooks、store、工具函数
-   - `apps/backend/**` 下的服务、路由、控制器、中间件、处理器
-   - `packages/` 下各包的源码逻辑文件
+   - `src/web/**` 下的组件、页面、hooks、store、工具函数
+   - `src/server/**` 下的服务、路由、控制器、中间件、处理器
+   - `src/` 下各模块的源码逻辑文件
 
 2. **识别功能点**：对每个核心逻辑文件，结合 git diff 的实际改动内容，分析其涉及的功能维度：
    - **页面/路由**：涉及哪个页面或路由（如 `/dashboard`）
@@ -65,7 +65,7 @@ allowed-tools:
    === 改动分析报告 ===
 
    核心逻辑文件（共 N 个）：
-   1. apps/frontend/src/pages/Dashboard.tsx
+   1. src/web/pages/Dashboard.tsx
       - 涉及页面：Dashboard 页面
       - 涉及功能点：新增状态卡片 X、修改表格列 Y
 
@@ -98,7 +98,7 @@ allowed-tools:
    缺少覆盖的功能点：
    | 功能点 | 涉及文件 | 风险等级 |
    |--------|---------|---------|
-   | 新增的 XXX 功能 | apps/frontend/src/components/XXX.tsx | 高 |
+   | 新增的 XXX 功能 | src/web/components/XXX.tsx | 高 |
 
    覆盖率总结：
    - 总功能点数：N

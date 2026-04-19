@@ -32,8 +32,8 @@ description: 路径别名系统检查与修复
 
 #### 检查规则
 ```typescript
-// ✅ 推荐的别名使用
-import { LightService } from "@/services";
+// ✅ 推荐的别名使用（xiaozhi-client 项目 @/ 路径别名体系）
+import { LightService } from "@/server/services";
 import type { HassState } from "@/types";
 import { formatDate } from "@/utils";
 
@@ -54,24 +54,16 @@ import { formatDate } from "./utils";
 
 #### 标准别名映射
 ```typescript
-// xiaozhi-client 项目完整别名映射
+// xiaozhi-client 项目完整别名映射（单体架构，统一 @/ 路径别名体系）
 {
-  "@/*": ["apps/backend/*"],                    // 后端根目录快速访问
-  "@cli/*": ["apps/backend/cli/*"],             // CLI 相关代码
-  "@cli/commands/*": ["apps/backend/cli/commands/*"],  // CLI 命令
-  "@cli/services/*": ["apps/backend/cli/services/*"],  // CLI 服务
-  "@cli/utils/*": ["apps/backend/cli/utils/*"],        // CLI 工具
-  "@cli/errors/*": ["apps/backend/cli/errors/*"],      // CLI 错误处理
-  "@cli/interfaces/*": ["apps/backend/cli/interfaces/*"], // CLI 接口
-  "@handlers/*": ["apps/backend/handlers/*"],     // 请求处理器
-  "@services/*": ["apps/backend/services/*"],     // 业务服务
-  "@errors/*": ["apps/backend/errors/*"],         // 错误定义
-  "@utils/*": ["apps/backend/utils/*"],           // 工具函数
-  "@core/*": ["apps/backend/core/*"],             // 核心 MCP 功能
-  "@transports/*": ["apps/backend/transports/*"], // 传输层适配器
-  "@adapters/*": ["apps/backend/adapters/*"],     // 适配器模式
-  "@managers/*": ["apps/backend/managers/*"],     // 管理器服务
-  "@types/*": ["apps/backend/types/*"]            // 类型定义
+  "@/types":    ["./src/types"],      // 共享类型定义
+  "@/config":   ["./src/config"],     // 配置管理
+  "@/mcp-core": ["./src/mcp-core"],   // MCP 协议核心
+  "@/endpoint": ["./src/endpoint"],   // 端点处理
+  "@/esp32":    ["./src/esp32"],      // ESP32 硬件相关
+  "@/cli":      ["./src/cli"],        // CLI 命令行工具
+  "@/utils":    ["./src/utils"],      // 通用工具
+  "@/server":   ["./src/server"]      // 后端服务（含 handlers、services、routes 等）
 }
 ```
 
@@ -85,16 +77,12 @@ import { UserService } from "../services/user";
 import type { APIResponse } from "../types/api";
 import { formatDate } from "./utils/date";
 import { Command } from "./commands/help";
-import { WebSocketAdapter } from "../transports/websocket";
-import { ConnectionManager } from "../../managers/connection";
 
-// ✅ 修复后（xiaozhi-client 别名）
-import { UserService } from "@/services/user";
+// ✅ 修复后（xiaozhi-client @/ 路径别名体系）
+import { UserService } from "@/server/services/user";
 import type { APIResponse } from "@/types/api";
 import { formatDate } from "@/utils/date";
-import { Command } from "@cli/commands/help";
-import { WebSocketAdapter } from "@transports/websocket";
-import { ConnectionManager } from "@managers/connection";
+import { Command } from "@/cli/commands/start";
 ```
 
 ## 使用方法
@@ -116,22 +104,17 @@ import { ConnectionManager } from "@managers/connection";
 
 ### 特定文件检查
 ```
-请检查 apps/backend/services/ 目录下的所有文件，确保它们正确使用路径别名。
+请检查 src/server/services/ 目录下的所有文件，确保它们正确使用 @/ 路径别名体系。
 ```
 
 ### CLI模块检查
 ```
-请检查 apps/backend/cli/ 目录下的所有文件，确保CLI命令正确使用 @cli/* 别名。
+请检查 src/cli/ 目录下的所有文件，确保CLI命令正确使用 @/cli 路径别名。
 ```
 
 ### 核心模块检查
 ```
-请检查 apps/backend/core/ 目录下的所有文件，确保核心MCP功能正确使用路径别名。
-```
-
-### 传输层检查
-```
-请检查 apps/backend/transports/ 目录下的所有文件，确保传输适配器使用 @transports/* 别名。
+请检查 src/mcp-core/ 目录下的所有文件，确保核心MCP功能正确使用 @/mcp-core 路径别名。
 ```
 
 ### 文档专项检查
@@ -265,28 +248,26 @@ import { path } from "node:path";
 import express from "express";
 import { Command } from "commander";
 
-// 3. xiaozhi-client 路径别名导入（按分组排序）
-// 核心模块
-import { UnifiedMCPServer } from "@core";
-import type { MCPMessage } from "@types";
+// 3. xiaozhi-client @/ 路径别名导入（按分组排序）
+// 核心类型和配置
+import type { AppConfig, XiaozhiConfig } from "@/types";
+import { getConfig } from "@/config";
 
-// 传输和适配器
-import { WebSocketAdapter } from "@transports";
-import { HTTPAdapter } from "@adapters";
+// MCP 核心
+import { MCPConnection } from "@/mcp-core";
 
-// 管理器和服务
-import { ConnectionManager } from "@managers";
-import { ConfigService } from "@/services";
+// CLI 相关
+import { Container } from "@/cli";
+import { StartCommand } from "@/cli/commands/start";
 
-// CLI相关
-import { StartCommand } from "@cli/commands";
-import { Container } from "@cli";
+// 后端服务
+import { HandlerManager } from "@/server/handlers/HandlerManager";
+import { ConfigService } from "@/server/services/ConfigService";
 
-// 工具和错误
-import { formatConfig } from "@/utils";
-import { ConfigError } from "@errors";
+// 工具函数
+import { formatDate } from "@/utils";
 
-// 4. 相对路径（仅在必要时）
+// 4. 相对路径（同模块内引用，仅在必要时）
 import { helperFunction } from "./helpers";
 ```
 
@@ -304,16 +285,16 @@ import { HassState } from "@/types";
 
 ## 验证检查清单
 
-- [ ] 所有跨目录导入都使用正确的别名格式（@cli/*, @core/*, @transports/* 等）
-- [ ] 配置文件（vitest.config.ts, tsup.config.ts）中的别名设置一致
+- [ ] 所有跨目录导入都使用正确的 @/ 路径别名格式（@/server, @/cli, @/mcp-core, @/types, @/utils, @/config 等）
+- [ ] 配置文件（tsconfig.json, vitest.config.ts, tsup.config.ts）中的别名设置一致
 - [ ] 没有与 npm 包名冲突的别名
 - [ ] IDE 能正确识别和跳转别名路径
 - [ ] 构建和测试都能正常运行
 - [ ] 代码审查规则包含别名检查
-- [ ] **MCP 相关模块使用 @core/* 别名**
-- [ ] **CLI 命令使用 @cli/* 别名**
-- [ ] **传输适配器使用 @transports/* 别名**
+- [ ] **MCP 相关模块使用 @/mcp-core 路径别名**
+- [ ] **CLI 命令使用 @/cli 路径别名**
+- [ ] **后端服务使用 @/server 路径别名**
 - [ ] **类型导入使用 `import type` 语法**
-- [ ] **文档示例使用正确的路径别名**
+- [ ] **文档示例使用正确的 @/ 路径别名**
 
 通过这个技能的帮助，可以确保项目始终遵循路径别名最佳实践，提高代码质量和可维护性。

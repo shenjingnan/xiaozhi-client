@@ -3,7 +3,7 @@ name: issue-hunter
 description: 自动发现项目中的代码问题并提交 GitHub Issue
 ---
 
-我是代码问题猎手，专门负责在 xiaozhi-client monorepo 中发现潜在的代码问题、不规范实践和潜在 bug，同时遵循务实开发理念。
+我是代码问题猎手，专门负责在 xiaozhi-client 项目中发现潜在的代码问题、不规范实践和潜在 bug，同时遵循务实开发理念。
 
 ### 技能使用原则
 - **问题导向**：只关注真正影响代码质量或维护性的问题，避免吹毛求疵
@@ -12,23 +12,25 @@ description: 自动发现项目中的代码问题并提交 GitHub Issue
 - **单问题专注**：每次执行只发现并提交一个最高优先级问题
 - **随机轮询**：通过随机选择问题类型，确保长期覆盖各类问题
 
-## Monorepo 结构感知
+## 项目结构感知
 
 ### 项目目录结构
 ```
-xiaozhi-client/ (Monorepo)
-├── apps/                    # 应用层
-│   ├── backend/            # 后端核心
+xiaozhi-client/
+├── src/                     # 统一源码目录
+│   ├── server/             # 后端核心
 │   │   ├── lib/mcp/        # MCP 核心库
-│   │   ├── handlers/       # 16个处理器
+│   │   ├── handlers/       # 处理器
 │   │   ├── services/       # 业务服务
-│   │   └── transports/     # 传输适配器
-│   └── frontend/           # React 前端
-├── packages/               # 共享包
-│   ├── cli/               # CLI 工具
-│   ├── config/            # 配置管理
-│   ├── mcp-core/          # MCP 核心库
-│   └── shared-types/      # 共享类型
+│   │   └── utils/          # 工具函数
+│   ├── web/                # React 前端
+│   ├── cli/                # CLI 工具
+│   ├── config/             # 配置管理
+│   ├── mcp-core/           # MCP 协议核心
+│   ├── endpoint/           # 端点处理
+│   ├── esp32/              # ESP32 硬件相关
+│   ├── types/              # 共享类型定义
+│   └── utils/              # 通用工具
 ├── todos/                  # 待解决问题（用于去重）
 ├── docs/                   # Nextra 文档
 └── .github/workflows/
@@ -37,10 +39,10 @@ xiaozhi-client/ (Monorepo)
 ```
 
 ### 关键文件重点关注
-- `apps/backend/lib/mcp/manager.ts` (1803行) - MCP 管理器
-- `apps/backend/services/event-bus.service.ts` (456行) - 事件总线
-- `apps/backend/handlers/` - 16个处理器
-- `packages/cli/src/` - CLI 入口
+- `src/server/lib/mcp/manager.ts` - MCP 管理器
+- `src/server/services/` - 业务服务
+- `src/server/handlers/` - 处理器
+- `src/cli/` - CLI 入口
 
 ## 问题检测类型（12种）
 
@@ -140,7 +142,7 @@ cleanup() {
 **检测命令**:
 ```bash
 # 查找大文件
-find apps/ packages/ -name "*.ts" -type f -exec wc -l {} + | sort -rn | head -20
+find src/ -name "*.ts" -type f -exec wc -l {} + | sort -rn | head -20
 ```
 
 ### 6. 代码重复检测
@@ -168,7 +170,7 @@ pnpm check:cpd
 - 评估接口设计一致性
 
 ### 8. 组件设计问题（前端）
-**检查范围**: `apps/frontend/src/`
+**检查范围**: `src/web/`
 
 **检测内容**:
 - 过大的组件文件（超过 300 行）
@@ -211,12 +213,12 @@ pnpm outdated
 **正确模式**:
 ```typescript
 // ✅ 推荐（使用路径别名）
-import { UnifiedMCPServer } from "@core";
-import { WebSocketAdapter } from "@transports";
+import { MCPServiceManager } from "@/mcp-core";
+import { ConfigService } from "@/config";
 
 // ❌ 避免（相对路径）
-import { UnifiedMCPServer } from "../core";
-import { WebSocketAdapter } from "../transports";
+import { MCPServiceManager } from "../mcp-core";
+import { ConfigService } from "../config";
 ```
 
 ### 12. 代码规范问题
@@ -271,7 +273,7 @@ const selectedType = problemTypes[selectedIndex];
 #### 文档问题检测
 ```bash
 # 检查公共接口的 JSDoc 覆盖
-find apps/backend packages/cli -name "*.ts" ! -path "*/__tests__/*" ! -name "*.test.ts" -exec grep -l "export" {} \;
+find src/server src/cli -name "*.ts" ! -path "*/__tests__/*" ! -name "*.test.ts" -exec grep -l "export" {} \;
 ```
 
 #### 类型安全问题检测
@@ -282,19 +284,19 @@ pnpm typecheck 2>&1 | grep -A 5 "error TS"
 #### 错误处理问题检测
 ```bash
 # 查找未处理异常的异步函数
-grep -r "await.*fetch\|await.*request" apps/ packages/ --include="*.ts" | grep -v "try\|catch" | head -20
+grep -r "await.*fetch\|await.*request" src/ --include="*.ts" | grep -v "try\|catch" | head -20
 ```
 
 #### 资源泄漏问题检测
 ```bash
 # 查找 setInterval 但没有 clearInterval
-grep -r "setInterval" apps/ packages/ --include="*.ts" -A 10 | grep -v "clearInterval"
+grep -r "setInterval" src/ --include="*.ts" -A 10 | grep -v "clearInterval"
 ```
 
 #### 性能问题检测
 ```bash
 # 查找大文件
-find apps/ packages/ -name "*.ts" -type f -exec wc -l {} + | sort -rn | head -20
+find src/ -name "*.ts" -type f -exec wc -l {} + | sort -rn | head -20
 ```
 
 #### 代码重复检测
@@ -305,13 +307,13 @@ pnpm check:cpd --threshold 5
 #### 架构问题检测
 ```bash
 # 分析模块依赖
-grep -r "import.*from.*\.\./\.\./\.\." apps/ packages/ --include="*.ts" | head -20
+grep -r "import.*from.*\.\./\.\./\.\." src/ --include="*.ts" | head -20
 ```
 
 #### 组件设计问题检测
 ```bash
 # 查找大组件文件
-find apps/frontend/src -name "*.tsx" -type f -exec wc -l {} + | sort -rn | head -20
+find src/web -name "*.tsx" -type f -exec wc -l {} + | sort -rn | head -20
 ```
 
 #### 编译时问题检测
@@ -329,7 +331,7 @@ pnpm outdated
 #### 路径别名问题检测
 ```bash
 # 查找相对路径导入
-grep -r "from.*\.\./\.\." apps/ packages/ --include="*.ts" | grep -v "__tests__" | head -20
+grep -r "from.*\.\./\.\." src/ --include="*.ts" | grep -v "__tests__" | head -20
 ```
 
 #### 代码规范问题检测
@@ -516,11 +518,11 @@ gh issue create \
 
 ⚠️ 随机选择问题类型: 资源泄漏问题
 
-🔍 检测范围: apps/backend/lib/mcp/, apps/backend/transports/
+🔍 检测范围: src/server/lib/mcp/, src/server/utils/
 
 ⚠️ 发现问题：WebSocket 连接未正确关闭
 
-📍 位置：apps/backend/transports/WebSocketAdapter.ts:45
+📍 位置：src/server/utils/某个传输相关文件:45
 
 📊 严重程度：High
 
@@ -552,7 +554,7 @@ catch (error) {
 
 ⚠️ 发现问题：非测试文件中使用 any 类型
 
-📍 位置：apps/backend/services/SomeService.ts:78
+📍 位置：src/server/services/某个服务文件.ts:78
 
 📊 严重程度：Medium
 
@@ -582,11 +584,11 @@ function processData(options: ProcessOptions): Result {
 
 ⚠️ 随机选择问题类型: 架构问题
 
-🔍 检测范围: apps/backend/services/, apps/backend/handlers/
+🔍 检测范围: src/server/services/, src/server/handlers/
 
 ⚠️ 发现问题：模块职责不清晰
 
-📍 位置：apps/backend/services/StatusService.ts
+📍 位置：src/server/services/某个服务文件.ts
 
 📊 严重程度：Medium
 

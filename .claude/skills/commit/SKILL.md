@@ -242,14 +242,14 @@ docs(mcp): 更新 MCP 协议集成文档
 
 ```typescript
 // 常见 scope 定义
-- cli: CLI 层 (packages/cli/)
-- core: 核心 MCP 层 (apps/backend/core/)
-- transport: 传输层 (apps/backend/transports/)
-- service: 服务层 (apps/backend/services/)
-- manager: 管理器 (apps/backend/managers/)
-- handler: 处理器层 (apps/backend/handlers/)
-- utils: 工具层 (apps/backend/utils/)
-- types: 类型定义 (apps/backend/types/)
+- cli: CLI 层 (src/cli/)
+- mcp-core: MCP 核心层 (src/mcp-core/)
+- server: 后端服务层 (src/server/)
+- web: 前端 Web 应用 (src/web/)
+- config: 配置管理 (src/config/)
+- endpoint: 端点处理 (src/endpoint/)
+- utils: 通用工具 (src/utils/)
+- types: 类型定义 (src/types/)
 - test: 测试相关
 - docs: 文档相关
 - build: 构建相关
