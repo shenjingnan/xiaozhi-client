@@ -1,0 +1,30 @@
+{
+  "git": {
+    "commitMessage": "chore: release v${version}",
+    "tagName": "v${version}",
+    "requireCleanWorkingDir": true
+  },
+  "github": { "release": true, "releaseName": "v${version}" },
+  "npm": { "publish": false },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "infile": "CHANGELOG.md",
+      "header": "# 更新日志\n\n本文档记录项目的所有重要变更。",
+      "preset": {
+        "name": "conventionalcommits",
+        "types": [
+          { "type": "feat", "section": "Features" },
+          { "type": "fix", "section": "Bug Fixes" },
+          { "type": "perf", "section": "Performance" },
+          { "type": "refactor", "section": "Code Refactoring" },
+          { "type": "docs", "section": "Documentation" },
+          { "type": "test", "section": "Tests" },
+          { "type": "build", "section": "Build System" },
+          { "type": "ci", "section": "CI/CD" },
+          { "type": "chore", "hidden": true }
+        ]
+      }
+    }
+  },
+  "hooks": { "after:bump": "pnpm run build" }
+}

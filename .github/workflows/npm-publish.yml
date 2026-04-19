@@ -1,137 +1,43 @@
-name: NPM Publish
+name: Release
 
-# 主要触发方式：检测到 version tag 时自动发布
-# 备用触发方式：手动触发（用于测试或紧急发布）
 on:
-  push:
-    tags:
-      - "v*.*.*" # 正式版：v1.0.0, v2.1.3 等
-      - "v*.*.*-*" # 预发布版：v1.0.0-beta.0, v1.0.0-rc.1 等
-  workflow_dispatch: # 手动触发作为备用
-    inputs:
-      dry_run:
-        description: "预演模式（不实际发布）"
-        required: false
-        default: "false"
-        type: boolean
-
-permissions:
-  id-token: write
-  contents: write
+  release:
+    types: [published]
 
 jobs:
-  npm-release:
-    name: NPM 发布
+  publish:
     runs-on: ubuntu-latest
-    concurrency:
-      group: npm-release-${{ github.ref }}
-      cancel-in-progress: false
     permissions:
-      contents: write
-      issues: write
-      pull-requests: write
+      contents: read
       id-token: write
+
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
+      - name: 检出代码仓库
+        uses: actions/checkout@v6
+
+      - name: 设置 pnpm
+        uses: pnpm/action-setup@v5
         with:
-          fetch-depth: 0
-
-      - name: 提取版本信息
-        id: version-info
-        run: |
-          # 从 GitHub 环境变量获取 tag 信息
-          REF_NAME="${{ github.ref_name }}"
-          REF_TYPE="${{ github.ref_type }}"
-
-          if [[ "$REF_TYPE" == "tag" ]]; then
-            # 从 tag 名称提取版本号（去掉 v 前缀）
-            VERSION="${REF_NAME#v}"
-
-            echo "📦 检测到版本标签: $REF_NAME"
-            echo "📋 版本号: $VERSION"
-
-            # 判断版本类型
-            if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              VERSION_TYPE="release"
-              echo "类型: 正式版"
-            elif [[ "$VERSION" =~ -beta\. ]]; then
-              VERSION_TYPE="prerelease"
-              echo "类型: Beta 版"
-            elif [[ "$VERSION" =~ -rc\. ]]; then
-              VERSION_TYPE="prerelease"
-              echo "类型: RC 版"
-            else
-              VERSION_TYPE="other"
-              echo "类型: 其他"
-            fi
-
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
-          else
-            echo "⚠️ 非标签触发，跳过版本信息提取"
-            echo "version=manual" >> $GITHUB_OUTPUT
-            echo "version_type=manual" >> $GITHUB_OUTPUT
-          fi
-
-      - name: 安装 pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.13.1
+          version: 10
 
       - name: 设置 Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version-file: ".nvmrc"
-          cache: "pnpm"
+          node-version-file: .nvmrc
           registry-url: "https://registry.npmjs.org"
+          cache: "pnpm"
 
       - name: 安装依赖
-        run: |
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
-      - name: 发布到 npm
+      - name: 发布
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${{ steps.version-info.outputs.version }}"
-          VERSION_TYPE="${{ steps.version-info.outputs.version_type }}"
-          EVENT_NAME="${{ github.event_name }}"
-
-          echo "📦 开始发布流程..."
-          echo "📋 版本信息："
-          echo "   - 版本: $VERSION"
-          echo "   - 类型: $VERSION_TYPE"
-          echo "   - 触发方式: $EVENT_NAME"
-          echo ""
-
-          # 检查环境
-          echo "🔍 环境检查："
-          echo "   - Node版本: $(node --version)"
-          echo "   - pnpm版本: $(pnpm --version)"
-          echo "   - 当前分支: ${GITHUB_REF#refs/heads/}"
-          echo "   - 当前标签: ${GITHUB_REF#refs/tags/}"
-          echo ""
-
-          # 检查是否为手动触发的预演模式
-          MANUAL_DRY_RUN="${{ github.event.inputs.dry_run }}"
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]] && [[ "$MANUAL_DRY_RUN" == "true" ]]; then
-            echo "⚠️ 预演模式：跳过实际发布"
-            exit 0
-          fi
-
-          # 执行发布
-          echo "🚀 执行发布命令..."
-          pnpm exec nx release publish --skip-nx-cache
-
-      - name: 发布结果
-        if: always()
-        run: |
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "✅ 发布成功！"
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" == *"-"* ]]; then
+            TAG=$(echo "$VERSION" | sed 's/.*-\([a-zA-Z]*\).*/\1/')
+            pnpm publish --no-git-checks --provenance --access public --tag "$TAG"
           else
-            echo "❌ 发布失败，请检查日志"
-            exit 1
+            pnpm publish --no-git-checks --provenance --access public
           fi
