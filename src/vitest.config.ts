@@ -26,7 +26,6 @@ export default defineConfig({
       "@/endpoint": resolve(__dirname, "./endpoint"),
       "@/esp32": resolve(__dirname, "./esp32"),
       "@/cli": resolve(__dirname, "./cli"),
-      "@/server": resolve(__dirname, "./server"),
       // Web 前端路径别名（与 src/web/vitest.config.ts 保持一致）
       "@": resolve(__dirname, "./web"),
       "@components": resolve(__dirname, "./web/components"),
