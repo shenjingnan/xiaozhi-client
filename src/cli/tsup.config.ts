@@ -1,10 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig } from "tsup";
-
-// 读取根目录 package.json 获取版本号
-const rootPkgPath = resolve("../../package.json");
-const pkg = JSON.parse(readFileSync(rootPkgPath, "utf-8"));
+import { getVersionDefine } from "../build/version";
 
 export default defineConfig({
   entry: {
@@ -31,30 +28,17 @@ export default defineConfig({
 
     // 构建时注入版本号常量
     options.define = {
-      ...options.define, // 保留已有的 define
-      __VERSION__: JSON.stringify(pkg.version),
-      __APP_NAME__: JSON.stringify(pkg.name),
+      ...options.define,
+      ...getVersionDefine(import.meta.dirname ?? __dirname),
     };
 
     // 源码使用 @/ 路径别名体系（见根 tsconfig.json paths 配置）
   },
   external: [
-    // Node.js 内置模块
+    // 第三方依赖包（不打包，运行时从 node_modules 加载）
+    // 注：Node.js 内置模块（fs, path, http 等）在 platform: "node" 下已被 esbuild 自动排除，无需手动声明
     "ws",
-    "child_process",
-    "fs",
-    "path",
-    "url",
-    "process",
     "dotenv",
-    "os",
-    "stream",
-    "events",
-    "util",
-    "crypto",
-    "http",
-    "https",
-    // 依赖的外部包（不打包）
     "commander",
     "chalk",
     "consola",

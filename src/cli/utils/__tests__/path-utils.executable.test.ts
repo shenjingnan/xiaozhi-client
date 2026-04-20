@@ -120,15 +120,16 @@ describe("PathUtils - 可执行文件路径", () => {
   });
 
   describe("getWebServerLauncherPath 获取 WebServer 启动器路径", () => {
-    it("应该返回项目根目录 dist 下的 WebServerLauncher.js", () => {
+    it("应该返回项目根目录 dist/backend 下的 WebServerLauncher.js", () => {
       mockFileURLToPath.mockReturnValue(
         "/Users/test/xiaozhi-client/src/cli/utils/PathUtils.js"
       );
 
       const result = PathUtils.getWebServerLauncherPath();
 
-      // 应该指向 <projectRoot>/dist/WebServerLauncher.js
+      // 应该指向 <projectRoot>/dist/backend/WebServerLauncher.js
       expect(result).toContain("dist");
+      expect(result).toContain("backend");
       expect(result).toContain("WebServerLauncher.js");
       expect(result).toMatch(/WebServerLauncher\.js$/);
     });
@@ -150,7 +151,7 @@ describe("PathUtils - 可执行文件路径", () => {
 
         const result = PathUtils.getWebServerLauncherPath();
         expect(result).toBe(
-          path.join(expectedPrefix, "dist", "WebServerLauncher.js")
+          path.join(expectedPrefix, "dist", "backend", "WebServerLauncher.js")
         );
       }
     });
@@ -169,13 +170,13 @@ describe("PathUtils - 可执行文件路径", () => {
       const cliPath = PathUtils.getExecutablePath("cli");
       expect(cliPath).toBe(npmRealPath);
 
-      // WebServerLauncher 从项目根目录查找
+      // WebServerLauncher 从项目根目录 dist/backend 查找
       mockFileURLToPath.mockReturnValue(
         npmRealPath.replace("/dist/cli/index.js", "/src/cli/utils/PathUtils.js")
       );
       const webServerPath = PathUtils.getWebServerLauncherPath();
       expect(webServerPath).toContain(
-        path.join("dist", "WebServerLauncher.js")
+        path.join("dist", "backend", "WebServerLauncher.js")
       );
     });
 
