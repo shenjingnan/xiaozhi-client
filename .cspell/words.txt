@@ -123,6 +123,7 @@ numpy
 nums
 oneline
 openspeech
+Ollama
 OTAHANDLER
 peiqi
 phantomjs
