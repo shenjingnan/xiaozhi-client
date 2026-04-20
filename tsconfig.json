@@ -30,8 +30,7 @@
       "@/endpoint": ["./src/endpoint"],
       "@/esp32": ["./src/esp32"],
       "@/cli": ["./src/cli"],
-      "@/utils": ["./src/utils"],
-      "@/server": ["./src/server"]
+      "@/utils": ["./src/utils"]
     }
   },
   "include": ["mcps/**/*", "src/**/*"],
