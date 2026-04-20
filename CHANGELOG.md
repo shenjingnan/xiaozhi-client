@@ -2,6 +2,13 @@
 
 本文档记录项目的所有重要变更。
 
+## [2.3.1-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.0...v2.3.1-beta.0) (2026-04-20)
+
+### Code Refactoring
+
+* **build:** 移除前台模式，统一守护进程启动并简化构建配置 ([#3412](https://github.com/shenjingnan/xiaozhi-client/issues/3412)) ([9cdadf0](https://github.com/shenjingnan/xiaozhi-client/commit/9cdadf078a3cbbb302f8f64663cb0d3f23b6ebd0))
+* **build:** 简化 tsup 构建配置 — Phase 1 清理冗余 ([#3411](https://github.com/shenjingnan/xiaozhi-client/issues/3411)) ([2f769be](https://github.com/shenjingnan/xiaozhi-client/commit/2f769beb30b21787527173ce192a294b78e21a24))
+
 ## [2.3.0](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.0-beta.9...v2.3.0) (2026-04-19)
 
 ## [2.3.0-beta.9](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.0-beta.8...v2.3.0-beta.9) (2026-04-19)
