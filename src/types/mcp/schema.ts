@@ -5,19 +5,23 @@
 
 /**
  * JSON Schema 类型
- * 带类型守卫的严格 JSON Schema 类型定义
+ * 兼容 MCP SDK 的 JSON Schema 格式，同时支持更宽松的对象格式以保持向后兼容
+ *
+ * 注意：此定义与 src/server/lib/mcp/types.ts 中的 JSONSchema 保持一致
+ * 支持严格的结构化定义和宽松的 Record<string, unknown> 格式
  */
-export interface JSONSchema {
-  type?: string | string[];
-  properties?: Record<string, JSONSchema>;
-  required?: string[];
-  items?: JSONSchema;
-  additionalProperties?: boolean | JSONSchema;
-  description?: string;
-  enum?: unknown[];
-  const?: unknown;
-  [key: string]: unknown;
-}
+export type JSONSchema =
+  | (Record<string, unknown> & {
+      type?: string | string[];
+      properties?: Record<string, unknown>;
+      required?: string[];
+      items?: unknown;
+      additionalProperties?: boolean | unknown;
+      description?: string;
+      enum?: unknown[];
+      const?: unknown;
+    })
+  | Record<string, unknown>;
 
 /**
  * 检查值是否为有效的 JSON Schema

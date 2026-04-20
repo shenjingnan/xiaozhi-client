@@ -25,6 +25,14 @@ export type {
   CustomMCPToolWithStats,
   CustomMCPToolConfig,
   JSONSchema,
+  // 处理器配置类型
+  ToolHandlerConfig,
+  MCPHandlerConfig,
+  ProxyHandlerConfig,
+  HttpHandlerConfig,
+  FunctionHandlerConfig,
+  ScriptHandlerConfig,
+  ChainHandlerConfig,
 } from "./mcp";
 
 // 工具API相关类型
