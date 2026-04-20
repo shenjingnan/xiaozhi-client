@@ -2,16 +2,12 @@ import {
   copyFileSync,
   existsSync,
   mkdirSync,
-  readFileSync,
   readdirSync,
   statSync,
-  writeFileSync,
 } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { defineConfig } from "tsup";
-
-// 读取根目录 package.json 获取版本号
-const rootPkg = JSON.parse(readFileSync(resolve("../../package.json"), "utf8"));
+import { getVersionDefine } from "../build/version";
 
 /**
  * 递归复制目录 - 跨平台实现
@@ -71,8 +67,7 @@ export default defineConfig({
     // 构建时注入版本号常量
     options.define = {
       ...options.define,
-      __VERSION__: JSON.stringify(rootPkg.version),
-      __APP_NAME__: JSON.stringify(rootPkg.name),
+      ...getVersionDefine(import.meta.dirname ?? __dirname),
     };
 
     // 注入 require polyfill：让打包的 CJS 依赖中的 require() 在 ESM 环境下正常工作
@@ -90,22 +85,10 @@ export default defineConfig({
     };
   },
   external: [
-    // Node.js 内置模块
+    // 第三方依赖包（不打包，运行时从 node_modules 加载）
+    // 注：Node.js 内置模块（fs, path, http 等）在 platform: "node" 下已被 esbuild 自动排除，无需手动声明
     "ws",
-    "child_process",
-    "fs",
-    "path",
-    "url",
-    "process",
     "dotenv",
-    "os",
-    "stream",
-    "events",
-    "util",
-    "crypto",
-    "http",
-    "https",
-    // 外部依赖包
     "commander",
     "chalk",
     "ora",
@@ -159,15 +142,5 @@ export default defineConfig({
     }
 
     console.log("✅ 构建完成，产物现在为 ESM 格式");
-
-    // 创建向后兼容的 dist/WebServerLauncher.js
-    const compatLauncherPath = "../../dist/WebServerLauncher.js";
-    writeFileSync(
-      compatLauncherPath,
-      `// 向后兼容包装脚本 - 重定向到新的路径
-export * from './backend/WebServerLauncher.js';
-`
-    );
-    console.log("✅ 已创建向后兼容包装脚本 dist/WebServerLauncher.js");
   },
 });

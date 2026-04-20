@@ -222,11 +222,11 @@ export class PathUtils {
 
   /**
    * 获取 Web 服务器启动器路径
-   * 返回项目根目录 dist 下的 WebServerLauncher.js（向后兼容包装脚本）
+   * 返回项目根目录 dist/backend 下的 WebServerLauncher.js
    */
   static getWebServerLauncherPath(): string {
     const projectRoot = PathUtils.getProjectRoot();
-    return path.join(projectRoot, "dist", "WebServerLauncher.js");
+    return path.join(projectRoot, "dist", "backend", "WebServerLauncher.js");
   }
 
   /**
