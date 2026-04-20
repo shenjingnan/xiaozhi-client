@@ -34,7 +34,7 @@
     "xiaozhi-client": "dist/cli/index.js"
   },
   "scripts": {
-    "build": "pnpm run clean:dist && pnpm run build:server && pnpm run build:cli && pnpm run build:web",
+    "build": "pnpm run clean:dist && pnpm run build:server && pnpm run build:cli && cp -r templates dist/cli/templates && pnpm run build:web",
     "build:server": "cd src/server && tsup",
     "build:cli": "cd src/cli && tsup",
     "build:web": "cd src/web && vite build",
