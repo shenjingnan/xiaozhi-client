@@ -16,7 +16,7 @@ import { resolve } from "node:path";
  */
 export function getVersionDefine(fromDir?: string): Record<string, string> {
   const rootPkgPath = resolve(
-    fromDir ?? import.meta.dirname ?? __dirname,
+    fromDir ?? import.meta.dirname,
     "..",
     "..",
     "package.json"
