@@ -405,11 +405,12 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
       };
       mockSpawn.mockReturnValue(mockChild as any);
 
-      // Should handle undefined PID gracefully
+      // spawn 返回 undefined PID 时应抛出错误而非报告启动成功
       await expect(serviceManager.start(defaultOptions)).rejects.toThrow(
-        /process\.exit/
+        /无法创建守护进程/
       );
-      expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(0, "daemon");
+      // 不应保存无效的 PID 信息
+      expect(mockProcessManager.savePidInfo).not.toHaveBeenCalled();
     });
 
     it("应传递正确的环境变量", async () => {

@@ -294,8 +294,15 @@ export class ServiceManagerImpl implements IServiceManager {
       },
     });
 
+    // 同步检查 spawn 是否成功（失败时 pid 为 undefined）
+    if (!child.pid) {
+      throw new ServiceError(
+        "无法创建守护进程（node 启动失败），请检查 Node.js 安装是否正常"
+      );
+    }
+
     // 保存 PID 信息
-    this.processManager.savePidInfo(child.pid || 0, "daemon");
+    this.processManager.savePidInfo(child.pid, "daemon");
 
     // 完全分离子进程
     child.unref();
