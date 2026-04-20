@@ -2,6 +2,17 @@
 
 本文档记录项目的所有重要变更。
 
+## [2.3.1-beta.1](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.1-beta.0...v2.3.1-beta.1) (2026-04-20)
+
+### Bug Fixes
+
+* **build:** 修复 tsup 共享配置遗漏关键字段导致构建产物无法运行 ([#3415](https://github.com/shenjingnan/xiaozhi-client/issues/3415)) ([4e6c1c5](https://github.com/shenjingnan/xiaozhi-client/commit/4e6c1c534ae18627b1cd9072f3480392793316a0))
+
+### Code Refactoring
+
+* **build:** 清理未使用的 @/server 路径别名 ([#3413](https://github.com/shenjingnan/xiaozhi-client/issues/3413)) ([ec942d3](https://github.com/shenjingnan/xiaozhi-client/commit/ec942d331c6810848a6b6d58cf51e6cce43b2e90))
+* **build:** 简化 tsup 构建配置 — 移除冗余的文件复制和 polyfill 逻辑 ([#3414](https://github.com/shenjingnan/xiaozhi-client/issues/3414)) ([ff55137](https://github.com/shenjingnan/xiaozhi-client/commit/ff55137a7069266ac898138e3d8d6c8b26cfe43c))
+
 ## [2.3.1-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.0...v2.3.1-beta.0) (2026-04-20)
 
 ### Code Refactoring
