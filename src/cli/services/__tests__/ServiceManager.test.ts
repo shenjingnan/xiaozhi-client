@@ -30,20 +30,6 @@ const mockConfigManager = {
   getConfig: vi.fn(),
 } as any;
 
-const mockWebServerInstance = {
-  start: vi.fn().mockResolvedValue(undefined),
-  stop: vi.fn().mockResolvedValue(undefined),
-};
-
-const mockMCPServerInstance = {
-  start: vi.fn().mockResolvedValue(undefined),
-  stop: vi.fn().mockResolvedValue(undefined),
-};
-
-vi.mock("@/server/WebServer.js", () => ({
-  WebServer: vi.fn().mockImplementation(() => mockWebServerInstance),
-}));
-
 // Mock dynamic imports
 vi.mock("node:child_process", () => ({
   spawn: vi.fn().mockReturnValue({
@@ -56,10 +42,6 @@ vi.mock("node:child_process", () => ({
   exec: vi.fn().mockImplementation((cmd: string, callback: any) => {
     callback(null, { stdout: "", stderr: "" });
   }),
-}));
-
-vi.mock("@services/MCPServer.js", () => ({
-  MCPServer: vi.fn().mockImplementation(() => mockMCPServerInstance),
 }));
 
 // Mock PathUtils
@@ -145,12 +127,6 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
     vi.mocked(PathUtils.getConfigDir).mockReturnValue("/mock/config");
     vi.mocked(PathUtils.getLogFile).mockReturnValue("/mock/logs/xiaozhi.log");
 
-    // 重置 mock 实例
-    mockWebServerInstance.start.mockClear();
-    mockWebServerInstance.stop.mockClear();
-    mockMCPServerInstance.start.mockClear();
-    mockMCPServerInstance.stop.mockClear();
-
     // 设置默认 mock 返回值
     mockConfigManager.configExists.mockReturnValue(true);
     mockConfigManager.getConfig.mockReturnValue({ webServer: { port: 9999 } });
@@ -161,10 +137,19 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
       undefined
     );
 
-    // Mock dynamic import for WebServer
-    vi.doMock("@/server/WebServer.js", () => ({
-      WebServer: vi.fn().mockImplementation(() => mockWebServerInstance),
-    }));
+    // 默认 WebServerLauncher 文件存在（daemon 模式需要）
+    const fs = await import("node:fs");
+    vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+    // 默认 spawn 返回有效的子进程对象（daemon 模式需要）
+    const { spawn } = await import("node:child_process");
+    vi.mocked(spawn).mockReturnValue({
+      pid: 1234,
+      stdout: { pipe: vi.fn() },
+      stderr: { pipe: vi.fn() },
+      on: vi.fn(),
+      unref: vi.fn(),
+    });
   });
 
   afterEach(() => {
@@ -172,9 +157,14 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
     mockProcessExit.mockClear();
   });
 
+  /** 获取 spawn mock 的便捷方法 */
+  async function getMockSpawn() {
+    const { spawn } = await import("node:child_process");
+    return vi.mocked(spawn);
+  }
+
   describe("start 启动服务", () => {
     const defaultOptions: ServiceStartOptions = {
-      daemon: false,
       ui: false,
       mode: "normal",
     };
@@ -197,14 +187,18 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         .mockResolvedValue(undefined);
       mockProcessManager.cleanupPidFile = vi.fn();
 
-      await serviceManager.start(defaultOptions);
+      // start 现在走 daemon 路径会触发 process.exit
+      await expect(serviceManager.start(defaultOptions)).rejects.toThrow(
+        /process\.exit/
+      );
 
       // 验证调用了停止进程的方法
       expect(mockProcessManager.gracefulKillProcess).toHaveBeenCalledWith(1234);
       expect(mockProcessManager.cleanupPidFile).toHaveBeenCalled();
 
-      // 验证最终启动了服务
-      expect(mockWebServerInstance.start).toHaveBeenCalled();
+      // 验证最终启动了守护进程（通过 spawn 调用验证）
+      const mockSpawn = await getMockSpawn();
+      expect(mockSpawn).toHaveBeenCalled();
     });
 
     it("如果停止现有服务失败应继续启动新服务", async () => {
@@ -231,20 +225,22 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         .spyOn(consola, "warn")
         .mockImplementation(() => {});
 
-      await serviceManager.start(defaultOptions);
+      // start 现在走 daemon 路径会触发 process.exit
+      await expect(serviceManager.start(defaultOptions)).rejects.toThrow(
+        /process\.exit/
+      );
 
       // 验证调用了停止进程的方法
       expect(mockProcessManager.gracefulKillProcess).toHaveBeenCalledWith(1234);
-      // 注意：当 gracefulKillProcess 失败时，cleanupPidFile 不会在 catch 块中被调用
-      // 这是当前实现的行为，所以我们不应该期望它被调用
 
       // 验证输出了警告信息
       expect(mockConsolaWarn).toHaveBeenCalledWith(
         "停止现有服务时出现警告: 无法停止进程"
       );
 
-      // 验证最终仍然启动了服务
-      expect(mockWebServerInstance.start).toHaveBeenCalled();
+      // 验证最终仍然启动了守护进程
+      const mockSpawn = await getMockSpawn();
+      expect(mockSpawn).toHaveBeenCalled();
 
       mockConsolaWarn.mockRestore();
     });
@@ -278,275 +274,181 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
     });
 
     it("启动前应清理容器状态", async () => {
-      await serviceManager.start(defaultOptions);
+      // start 会因 process.exit 抛出异常，需要 expect 包装
+      await expect(serviceManager.start(defaultOptions)).rejects.toThrow(
+        /process\.exit/
+      );
 
       expect(mockProcessManager.cleanupContainerState).toHaveBeenCalled();
     });
 
-    it("默认应以普通模式启动", async () => {
-      await serviceManager.start(defaultOptions);
+    it("默认应以守护进程方式启动 WebServer 并退出父进程", async () => {
+      // Ensure file exists
+      const fs = await import("node:fs");
+      vi.mocked(fs.default.existsSync).mockReturnValue(true);
 
-      expect(mockWebServerInstance.start).toHaveBeenCalled();
-      expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
-        process.pid,
-        "foreground"
+      const mockSpawn = await getMockSpawn();
+      const mockChild = {
+        pid: 1234,
+        unref: vi.fn(),
+      };
+      mockSpawn.mockReturnValue(mockChild as any);
+
+      // 测试默认启动（始终使用 daemon 模式）
+      await expect(serviceManager.start(defaultOptions)).rejects.toThrow(
+        /process\.exit/
       );
+
+      // 验证子进程正确启动（使用 WebServerLauncher）
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "node",
+        ["/mock/path/WebServerLauncher.js"],
+        {
+          detached: true,
+          stdio: ["ignore", "ignore", "ignore"],
+          env: expect.objectContaining({
+            XIAOZHI_CONFIG_DIR: "/mock/config",
+            XIAOZHI_DAEMON: "true",
+          }),
+        }
+      );
+
+      // 验证 PID 信息保存为 daemon 模式
+      expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
+        1234,
+        "daemon"
+      );
+
+      // 验证子进程分离
+      expect(mockChild.unref).toHaveBeenCalled();
     });
 
-    it("应以 MCP 服务器模式启动", async () => {
+    it("应以守护进程方式启动 MCP Server 并退出父进程", async () => {
+      // Ensure file exists
+      const fs = await import("node:fs");
+      vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+      const mockSpawn = await getMockSpawn();
+      const mockChild = {
+        pid: 5678,
+        unref: vi.fn(),
+      };
+      mockSpawn.mockReturnValue(mockChild as any);
+
       const mcpOptions: ServiceStartOptions = {
         ...defaultOptions,
         mode: "mcp-server",
         port: 3000,
       };
 
-      await serviceManager.start(mcpOptions);
+      await expect(serviceManager.start(mcpOptions)).rejects.toThrow(
+        /process\.exit/
+      );
 
-      expect(mockWebServerInstance.start).toHaveBeenCalled();
-    });
-
-    describe("daemon 模式", () => {
-      it("应以 daemon 模式启动 WebServer 并退出父进程", async () => {
-        // Ensure file exists
-        const fs = await import("node:fs");
-        vi.mocked(fs.default.existsSync).mockReturnValue(true);
-
-        const { spawn } = await import("node:child_process");
-        const mockSpawn = vi.mocked(spawn);
-        const mockChild = {
-          pid: 1234,
-          unref: vi.fn(),
-        };
-        mockSpawn.mockReturnValue(mockChild as any);
-
-        const daemonOptions: ServiceStartOptions = {
-          ...defaultOptions,
-          daemon: true,
-        };
-
-        // 测试 daemon 模式启动
-        await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
-          /process\.exit/
-        );
-
-        // 验证子进程正确启动
-        expect(mockSpawn).toHaveBeenCalledWith(
-          "node",
-          ["/mock/path/WebServerLauncher.js"],
-          {
-            detached: true,
-            stdio: ["ignore", "ignore", "ignore"],
-            env: expect.objectContaining({
-              XIAOZHI_CONFIG_DIR: "/mock/config",
-              XIAOZHI_DAEMON: "true",
-            }),
-          }
-        );
-
-        // 验证 PID 信息保存
-        expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
-          1234,
-          "daemon"
-        );
-
-        // 验证子进程分离
-        expect(mockChild.unref).toHaveBeenCalled();
-
-        // 验证父进程退出 (通过异常抛出验证)
-        // mockProcessExit 在测试中抛出异常，所以不直接检查调用
-      });
-
-      it("应以 daemon 模式启动 WebServer", async () => {
-        // Ensure file exists
-        const fs = await import("node:fs");
-        vi.mocked(fs.default.existsSync).mockReturnValue(true);
-
-        const { spawn } = await import("node:child_process");
-        const mockSpawn = vi.mocked(spawn);
-        const mockChild = {
-          pid: 1234,
-          unref: vi.fn(),
-        };
-        mockSpawn.mockReturnValue(mockChild as any);
-
-        const daemonOptions: ServiceStartOptions = {
-          ...defaultOptions,
-          daemon: true,
-        };
-
-        await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
-          /process\.exit/
-        );
-
-        expect(mockSpawn).toHaveBeenCalledWith(
-          "node",
-          ["/mock/path/WebServerLauncher.js"],
-          {
-            detached: true,
-            stdio: ["ignore", "ignore", "ignore"],
-            env: expect.objectContaining({
-              XIAOZHI_CONFIG_DIR: "/mock/config",
-              XIAOZHI_DAEMON: "true",
-            }),
-          }
-        );
-      });
-
-      it("应以 daemon 模式启动 MCP Server 并退出父进程", async () => {
-        // Ensure file exists
-        const fs = await import("node:fs");
-        vi.mocked(fs.default.existsSync).mockReturnValue(true);
-
-        const { spawn } = await import("node:child_process");
-        const mockSpawn = vi.mocked(spawn);
-        const mockChild = {
-          pid: 5678,
-          unref: vi.fn(),
-        };
-        mockSpawn.mockReturnValue(mockChild as any);
-
-        const mcpDaemonOptions: ServiceStartOptions = {
-          ...defaultOptions,
-          daemon: true,
-          mode: "mcp-server",
-          port: 3000,
-        };
-
-        await expect(serviceManager.start(mcpDaemonOptions)).rejects.toThrow(
-          /process\.exit/
-        );
-
-        expect(mockSpawn).toHaveBeenCalledWith(
-          "node",
-          ["/mock/path/cli.js", "start", "--server", "3000"],
-          {
-            detached: true,
-            stdio: ["ignore", "ignore", "ignore"],
-            env: expect.objectContaining({
-              XIAOZHI_CONFIG_DIR: "/mock/config",
-              XIAOZHI_DAEMON: "true",
-              MCP_SERVER_MODE: "true",
-            }),
-          }
-        );
-
-        expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
-          5678,
-          "daemon"
-        );
-        expect(mockChild.unref).toHaveBeenCalled();
-        // 验证父进程退出 (通过异常抛出验证)
-        // mockProcessExit 在测试中抛出异常，所以不直接检查调用
-      });
-
-      it("如果 WebServer 文件不存在应抛出错误", async () => {
-        const fs = await import("node:fs");
-        vi.mocked(fs.default.existsSync).mockReturnValue(false);
-
-        const daemonOptions: ServiceStartOptions = {
-          ...defaultOptions,
-          daemon: true,
-        };
-
-        await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
-          /WebServer 文件不存在/
-        );
-      });
-
-      it("应优雅地处理 spawn 错误", async () => {
-        // Ensure file exists first
-        const fs = await import("node:fs");
-        vi.mocked(fs.default.existsSync).mockReturnValue(true);
-
-        const { spawn } = await import("node:child_process");
-        const mockSpawn = vi.mocked(spawn);
-
-        mockSpawn.mockImplementation(() => {
-          throw new Error("Failed to spawn process");
-        });
-
-        const daemonOptions: ServiceStartOptions = {
-          ...defaultOptions,
-          daemon: true,
-        };
-
-        await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
-          "Failed to spawn process"
-        );
-        expect(mockProcessExit).not.toHaveBeenCalled();
-      });
-
-      it("应处理没有 PID 的子进程", async () => {
-        // Ensure file exists
-        const fs = await import("node:fs");
-        vi.mocked(fs.default.existsSync).mockReturnValue(true);
-
-        const { spawn } = await import("node:child_process");
-        const mockSpawn = vi.mocked(spawn);
-        const mockChild = {
-          pid: undefined,
-          unref: vi.fn(),
-        };
-        mockSpawn.mockReturnValue(mockChild as any);
-
-        const daemonOptions: ServiceStartOptions = {
-          ...defaultOptions,
-          daemon: true,
-        };
-
-        // Should handle undefined PID gracefully
-        await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
-          /process\.exit/
-        );
-        expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
-          0,
-          "daemon"
-        );
-      });
-
-      it("应传递正确的环境变量", async () => {
-        // Ensure file exists
-        const fs = await import("node:fs");
-        vi.mocked(fs.default.existsSync).mockReturnValue(true);
-
-        const { spawn } = await import("node:child_process");
-        const mockSpawn = vi.mocked(spawn);
-        const mockChild = {
-          pid: 1234,
-          unref: vi.fn(),
-        };
-        mockSpawn.mockReturnValue(mockChild as any);
-
-        // Set some existing environment variables
-        const originalEnv = process.env;
-        process.env = {
-          ...originalEnv,
-          EXISTING_VAR: "existing_value",
-          PATH: "/usr/bin:/bin",
-        };
-
-        const daemonOptions: ServiceStartOptions = {
-          ...defaultOptions,
-          daemon: true,
-        };
-
-        await expect(serviceManager.start(daemonOptions)).rejects.toThrow(
-          /process\.exit/
-        );
-
-        const spawnCall = mockSpawn.mock.calls[0];
-        expect(spawnCall[2]?.env).toEqual(
-          expect.objectContaining({
-            EXISTING_VAR: "existing_value",
-            PATH: "/usr/bin:/bin",
+      // MCP Server 模式也使用守护进程方式，通过 CLI 脚本启动
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "node",
+        ["/mock/path/cli.js", "start", "--server", "3000"],
+        {
+          detached: true,
+          stdio: ["ignore", "ignore", "ignore"],
+          env: expect.objectContaining({
             XIAOZHI_CONFIG_DIR: "/mock/config",
             XIAOZHI_DAEMON: "true",
-          })
-        );
+            MCP_SERVER_MODE: "true",
+          }),
+        }
+      );
 
-        // Restore original environment
-        process.env = originalEnv;
+      expect(mockProcessManager.savePidInfo).toHaveBeenCalledWith(
+        5678,
+        "daemon"
+      );
+      expect(mockChild.unref).toHaveBeenCalled();
+    });
+
+    it("如果 WebServer 文件不存在应抛出错误", async () => {
+      const fs = await import("node:fs");
+      vi.mocked(fs.default.existsSync).mockReturnValue(false);
+
+      await expect(serviceManager.start(defaultOptions)).rejects.toThrow(
+        /WebServer 文件不存在/
+      );
+    });
+
+    it("应优雅地处理 spawn 错误", async () => {
+      // Ensure file exists first
+      const fs = await import("node:fs");
+      vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+      const mockSpawn = await getMockSpawn();
+
+      mockSpawn.mockImplementation(() => {
+        throw new Error("Failed to spawn process");
       });
+
+      await expect(serviceManager.start(defaultOptions)).rejects.toThrow(
+        "Failed to spawn process"
+      );
+      expect(mockProcessExit).not.toHaveBeenCalled();
+    });
+
+    it("应处理没有 PID 的子进程", async () => {
+      // Ensure file exists
+      const fs = await import("node:fs");
+      vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+      const mockSpawn = await getMockSpawn();
+      const mockChild = {
+        pid: undefined,
+        unref: vi.fn(),
+      };
+      mockSpawn.mockReturnValue(mockChild as any);
+
+      // spawn 返回 undefined PID 时应抛出错误而非报告启动成功
+      await expect(serviceManager.start(defaultOptions)).rejects.toThrow(
+        /无法创建守护进程/
+      );
+      // 不应保存无效的 PID 信息
+      expect(mockProcessManager.savePidInfo).not.toHaveBeenCalled();
+    });
+
+    it("应传递正确的环境变量", async () => {
+      // Ensure file exists
+      const fs = await import("node:fs");
+      vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+      const mockSpawn = await getMockSpawn();
+      const mockChild = {
+        pid: 1234,
+        unref: vi.fn(),
+      };
+      mockSpawn.mockReturnValue(mockChild as any);
+
+      // Set some existing environment variables
+      const originalEnv = process.env;
+      process.env = {
+        ...originalEnv,
+        EXISTING_VAR: "existing_value",
+        PATH: "/usr/bin:/bin",
+      };
+
+      await expect(serviceManager.start(defaultOptions)).rejects.toThrow(
+        /process\.exit/
+      );
+
+      const spawnCall = mockSpawn.mock.calls[0];
+      expect(spawnCall[2]?.env).toEqual(
+        expect.objectContaining({
+          EXISTING_VAR: "existing_value",
+          PATH: "/usr/bin:/bin",
+          XIAOZHI_CONFIG_DIR: "/mock/config",
+          XIAOZHI_DAEMON: "true",
+        })
+      );
+
+      // Restore original environment
+      process.env = originalEnv;
     });
   });
 
@@ -585,8 +487,24 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
   });
 
   describe("restart 重启服务", () => {
-    it("应停止并启动服务", async () => {
-      const options: ServiceStartOptions = { daemon: false, ui: false };
+    const restartOptions: ServiceStartOptions = { ui: false };
+
+    /** 为 restart 测试设置 daemon 路径所需 mock */
+    async function setupDaemonMocks() {
+      const fs = await import("node:fs");
+      vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+      const { spawn } = await import("node:child_process");
+      const mockSpawn = vi.mocked(spawn);
+      mockSpawn.mockReturnValue({
+        pid: 9999,
+        unref: vi.fn(),
+      } as any);
+      return mockSpawn;
+    }
+
+    it("应停止并重启服务", async () => {
+      const mockSpawn = await setupDaemonMocks();
 
       // Mock running service - restart() calls getStatus(), then stop() calls getStatus() again
       (mockProcessManager.getServiceStatus as any)
@@ -599,29 +517,37 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         undefined
       );
 
-      await serviceManager.restart(options);
+      // restart 内部调用 start，start 现在始终走 daemon 路径会触发 process.exit
+      await expect(serviceManager.restart(restartOptions)).rejects.toThrow(
+        /process\.exit/
+      );
 
       expect(mockProcessManager.gracefulKillProcess).toHaveBeenCalledWith(1234);
       expect(mockProcessManager.cleanupPidFile).toHaveBeenCalled();
-      expect(mockWebServerInstance.start).toHaveBeenCalled();
+
+      // 验证启动了新的守护进程
+      expect(mockSpawn).toHaveBeenCalled();
     });
 
-    it("如果服务未运行应启动服务", async () => {
-      const options: ServiceStartOptions = { daemon: false, ui: false };
+    it("如果服务未运行应直接启动服务", async () => {
+      const mockSpawn = await setupDaemonMocks();
 
       (mockProcessManager.getServiceStatus as any).mockReturnValue({
         running: false,
       });
 
-      await serviceManager.restart(options);
+      // start 始终走 daemon 路径会触发 process.exit
+      await expect(serviceManager.restart(restartOptions)).rejects.toThrow(
+        /process\.exit/
+      );
 
       expect(mockProcessManager.gracefulKillProcess).not.toHaveBeenCalled();
-      expect(mockWebServerInstance.start).toHaveBeenCalled();
+
+      // 验证启动了守护进程
+      expect(mockSpawn).toHaveBeenCalled();
     });
 
     it("应处理重启过程中的错误", async () => {
-      const options: ServiceStartOptions = { daemon: false, ui: false };
-
       // Mock running service
       (mockProcessManager.getServiceStatus as any)
         .mockReturnValueOnce({ running: true, pid: 1234 }) // restart() check
@@ -633,28 +559,8 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
         .fn()
         .mockRejectedValue(killError);
 
-      await expect(serviceManager.restart(options)).rejects.toThrow(
+      await expect(serviceManager.restart(restartOptions)).rejects.toThrow(
         ServiceError
-      );
-    });
-
-    it("应处理启动过程中的错误", async () => {
-      const options: ServiceStartOptions = { daemon: false, ui: false };
-
-      // Mock service not running
-      (mockProcessManager.getServiceStatus as any)
-        .mockReturnValueOnce({ running: false }) // restart() check
-        .mockReturnValueOnce({ running: false }); // start() check
-
-      // Mock WebServer start to throw error
-      const startError = new Error("启动失败");
-      mockWebServerInstance.start.mockRejectedValue(startError);
-
-      await expect(serviceManager.restart(options)).rejects.toThrow(
-        ServiceError
-      );
-      await expect(serviceManager.restart(options)).rejects.toThrow(
-        "重启服务失败: 服务启动失败: 启动失败"
       );
     });
   });

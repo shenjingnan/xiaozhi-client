@@ -31,10 +31,7 @@
       "@/esp32": ["./src/esp32"],
       "@/cli": ["./src/cli"],
       "@/utils": ["./src/utils"],
-      "@/server": ["./src/server"],
-      // 跨模块显式别名（CLI → Server）
-      "@/server/WebServer": ["./src/server/WebServer"],
-      "@/server/WebServer.js": ["./src/server/WebServer.ts"]
+      "@/server": ["./src/server"]
     }
   },
   "include": ["mcps/**/*", "src/**/*"],

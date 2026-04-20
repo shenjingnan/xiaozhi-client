@@ -13,7 +13,6 @@
 import type { ChildProcess } from "node:child_process";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import type { WebServer } from "@/server/WebServer";
 import consola from "consola";
 import { RETRY_CONSTANTS } from "../Constants";
 import { ProcessError, ServiceError } from "../errors/index";
@@ -50,7 +49,7 @@ export class DaemonManagerImpl implements IDaemonManager {
    * 启动守护进程
    */
   async startDaemon(
-    serverFactory: () => Promise<WebServer>,
+    serverFactory: () => Promise<any>,
     options: DaemonOptions = {}
   ): Promise<void> {
     try {
@@ -116,7 +115,7 @@ export class DaemonManagerImpl implements IDaemonManager {
    * 重启守护进程
    */
   async restartDaemon(
-    serverFactory: () => Promise<WebServer>,
+    serverFactory: () => Promise<any>,
     options: DaemonOptions = {}
   ): Promise<void> {
     try {
@@ -186,7 +185,7 @@ export class DaemonManagerImpl implements IDaemonManager {
    * 生成守护进程
    */
   private async spawnDaemonProcess(
-    serverFactory: () => Promise<WebServer>,
+    serverFactory: () => Promise<any>,
     options: DaemonOptions
   ): Promise<ChildProcess> {
     // 获取启动脚本路径

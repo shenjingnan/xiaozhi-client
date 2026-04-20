@@ -114,10 +114,18 @@ export class PathUtils {
 
   /**
    * 获取项目根目录路径
+   *
+   * 兼容开发和构建两种环境：
+   * - 开发环境：脚本位于 src/cli/ 下，需向上 3 级
+   * - 构建环境：脚本位于 dist/cli/ 下，需向上 2 级
    */
   static getProjectRoot(): string {
     const scriptDir = PathUtils.getScriptDir();
-    // 从 src/cli/utils 回到项目根目录
+    // 构建产物在 dist/cli/ 下，向上 2 级即可到达项目根
+    if (scriptDir.endsWith("/dist/cli") || scriptDir.endsWith("\\dist\\cli")) {
+      return path.join(scriptDir, "..", "..");
+    }
+    // 开发环境 src/cli/utils 下，向上 3 级到达项目根
     return path.join(scriptDir, "..", "..", "..");
   }
 
