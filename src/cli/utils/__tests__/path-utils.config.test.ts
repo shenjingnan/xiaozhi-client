@@ -157,7 +157,7 @@ describe("PathUtils - 配置路径", () => {
   });
 
   describe("getProjectRoot 获取项目根目录路径", () => {
-    it("应该从脚本目录计算项目根目录", () => {
+    it("应该从脚本目录计算项目根目录（开发环境 src/cli/）", () => {
       mockFileURLToPath.mockReturnValue("/project/src/cli/utils/PathUtils.js");
 
       const result = PathUtils.getProjectRoot();
@@ -167,7 +167,7 @@ describe("PathUtils - 配置路径", () => {
       expect(result).toBe(expected);
     });
 
-    it("应该处理不同深度的脚本路径", () => {
+    it("应该处理不同深度的脚本路径（开发环境）", () => {
       mockFileURLToPath.mockReturnValue(
         "/deep/nested/src/cli/utils/PathUtils.js"
       );
@@ -175,6 +175,27 @@ describe("PathUtils - 配置路径", () => {
       const result = PathUtils.getProjectRoot();
       // 使用跨平台的路径比较
       const expected = path.normalize("/deep/nested");
+
+      expect(result).toBe(expected);
+    });
+
+    it("应该从构建产物位置正确计算项目根目录（dist/cli/）", () => {
+      // 构建后脚本位于 dist/cli/index.js，只需向上 2 级
+      mockFileURLToPath.mockReturnValue("/project/dist/cli/index.js");
+
+      const result = PathUtils.getProjectRoot();
+      const expected = path.normalize("/project");
+
+      expect(result).toBe(expected);
+    });
+
+    it("应该处理构建产物的嵌套路径（dist/cli/）", () => {
+      mockFileURLToPath.mockReturnValue(
+        "/some/where/project/dist/cli/index.js"
+      );
+
+      const result = PathUtils.getProjectRoot();
+      const expected = path.normalize("/some/where/project");
 
       expect(result).toBe(expected);
     });

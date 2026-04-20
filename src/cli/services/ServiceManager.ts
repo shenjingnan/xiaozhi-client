@@ -5,7 +5,7 @@
  * - 服务启动和停止
  * - 进程状态查询
  * - 配置验证和初始化
- * - 多种运行模式支持（normal、mcp-server）
+ * - 多种运行模式支持（normal、mcp-server，均以守护进程方式运行）
  *
  * @module src/cli/services/ServiceManager
  */
@@ -222,20 +222,14 @@ export class ServiceManagerImpl implements IServiceManager {
   }
 
   /**
-   * 启动普通模式
+   * 启动普通模式（始终以守护进程方式运行）
    */
-  private async startNormalMode(options: ServiceStartOptions): Promise<void> {
-    if (options.daemon) {
-      // 后台模式 - 默认启动 WebUI
-      await this.startWebServerInDaemon();
-    } else {
-      // 前台模式 - 默认启动 WebUI
-      await this.startWebServerInForeground();
-    }
+  private async startNormalMode(_options: ServiceStartOptions): Promise<void> {
+    await this.startWebServerInDaemon();
   }
 
   /**
-   * 启动 MCP Server 模式
+   * 启动 MCP Server 模式（始终以守护进程方式运行）
    */
   private async startMcpServerMode(
     options: ServiceStartOptions
@@ -243,54 +237,37 @@ export class ServiceManagerImpl implements IServiceManager {
     const port = options.port || 3000;
     const { spawn } = await import("node:child_process");
 
-    if (options.daemon) {
-      // 后台模式
-      const scriptPath = PathUtils.getExecutablePath("cli");
-      const child = spawn(
-        "node",
-        [scriptPath, "start", "--server", port.toString()],
-        {
-          detached: true,
-          stdio: ["ignore", "ignore", "ignore"], // 完全忽略所有 stdio，避免阻塞
-          env: {
-            ...process.env,
-            XIAOZHI_CONFIG_DIR: PathUtils.getConfigDir(),
-            XIAOZHI_DAEMON: "true",
-            MCP_SERVER_MODE: "true",
-          },
-        }
-      );
+    // 始终以守护进程方式启动
+    const scriptPath = PathUtils.getExecutablePath("cli");
+    const child = spawn(
+      "node",
+      [scriptPath, "start", "--server", port.toString()],
+      {
+        detached: true,
+        stdio: ["ignore", "ignore", "ignore"], // 完全忽略所有 stdio，避免阻塞
+        env: {
+          ...process.env,
+          XIAOZHI_CONFIG_DIR: PathUtils.getConfigDir(),
+          XIAOZHI_DAEMON: "true",
+          MCP_SERVER_MODE: "true",
+        },
+      }
+    );
 
-      // 保存 PID 信息
-      this.processManager.savePidInfo(child.pid || 0, "daemon");
+    // 保存 PID 信息
+    this.processManager.savePidInfo(child.pid || 0, "daemon");
 
-      // 完全分离子进程
-      child.unref();
+    // 完全分离子进程
+    child.unref();
 
-      // 输出启动信息后立即退出父进程
-      consola.success(
-        `MCP Server 已在后台启动 (PID: ${child.pid}, Port: ${port})`
-      );
-      consola.info("使用 'xiaozhi status' 查看状态");
+    // 输出启动信息后立即退出父进程
+    consola.success(
+      `MCP Server 已在后台启动 (PID: ${child.pid}, Port: ${port})`
+    );
+    consola.info("使用 'xiaozhi status' 查看状态");
 
-      // 立即退出父进程，释放终端控制权
-      process.exit(0);
-    } else {
-      // 前台模式 - 直接启动 Web Server
-      const { WebServer } = await import("@/server/WebServer.js");
-      const server = new WebServer(port);
-
-      // 处理退出信号
-      const cleanup = async () => {
-        await server.stop();
-        process.exit(0);
-      };
-
-      process.once("SIGINT", cleanup);
-      process.once("SIGTERM", cleanup);
-
-      await server.start();
-    }
+    // 立即退出父进程，释放终端控制权
+    process.exit(0);
   }
 
   /**
@@ -330,28 +307,5 @@ export class ServiceManagerImpl implements IServiceManager {
 
     // 立即退出父进程，释放终端控制权
     process.exit(0);
-  }
-
-  /**
-   * 前台模式启动 WebServer
-   */
-  private async startWebServerInForeground(): Promise<void> {
-    const { WebServer } = await import("@/server/WebServer.js");
-    const server = new WebServer();
-
-    // 处理退出信号
-    const cleanup = async () => {
-      await server.stop();
-      this.processManager.cleanupPidFile();
-      process.exit(0);
-    };
-
-    process.once("SIGINT", cleanup);
-    process.once("SIGTERM", cleanup);
-
-    // 保存 PID 信息
-    this.processManager.savePidInfo(process.pid, "foreground");
-
-    await server.start();
   }
 }
