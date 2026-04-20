@@ -43,7 +43,7 @@ const withEndpointHandler = async (
     // 使用类型安全的方式调用方法
     return await endpointHandler[handlerName](c);
   } catch (error) {
-    console.error(`端点处理器错误 [${handlerName}]:`, error);
+    c.logger.error(`端点处理器错误 [${handlerName}]:`, error);
     return c.fail(
       "ENDPOINT_HANDLER_ERROR",
       error instanceof Error ? error.message : "端点处理失败",
