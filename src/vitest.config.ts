@@ -11,6 +11,20 @@ export default defineConfig({
     environmentMatchGlobs: [["src/web/**", "jsdom"]],
     // 全局 setup 文件（内部会根据环境条件执行）
     setupFiles: [resolve(__dirname, "./web/__tests__/setup.ts")],
+    coverage: {
+      // 排除构建工具文件（仅 tsdown 构建时使用，不应计入覆盖率）
+      exclude: [
+        "node_modules/**",
+        "dist/**",
+        "**/build/**",
+        "**/*.config.{js,ts}",
+        "**/tsdown.config.ts",
+        "templates/**",
+        "docs/**",
+        "mcps/**",
+        "tests/**",
+      ],
+    },
   },
   // 顶层 define 用于替换全局常量（Vitest 3.x 使用 oxc 而非 esbuild）
   define: {
