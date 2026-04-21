@@ -411,7 +411,7 @@ export class ConfigManager {
 
   /**
    * 初始化配置文件
-   * 从 config.default.json 复制到 config.json
+   * 将默认模板配置复制到 xiaozhi.config.json
    */
   public initConfig(): void {
     if (!existsSync(this.defaultConfigPath)) {
@@ -983,8 +983,8 @@ export class ConfigManager {
         this.currentConfigPath = configPath;
       }
 
-      // 序列化配置为 JSON 字符串
-      const configContent: string = JSON.stringify(config, null, 2);
+      // 序列化配置为 JSON 字符串，并确保文件以换行结尾
+      const configContent: string = `${JSON.stringify(config, null, 2)}\n`;
 
       // 保存到文件
       writeFileSync(configPath, configContent, "utf8");
