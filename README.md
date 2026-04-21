@@ -1,7 +1,7 @@
 <div align="center">
   <br />
   <br />
-  <img src="logo.svg" alt="Univoice" width="400" height="100" />
+  <img src="logo.svg" alt="Xiaozhi Client" width="400" height="100" />
   <br />
   <br />
   <br />
