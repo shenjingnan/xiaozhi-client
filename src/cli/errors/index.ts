@@ -52,7 +52,7 @@ export class ConfigError extends CLIError {
 
   static invalidFormat(format: string): ConfigError {
     return new ConfigError(`无效的配置文件格式: ${format}`, [
-      "支持的格式: json, json5, jsonc",
+      "支持的格式: json",
     ]);
   }
 }

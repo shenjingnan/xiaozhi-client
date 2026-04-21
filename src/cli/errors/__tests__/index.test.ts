@@ -61,7 +61,7 @@ describe("ConfigError", () => {
     const error = ConfigError.invalidFormat("xml");
 
     expect(error.message).toBe("无效的配置文件格式: xml");
-    expect(error.suggestions).toContain("支持的格式: json, json5, jsonc");
+    expect(error.suggestions).toContain("支持的格式: json");
   });
 });
 

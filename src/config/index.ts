@@ -8,7 +8,7 @@
  * - ConfigResolver: 配置解析器，按优先级查找配置文件
  * - ConfigInitializer: 配置初始化器，负责创建默认配置
  * - 配置适配与转换工具: 提供旧配置向新格式迁移、规范化（例如 normalizeServiceConfig 等）
- * - JSON5 读写工具: 提供 JSON5 格式的读写支持
+ * - 配置格式工具: 提供标准 JSON 格式的读写支持
  *
  * @example
  * ```typescript

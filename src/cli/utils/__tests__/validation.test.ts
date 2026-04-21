@@ -41,8 +41,6 @@ describe("Validation", () => {
   describe("验证配置格式", () => {
     it("应接受有效的配置格式", () => {
       expect(Validation.validateConfigFormat("json")).toBe("json");
-      expect(Validation.validateConfigFormat("json5")).toBe("json5");
-      expect(Validation.validateConfigFormat("jsonc")).toBe("jsonc");
     });
 
     it("应拒绝无效的配置格式", () => {
@@ -59,7 +57,7 @@ describe("Validation", () => {
 
     it("应抛出带有正确消息的验证错误", () => {
       expect(() => Validation.validateConfigFormat("invalid")).toThrow(
-        "无效的配置文件格式: invalid，支持的格式: json, json5, jsonc"
+        "无效的配置文件格式: invalid，支持的格式: json"
       );
     });
   });

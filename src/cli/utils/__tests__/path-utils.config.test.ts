@@ -85,20 +85,8 @@ describe("PathUtils - 配置路径", () => {
     it("应该返回指定格式的配置文件路径", () => {
       process.env.XIAOZHI_CONFIG_DIR = "/config";
 
-      const result = PathUtils.resolveConfigPath("json5");
-      const expected = path.join("/config", "xiaozhi.config.json5");
-
-      expect(result).toBe(expected);
-    });
-
-    it("应该按优先级查找存在的配置文件", () => {
-      process.env.XIAOZHI_CONFIG_DIR = "/config";
-      mockFileExists
-        .mockReturnValueOnce(false) // json5 不存在
-        .mockReturnValueOnce(true); // jsonc 存在
-
-      const result = PathUtils.resolveConfigPath();
-      const expected = path.join("/config", "xiaozhi.config.jsonc");
+      const result = PathUtils.resolveConfigPath("json");
+      const expected = path.join("/config", "xiaozhi.config.json");
 
       expect(result).toBe(expected);
     });
@@ -113,16 +101,12 @@ describe("PathUtils - 配置路径", () => {
       expect(result).toBe(expected);
     });
 
-    it("应该处理所有支持的配置文件格式", () => {
+    it("应该处理配置文件格式", () => {
       process.env.XIAOZHI_CONFIG_DIR = "/config";
 
-      const formats = ["json", "json5", "jsonc"] as const;
-
-      for (const format of formats) {
-        const result = PathUtils.resolveConfigPath(format);
-        const expected = path.join("/config", `xiaozhi.config.${format}`);
-        expect(result).toBe(expected);
-      }
+      const result = PathUtils.resolveConfigPath("json");
+      const expected = path.join("/config", "xiaozhi.config.json");
+      expect(result).toBe(expected);
     });
   });
 

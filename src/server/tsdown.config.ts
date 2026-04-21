@@ -17,7 +17,6 @@ export default createXiaozhiConfig({
       "chalk",
       "pino",
       "pino-*",
-      "comment-json",
       "dayjs",
       "eventsource",
       "hono",

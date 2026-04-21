@@ -22,7 +22,7 @@ export type LogLevel = "error" | "warn" | "info" | "debug";
 /**
  * 配置文件格式
  */
-export type ConfigFormat = "json" | "json5" | "jsonc";
+export type ConfigFormat = "json";
 
 /**
  * 命令执行结果

@@ -80,8 +80,6 @@ describe("配置同步集成测试", () => {
     });
 
     mockExistsSync.mockImplementation((path) => {
-      if (path.toString().includes("xiaozhi.config.json5")) return false;
-      if (path.toString().includes("xiaozhi.config.jsonc")) return false;
       if (path.toString().includes("xiaozhi.config.json")) return true;
       return false;
     });

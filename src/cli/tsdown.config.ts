@@ -21,7 +21,6 @@ export default createXiaozhiConfig({
       "consola",
       "ora",
       "cli-table3",
-      "comment-json",
       "dayjs",
       "@modelcontextprotocol/sdk",
       "eventsource",
