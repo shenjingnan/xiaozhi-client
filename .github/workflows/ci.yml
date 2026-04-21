@@ -99,7 +99,7 @@ jobs:
         echo "开始 CLI 功能测试..."
         node dist/cli/index.js -v
         node dist/cli/index.js create myapp
-        node dist/cli/index.js create myapp2 --template hello-world
+        node dist/cli/index.js create myapp2 --template default
         echo "✅ CLI 功能测试完成"
 
     - name: CLI 配置测试 (Unix)

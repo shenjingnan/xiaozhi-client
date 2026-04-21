@@ -32,7 +32,7 @@
 - 支持 本地化部署的开源服务端集成，你可以使用和小智官方服务端一样的 RPC 通信或直接使用标准 MCP 集成方式
 - 支持 Web 网页可视化配置(允许自定义 IP 和端口，你能将 xiaozhi-client 部署在设备 A，然后在设备 B 通过网页控制 xiaozhi-client)
 - 支持 集成 ModelScope 的远程 MCP 服务
-- 支持 通过模板创建 xiaozhi-client 项目 (xiaozhi create \<my-app\> --template hello-world)
+- 支持 通过模板创建 xiaozhi-client 项目 (xiaozhi create \<my-app\> --template \<template-name\>)
 - 支持 后台运行(xiaozhi start -d)
 
 ![Web UI 配置界面](https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/public/images/web-ui-preview.png)
