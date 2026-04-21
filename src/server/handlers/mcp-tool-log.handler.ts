@@ -12,6 +12,24 @@ import type { AppContext } from "../types/hono.context.js";
 import { BaseHandler } from "./base.handler.js";
 
 /**
+ * 创建可复用的日期字符串验证 refinement
+ * @param fieldName 字段名称，用于错误消息
+ */
+const dateStringSchema = (fieldName: string) =>
+  z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        return !Number.isNaN(Date.parse(val));
+      },
+      {
+        message: `${fieldName} 参数格式无效`,
+      }
+    );
+
+/**
  * 工具调用查询参数 Zod Schema
  */
 const ToolCallQuerySchema = z
@@ -41,32 +59,8 @@ const ToolCallQuerySchema = z
       .string()
       .optional()
       .transform((val) => (val ? val.toLowerCase() === "true" : undefined)),
-    startDate: z
-      .string()
-      .optional()
-      .refine(
-        (val) => {
-          if (!val) return true;
-          const date = Date.parse(val);
-          return !Number.isNaN(date);
-        },
-        {
-          message: "startDate 参数格式无效",
-        }
-      ),
-    endDate: z
-      .string()
-      .optional()
-      .refine(
-        (val) => {
-          if (!val) return true;
-          const date = Date.parse(val);
-          return !Number.isNaN(date);
-        },
-        {
-          message: "endDate 参数格式无效",
-        }
-      ),
+    startDate: dateStringSchema("startDate"),
+    endDate: dateStringSchema("endDate"),
   })
   .refine(
     (data) => {
