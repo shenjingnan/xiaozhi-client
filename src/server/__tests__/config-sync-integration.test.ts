@@ -62,8 +62,7 @@ describe("配置同步集成测试", () => {
     vi.clearAllMocks();
 
     // 重置单例实例
-    // @ts-ignore - accessing private static property for testing
-    ConfigManager.instance = undefined;
+    ConfigManager.resetInstance();
 
     configManager = ConfigManager.getInstance();
 
