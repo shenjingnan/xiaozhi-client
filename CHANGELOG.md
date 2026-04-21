@@ -2,6 +2,12 @@
 
 本文档记录项目的所有重要变更。
 
+## [2.3.1-beta.3](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.1-beta.2...v2.3.1-beta.3) (2026-04-21)
+
+### Performance
+
+* **web:** 启用 Rolldown 作为 Vite 打包引擎 ([#3445](https://github.com/shenjingnan/xiaozhi-client/issues/3445)) ([32a34de](https://github.com/shenjingnan/xiaozhi-client/commit/32a34deb5eff94a044f9b6107cc3d9f2b5e7502d)), closes [#3443](https://github.com/shenjingnan/xiaozhi-client/issues/3443)
+
 ## [2.3.1-beta.2](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.1-beta.1...v2.3.1-beta.2) (2026-04-21)
 
 ### Bug Fixes
