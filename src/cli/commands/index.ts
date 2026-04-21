@@ -288,9 +288,8 @@ export class CommandRegistry implements ICommandRegistry {
   //   program
   //     .command('init')
   //     .description('初始化配置文件')
-  //     .option('-f, --format <format>', '配置文件格式 (json)', 'json')
-  //     .action(async (options) => {
-  //       await configCommand.init(options);
+  //     .action(async () => {
+  //       await configCommand.init();
   //     });
 
   //   // config 命令
