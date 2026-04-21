@@ -2,6 +2,21 @@
 
 本文档记录项目的所有重要变更。
 
+## [2.3.1-beta.2](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.1-beta.1...v2.3.1-beta.2) (2026-04-21)
+
+### Bug Fixes
+
+* **web:** 排除 node_modules 避免 Tailwind CSS 构建性能警告 ([#3417](https://github.com/shenjingnan/xiaozhi-client/issues/3417)) ([7f4d900](https://github.com/shenjingnan/xiaozhi-client/commit/7f4d900e1aa46a72dd6622a3781f5d6a973a6c38))
+
+### Performance
+
+* **web:** 移除 build 命令中的冗余 tsc 类型检查 ([#3416](https://github.com/shenjingnan/xiaozhi-client/issues/3416)) ([a29a4e0](https://github.com/shenjingnan/xiaozhi-client/commit/a29a4e099897dd8d91d8c583e718ffb0fe9ac77e))
+
+### Code Refactoring
+
+* **build:** 将主项目构建工具从 tsup 迁移至 tsdown (PR2/2) ([#3444](https://github.com/shenjingnan/xiaozhi-client/issues/3444)) ([410d1e1](https://github.com/shenjingnan/xiaozhi-client/commit/410d1e1d9200ffbf346f375c1e5b8684d16169f1)), closes [#3443](https://github.com/shenjingnan/xiaozhi-client/issues/3443)
+* **mcp:** 将 MCP 子包构建工具从 tsup 迁移至 tsdown (PR1/2) ([#3443](https://github.com/shenjingnan/xiaozhi-client/issues/3443)) ([f22fa33](https://github.com/shenjingnan/xiaozhi-client/commit/f22fa33fcf9a4dbcdbc3fb2e4884b5aadb682fbd))
+
 ## [2.3.1-beta.1](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.1-beta.0...v2.3.1-beta.1) (2026-04-20)
 
 ### Bug Fixes
