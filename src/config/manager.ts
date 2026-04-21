@@ -2,7 +2,7 @@
  * 配置管理器
  *
  * 核心配置管理模块，负责：
- * - 配置文件的读取和解析（支持 JSON、JSON5、JSONC 格式）
+ * - 配置文件的读取和解析（支持 JSON 格式）
  * - 配置验证和类型检查
  * - 配置更新和持久化
  * - 配置变更事件通知
@@ -38,9 +38,7 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import * as commentJson from "comment-json";
 import dayjs from "dayjs";
-import { createJson5Writer, parseJson5 } from "./json5-adapter.js";
 import { ConfigResolver } from "./resolver.js";
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
@@ -300,10 +298,6 @@ export class ConfigManager {
   private defaultConfigPath: string;
   private config: AppConfig | null = null;
   private currentConfigPath: string | null = null; // 跟踪当前使用的配置文件路径
-  private json5Writer: {
-    write(data: unknown): void;
-    toSource(): string;
-  } | null = null; // json5-writer 实例，用于保留 JSON5 注释
 
   // 统计更新并发控制
   private statsUpdateLocks: Map<string, Promise<void>> = new Map();
@@ -367,7 +361,7 @@ export class ConfigManager {
 
   /**
    * 获取配置文件路径（动态计算）
-   * 支持多种配置文件格式：json5 > jsonc > json
+   * 支持配置文件格式：json
    *
    * 查找优先级：
    * 1. 环境变量 XIAOZHI_CONFIG_DIR 指定的目录
@@ -394,21 +388,6 @@ export class ConfigManager {
   }
 
   /**
-   * 获取配置文件格式
-   */
-  private getConfigFileFormat(filePath: string): "json5" | "jsonc" | "json" {
-    if (filePath.endsWith(".json5")) {
-      return "json5";
-    }
-
-    if (filePath.endsWith(".jsonc")) {
-      return "jsonc";
-    }
-
-    return "json";
-  }
-
-  /**
    * 获取配置管理器单例实例
    */
   public static getInstance(): ConfigManager {
@@ -432,28 +411,25 @@ export class ConfigManager {
 
   /**
    * 初始化配置文件
-   * 从 config.default.json 复制到 config.json
-   * @param format 配置文件格式，默认为 json
+   * 将默认模板配置复制到 xiaozhi.config.json
    */
-  public initConfig(format: "json" | "json5" | "jsonc" = "json"): void {
+  public initConfig(): void {
     if (!existsSync(this.defaultConfigPath)) {
       throw new Error(`默认配置模板文件不存在: ${this.defaultConfigPath}`);
     }
 
-    // 检查是否已有任何格式的配置文件
+    // 检查是否已有配置文件
     if (this.configExists()) {
       throw new Error("配置文件已存在，无需重复初始化");
     }
 
     // 确定目标配置文件路径
     const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
-    const targetFileName = `xiaozhi.config.${format}`;
-    const configPath = resolve(configDir, targetFileName);
+    const configPath = resolve(configDir, "xiaozhi.config.json");
 
     // 复制默认配置文件
     copyFileSync(this.defaultConfigPath, configPath);
     this.config = null; // 重置缓存
-    this.json5Writer = null; // 重置 json5Writer 实例
   }
 
   /**
@@ -474,7 +450,6 @@ export class ConfigManager {
     try {
       const configPath = this.getConfigFilePath();
       this.currentConfigPath = configPath; // 记录当前使用的配置文件路径
-      const configFileFormat = this.getConfigFileFormat(configPath);
       const rawConfigData = readFileSync(configPath, "utf8");
 
       // 移除可能存在的UTF-8 BOM字符（\uFEFF）
@@ -482,24 +457,7 @@ export class ConfigManager {
       // 这个过滤确保即使文件包含BOM字符也能正常解析
       const configData = rawConfigData.replace(/^\uFEFF/, "");
 
-      let config: AppConfig;
-
-      // 根据文件格式使用相应的解析器
-      switch (configFileFormat) {
-        case "json5":
-          // 使用 JSON5 解析配置对象，同时使用适配器保留注释信息
-          config = parseJson5(configData) as AppConfig;
-          // 创建适配器实例用于后续保存时保留注释
-          this.json5Writer = createJson5Writer(configData);
-          break;
-        case "jsonc":
-          // 使用 comment-json 解析 JSONC 格式，保留注释信息
-          config = commentJson.parse(configData) as unknown as AppConfig;
-          break;
-        default:
-          config = JSON.parse(configData) as AppConfig;
-          break;
-      }
+      const config: AppConfig = JSON.parse(configData) as AppConfig;
 
       // 验证配置结构
       this.validateConfig(config);
@@ -1025,51 +983,8 @@ export class ConfigManager {
         this.currentConfigPath = configPath;
       }
 
-      // 根据文件格式选择序列化方法
-      const configFileFormat = this.getConfigFileFormat(configPath);
-      let configContent: string;
-
-      switch (configFileFormat) {
-        case "json5":
-          // 对于 JSON5 格式，使用适配器保留注释
-          try {
-            if (this.json5Writer) {
-              // 使用适配器更新配置并保留注释
-              this.json5Writer.write(config);
-              configContent = this.json5Writer.toSource();
-            } else {
-              // 如果没有适配器实例，回退到 comment-json 序列化
-              console.warn("没有 JSON5 适配器实例，使用 comment-json 序列化");
-              configContent = commentJson.stringify(config, null, 2);
-            }
-          } catch (json5Error) {
-            // 如果适配器序列化失败，回退到 comment-json 序列化
-            console.warn(
-              "使用 JSON5 适配器保存失败，回退到 comment-json 序列化:",
-              json5Error
-            );
-            configContent = commentJson.stringify(config, null, 2);
-          }
-          break;
-        case "jsonc":
-          // 对于 JSONC 格式，使用 comment-json 库保留注释
-          try {
-            // 直接使用 comment-json 的 stringify 方法
-            // 如果 config 是通过 comment-json.parse 解析的，注释信息会被保留
-            configContent = commentJson.stringify(config, null, 2);
-          } catch (commentJsonError) {
-            // 如果 comment-json 序列化失败，回退到标准 JSON
-            console.warn(
-              "使用 comment-json 保存失败，回退到标准 JSON 格式:",
-              commentJsonError
-            );
-            configContent = JSON.stringify(config, null, 2);
-          }
-          break;
-        default:
-          configContent = JSON.stringify(config, null, 2);
-          break;
-      }
+      // 序列化配置为 JSON 字符串，并确保文件以换行结尾
+      const configContent: string = `${JSON.stringify(config, null, 2)}\n`;
 
       // 保存到文件
       writeFileSync(configPath, configContent, "utf8");
@@ -1101,7 +1016,6 @@ export class ConfigManager {
   public reloadConfig(): void {
     this.config = null;
     this.currentConfigPath = null; // 清除配置文件路径缓存
-    this.json5Writer = null; // 清除 json5Writer 实例
   }
 
   /**

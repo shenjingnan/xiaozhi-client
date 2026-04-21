@@ -148,23 +148,21 @@ export class PathUtils {
   /**
    * 解析配置文件路径
    */
-  static resolveConfigPath(format?: "json" | "json5" | "jsonc"): string {
+  static resolveConfigPath(format?: "json"): string {
     const configDir = PathUtils.getConfigDir();
 
     if (format) {
       return path.join(configDir, `xiaozhi.config.${format}`);
     }
 
-    // 按优先级查找配置文件
-    for (const fileName of CONFIG_CONSTANTS.FILE_NAMES) {
-      const filePath = path.join(configDir, fileName);
-      if (FileUtils.exists(filePath)) {
-        return filePath;
-      }
+    // 查找配置文件
+    const defaultPath = path.join(configDir, "xiaozhi.config.json");
+    if (FileUtils.exists(defaultPath)) {
+      return defaultPath;
     }
 
     // 返回默认配置文件路径
-    return path.join(configDir, CONFIG_CONSTANTS.FILE_NAMES[2]); // xiaozhi.config.json
+    return defaultPath;
   }
 
   /**

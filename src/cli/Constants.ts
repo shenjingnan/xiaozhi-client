@@ -22,12 +22,8 @@ export const SERVICE_CONSTANTS = {
  * 配置相关常量
  */
 export const CONFIG_CONSTANTS = {
-  /** 配置文件名（按优先级排序） */
-  FILE_NAMES: [
-    "xiaozhi.config.json5",
-    "xiaozhi.config.jsonc",
-    "xiaozhi.config.json",
-  ],
+  /** 配置文件名 */
+  FILE_NAMES: ["xiaozhi.config.json"],
   /** 默认配置文件名 */
   DEFAULT_FILE: "xiaozhi.config.default.json",
   /** 配置目录环境变量 */

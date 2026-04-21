@@ -22,7 +22,7 @@ export class Validation {
    * 验证配置文件格式
    */
   static validateConfigFormat(format: string): ConfigFormat {
-    const validFormats: ConfigFormat[] = ["json", "json5", "jsonc"];
+    const validFormats: ConfigFormat[] = ["json"];
 
     if (!validFormats.includes(format as ConfigFormat)) {
       throw new ValidationError(

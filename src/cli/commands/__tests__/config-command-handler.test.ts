@@ -119,27 +119,7 @@ describe("ConfigCommandHandler", () => {
         const options = { format: "json" };
         await handler.subcommands![0].execute([], options);
 
-        expect(mockConfigManager.initConfig).toHaveBeenCalledWith("json");
-      });
-
-      it("应该正确处理 -f json5 参数", async () => {
-        mockConfigManager.configExists.mockReturnValue(false);
-        mockConfigManager.initConfig.mockImplementation(() => {});
-
-        const options = { format: "json5" };
-        await handler.subcommands![0].execute([], options);
-
-        expect(mockConfigManager.initConfig).toHaveBeenCalledWith("json5");
-      });
-
-      it("应该正确处理 -f jsonc 参数", async () => {
-        mockConfigManager.configExists.mockReturnValue(false);
-        mockConfigManager.initConfig.mockImplementation(() => {});
-
-        const options = { format: "jsonc" };
-        await handler.subcommands![0].execute([], options);
-
-        expect(mockConfigManager.initConfig).toHaveBeenCalledWith("jsonc");
+        expect(mockConfigManager.initConfig).toHaveBeenCalled();
       });
     });
 
@@ -152,7 +132,7 @@ describe("ConfigCommandHandler", () => {
         const options = { format: "json" };
         await handler.subcommands![0].execute([], options);
 
-        expect(mockConfigManager.initConfig).toHaveBeenCalledWith("json");
+        expect(mockConfigManager.initConfig).toHaveBeenCalled();
       });
     });
 
@@ -165,7 +145,7 @@ describe("ConfigCommandHandler", () => {
         await handler.subcommands![0].execute([], options);
 
         expect(mockConfigManager.configExists).toHaveBeenCalled();
-        expect(mockConfigManager.initConfig).toHaveBeenCalledWith("json");
+        expect(mockConfigManager.initConfig).toHaveBeenCalled();
         expect(mockConsoleLog).toHaveBeenCalledWith(
           expect.stringContaining("✅ 配置文件已创建: xiaozhi.config.json")
         );
@@ -175,17 +155,14 @@ describe("ConfigCommandHandler", () => {
         mockConfigManager.configExists.mockReturnValue(false);
         mockConfigManager.initConfig.mockImplementation(() => {});
 
-        const options = { format: "json5" };
+        const options = {};
         await handler.subcommands![0].execute([], options);
 
         expect(mockConsoleLog).toHaveBeenCalledWith(
-          expect.stringContaining("✅ 配置文件已创建: xiaozhi.config.json5")
+          expect.stringContaining("✅ 配置文件已创建: xiaozhi.config.json")
         );
         expect(mockConsoleLog).toHaveBeenCalledWith(
           expect.stringContaining("配置文件路径:")
-        );
-        expect(mockConsoleLog).toHaveBeenCalledWith(
-          expect.stringContaining("xiaozhi.config.json5")
         );
       });
 
@@ -211,19 +188,6 @@ describe("ConfigCommandHandler", () => {
     });
 
     describe("错误处理", () => {
-      it("应该拒绝无效的格式", async () => {
-        const options = { format: "invalid" };
-
-        // 这个测试应该调用错误处理器
-        await handler.subcommands![0].execute([], options);
-
-        expect(mockErrorHandler.handle).toHaveBeenCalledWith(
-          expect.objectContaining({
-            message: "格式必须是 json, json5 或 jsonc",
-          })
-        );
-      });
-
       it("应该处理配置文件已存在的情况", async () => {
         mockConfigManager.configExists.mockReturnValue(true);
 
@@ -246,7 +210,7 @@ describe("ConfigCommandHandler", () => {
         await handler.subcommands![0].execute([], options);
 
         // 错误应该被捕获并传递给错误处理器
-        expect(mockConfigManager.initConfig).toHaveBeenCalledWith("json");
+        expect(mockConfigManager.initConfig).toHaveBeenCalled();
         expect(mockErrorHandler.handle).toHaveBeenCalledWith(
           expect.objectContaining({
             message: "初始化失败",
@@ -271,7 +235,7 @@ describe("ConfigCommandHandler", () => {
           expect.stringContaining("配置文件路径:")
         );
         // 由于实际实现中可能不会使用环境变量，我们只验证基本功能
-        expect(mockConfigManager.initConfig).toHaveBeenCalledWith("json");
+        expect(mockConfigManager.initConfig).toHaveBeenCalled();
       });
     });
   });
@@ -293,19 +257,12 @@ describe("ConfigCommandHandler", () => {
       expect(initSubcommand?.description).toBe("初始化配置文件");
     });
 
-    it("init 子命令应该有正确的选项", () => {
+    it("init 子命令应该没有格式选项", () => {
       const initSubcommand = handler.subcommands?.find(
         (cmd) => cmd.name === "init"
       );
       expect(initSubcommand?.options).toBeDefined();
-      expect(initSubcommand?.options).toHaveLength(1);
-
-      const formatOption = initSubcommand?.options?.[0];
-      expect(formatOption?.flags).toBe("-f, --format <format>");
-      expect(formatOption?.description).toBe(
-        "配置文件格式 (json, json5, jsonc)"
-      );
-      expect(formatOption?.defaultValue).toBe("json");
+      expect(initSubcommand?.options).toHaveLength(0);
     });
   });
 
@@ -809,8 +766,8 @@ describe("ConfigCommandHandler", () => {
       mockConfigManager.configExists.mockReturnValue(false);
       mockConfigManager.initConfig.mockImplementation(() => {});
 
-      await handler.subcommands![0].execute([], { format: "json" });
-      expect(mockConfigManager.initConfig).toHaveBeenCalledWith("json");
+      await handler.subcommands![0].execute([], {});
+      expect(mockConfigManager.initConfig).toHaveBeenCalled();
 
       // 2. 获取初始配置（未配置端点）
       mockConfigManager.configExists.mockReturnValue(true);

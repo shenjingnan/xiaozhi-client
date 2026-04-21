@@ -54,17 +54,13 @@ export class ConfigResolver {
   /**
    * 在指定目录中查找配置文件
    *
-   * 按优先级查找：xiaozhi.config.json5 > xiaozhi.config.jsonc > xiaozhi.config.json
+   * 查找配置文件：xiaozhi.config.json
    *
    * @param dir - 要搜索的目录
    * @returns 找到的配置文件路径，如果不存在则返回 null
    */
   static findConfigInDir(dir: string): string | null {
-    const configFileNames = [
-      "xiaozhi.config.json5",
-      "xiaozhi.config.jsonc",
-      "xiaozhi.config.json",
-    ];
+    const configFileNames = ["xiaozhi.config.json"];
 
     for (const fileName of configFileNames) {
       const filePath = path.join(dir, fileName);

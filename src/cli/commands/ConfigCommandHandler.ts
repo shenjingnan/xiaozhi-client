@@ -25,15 +25,9 @@ export class ConfigCommandHandler extends BaseCommandHandler {
     {
       name: "init",
       description: "初始化配置文件",
-      options: [
-        {
-          flags: "-f, --format <format>",
-          description: "配置文件格式 (json, json5, jsonc)",
-          defaultValue: "json",
-        },
-      ],
-      execute: async (args: CommandArguments, options: CommandOptions) => {
-        await this.handleInit(options);
+      options: [],
+      execute: async (_args: CommandArguments, _options: CommandOptions) => {
+        await this.handleInit();
       },
     },
     {
@@ -71,15 +65,10 @@ export class ConfigCommandHandler extends BaseCommandHandler {
   /**
    * 处理初始化命令
    */
-  private async handleInit(options: CommandOptions): Promise<void> {
+  private async handleInit(): Promise<void> {
     const spinner = ora("初始化配置...").start();
 
     try {
-      const format = options.format as "json" | "json5" | "jsonc";
-      if (format !== "json" && format !== "json5" && format !== "jsonc") {
-        throw new Error("格式必须是 json, json5 或 jsonc");
-      }
-
       const configManager = this.getService<any>("configManager");
 
       if (configManager.configExists()) {
@@ -88,15 +77,14 @@ export class ConfigCommandHandler extends BaseCommandHandler {
         return;
       }
 
-      configManager.initConfig(format);
+      configManager.initConfig();
       spinner.succeed("配置文件初始化成功");
 
       // 获取实际创建的配置文件路径
       const configDir = process.env.XIAOZHI_CONFIG_DIR || process.cwd();
-      const configFileName = `xiaozhi.config.${format}`;
-      const configPath = path.join(configDir, configFileName);
+      const configPath = path.join(configDir, "xiaozhi.config.json");
 
-      console.log(chalk.green(`✅ 配置文件已创建: ${configFileName}`));
+      console.log(chalk.green("✅ 配置文件已创建: xiaozhi.config.json"));
       console.log(chalk.yellow("📝 请编辑配置文件设置你的 MCP 端点:"));
       console.log(chalk.gray(`   配置文件路径: ${configPath}`));
       console.log(chalk.yellow("💡 或者使用命令设置:"));
