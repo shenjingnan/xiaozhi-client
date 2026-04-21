@@ -388,13 +388,6 @@ export class ConfigManager {
   }
 
   /**
-   * 获取配置文件格式
-   */
-  private getConfigFileFormat(_filePath: string): "json" {
-    return "json";
-  }
-
-  /**
    * 获取配置管理器单例实例
    */
   public static getInstance(): ConfigManager {
@@ -457,7 +450,6 @@ export class ConfigManager {
     try {
       const configPath = this.getConfigFilePath();
       this.currentConfigPath = configPath; // 记录当前使用的配置文件路径
-      const configFileFormat = this.getConfigFileFormat(configPath);
       const rawConfigData = readFileSync(configPath, "utf8");
 
       // 移除可能存在的UTF-8 BOM字符（\uFEFF）

@@ -26,8 +26,8 @@ export class ConfigCommandHandler extends BaseCommandHandler {
       name: "init",
       description: "初始化配置文件",
       options: [],
-      execute: async (args: CommandArguments, options: CommandOptions) => {
-        await this.handleInit(options);
+      execute: async (_args: CommandArguments, _options: CommandOptions) => {
+        await this.handleInit();
       },
     },
     {
@@ -65,7 +65,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
   /**
    * 处理初始化命令
    */
-  private async handleInit(options: CommandOptions): Promise<void> {
+  private async handleInit(): Promise<void> {
     const spinner = ora("初始化配置...").start();
 
     try {
