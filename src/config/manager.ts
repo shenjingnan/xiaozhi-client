@@ -313,19 +313,12 @@ export class ConfigManager {
     // 在不同环境中尝试不同的路径
     //
     // 迁移后 __dirname = src/config/（开发环境）或 dist/config/（构建后）
-    // 项目根目录的 templates/default/ 在 __dirname 的上两级
+    // 项目根目录的 template/ 在 __dirname 的上两级
     const possiblePaths = [
-      // src/config/ 或 dist/config/ → 项目根 templates/default/xiaozhi.config.json
-      resolve(
-        __dirname,
-        "..",
-        "..",
-        "templates",
-        "default",
-        "xiaozhi.config.json"
-      ),
+      // src/config/ 或 dist/config/ → 项目根 template/xiaozhi.config.json
+      resolve(__dirname, "..", "..", "template", "xiaozhi.config.json"),
       // 从 CWD 查找（兼容各种启动场景）
-      resolve(process.cwd(), "templates", "default", "xiaozhi.config.json"),
+      resolve(process.cwd(), "template", "xiaozhi.config.json"),
     ];
 
     // 找到第一个存在的路径

@@ -26,8 +26,8 @@ export default createXiaozhiConfig({
       "eventsource",
     ],
   },
-  // 将项目根目录的 templates/ 复制到输出目录
+  // 将项目根目录的 template/ 复制到输出目录
   // copy 路径相对于 config 文件所在目录（src/cli/）解析
-  // to 指向 dist/cli/，tsdown 会保留源目录名 templates，最终生成 dist/cli/templates/
-  copy: [{ from: "../../templates", to: "../../dist/cli" }],
+  // to 指向 dist/cli/，tsdown 会保留源目录名 template，最终生成 dist/cli/template/
+  copy: [{ from: "../../template", to: "../../dist/cli" }],
 });

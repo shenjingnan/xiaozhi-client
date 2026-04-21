@@ -106,10 +106,10 @@ export class ConfigInitializer {
    */
   private static getDefaultTemplateDir(): string | null {
     const possiblePaths = [
-      // 迁移后：src/config/ 或 dist/config/ → 项目根 templates/default/
-      resolve(__dirname, "..", "..", "templates", "default"),
+      // 模板目录已扁平化为 template/
+      resolve(__dirname, "..", "..", "template"),
       // 从 CWD 查找（兼容各种启动场景）
-      resolve(process.cwd(), "templates", "default"),
+      resolve(process.cwd(), "template"),
     ];
 
     for (const p of possiblePaths) {

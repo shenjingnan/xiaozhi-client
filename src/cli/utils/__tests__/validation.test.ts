@@ -304,45 +304,6 @@ describe("Validation", () => {
     });
   });
 
-  describe("验证模板名称", () => {
-    it("应接受有效的模板名称", () => {
-      expect(() =>
-        Validation.validateTemplateName("hello-world")
-      ).not.toThrow();
-      expect(() =>
-        Validation.validateTemplateName("hello_world")
-      ).not.toThrow();
-      expect(() => Validation.validateTemplateName("HelloWorld")).not.toThrow();
-      expect(() => Validation.validateTemplateName("hello123")).not.toThrow();
-      expect(() => Validation.validateTemplateName("h")).not.toThrow();
-    });
-
-    it("应拒绝包含无效字符的模板名称", () => {
-      expect(() => Validation.validateTemplateName("hello.world")).toThrow(
-        ValidationError
-      );
-      expect(() => Validation.validateTemplateName("hello$world")).toThrow(
-        ValidationError
-      );
-      expect(() => Validation.validateTemplateName("hello world")).toThrow(
-        ValidationError
-      );
-      expect(() => Validation.validateTemplateName("hello@world")).toThrow(
-        ValidationError
-      );
-    });
-
-    it("应拒绝过短或过长的模板名称", () => {
-      expect(() => Validation.validateTemplateName("")).toThrow(
-        ValidationError
-      );
-      const longName = "a".repeat(51);
-      expect(() => Validation.validateTemplateName(longName)).toThrow(
-        ValidationError
-      );
-    });
-  });
-
   describe("验证环境变量名", () => {
     it("应接受有效的环境变量名", () => {
       expect(() => Validation.validateEnvVarName("VAR_NAME")).not.toThrow();

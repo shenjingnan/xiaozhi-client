@@ -52,59 +52,6 @@ export class PathUtils {
   }
 
   /**
-   * 获取模板目录路径
-   */
-  static getTemplatesDir(): string[] {
-    // 在 ES 模块环境中获取当前目录
-    const __filename = fileURLToPath(import.meta.url);
-    const scriptDir = path.dirname(__filename);
-
-    return [
-      // 构建后的环境：dist/cli.js -> dist/templates
-      path.join(scriptDir, PATH_CONSTANTS.TEMPLATES_DIR),
-      // 构建环境：dist/cli/index.js -> dist/backend/templates
-      path.join(scriptDir, "..", "backend", PATH_CONSTANTS.TEMPLATES_DIR),
-      // npm 全局安装
-      path.join(
-        scriptDir,
-        "..",
-        "..",
-        "..",
-        "..",
-        PATH_CONSTANTS.TEMPLATES_DIR
-      ),
-    ];
-  }
-
-  /**
-   * 查找模板目录
-   */
-  static findTemplatesDir(): string | null {
-    const possiblePaths = PathUtils.getTemplatesDir();
-
-    for (const templatesDir of possiblePaths) {
-      if (FileUtils.exists(templatesDir)) {
-        return templatesDir;
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * 获取模板路径
-   */
-  static getTemplatePath(templateName: string): string | null {
-    const templatesDir = PathUtils.findTemplatesDir();
-    if (!templatesDir) {
-      return null;
-    }
-
-    const templatePath = path.join(templatesDir, templateName);
-    return FileUtils.exists(templatePath) ? templatePath : null;
-  }
-
-  /**
    * 获取脚本目录路径
    */
   static getScriptDir(): string {

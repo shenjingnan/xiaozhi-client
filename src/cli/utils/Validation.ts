@@ -137,23 +137,6 @@ export class Validation {
   }
 
   /**
-   * 验证模板名称
-   */
-  static validateTemplateName(name: string): void {
-    Validation.validateRequired(name, "templateName");
-    Validation.validateStringLength(name, "templateName", { min: 1, max: 50 });
-
-    // 模板名称只能包含字母、数字、连字符和下划线
-    const validPattern = /^[a-zA-Z0-9_-]+$/;
-    if (!validPattern.test(name)) {
-      throw new ValidationError(
-        "模板名称只能包含字母、数字、连字符和下划线",
-        "templateName"
-      );
-    }
-  }
-
-  /**
    * 验证环境变量名称
    */
   static validateEnvVarName(name: string): void {

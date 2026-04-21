@@ -124,12 +124,7 @@ export class CommandRegistry implements ICommandRegistry {
       );
     } else {
       // 没有子命令，注册为普通命令
-      let commandName = handler.name;
-
-      // 特殊处理 create 命令，需要接受项目名称参数
-      if (handler.name === "create") {
-        commandName = "create <projectName>";
-      }
+      const commandName = handler.name;
 
       const command = program
         .command(commandName)
@@ -182,7 +177,6 @@ export class CommandRegistry implements ICommandRegistry {
   xiaozhi status                   # 检查服务状态
   xiaozhi restart -d               # 重启服务（后台模式）
   xiaozhi config mcpEndpoint <url> # 设置 MCP 端点
-  xiaozhi create my-project        # 创建项目
   xiaozhi mcp list                 # 列出 MCP 服务
 
 更多信息请访问: https://github.com/your-org/xiaozhi-client

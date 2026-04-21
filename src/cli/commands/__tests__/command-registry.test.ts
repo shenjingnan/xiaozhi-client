@@ -39,13 +39,6 @@ const mockConfigCommandHandler = {
   subcommands: [],
 };
 
-const mockProjectCommandHandler = {
-  name: "project",
-  description: "项目管理命令",
-  execute: vi.fn(),
-  subcommands: [],
-};
-
 const mockMcpCommandHandler = {
   name: "mcp",
   description: "MCP 服务和工具管理",
@@ -68,7 +61,6 @@ vi.mock("./CommandHandlerFactory.js", () => ({
       .mockReturnValue([
         mockServiceCommandHandler,
         mockConfigCommandHandler,
-        mockProjectCommandHandler,
         mockMcpCommandHandler,
         mockEndpointCommandHandler,
       ]),

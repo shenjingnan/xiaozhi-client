@@ -36,8 +36,6 @@ export const CONFIG_CONSTANTS = {
 export const PATH_CONSTANTS = {
   /** 工作目录名 */
   WORK_DIR: ".xiaozhi",
-  /** 模板目录名 */
-  TEMPLATES_DIR: "templates",
   /** 日志目录名 */
   LOGS_DIR: "logs",
 } as const;

@@ -4,7 +4,6 @@
  * 负责创建和管理命令处理器，包括：
  * - 服务命令处理器
  * - 配置命令处理器
- * - 项目命令处理器
  * - MCP 命令处理器
  * - 端点命令处理器
  *
@@ -30,7 +29,6 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
     return [
       this.createHandler("service"),
       this.createHandler("config"),
-      this.createHandler("project"),
       this.createHandler("mcp"),
       this.createHandler("endpoint"),
     ];
@@ -45,8 +43,6 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
         return this.createServiceCommandHandler();
       case "config":
         return this.createConfigCommandHandler();
-      case "project":
-        return this.createProjectCommandHandler();
       case "mcp":
         return this.createMcpCommandHandler();
       case "endpoint":
@@ -71,14 +67,6 @@ export class CommandHandlerFactory implements ICommandHandlerFactory {
   private createConfigCommandHandler(): CommandHandler {
     const { ConfigCommandHandler } = require("./ConfigCommandHandler.js");
     return new ConfigCommandHandler(this.container);
-  }
-
-  /**
-   * 创建项目命令处理器
-   */
-  private createProjectCommandHandler(): CommandHandler {
-    const { ProjectCommandHandler } = require("./ProjectCommandHandler.js");
-    return new ProjectCommandHandler(this.container);
   }
 
   /**

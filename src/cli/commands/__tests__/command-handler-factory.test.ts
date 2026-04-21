@@ -201,13 +201,7 @@ describe("CommandHandlerFactory", () => {
     });
 
     it("应该为所有支持的处理器类型抛出模块不存在的错误", () => {
-      const supportedTypes = [
-        "service",
-        "config",
-        "project",
-        "mcp",
-        "endpoint",
-      ];
+      const supportedTypes = ["service", "config", "mcp", "endpoint"];
 
       for (const type of supportedTypes) {
         expect(() => {
@@ -220,7 +214,7 @@ describe("CommandHandlerFactory", () => {
   describe("工厂模式的核心逻辑", () => {
     it("应该有正确的类型判断逻辑", () => {
       // 测试 switch 语句的逻辑
-      const types = ["service", "config", "project", "mcp", "endpoint"];
+      const types = ["service", "config", "mcp", "endpoint"];
 
       for (const type of types) {
         // 这些应该尝试加载模块（会失败，但不会在 switch 语句中抛出错误）
@@ -241,7 +235,6 @@ describe("CommandHandlerFactory", () => {
       const knownTypes = [
         { type: "service", module: "ServiceCommandHandler.js" },
         { type: "config", module: "ConfigCommandHandler.js" },
-        { type: "project", module: "ProjectCommandHandler.js" },
         { type: "mcp", module: "McpCommandHandler.js" },
         { type: "endpoint", module: "EndpointCommandHandler.js" },
       ];

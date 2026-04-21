@@ -168,12 +168,6 @@ export class DIContainer implements IDIContainer {
       );
     });
 
-    container.registerSingleton("templateManager", () => {
-      // 使用动态导入的同步版本
-      const TemplateManagerModule = require("./services/TemplateManager.js");
-      return new TemplateManagerModule.TemplateManagerImpl();
-    });
-
     return container;
   }
 }
