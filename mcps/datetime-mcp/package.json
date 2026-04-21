@@ -19,8 +19,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "type-check": "tsc --noEmit",
     "lint": "biome check src/",
     "lint:fix": "biome check --write src/"
@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.5.0",
-    "tsup": "^8.3.5",
+    "tsdown": "^0.21.9",
     "typescript": "^5.9.2"
   }
 }
