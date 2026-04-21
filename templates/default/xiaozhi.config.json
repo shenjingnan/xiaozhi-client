@@ -14,7 +14,6 @@
   "modelscope": { "apiKey": "" },
   "platforms": {},
   "asr": {
-    "model": "doubao",
     "appid": "",
     "accessToken": "",
     "cluster": "",
@@ -28,7 +27,6 @@
     "baseURL": ""
   },
   "tts": {
-    "model": "doubao",
     "appid": "",
     "accessToken": "",
     "voice_type": "zh_female_xiaohe_uranus_bigtts",
