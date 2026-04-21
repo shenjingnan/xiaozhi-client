@@ -4,9 +4,17 @@ import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  // 启用 Rolldown 作为底层打包引擎（替代 Rollup）
+  // Rolldown 由 Rust 编写，构建速度显著更快
+  experimental: {
+    rolldown: true,
+  },
   plugins: [
     react(),
     // Bundle analyzer - 只在需要时启用
+    // 注意：rollup-plugin-visualizer 依赖 moduleParsed hook，
+    // 在 rolldown 模式下可能无法正常工作。如需分析包体积，
+    // 可临时禁用 experimental.rolldown 或使用其他分析工具。
     process.env.ANALYZE &&
       visualizer({
         filename: "dist/stats.html",
@@ -35,8 +43,10 @@ export default defineConfig({
   build: {
     outDir: "../../dist/frontend",
     sourcemap: true,
-    // 代码分割优化配置
-    rollupOptions: {
+    // 使用 Oxc 压缩器（与 Rolldown 集成更好，压缩速度更快）
+    minify: "oxc",
+    // 代码分割优化配置（使用 rolldown 原生配置）
+    rolldownOptions: {
       output: {
         // 动态分包策略 - 只为实际使用的库创建 chunk
         manualChunks: (id) => {
