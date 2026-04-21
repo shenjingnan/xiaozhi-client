@@ -10,10 +10,16 @@
       "args": ["-y", "@xiaozhi-client/datetime-mcp"]
     }
   },
+  "mcpServerConfig": {},
+  "modelscope": { "apiKey": "" },
+  "platforms": {},
   "asr": {
     "model": "doubao",
     "appid": "",
-    "accessToken": ""
+    "accessToken": "",
+    "cluster": "",
+    "wsUrl": "",
+    "vadEndWindowSize": 0
   },
   "llm": {
     "prompt": "./prompts/default.md",
@@ -25,14 +31,18 @@
     "model": "doubao",
     "appid": "",
     "accessToken": "",
-    "voice_type": "zh_female_xiaohe_uranus_bigtts"
+    "voice_type": "zh_female_xiaohe_uranus_bigtts",
+    "encoding": "",
+    "cluster": "",
+    "endpoint": ""
   },
   "connection": {
     "heartbeatInterval": 30000,
     "heartbeatTimeout": 10000,
-    "reconnectInterval": 5000
+    "reconnectInterval": 5000,
+    "maxReconnectAttempts": 10,
+    "connectionTimeout": 30000,
+    "autoReconnect": true
   },
-  "webUI": {
-    "port": 9999
-  }
+  "webUI": { "port": 9999, "autoRestart": true }
 }
