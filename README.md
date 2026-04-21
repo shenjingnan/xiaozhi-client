@@ -1,8 +1,11 @@
-<br />
 <div align="center">
-  <img style="height: 60px;" src="https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docs/public/images/logo.png" alt="xiaozhi-client logo" />
+  <br />
+  <br />
+  <img src="logo.svg" alt="Univoice" width="400" height="100" />
+  <br />
+  <br />
+  <br />
 </div>
-<br />
 
 <div align="center">
 <a href="https://www.npmjs.com/package/xiaozhi-client" target="_blank"><img src="https://img.shields.io/npm/v/xiaozhi-client" alt="npm version" /></a>
