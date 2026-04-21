@@ -2,6 +2,16 @@
 
 本文档记录项目的所有重要变更。
 
+## [2.3.1-beta.4](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.1-beta.3...v2.3.1-beta.4) (2026-04-21)
+
+### Code Refactoring
+
+* **config:** 移除 JSON5/JSONC 配置文件格式支持，聚焦标准 JSON ([#3447](https://github.com/shenjingnan/xiaozhi-client/issues/3447)) ([96bb8f2](https://github.com/shenjingnan/xiaozhi-client/commit/96bb8f2b3f7264e94264782c81988cdf672b5faa))
+
+### Documentation
+
+* 添加项目 logo 并更新 README 展示 ([#3446](https://github.com/shenjingnan/xiaozhi-client/issues/3446)) ([1030072](https://github.com/shenjingnan/xiaozhi-client/commit/1030072a8f3be1747058dd21d7fa2f5e031116e9))
+
 ## [2.3.1-beta.3](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.1-beta.2...v2.3.1-beta.3) (2026-04-21)
 
 ### Performance
