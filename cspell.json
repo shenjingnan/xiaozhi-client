@@ -12,6 +12,7 @@
   ],
   "dictionaries": ["xiaozhi-words"],
   "ignorePaths": [
+    "logo.svg",
     "docs/content/音色列表.md",
     "node_modules/**",
     "reports/jscpd",
