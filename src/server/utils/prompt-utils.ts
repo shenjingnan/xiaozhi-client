@@ -16,7 +16,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
-import { configManager } from "../../config/index.js";
+import { configManager } from "@/config";
 
 // 默认系统提示词
 const DEFAULT_SYSTEM_PROMPT =
