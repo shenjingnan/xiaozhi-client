@@ -1,0 +1,203 @@
+---
+title: "错误码参考 - Xiaozhi Client"
+description: "xiaozhi-client 错误码完整参考文档，包含所有错误码的含义、严重级别和处理建议。"
+---
+
+# 错误码参考
+
+本文档提供 xiaozhi-client 项目中所有错误码的完整参考，帮助开发者和用户快速定位问题。
+
+## MCP 错误码
+
+MCP 服务相关错误定义在 `apps/backend/errors/mcp-errors.ts`。
+
+### 配置错误
+
+| 错误码 | 说明 | 常见原因 |
+| ------ | ---- | -------- |
+| `SERVER_ALREADY_EXISTS` | 服务已存在 | 尝试添加重复的 MCP 服务 |
+| `SERVER_NOT_FOUND` | 服务未找到 | 操作不存在的服务配置 |
+| `INVALID_CONFIG` | 配置格式无效 | JSON 解析失败或配置字段缺失 |
+| `INVALID_SERVICE_NAME` | 服务名称不符合规范 | 服务名称包含非法字符或格式错误 |
+
+### 连接错误
+
+| 错误码 | 说明 | 常见原因 |
+| ------ | ---- | -------- |
+| `CONNECTION_FAILED` | 无法建立连接 | 网络不通、地址错误、端口未开放 |
+| `CONNECTION_TIMEOUT` | 连接超时 | 网络延迟过高、服务响应慢 |
+| `SERVICE_UNAVAILABLE` | 服务暂时不可用 | 服务未启动或正在重启 |
+
+### 操作错误
+
+| 错误码 | 说明 | 常见原因 |
+| ------ | ---- | -------- |
+| `OPERATION_FAILED` | 一般操作失败 | 未知操作错误 |
+| `ADD_FAILED` | 服务添加失败 | 配置验证失败或依赖缺失 |
+| `REMOVE_FAILED` | 服务移除失败 | 服务正在使用中或不存在 |
+| `SYNC_FAILED` | 工具同步失败 | 与 MCP 服务通信异常 |
+
+### 系统错误
+
+| 错误码 | 说明 | 常见原因 |
+| ------ | ---- | -------- |
+| `INTERNAL_ERROR` | 内部系统错误 | 未预期的异常情况 |
+| `CONFIG_UPDATE_FAILED` | 配置更新失败 | 文件写入失败或权限问题 |
+
+### 工具同步错误
+
+| 错误码 | 说明 | 常见原因 |
+| ------ | ---- | -------- |
+| `TOOL_SYNC_FAILED` | 工具同步失败 | 工具列表获取失败 |
+| `TOOL_VALIDATION_FAILED` | 工具验证失败 | 工具定义不符合规范 |
+| `TOOL_NOT_FOUND` | 工具未找到 | 调用不存在的工具 |
+
+---
+
+## ESP32 错误码
+
+ESP32 设备相关错误定义在 `packages/esp32/src/types.ts`。
+
+| 错误码 | 说明 | 常见原因 |
+| ------ | ---- | -------- |
+| `MISSING_DEVICE_ID` | 设备 ID 缺失 | 设备未正确上报 MAC 地址 |
+| `DEVICE_NOT_FOUND` | 设备不存在 | 操作未注册的设备 |
+| `DEVICE_OFFLINE` | 设备离线 | 设备断开连接或网络中断 |
+| `INVALID_DEVICE_STATUS` | 无效的设备状态 | 状态转换逻辑错误 |
+| `WEBSOCKET_CONNECTION_FAILED` | WebSocket 连接失败 | WebSocket 服务不可用 |
+| `INVALID_MESSAGE_FORMAT` | 无效的消息格式 | JSON 解析失败或协议不符 |
+
+---
+
+## 错误严重级别
+
+所有错误都有对应的严重级别，用于判断错误的影响范围和处理优先级。
+
+| 级别 | 说明 | 影响 | 处理建议 |
+| ---- | ---- | ---- | -------- |
+| `LOW` | 轻微错误 | 不影响主要功能 | 记录日志，无需立即处理 |
+| `MEDIUM` | 中等错误 | 影响部分功能 | 记录日志，适当通知 |
+| `HIGH` | 严重错误 | 影响核心功能 | 立即通知，优先处理 |
+| `CRITICAL` | 致命错误 | 系统无法继续运行 | 立即告警，紧急处理 |
+
+---
+
+## 错误分类
+
+错误按功能区域进行分类，帮助快速定位问题根源。
+
+| 分类 | 说明 | 恢复策略 |
+| ---- | ---- | -------- |
+| `CONNECTION` | 连接相关错误 | 自动重连 |
+| `TRANSPORT` | 传输层错误 | 重启服务 |
+| `TOOL_CALL` | 工具调用错误 | 重试调用 |
+| `CONFIGURATION` | 配置错误 | 人工干预 |
+| `TIMEOUT` | 超时错误 | 重试请求 |
+| `AUTHENTICATION` | 认证错误 | 人工干预 |
+| `NETWORK` | 网络错误 | 重试请求 |
+| `VALIDATION` | 验证错误 | 检查参数 |
+| `OPERATION` | 操作错误 | 视情况处理 |
+| `SYSTEM` | 系统错误 | 人工干预 |
+| `EXTERNAL` | 外部依赖错误 | 视情况处理 |
+| `UNKNOWN` | 未知错误 | 人工干预 |
+
+---
+
+## 错误响应格式
+
+当发生错误时，系统返回标准化的错误响应格式。
+
+### MCPError 格式
+
+```json
+{
+  "name": "MCPError",
+  "code": "CONNECTION_FAILED",
+  "message": "无法建立到服务的连接",
+  "severity": "high",
+  "category": "connection",
+  "details": {
+    "serverName": "my-mcp-service",
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "severity": "high",
+    "category": "connection",
+    "context": {
+      "endpoint": "ws://localhost:8080"
+    }
+  },
+  "timestamp": "2024-01-15T10:30:00.000Z"
+}
+```
+
+### ESP32Error 格式
+
+```json
+{
+  "type": "error",
+  "code": "DEVICE_OFFLINE",
+  "message": "设备已离线，请检查网络连接"
+}
+```
+
+---
+
+## 常见错误处理建议
+
+### 配置错误处理
+
+当遇到 `INVALID_CONFIG` 或 `INVALID_SERVICE_NAME` 错误时：
+
+1. 检查 `xiaozhi.config.json` 文件格式是否正确
+2. 验证服务名称是否符合规范（不含特殊字符）
+3. 确认所有必需字段已填写
+
+### 连接错误处理
+
+当遇到 `CONNECTION_FAILED` 或 `SERVICE_UNAVAILABLE` 错误时：
+
+1. 检查目标服务是否正常运行
+2. 验证网络连接是否正常
+3. 确认连接地址和端口配置正确
+4. 检查防火墙设置是否阻止连接
+
+### 工具错误处理
+
+当遇到 `TOOL_NOT_FOUND` 或 `TOOL_VALIDATION_FAILED` 错误时：
+
+1. 确认工具名称拼写正确
+2. 检查工具参数是否符合要求
+3. 验证 MCP 服务是否支持该工具
+
+### 设备错误处理
+
+当遇到 ESP32 设备相关错误时：
+
+1. 检查设备是否正常上报 MAC 地址
+2. 确认设备已在系统中注册
+3. 验证 WebSocket 连接状态
+4. 检查设备消息格式是否符合协议规范
+
+---
+
+## 错误日志查询
+
+系统会记录所有错误的历史记录，可通过以下方式查询：
+
+```typescript
+// 获取特定服务的错误统计
+import { getErrorStatistics } from "@/errors/error-helper.js";
+
+const stats = getErrorStatistics("my-mcp-service");
+console.log(stats.totalErrors);       // 总错误数
+console.log(stats.errorsByCategory);  // 按分类统计
+console.log(stats.errorsByCode);      // 按错误码统计
+console.log(stats.lastError);         // 最近一次错误
+```
+
+---
+
+## 相关源文件
+
+- MCP 错误定义：`apps/backend/errors/mcp-errors.ts`
+- 错误辅助工具：`apps/backend/errors/error-helper.ts`
+- ESP32 错误定义：`packages/esp32/src/types.ts`
