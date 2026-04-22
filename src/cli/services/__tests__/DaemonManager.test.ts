@@ -375,4 +375,109 @@ describe("DaemonManagerImpl", () => {
       expect(daemonManager.getCurrentDaemon()).toBe(mockChild);
     });
   });
+
+  describe("startDaemon 边界情况", () => {
+    it("当 spawn 返回无 PID 时应抛出 ProcessError", async () => {
+      const { spawn } = await import("node:child_process");
+
+      const childWithoutPid = {
+        pid: undefined,
+        stdout: { pipe: vi.fn() },
+        stderr: { pipe: vi.fn() },
+        on: vi.fn(),
+        unref: vi.fn(),
+      };
+      vi.mocked(spawn).mockReturnValue(childWithoutPid as any);
+
+      await expect(
+        daemonManager.startDaemon(mockServerFactory)
+      ).rejects.toThrow("无法启动守护进程");
+    });
+  });
+
+  describe("setupLogging 日志重定向边界情况", () => {
+    it("当日志目录不存在时应自动创建", async () => {
+      const fs = await import("node:fs");
+
+      let callCount = 0;
+      vi.mocked(fs.default.existsSync).mockImplementation((path: string) => {
+        callCount++;
+        if (path.includes("logs")) return false; // 日志目录不存在
+        return true;
+      });
+
+      await daemonManager.startDaemon(mockServerFactory);
+
+      expect(fs.default.mkdirSync).toHaveBeenCalled();
+    });
+  });
+
+  describe("setupEventHandlers 事件处理边界情况", () => {
+    it("进程正常退出(code=0)时应输出正常退出信息", async () => {
+      await daemonManager.startDaemon(mockServerFactory);
+
+      const exitCall = mockChild.on.mock.calls.find(
+        (call: any[]) => call[0] === "exit"
+      );
+      expect(exitCall).toBeDefined();
+
+      const exitCallback = exitCall![1];
+      exitCallback(0, null);
+
+      expect(consola.info).toHaveBeenCalledWith("守护进程正常退出");
+    });
+
+    it("进程异常退出(code!=0)时应输出错误信息", async () => {
+      await daemonManager.startDaemon(mockServerFactory);
+
+      const exitCall = mockChild.on.mock.calls.find(
+        (call: any[]) => call[0] === "exit"
+      );
+      const exitCallback = exitCall![1];
+      exitCallback(1, "SIGTERM");
+
+      expect(consola.error).toHaveBeenCalledWith(
+        expect.stringContaining("守护进程异常退出")
+      );
+    });
+
+    it("进程 error 事件应清理 PID 文件和当前引用", async () => {
+      await daemonManager.startDaemon(mockServerFactory);
+
+      const errorCall = mockChild.on.mock.calls.find(
+        (call: any[]) => call[0] === "error"
+      );
+      expect(errorCall).toBeDefined();
+      const errorCallback = errorCall![1];
+      errorCallback(new Error("test error"));
+
+      expect(consola.error).toHaveBeenCalled();
+      expect(mockProcessManager.cleanupPidFile).toHaveBeenCalled();
+      expect(daemonManager.getCurrentDaemon()).toBeNull();
+    });
+  });
+
+  describe("checkHealth 异常情况", () => {
+    it("当 getServiceStatus 抛出异常时应返回 false", async () => {
+      (mockProcessManager.getServiceStatus as any).mockImplementation(() => {
+        throw new Error("status check failed");
+      });
+
+      const isHealthy = await daemonManager.checkHealth();
+      expect(isHealthy).toBe(false);
+    });
+
+    it("当 getProcessInfo 抛出异常时应返回 false", async () => {
+      (mockProcessManager.getServiceStatus as any).mockReturnValue({
+        running: true,
+        pid: 9999,
+      });
+      (mockProcessManager.getProcessInfo as any).mockImplementation(() => {
+        throw new Error("process info failed");
+      });
+
+      const isHealthy = await daemonManager.checkHealth();
+      expect(isHealthy).toBe(false);
+    });
+  });
 });

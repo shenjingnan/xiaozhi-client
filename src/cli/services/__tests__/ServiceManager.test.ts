@@ -450,6 +450,58 @@ describe("ServiceManagerImpl 服务管理器实现", () => {
       // Restore original environment
       process.env = originalEnv;
     });
+
+    it("stdio 模式应走 normal 启动路径（废弃兼容）", async () => {
+      const fs = await import("node:fs");
+      vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+      const mockSpawn = await getMockSpawn();
+      const mockChild = { pid: 3456, unref: vi.fn() };
+      mockSpawn.mockReturnValue(mockChild as any);
+
+      const stdioOptions: ServiceStartOptions = {
+        ...defaultOptions,
+        mode: "stdio",
+      };
+
+      // stdio 模式内部调用 startNormalMode，最终走 daemon 路径
+      await expect(serviceManager.start(stdioOptions)).rejects.toThrow(
+        /process\.exit/
+      );
+
+      // 验证使用了 WebServerLauncher（而非 MCP Server 路径）
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "node",
+        ["/mock/path/WebServerLauncher.js"],
+        expect.not.objectContaining({
+          env: expect.objectContaining({ MCP_SERVER_MODE: "true" }),
+        })
+      );
+    });
+
+    it("未设置 mode 时应回退到 normal 启动路径（default 分支）", async () => {
+      const fs = await import("node:fs");
+      vi.mocked(fs.default.existsSync).mockReturnValue(true);
+
+      const mockSpawn = await getMockSpawn();
+      const mockChild = { pid: 7890, unref: vi.fn() };
+      mockSpawn.mockReturnValue(mockChild as any);
+
+      // 不设置 mode → undefined → 触发 switch default 分支
+      const noModeOptions: ServiceStartOptions = {
+        ui: false,
+      };
+
+      await expect(serviceManager.start(noModeOptions)).rejects.toThrow(
+        /process\.exit/
+      );
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "node",
+        ["/mock/path/WebServerLauncher.js"],
+        expect.any(Object)
+      );
+    });
   });
 
   describe("stop 停止服务", () => {
