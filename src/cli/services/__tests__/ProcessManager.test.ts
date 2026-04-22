@@ -273,4 +273,41 @@ describe("ProcessManagerImpl", () => {
       expect(isValid).toBe(false);
     });
   });
+
+  describe("getServiceStatus 异常处理", () => {
+    it("当读取 PID 文件出现意外异常时应返回 not running", () => {
+      mockFileUtils.exists.mockImplementation(() => {
+        throw new Error("Unexpected I/O error");
+      });
+
+      const status = processManager.getServiceStatus();
+
+      // 外层 catch 应捕获并返回 not running
+      expect(status.running).toBe(false);
+    });
+  });
+
+  describe("cleanupContainerState 异常处理", () => {
+    it("容器环境中清理失败不应抛出异常", () => {
+      mockPlatformUtils.isContainerEnvironment.mockReturnValue(true);
+      mockFileUtils.exists.mockReturnValue(true);
+      mockFileUtils.deleteFile.mockImplementation(() => {
+        throw new Error("Permission denied");
+      });
+
+      // 不应抛出异常
+      expect(() => processManager.cleanupContainerState()).not.toThrow();
+    });
+  });
+
+  describe("validatePidFile 异常路径", () => {
+    it("当读取 PID 文件抛出意外异常时应返回 false", () => {
+      mockFileUtils.exists.mockImplementation(() => {
+        throw new Error("Disk error");
+      });
+
+      const isValid = processManager.validatePidFile();
+      expect(isValid).toBe(false);
+    });
+  });
 });

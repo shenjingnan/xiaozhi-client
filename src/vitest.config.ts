@@ -19,7 +19,7 @@ export default defineConfig({
         "**/build/**",
         "**/*.config.{js,ts}",
         "**/tsdown.config.ts",
-        "templates/**",
+        "template/**",
         "docs/**",
         "mcps/**",
         "tests/**",

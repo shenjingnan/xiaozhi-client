@@ -21,7 +21,7 @@
   "main": "dist/cli/index.js",
   "files": [
     "dist",
-    "templates",
+    "template",
     "README.md",
     "LICENSE"
   ],

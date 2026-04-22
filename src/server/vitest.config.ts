@@ -24,7 +24,7 @@ export default defineConfig({
     testTimeout: 10000,
     hookTimeout: 10000,
     include: ["**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
-    exclude: ["**/node_modules", "dist", "templates/**/*"],
+    exclude: ["**/node_modules", "dist", "template/**/*"],
     coverage: {
       enabled: true,
       provider: "v8",
@@ -33,7 +33,7 @@ export default defineConfig({
       exclude: [
         "node_modules/**",
         "dist/**",
-        "templates/**",
+        "template/**",
         "**/*.d.ts",
         "**/*.config.{js,ts}",
         "coverage/**",
