@@ -56,6 +56,7 @@ overrides:
   picomatch: '>=4.0.4'
   yaml: '>=2.8.3'
   cosmiconfig: '>=7.1.0'
+  undici@<6.24.0: '>=6.24.0'
 
 importers:
 
@@ -7186,10 +7187,6 @@ packages:
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
-  undici@6.23.0:
-    resolution: {integrity: sha512-VfQPToRA5FZs/qJxLIinmU59u0r7LXqoJkCzinq3ckNJp3vKEh7jTWN589YQ5+aoAC/TGRLyJLCPKcLQbM8r9g==}
-    engines: {node: '>=18.17'}
-
   undici@7.25.0:
     resolution: {integrity: sha512-xXnp4kTyor2Zq+J1FfPI6Eq3ew5h6Vl0F/8d9XU5zZQf1tX9s2Su1/3PiMmUANFULpmksxkClamIZcaUqryHsQ==}
     engines: {node: '>=20.18.1'}
@@ -14119,7 +14116,7 @@ snapshots:
       proxy-agent: 6.5.0
       semver: 7.7.3
       tinyglobby: 0.2.15
-      undici: 6.23.0
+      undici: 7.25.0
       url-join: 5.0.0
       wildcard-match: 5.1.4
       yargs-parser: 21.1.1
@@ -14958,8 +14955,6 @@ snapshots:
       quansync: 1.0.0
 
   undici-types@7.16.0: {}
-
-  undici@6.23.0: {}
 
   undici@7.25.0: {}
 
