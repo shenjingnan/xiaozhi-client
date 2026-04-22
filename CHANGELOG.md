@@ -2,6 +2,16 @@
 
 本文档记录项目的所有重要变更。
 
+## [2.4.0-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.1-beta.4...v2.4.0-beta.0) (2026-04-22)
+
+### Features
+
+* **config:** 补全默认配置模板中缺失的配置字段 ([#3448](https://github.com/shenjingnan/xiaozhi-client/issues/3448)) ([2f4ad42](https://github.com/shenjingnan/xiaozhi-client/commit/2f4ad426890bde8d6fb805392d54faf3de87dd23))
+
+### Code Refactoring
+
+* **cli:** 扁平化模板目录并移除 xiaozhi create 命令 ([#3450](https://github.com/shenjingnan/xiaozhi-client/issues/3450)) ([3c04cf5](https://github.com/shenjingnan/xiaozhi-client/commit/3c04cf5a464f0582f46370ec7929b41cb1fcf0ae))
+
 ## [2.3.1-beta.4](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.1-beta.3...v2.3.1-beta.4) (2026-04-21)
 
 ### Code Refactoring
