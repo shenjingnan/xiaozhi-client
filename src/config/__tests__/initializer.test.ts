@@ -54,9 +54,11 @@ describe("ConfigInitializer 配置初始化器", () => {
 
   describe("initializeDefaultConfig 初始化默认配置", () => {
     it("当无法获取用户家目录时应抛出错误（覆盖 !homeDir 分支）", async () => {
-      // 同时清除 HOME 和 USERPROFILE
-      process.env.HOME = undefined as unknown as string | undefined;
-      process.env.USERPROFILE = undefined as unknown as string | undefined;
+      // 使用 delete 彻底清除环境变量，赋值 undefined 无法真正移除
+      // biome-ignore lint/performance/noDelete: process.env 必须用 delete 才能真正移除属性
+      delete process.env.HOME;
+      // biome-ignore lint/performance/noDelete: <same reason>
+      delete process.env.USERPROFILE;
 
       await expect(ConfigInitializer.initializeDefaultConfig()).rejects.toThrow(
         "无法获取用户家目录"
@@ -65,7 +67,8 @@ describe("ConfigInitializer 配置初始化器", () => {
 
     it("当 HOME 为空字符串时应抛出错误", async () => {
       process.env.HOME = "";
-      process.env.USERPROFILE = undefined as unknown as string | undefined;
+      // biome-ignore lint/performance/noDelete: process.env 必须用 delete 才能真正移除属性
+      delete process.env.USERPROFILE;
 
       await expect(ConfigInitializer.initializeDefaultConfig()).rejects.toThrow(
         "无法获取用户家目录"
@@ -73,7 +76,8 @@ describe("ConfigInitializer 配置初始化器", () => {
     });
 
     it("当 USERPROFILE 存在但为空时也应抛出错误", async () => {
-      process.env.HOME = undefined as unknown as string | undefined;
+      // biome-ignore lint/performance/noDelete: process.env 必须用 delete 才能真正移除属性
+      delete process.env.HOME;
       process.env.USERPROFILE = "";
 
       await expect(ConfigInitializer.initializeDefaultConfig()).rejects.toThrow(
