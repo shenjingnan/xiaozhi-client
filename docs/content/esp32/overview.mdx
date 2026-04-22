@@ -1,16 +1,18 @@
 ---
-title: "ESP32 SDK 概览"
-description: "了解 @xiaozhi-client/esp32 包的核心能力、适用场景和安装方式。"
+title: "ESP32 模块概览"
+description: "了解 ESP32 模块的核心能力、适用场景和内部使用方式。"
 ---
 
 import { Callout, Tabs } from "nextra/components";
 
-# ESP32 SDK 概览
+# ESP32 模块概览
 
-`@xiaozhi-client/esp32` 是一个独立的 npm 包，负责 **ESP32 硬件设备**的全部通信逻辑。它从 `src/server` 中抽取出来，使设备通信能力可以被任何 Node.js 项目独立使用。
+> **注意**: ESP32 模块已集成在 xiaozhi-client 单体包中，无需单独安装。本文档面向项目开发者，说明 ESP32 模块的功能和内部使用方式。
+
+ESP32 模块（位于 `src/esp32/`）负责 **ESP32 硬件设备**的全部通信逻辑。它提供设备连接管理、语音交互流水线、二进制音频协议处理等核心能力。
 
 <Callout type="info">
-  本包不绑定任何 HTTP 框架（Express、Hono、Fastify 等），通过接口注入实现解耦，可灵活集成到各类服务端项目中。
+  ESP32 模块不绑定任何 HTTP 框架（Express、Hono、Fastify 等），通过接口注入实现解耦，可灵活集成到各类服务端项目中。
 </Callout>
 
 ## 核心能力
@@ -23,7 +25,7 @@ import { Callout, Tabs } from "nextra/components";
 | **OTA 配置下发** | 设备首次连接时自动激活，返回 WebSocket 地址、服务器时间、固件信息等配置 |
 | **设备注册表** | 维护所有已注册设备的状态信息（在线/离线、最后活跃时间等） |
 
-## 与项目其他包的关系
+## 与项目其他模块的关系
 
 ```mermaid
 graph TB
@@ -31,7 +33,7 @@ graph TB
         APP[应用层<br/>HTTP Server / CLI]
     end
 
-    subgraph "@xiaozhi-client/esp32<br/>（本包）"
+    subgraph "ESP32 模块<br/>（src/esp32/）"
         MGR[ESP32DeviceManager<br/>设备编排层]
         CONN[ESP32Connection<br/>连接管理层]
         REG[DeviceRegistryService<br/>设备注册表]
@@ -41,9 +43,12 @@ graph TB
         AP[audio-protocol.ts<br/>二进制协议]
     end
 
+    subgraph "项目内部依赖"
+        CONFIG["src/config/<br/>配置管理"]
+        TYPES["src/types/<br/>共享类型"]
+    end
+
     subgraph "外部依赖"
-        CONFIG["@xiaozhi-client/config<br/>配置管理"]
-        SHARED["@xiaozhi-client/shared-types<br/>共享类型"]
         WS["ws<br/>WebSocket"]
     end
 
@@ -57,42 +62,23 @@ graph TB
     ASR -->|"获取 ASR/LLM/TTS 配置"| CONFIG
     LLM --> CONFIG
     TTS --> CONFIG
-    ASR -->|"ASRConfig, LLMConfig, TTSConfig"| SHARED
+    ASR -->|"ASRConfig, LLMConfig, TTSConfig"| TYPES
     CONN --> WS
 ```
 
 ## 适用场景
 
-- **自建小智服务端**：在自己的 Node.js 服务中集成 ESP32 设备支持
+- **自建小智服务端**：在 xiaozhi-client 项目中集成 ESP32 设备支持
 - **定制化网关**：在现有系统中添加硬件设备接入能力
-- **二次开发**：基于本包构建具有特定业务逻辑的 IoT 网关
+- **二次开发**：基于 xiaozhi-client 构建具有特定业务逻辑的 IoT 网关
 - **测试与调试**：独立使用设备通信能力进行功能验证
 
-## 安装
+## 项目内使用
 
-<Tabs items={["pnpm", "npm"]}>
-  <Tabs.Tab>
-  ```bash
-  pnpm add @xiaozhi-client/esp32
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```bash
-  npm install @xiaozhi-client/esp32
-  ```
-  </Tabs.Tab>
-</Tabs>
-
-### Peer Dependencies
-
-本包依赖以下 peer dependency，需要在使用方项目中自行安装：
-
-| 包名 | 用途 |
-|------|------|
-| `ws` | WebSocket 通信 |
+ESP32 模块已包含在 xiaozhi-client 包中，无需额外安装。你只需安装 `xiaozhi-client` 包即可使用所有功能：
 
 ```bash
-pnpm add ws
+pnpm add xiaozhi-client
 ```
 
 ## 快速体验
@@ -100,7 +86,7 @@ pnpm add ws
 最简单的使用方式——创建设备管理器并处理一次 OTA 请求：
 
 ```typescript
-import { ESP32DeviceManager } from "@xiaozhi-client/esp32";
+import { ESP32DeviceManager } from "@/esp32";
 
 // 创建设备管理器
 const manager = new ESP32DeviceManager({
@@ -131,22 +117,22 @@ console.log(otaResponse);
 
 ```typescript
 // 核心类
-import { ESP32DeviceManager } from "@xiaozhi-client/esp32";
-import { ESP32Connection } from "@xiaozhi-client/esp32";
-import { DeviceRegistryService } from "@xiaozhi-client/esp32";
+import { ESP32DeviceManager } from "@/esp32";
+import { ESP32Connection } from "@/esp32";
+import { DeviceRegistryService } from "@/esp32";
 
 // 接口
-import type { ILogger, IESP32ConfigProvider, IDeviceConnection } from "@xiaozhi-client/esp32";
+import type { ILogger, IESP32ConfigProvider, IDeviceConnection } from "@/esp32";
 
 // 类型
-import type { ESP32Device, ESP32WSMessage, ESP32OTAResponse, ... } from "@xiaozhi-client/esp32";
+import type { ESP32Device, ESP32WSMessage, ESP32OTAResponse, ... } from "@/esp32";
 
 // 音频协议工具
-import { detectAudioProtocol, parseBinaryProtocol2, encodeBinaryProtocol2, ... } from "@xiaozhi-client/esp32";
+import { detectAudioProtocol, parseBinaryProtocol2, encodeBinaryProtocol2, ... } from "@/esp32";
 
 // 工具函数
-import { extractDeviceInfo, camelToSnakeCase } from "@xiaozhi-client/esp32";
+import { extractDeviceInfo, camelToSnakeCase } from "@/esp32";
 
 // 语音服务
-import { ASRService, LLMService, TTSService } from "@xiaozhi-client/esp32";
+import { ASRService, LLMService, TTSService } from "@/esp32";
 ```

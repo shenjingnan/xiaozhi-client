@@ -1,5 +1,5 @@
 ---
-title: "ESP32 SDK 快速上手"
+title: "ESP32 模块快速上手"
 description: "5 分钟跑通 ESP32 设备连接和完整语音交互流程。"
 ---
 
@@ -7,7 +7,7 @@ import { Callout, Steps, Tabs } from "nextra/components";
 
 # 快速上手
 
-本指南将引导你在 5 分钟内完成 `@xiaozhi-client/esp32` 的基本集成，实现从设备连接到语音交互的完整流程。
+本指南将引导你在 5 分钟内完成 ESP32 模块的基本集成，实现从设备连接到语音交互的完整流程。
 
 <Callout type="info">
   **前提条件**
@@ -21,11 +21,13 @@ import { Callout, Steps, Tabs } from "nextra/components";
 
 ## 安装依赖
 
+ESP32 模块已包含在 `xiaozhi-client` 包中，安装该包即可：
+
 <Tabs items={['pnpm', 'npm']}>
   <Tabs.Tab>
   ```bash
-  # 安装 ESP32 SDK
-  pnpm add @xiaozhi-client/esp32
+  # 安装 xiaozhi-client（包含 ESP32 模块）
+  pnpm add xiaozhi-client
 
   # 安装 WebSocket 依赖（peer dependency）
   pnpm add ws
@@ -33,8 +35,8 @@ import { Callout, Steps, Tabs } from "nextra/components";
   </Tabs.Tab>
   <Tabs.Tab>
   ```bash
-  # 安装 ESP32 SDK
-  npm install @xiaozhi-client/esp32
+  # 安装 xiaozhi-client（包含 ESP32 模块）
+  npm install xiaozhi-client
 
   # 安装 WebSocket 依赖（peer dependency）
   npm install ws
@@ -44,14 +46,14 @@ import { Callout, Steps, Tabs } from "nextra/components";
 
 ## 创建设备管理器
 
-首先创建 `ESP32DeviceManager` 实例，它是整个 SDK 的核心入口：
+首先创建 `ESP32DeviceManager` 实例，它是整个 ESP32 模块的核心入口：
 
 ```typescript
-import { ESP32DeviceManager, type IESP32ConfigProvider } from "@xiaozhi-client/esp32";
+import { ESP32DeviceManager, type IESP32ConfigProvider } from "@/esp32";
 import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 
-// 1. 定义配置提供者（将 ASR/LLM/TTS 配置注入给 SDK）
+// 1. 定义配置提供者（将 ASR/LLM/TTS 配置注入给 ESP32 模块）
 const configProvider: IESP32ConfigProvider = {
   getASRConfig() {
     // 返回你的 ASR 配置，例如豆包 ASR
