@@ -1,0 +1,513 @@
+---
+title: "配置系统 - Xiaozhi Client"
+description: "配置管理系统的 API 参考文档，负责配置文件的加载、解析、验证和更新。"
+---
+
+# 配置系统
+
+配置管理系统是 xiaozhi-client 的核心组件，负责配置文件的加载、解析、验证和更新。支持 JSON、JSON5、JSONC 格式，提供单例访问和类型安全的配置操作。
+
+## 模块导出
+
+```typescript
+import {
+  ConfigManager,
+  configManager,
+  ConfigResolver,
+  ConfigInitializer
+} from "@/config/index.js";
+```
+
+## ConfigManager
+
+配置管理类，负责管理应用配置，提供只读访问和安全的配置更新功能。
+
+### 获取实例
+
+```typescript
+import { configManager } from "@/config/index.js";
+
+// 使用单例实例
+const config = configManager.getConfig();
+
+// 或通过静态方法获取
+const manager = ConfigManager.getInstance();
+```
+
+### 主要方法
+
+#### getConfig
+
+获取配置（只读）。使用缓存机制避免频繁的文件 I/O 操作。
+
+**返回值：** `Readonly<AppConfig>`
+
+**示例：**
+
+```typescript
+const config = configManager.getConfig();
+console.log("MCP 端点:", config.mcpEndpoint);
+```
+
+#### configExists
+
+检查配置文件是否存在。
+
+**返回值：** `boolean`
+
+#### initConfig
+
+初始化配置文件。从默认模板复制到目标位置。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|------|--------|------|
+| format | `"json"` \| `"json5"` \| `"jsonc"` | 否 | `"json"` | 配置文件格式 |
+
+#### getMcpEndpoints
+
+获取所有 MCP 端点。
+
+**返回值：** `string[]`
+
+**示例：**
+
+```typescript
+const endpoints = configManager.getMcpEndpoints();
+console.log("端点列表:", endpoints);
+```
+
+#### getMcpServers
+
+获取 MCP 服务配置。
+
+**返回值：** `Readonly<Record<string, MCPServerConfig>>`
+
+#### getMcpServerConfig
+
+获取 MCP 服务工具配置。
+
+**返回值：** `Readonly<Record<string, MCPServerToolsConfig>>`
+
+#### isToolEnabled
+
+检查工具是否启用。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| serverName | string | 是 | 服务名称 |
+| toolName | string | 是 | 工具名称 |
+
+**返回值：** `boolean`（默认启用）
+
+#### updateMcpEndpoint
+
+更新 MCP 端点（支持字符串或数组）。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| endpoint | string \| string[] | 是 | 新的端点配置 |
+
+#### addMcpEndpoint
+
+添加 MCP 端点。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| endpoint | string | 是 | 要添加的端点 |
+
+#### removeMcpEndpoint
+
+移除 MCP 端点。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| endpoint | string | 是 | 要移除的端点 |
+
+#### updateMcpServer
+
+更新 MCP 服务配置。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| serverName | string | 是 | 服务名称 |
+| serverConfig | MCPServerConfig | 是 | 服务配置 |
+
+#### removeMcpServer
+
+删除 MCP 服务配置。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| serverName | string | 是 | 服务名称 |
+
+#### updateServerToolsConfig
+
+更新服务工具配置。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| serverName | string | 是 | 服务名称 |
+| toolsConfig | `Record<string, MCPToolConfig>` | 是 | 工具配置 |
+
+#### setToolEnabled
+
+设置工具启用状态。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| serverName | string | 是 | 服务名称 |
+| toolName | string | 是 | 工具名称 |
+| enabled | boolean | 是 | 启用状态 |
+| description | string | 否 | 工具描述 |
+
+### 连接配置方法
+
+#### getConnectionConfig
+
+获取连接配置（包含默认值）。
+
+**返回值：** `Required<ConnectionConfig>`
+
+```typescript
+interface ConnectionConfig {
+  heartbeatInterval: number; // 心跳检测间隔（默认 30000ms）
+  heartbeatTimeout: number;  // 心跳超时时间（默认 10000ms）
+  reconnectInterval: number; // 重连间隔（默认 5000ms）
+}
+```
+
+#### setHeartbeatInterval
+
+设置心跳检测间隔。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| interval | number | 是 | 间隔时间（毫秒） |
+
+#### setHeartbeatTimeout
+
+设置心跳超时时间。
+
+#### setReconnectInterval
+
+设置重连间隔。
+
+### ModelScope 配置方法
+
+#### getModelScopeConfig
+
+获取 ModelScope 配置。
+
+**返回值：** `Readonly<ModelScopeConfig>`
+
+#### getModelScopeApiKey
+
+获取 ModelScope API Key。优先从配置文件读取，其次从环境变量读取。
+
+**返回值：** `string | undefined`
+
+#### setModelScopeApiKey
+
+设置 ModelScope API Key。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| apiKey | string | 是 | API Key |
+
+### CustomMCP 配置方法
+
+#### getCustomMCPConfig
+
+获取 customMCP 配置。
+
+**返回值：** `CustomMCPConfig | null`
+
+#### getCustomMCPTools
+
+获取 customMCP 工具列表。
+
+**返回值：** `CustomMCPTool[]`
+
+#### addCustomMCPTool
+
+添加自定义 MCP 工具。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| tool | CustomMCPTool | 是 | 工具配置 |
+
+#### addCustomMCPTools
+
+批量添加自定义 MCP 工具。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| tools | CustomMCPTool[] | 是 | 工具配置数组 |
+
+**返回值：** `Promise<void>`
+
+#### removeCustomMCPTool
+
+删除自定义 MCP 工具。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| toolName | string | 是 | 工具名称 |
+
+#### updateCustomMCPTool
+
+更新单个自定义 MCP 工具配置。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| toolName | string | 是 | 工具名称 |
+| updatedTool | CustomMCPTool | 是 | 更新后的工具配置 |
+
+### Web UI 配置方法
+
+#### getWebUIConfig
+
+获取 Web UI 配置。
+
+**返回值：** `Readonly<WebUIConfig>`
+
+#### getWebUIPort
+
+获取 Web UI 端口号。
+
+**返回值：** `number`（默认 9999）
+
+#### setWebUIPort
+
+设置 Web UI 端口号。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| port | number | 是 | 端口号（1-65535） |
+
+### 语音服务配置方法
+
+#### getTTSConfig
+
+获取 TTS 配置。
+
+**返回值：** `Readonly<TTSConfig>`
+
+#### getASRConfig
+
+获取 ASR 配置。
+
+**返回值：** `Readonly<ASRConfig>`
+
+#### getLLMConfig
+
+获取 LLM 配置。
+
+**返回值：** `LLMConfig | null`
+
+#### isLLMConfigValid
+
+检查 LLM 配置是否有效。
+
+**返回值：** `boolean`
+
+### 事件监听
+
+#### on
+
+注册事件监听器。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| eventName | string | 是 | 事件名称（如 `config:updated`） |
+| callback | `(data: unknown) => void` | 是 | 回调函数 |
+
+**示例：**
+
+```typescript
+configManager.on("config:updated", (data) => {
+  const payload = data as {
+    type: string;
+    timestamp: Date;
+    serviceName?: string;
+  };
+
+  console.log(`配置已更新，类型: ${payload.type}`);
+});
+```
+
+## 配置类型定义
+
+### AppConfig
+
+```typescript
+interface AppConfig {
+  mcpEndpoint: string | string[];     // MCP 接入点
+  mcpServers: Record<string, MCPServerConfig>; // MCP 服务配置
+  mcpServerConfig?: Record<string, MCPServerToolsConfig>; // 工具配置
+  customMCP?: CustomMCPConfig;        // CustomMCP 配置
+  connection?: ConnectionConfig;      // 连接配置
+  modelscope?: ModelScopeConfig;      // ModelScope 配置
+  webUI?: WebUIConfig;                // Web UI 配置
+  platforms?: PlatformsConfig;        // 平台配置
+  toolCallLog?: ToolCallLogConfig;    // 工具调用日志配置
+  tts?: TTSConfig;                    // TTS 配置
+  asr?: ASRConfig;                    // ASR 配置
+  llm?: LLMConfig;                    // LLM 配置
+}
+```
+
+### MCPServerConfig
+
+```typescript
+type MCPServerConfig =
+  | LocalMCPServerConfig     // 本地 MCP 服务
+  | SSEMCPServerConfig       // SSE MCP 服务
+  | HTTPMCPServerConfig;     // HTTP MCP 服务
+
+interface LocalMCPServerConfig {
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+}
+
+interface SSEMCPServerConfig {
+  type: "sse";
+  url: string;
+  headers?: Record<string, string>;
+}
+
+interface HTTPMCPServerConfig {
+  type?: "http" | "streamable-http";
+  url: string;
+  headers?: Record<string, string>;
+}
+```
+
+### CustomMCPTool
+
+```typescript
+interface CustomMCPTool {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+  handler: HandlerConfig;
+  stats?: {
+    usageCount?: number;
+    lastUsedTime?: string;
+  };
+}
+```
+
+## 配置文件位置
+
+配置文件查找优先级：
+
+1. 环境变量 `XIAOZHI_CONFIG_DIR` 指定的目录
+2. 当前工作目录
+3. 用户家目录 `~/.xiaozhi-client/`
+
+支持格式：`.json5` > `.jsonc` > `.json`
+
+## 使用示例
+
+### 基础使用
+
+```typescript
+import { configManager } from "@/config";
+
+// 获取配置
+const config = configManager.getConfig();
+
+// 获取 MCP 端点
+const endpoints = configManager.getMcpEndpoints();
+
+// 检查工具是否启用
+const isEnabled = configManager.isToolEnabled("weather-service", "get_weather");
+```
+
+### 更新配置
+
+```typescript
+// 更新端点
+configManager.updateMcpEndpoint("wss://new-endpoint.example.com/mcp");
+
+// 添加服务
+configManager.updateMcpServer("new-service", {
+  url: "http://localhost:4000/mcp",
+  type: "http"
+});
+
+// 设置工具启用状态
+configManager.setToolEnabled("weather-service", "get_weather", true);
+```
+
+### 添加 CustomMCP 工具
+
+```typescript
+configManager.addCustomMCPTool({
+  name: "my_custom_tool",
+  description: "自定义工具",
+  inputSchema: {
+    type: "object",
+    properties: {
+      param1: { type: "string" }
+    }
+  },
+  handler: {
+    type: "http",
+    url: "https://api.example.com/tool",
+    method: "POST"
+  }
+});
+```
+
+### 监听配置更新
+
+```typescript
+configManager.on("config:updated", (data) => {
+  console.log("配置已更新:", data);
+});
+```
+
+## 源码位置
+
+- `src/config/manager.ts` - ConfigManager 主类
+- `src/config/resolver.ts` - ConfigResolver 配置解析器
+- `src/config/adapter.ts` - 配置适配器
+- `src/config/initializer.ts` - 配置初始化器
+- `src/config/json5-adapter.ts` - JSON5 适配器

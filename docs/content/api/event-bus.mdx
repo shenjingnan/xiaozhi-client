@@ -1,0 +1,296 @@
+---
+title: "EventBus - Xiaozhi Client"
+description: "事件总线的 API 参考文档，提供统一的事件发布订阅机制，用于解耦各个模块之间的通信。"
+---
+
+# EventBus
+
+EventBus 是事件总线服务，提供统一的事件发布订阅机制，用于解耦各个模块之间的通信。支持配置更新、状态变更、接入点状态、服务重启、MCP 服务、工具调用等多种事件类型。
+
+## 类定义
+
+```typescript
+import { EventBus, getEventBus, destroyEventBus } from "@/server/services/event-bus.service.js";
+```
+
+## 获取实例
+
+### getEventBus
+
+获取事件总线单例实例。
+
+**返回值：** `EventBus`
+
+**示例：**
+
+```typescript
+import { getEventBus } from "@/server/services/event-bus.service.js";
+
+const eventBus = getEventBus();
+```
+
+### destroyEventBus
+
+销毁事件总线单例。
+
+**示例：**
+
+```typescript
+import { destroyEventBus } from "@/server/services/event-bus.service.js";
+
+destroyEventBus();
+```
+
+## 主要方法
+
+### emitEvent
+
+发射事件（类型安全）。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| eventName | keyof EventBusEvents | 是 | 事件名称 |
+| data | EventBusEvents[K] | 是 | 事件数据 |
+
+**返回值：** `boolean`
+
+**示例：**
+
+```typescript
+eventBus.emitEvent("mcp:service:connected", {
+  serviceName: "weather-service",
+  tools: [{ name: "get_weather", description: "获取天气" }],
+  connectionTime: new Date()
+});
+```
+
+### onEvent
+
+监听事件（类型安全）。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| eventName | keyof EventBusEvents | 是 | 事件名称 |
+| listener | `(data: EventBusEvents[K]) => void` | 是 | 监听回调函数 |
+
+**返回值：** `this`
+
+**示例：**
+
+```typescript
+eventBus.onEvent("mcp:service:connected", (data) => {
+  console.log(`服务 ${data.serviceName} 已连接`);
+  console.log(`可用工具: ${data.tools.map(t => t.name).join(", ")}`);
+});
+```
+
+### onceEvent
+
+一次性监听事件（类型安全）。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| eventName | keyof EventBusEvents | 是 | 事件名称 |
+| listener | `(data: EventBusEvents[K]) => void` | 是 | 监听回调函数 |
+
+**返回值：** `this`
+
+**说明：** 监听器只会在事件首次触发时执行一次，执行后自动移除。
+
+**示例：**
+
+```typescript
+eventBus.onceEvent("service:restart:completed", (data) => {
+  console.log(`服务 ${data.serviceName} 重启完成`);
+});
+```
+
+### offEvent
+
+移除事件监听器（类型安全）。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| eventName | keyof EventBusEvents | 是 | 事件名称 |
+| listener | `(data: EventBusEvents[K]) => void` | 是 | 要移除的监听回调函数 |
+
+**返回值：** `this`
+
+**示例：**
+
+```typescript
+const listener = (data) => {
+  console.log("配置已更新:", data);
+};
+
+eventBus.onEvent("config:updated", listener);
+
+// 后续移除监听器
+eventBus.offEvent("config:updated", listener);
+```
+
+### getEventStats
+
+获取事件统计信息。
+
+**返回值：** `Record<string, { count: number; lastEmitted: Date }>`
+
+### getListenerStats
+
+获取监听器统计信息。
+
+**返回值：** `Record<string, number>`
+
+### clearEventStats
+
+清理事件统计。
+
+### getStatus
+
+获取事件总线状态。
+
+**返回值：**
+
+```typescript
+{
+  totalEvents: number;
+  totalListeners: number;
+  eventStats: Record<string, { count: number; lastEmitted: Date }>;
+  listenerStats: Record<string, number>;
+}
+```
+
+### destroy
+
+销毁事件总线，移除所有监听器并清理统计。
+
+## 事件类型
+
+EventBus 支持以下事件类型：
+
+### 配置相关事件
+
+| 事件名 | 说明 | 数据结构 |
+|--------|------|----------|
+| `config:updated` | 配置更新 | `{ type, serviceName?, platformName?, timestamp }` |
+| `config:error` | 配置错误 | `{ error, operation }` |
+
+### 状态相关事件
+
+| 事件名 | 说明 | 数据结构 |
+|--------|------|----------|
+| `status:updated` | 状态更新 | `{ status, source }` |
+| `status:error` | 状态错误 | `{ error, operation }` |
+
+### 接入点状态事件
+
+| 事件名 | 说明 | 数据结构 |
+|--------|------|----------|
+| `endpoint:status:changed` | 接入点状态变更 | `{ endpoint, connected, operation, success, message?, timestamp, source }` |
+| `endpoint:reconnect:completed` | 接入点重连完成 | `{ trigger, serverName?, endpointCount, timestamp }` |
+| `endpoint:reconnect:failed` | 接入点重连失败 | `{ trigger, serverName?, error, timestamp }` |
+
+### 服务相关事件
+
+| 事件名 | 说明 | 数据结构 |
+|--------|------|----------|
+| `service:restart:requested` | 服务重启请求 | `{ serviceName, reason?, delay, attempt, timestamp, source? }` |
+| `service:restart:started` | 服务重启开始 | `{ serviceName, reason?, attempt, timestamp }` |
+| `service:restart:completed` | 服务重启完成 | `{ serviceName, reason?, attempt, timestamp }` |
+| `service:restart:failed` | 服务重启失败 | `{ serviceName, error, attempt, timestamp }` |
+| `service:health:changed` | 服务健康状态变更 | `{ serviceName, oldStatus, newStatus, timestamp }` |
+
+### MCP 服务相关事件
+
+| 事件名 | 说明 | 数据结构 |
+|--------|------|----------|
+| `mcp:service:connected` | MCP 服务连接成功 | `{ serviceName, tools, connectionTime }` |
+| `mcp:service:disconnected` | MCP 服务断开连接 | `{ serviceName, reason?, disconnectionTime }` |
+| `mcp:service:connection:failed` | MCP 服务连接失败 | `{ serviceName, error, attempt }` |
+| `mcp:server:added` | MCP 服务添加 | `{ serverName, config, tools, timestamp }` |
+| `mcp:server:removed` | MCP 服务移除 | `{ serverName, affectedTools, timestamp }` |
+| `mcp:server:status_changed` | MCP 服务状态变更 | `{ serverName, oldStatus, newStatus, timestamp, reason? }` |
+| `mcp:server:tools:updated` | MCP 服务工具更新 | `{ serverName, tools, addedTools, removedTools, timestamp }` |
+| `mcp:server:batch_added` | MCP 服务批量添加 | `{ totalServers, addedCount, failedCount, ... }` |
+
+### WebSocket 相关事件
+
+| 事件名 | 说明 | 数据结构 |
+|--------|------|----------|
+| `websocket:client:connected` | WebSocket 客户端连接 | `{ clientId, timestamp }` |
+| `websocket:client:disconnected` | WebSocket 客户端断开 | `{ clientId, timestamp }` |
+| `websocket:message:received` | WebSocket 消息接收 | `{ type, data, clientId }` |
+
+### NPM 安装相关事件
+
+| 事件名 | 说明 | 数据结构 |
+|--------|------|----------|
+| `npm:install:started` | NPM 安装开始 | `{ version, installId, timestamp }` |
+| `npm:install:log` | NPM 安装日志 | `{ version, installId, type, message, timestamp }` |
+| `npm:install:completed` | NPM 安装完成 | `{ version, installId, success, duration, timestamp }` |
+| `npm:install:failed` | NPM 安装失败 | `{ version, installId, error, duration, timestamp }` |
+
+## 使用示例
+
+### 监听 MCP 服务连接
+
+```typescript
+import { getEventBus } from "@/server/services/event-bus.service.js";
+
+const eventBus = getEventBus();
+
+// 监听服务连接成功
+eventBus.onEvent("mcp:service:connected", (data) => {
+  console.log(`[${data.connectionTime}] 服务 ${data.serviceName} 已连接`);
+  console.log(`加载了 ${data.tools.length} 个工具`);
+});
+
+// 监听服务断开连接
+eventBus.onEvent("mcp:service:disconnected", (data) => {
+  console.log(`服务 ${data.serviceName} 已断开，原因: ${data.reason || "未知"}`);
+});
+```
+
+### 监听配置更新
+
+```typescript
+eventBus.onEvent("config:updated", (data) => {
+  console.log(`配置已更新，类型: ${data.type}`);
+  console.log(`时间: ${data.timestamp}`);
+
+  if (data.serviceName) {
+    console.log(`服务: ${data.serviceName}`);
+  }
+});
+```
+
+### 发射自定义事件
+
+```typescript
+// 发射服务状态变更事件
+eventBus.emitEvent("service:health:changed", {
+  serviceName: "weather-service",
+  oldStatus: "healthy",
+  newStatus: "unhealthy",
+  timestamp: Date.now()
+});
+```
+
+## 最佳实践
+
+1. **使用类型安全方法**：优先使用 `emitEvent`、`onEvent`、`offEvent` 而不是原生 EventEmitter 方法
+2. **及时移除监听器**：在模块销毁时移除事件监听器，避免内存泄漏
+3. **使用 onceEvent**：对于只需要监听一次的事件，使用 `onceEvent`
+4. **错误处理**：监听器内部错误会自动发射到 `error` 事件，可以统一监听处理
+
+## 源码位置
+
+`src/server/services/event-bus.service.ts`

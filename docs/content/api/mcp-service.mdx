@@ -1,0 +1,217 @@
+---
+title: "MCPService - Xiaozhi Client"
+description: "MCP 服务连接类的 API 参考文档，负责管理单个 MCP 服务的连接和工具调用。"
+---
+
+# MCPService
+
+MCPService 是 MCP 服务连接类（向后兼容包装器），负责管理单个 MCP 服务的连接、工具管理和调用。它包装了 `mcp-core` 的 MCPConnection 类，使用 EventBus 发射事件。
+
+## 类定义
+
+```typescript
+import { MCPService } from "@/server/lib/mcp/connection.js";
+```
+
+## 构造函数
+
+### constructor
+
+创建 MCPService 实例。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| config | InternalMCPServiceConfig | 是 | 服务配置对象 |
+
+**配置结构：**
+
+```typescript
+interface InternalMCPServiceConfig {
+  name: string;           // 服务名称
+  url?: string;           // HTTP/SSE 服务 URL
+  command?: string;       // 本地服务命令
+  args?: string[];        // 命令参数
+  env?: Record<string, string>; // 环境变量
+  type?: "http" | "sse";  // 传输类型
+  headers?: Record<string, string>; // HTTP headers
+}
+```
+
+**示例：**
+
+```typescript
+const service = new MCPService({
+  name: "weather-service",
+  url: "http://localhost:3000/mcp",
+  type: "http"
+});
+```
+
+## 主要方法
+
+### connect
+
+连接到 MCP 服务。
+
+**返回值：** `Promise<void>`
+
+**示例：**
+
+```typescript
+await service.connect();
+```
+
+### disconnect
+
+断开连接。
+
+**返回值：** `Promise<void>`
+
+### callTool
+
+调用工具。
+
+**参数：**
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| name | string | 是 | 工具名称 |
+| arguments_ | `Record<string, unknown>` | 是 | 工具参数 |
+
+**返回值：** `Promise<ToolCallResult>`
+
+**示例：**
+
+```typescript
+const result = await service.callTool("get_weather", {
+  city: "北京"
+});
+```
+
+### getTools
+
+获取工具列表。
+
+**返回值：** `Tool[]`
+
+**返回值结构：**
+
+```typescript
+interface Tool {
+  name: string;           // 工具名称
+  description?: string;   // 工具描述
+  inputSchema: object;    // 输入参数 Schema
+}
+```
+
+### getConfig
+
+获取服务配置。
+
+**返回值：** 服务配置对象
+
+### getStatus
+
+获取服务状态。
+
+**返回值：**
+
+```typescript
+interface ServiceStatus {
+  connected: boolean;     // 是否已连接
+  connectionTime?: Date;  // 连接时间
+  error?: Error;          // 错误信息
+}
+```
+
+### isConnected
+
+检查是否已连接。
+
+**返回值：** `boolean`
+
+## 使用示例
+
+### 创建并连接服务
+
+```typescript
+import { MCPService } from "@/server/lib/mcp/connection.js";
+
+// 创建服务实例
+const service = new MCPService({
+  name: "my-service",
+  url: "http://localhost:3000/mcp",
+  type: "http"
+});
+
+// 连接服务
+try {
+  await service.connect();
+  console.log("服务已连接");
+
+  // 获取工具列表
+  const tools = service.getTools();
+  console.log("可用工具:", tools.map(t => t.name));
+} catch (error) {
+  console.error("连接失败:", error);
+}
+```
+
+### 调用工具
+
+```typescript
+// 检查连接状态
+if (service.isConnected()) {
+  const result = await service.callTool("some_tool", {
+    param1: "value1",
+    param2: "value2"
+  });
+
+  if (result.isError) {
+    console.error("工具调用失败:", result.content);
+  } else {
+    console.log("工具调用成功:", result.content);
+  }
+}
+```
+
+### 断开连接
+
+```typescript
+await service.disconnect();
+console.log("服务已断开");
+```
+
+## 事件发射
+
+MCPService 通过 EventBus 发射以下事件：
+
+| 事件名 | 触发时机 | 数据结构 |
+|--------|----------|----------|
+| `mcp:service:connected` | 服务连接成功 | `{ serviceName, tools, connectionTime }` |
+| `mcp:service:disconnected` | 服务断开连接 | `{ serviceName, reason?, disconnectionTime }` |
+| `mcp:service:connection:failed` | 服务连接失败 | `{ serviceName, error, attempt }` |
+
+## 与 MCPServiceManager 的关系
+
+MCPService 通常不直接使用，而是通过 MCPServiceManager 进行管理：
+
+```typescript
+import { MCPServiceManager } from "@/server/lib/mcp/manager.js";
+
+const manager = new MCPServiceManager();
+manager.addServiceConfig("my-service", { url: "..." });
+await manager.startAllServices();
+
+// 通过管理器获取服务实例
+const service = manager.getService("my-service");
+
+// 或直接调用工具
+const result = await manager.callTool("my-service__tool_name", { ... });
+```
+
+## 源码位置
+
+`src/server/lib/mcp/connection.ts`
