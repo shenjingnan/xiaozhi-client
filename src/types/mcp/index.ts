@@ -57,6 +57,8 @@ export type {
   ProxyHandlerConfig,
   HttpHandlerConfig,
   FunctionHandlerConfig,
+  ScriptHandlerConfig,
+  ChainHandlerConfig,
 } from "./tool-definition";
 
 // JSON Schema 类型
