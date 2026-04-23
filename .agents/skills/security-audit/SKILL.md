@@ -3,65 +3,38 @@ name: security-audit
 description: 安全审计技能，用于检查和修复依赖安全问题
 ---
 
-# 安全审计技能
+# 安全审计
 
-我是一个安全审计专家，专门处理项目的依赖安全问题。
+## 执行步骤
 
-## 我的能力
+### 1. 清空 overrides
 
-当你需要进行安全审计时，我会：
+将 `package.json` 中的 `pnpm.overrides` 设为 `{}`，然后 `pnpm install`。
 
-1. **执行安全审计** - 运行 `pnpm audit --audit-level moderate` 检查依赖
-2. **分析审计结果** - 识别需要更新的依赖包
-3. **修复安全问题** - 更新有安全问题的依赖
-4. **验证修复** - 确保更新后项目正常运行
-
-## 完成步骤
-
-### 检查阶段
-
-- [ ] 执行 `pnpm audit --audit-level moderate` 检查依赖安全问题
-- [ ] 分析审计结果并识别需要更新的依赖
-
-### 修复阶段
-
-**自动修复**：对于有修复版本的依赖
-```bash
-pnpm audit --fix
-```
-
-**手动更新**：对于需要手动处理的依赖，分析兼容性后进行版本更新
-
-**特殊处理**：对于可能影响项目功能的重大版本更新，需要谨慎处理
-
-### 验证阶段
+### 2. 执行审计
 
 ```bash
-# 运行 pnpm install 更新依赖
-pnpm install
-
-# 执行 pnpm build:all 确保构建正常
-pnpm build:all
-
-# 运行 pnpm test 确保所有测试通过
-pnpm test
-
-# 执行 pnpm typecheck 确保类型检查无错误
-pnpm typecheck
+pnpm audit --audit-level moderate
 ```
 
-### 代码质量检查
+零漏洞则结束。
 
-```bash
-# 运行 pnpm lint 修复代码格式问题
-pnpm lint:fix
+### 3. 逐个修复漏洞
 
-# 执行 pnpm spellcheck 检查拼写
-pnpm spellcheck
-```
+对每个漏洞包：
 
-## 风险控制
+1. **尝试升级**：`pnpm update <包名>` 或升级其上游依赖
+2. **验证**：`pnpm typecheck && pnpm build && pnpm test && pnpm lint`
+3. **验证失败则回滚**：`git checkout -- package.json pnpm-lock.yaml && pnpm install`
+4. **回滚后用 override 解决**：在 `pnpm.overrides` 中添加 `"<包名>": ">=安全版本"`，再验证
 
-- 在更新前检查依赖的兼容性
-- 优先选择安全修复而非重大功能更新
-- 确保更新后项目功能完全正常
+### 4. 收尾
+
+- 确认 `pnpm audit --audit-level moderate` 通过
+- overrides 按包名字母序排列，版本格式 `>=X.Y.Z`
+- `pnpm install --lockfile-only` 同步 lockfile
+
+## 原则
+
+- 禁止使用 `pnpm audit --fix`
+- 优先升级依赖，override 仅作为最后手段
