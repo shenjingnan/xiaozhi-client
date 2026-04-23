@@ -10,6 +10,6 @@
     "start": "npx -y serve out -p 3000"
   },
   "devDependencies": {
-    "openmanual": "v0.12.0"
+    "openmanual": "^0.15.3"
   }
 }
