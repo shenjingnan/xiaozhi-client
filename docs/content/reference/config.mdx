@@ -1,0 +1,699 @@
+---
+title: "配置文件参考 - Xiaozhi Client"
+description: "xiaozhi.config.json 配置文件的完整参考文档，包含所有配置项的详细说明和使用示例。"
+---
+
+import { Callout, Tabs } from "nextra/components";
+
+# 配置文件参考
+
+`xiaozhi.config.json` 是 xiaozhi-client 的核心配置文件，位于应用根目录下。本文档详细说明每个配置项的含义、默认值、可选值和使用方法。
+
+## 配置文件格式
+
+配置文件使用 JSON 格式，支持以下特性：
+- 标准 JSON 语法
+- 注释（JSONC/JSON5 格式，使用 `//` 或 `/* */`）
+
+<Callout type="info">
+配置文件可以通过 Web UI (`http://localhost:9999`) 或直接编辑文件进行修改。
+</Callout>
+
+## 配置项总览
+
+| 配置项 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `mcpEndpoint` | `string \| string[]` | 是 | 小智接入点地址 |
+| `mcpServers` | `Record<string, MCPServerConfig>` | 否 | MCP 服务器配置 |
+| `asr` | `ASRConfig` | 否 | ASR（语音识别）配置 |
+| `tts` | `TTSConfig` | 否 | TTS（语音合成）配置 |
+| `llm` | `LLMConfig` | 否 | LLM（大语言模型）配置 |
+| `connection` | `ConnectionConfig` | 否 | 连接参数配置 |
+| `webUI` | `WebUIConfig` | 否 | Web UI 配置 |
+| `modelscope` | `ModelScopeConfig` | 否 | 魔搭社区配置 |
+| `platforms` | `PlatformsConfig` | 否 | 平台集成配置 |
+
+## 核心配置项
+
+### mcpEndpoint
+
+小智接入点地址，用于连接小智服务端。
+
+**类型**: `string | string[]`
+**必填**: 是
+
+#### 单端点配置
+
+```json
+{
+  "mcpEndpoint": "wss://api.xiaozhi.me/mcp/endpoint-1"
+}
+```
+
+#### 多端点配置
+
+```json
+{
+  "mcpEndpoint": [
+    "wss://api.xiaozhi.me/mcp/endpoint-1",
+    "wss://api.xiaozhi.me/mcp/endpoint-2",
+    "wss://api.xiaozhi.me/mcp/endpoint-3"
+  ]
+}
+```
+
+<Callout type="info">
+多端点配置时，每个端点完全独立管理，不进行负载均衡或故障转移。应用程序可以直接访问特定端点。
+</Callout>
+
+#### 获取接入点地址
+
+访问 [小智服务端](https://xiaozhi.me/console/agents)，在设备配置中获取 MCP 接入点地址。
+
+---
+
+### mcpServers
+
+MCP 服务器配置，用于聚合多个 MCP 工具服务。支持三种传输类型：
+
+**类型**: `Record<string, MCPServerConfig>`
+**必填**: 否
+
+#### Local 类型（本地 MCP 服务）
+
+通过命令行启动的本地 MCP 服务。
+
+```json
+{
+  "mcpServers": {
+    "calculator": {
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/calculator-mcp"]
+    },
+    "datetime": {
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/datetime-mcp"],
+      "env": {
+        "CUSTOM_VAR": "value"
+      }
+    }
+  }
+}
+```
+
+**LocalMCPServerConfig 字说明**：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `command` | `string` | 是 | 启动命令 |
+| `args` | `string[]` | 是 | 命令参数 |
+| `env` | `Record<string, string>` | 否 | 环境变量 |
+
+#### SSE 类型（Server-Sent Events）
+
+通过 SSE 协议连接的远程 MCP 服务。
+
+```json
+{
+  "mcpServers": {
+    "modelscope-12306": {
+      "type": "sse",
+      "url": "https://mcp.api-inference.modelscope.net/f89ef6f3597d48/sse"
+    }
+  }
+}
+```
+
+**SSEMCPServerConfig 字段说明**：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `type` | `"sse"` | 是 | 类型标识 |
+| `url` | `string` | 是 | SSE 服务地址 |
+| `headers` | `Record<string, string>` | 否 | 自定义请求头 |
+
+#### Streamable HTTP 类型
+
+通过 HTTP 流式协议连接的远程 MCP 服务。
+
+```json
+{
+  "mcpServers": {
+    "my-http-mcp": {
+      "type": "streamable-http",
+      "url": "https://example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer token"
+      }
+    }
+  }
+}
+```
+
+**StreamableHTTPMCPServerConfig 字段说明**：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `type` | `"streamable-http"` | 否 | 类型标识（默认为 streamable-http） |
+| `url` | `string` | 是 | HTTP 服务地址 |
+| `headers` | `Record<string, string>` | 否 | 自定义请求头 |
+
+---
+
+## 语音配置
+
+### asr
+
+ASR（语音识别）配置，用于本地语音识别功能。
+
+**类型**: `ASRConfig`
+**必填**: 否（启用本地语音功能时需要）
+
+```json
+{
+  "asr": {
+    "model": "doubao",
+    "appid": "<appid>",
+    "accessToken": "<accessToken>",
+    "vadEndWindowSize": 800
+  }
+}
+```
+
+**ASRConfig 字段说明**：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `model` | `string` | 否 | ASR 模型（目前支持 `doubao`） |
+| `appid` | `string` | 是 | 应用 ID |
+| `accessToken` | `string` | 是 | 访问令牌 |
+| `cluster` | `string` | 否 | 集群类型 |
+| `wsUrl` | `string` | 否 | WebSocket 端点 |
+| `vadEndWindowSize` | `number` | 否 | VAD 端点检测窗口大小（ms） |
+
+#### vadEndWindowSize 参数
+
+VAD（Voice Activity Detection）端点检测窗口大小，用于启用服务端 VAD 判停。
+
+- **推荐值**: `800`
+- **最小值**: `200`
+- **设为 `0` 或不传**: 禁用服务端 VAD，回退到客户端静音超时
+
+<Callout type="info">
+获取豆包 ASR 凭证：访问 [豆包语音控制台](https://console.volcengine.com/speech/app) → 应用管理 → 获取 `appid` 和 `accessToken`。
+</Callout>
+
+---
+
+### tts
+
+TTS（语音合成）配置，用于本地语音合成功能。
+
+**类型**: `TTSConfig`
+**必填**: 否（启用本地语音功能时需要）
+
+```json
+{
+  "tts": {
+    "model": "doubao",
+    "appid": "<appid>",
+    "accessToken": "<accessToken>",
+    "voice_type": "zh_female_xiaohe_uranus_bigtts",
+    "encoding": "mp3"
+  }
+}
+```
+
+**TTSConfig 字段说明**：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `model` | `string` | 否 | TTS 模型（目前支持 `doubao`） |
+| `appid` | `string` | 是 | 应用 ID |
+| `accessToken` | `string` | 是 | 访问令牌 |
+| `voice_type` | `string` | 是 | 音色类型 |
+| `encoding` | `string` | 否 | 编码格式（如 `mp3`、`wav`） |
+| `cluster` | `string` | 否 | 集群类型 |
+| `endpoint` | `string` | 否 | WebSocket 端点 |
+
+#### 常用音色列表
+
+| 音色名称 | voice_type 值 |
+| --- | --- |
+| 小何湾湾 | `zh_female_xiaohe_uranus_bigtts` |
+
+<Callout type="info">
+完整音色列表请参考 [豆包语音音色列表](https://www.volcengine.com/docs/6561/1257544?lang=zh)。
+</Callout>
+
+---
+
+## LLM 配置
+
+### llm
+
+LLM（大语言模型）配置，用于本地语音互动时的 AI 响应生成。
+
+**类型**: `LLMConfig`
+**必填**: 否（启用本地语音功能时需要）
+
+```json
+{
+  "llm": {
+    "prompt": "./prompts/default.md",
+    "model": "gpt-4o-mini",
+    "apiKey": "<apiKey>",
+    "baseURL": "https://api.openai.com/v1"
+  }
+}
+```
+
+**LLMConfig 字段说明**：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `prompt` | `string` | 否 | 自定义提示词文件路径 |
+| `model` | `string` | 是 | 模型名称 |
+| `apiKey` | `string` | 是 | API 密钥 |
+| `baseURL` | `string` | 是 | API 基础地址 |
+
+#### 支持的 LLM 服务
+
+xiaozhi-client 使用 OpenAI SDK 调用 LLM，因此兼容所有支持 OpenAI API 格式的服务：
+
+<Tabs items={['OpenAI', 'Azure OpenAI', '本地模型', '其他兼容服务']}>
+  <Tabs.Tab>
+  ```json
+  {
+    "llm": {
+      "model": "gpt-4o-mini",
+      "apiKey": "sk-xxx",
+      "baseURL": "https://api.openai.com/v1"
+    }
+  }
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```json
+  {
+    "llm": {
+      "model": "gpt-4",
+      "apiKey": "azure-key",
+      "baseURL": "https://your-resource.openai.azure.com/openai/deployments/gpt-4"
+    }
+  }
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```json
+  {
+    "llm": {
+      "model": "qwen2.5:7b",
+      "apiKey": "ollama",
+      "baseURL": "http://localhost:11434/v1"
+    }
+  }
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  如：通义千问、DeepSeek、智谱 AI 等
+  ```json
+  {
+    "llm": {
+      "model": "qwen-plus",
+      "apiKey": "xxx",
+      "baseURL": "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    }
+  }
+  ```
+  </Tabs.Tab>
+</Tabs>
+
+#### 自定义提示词
+
+在 `.xiaozhi-client` 目录下创建 `prompts/default.md` 文件：
+
+```md
+我是一个叫小智的台湾女孩，说话机车，声音好听，习惯简短表达，爱用网络梗。
+我的男朋友是一个程序员，梦想是开发出一个机器人，能够帮助人们解决生活中的各种问题。
+我是一个喜欢哈哈大笑的女孩，爱东说西说吹牛，不合逻辑的也照吹，就要逗别人开心。
+```
+
+然后在配置中指定：
+
+```json
+{
+  "llm": {
+    "prompt": "./prompts/default.md",
+    "model": "gpt-4o-mini",
+    "apiKey": "sk-xxx",
+    "baseURL": "https://api.openai.com/v1"
+  }
+}
+```
+
+---
+
+## 连接配置
+
+### connection
+
+连接参数配置，控制心跳、超时和重连行为。
+
+**类型**: `ConnectionConfig`
+**必填**: 否
+
+```json
+{
+  "connection": {
+    "heartbeatInterval": 30000,
+    "heartbeatTimeout": 10000,
+    "reconnectInterval": 5000,
+    "autoReconnect": true
+  }
+}
+```
+
+**ConnectionConfig 字段说明**：
+
+| 字段 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `heartbeatInterval` | `number` | `30000` | 心跳间隔（ms） |
+| `heartbeatTimeout` | `number` | `10000` | 心跳超时（ms） |
+| `reconnectInterval` | `number` | `5000` | 重连间隔（ms） |
+| `maxReconnectAttempts` | `number` | - | 最大重连次数 |
+| `connectionTimeout` | `number` | - | 连接超时（ms） |
+| `autoReconnect` | `boolean` | `true` | 是否自动重连 |
+
+<Callout type="warning">
+心跳间隔过短可能导致服务器压力增大；过长可能导致连接状态检测不及时。建议保持默认值或根据实际网络情况调整。
+</Callout>
+
+---
+
+## Web UI 配置
+
+### webUI
+
+Web UI 配置，控制 Web 界面的端口和重启行为。
+
+**类型**: `WebUIConfig`
+**必填**: 否
+
+```json
+{
+  "webUI": {
+    "port": 9999,
+    "autoRestart": true
+  }
+}
+```
+
+**WebUIConfig 字段说明**：
+
+| 字段 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `port` | `number` | `9999` | Web UI 监听端口 |
+| `autoRestart` | `boolean` | - | 配置更改后是否自动重启服务 |
+
+---
+
+## 平台集成配置
+
+### modelscope
+
+魔搭社区配置，用于使用魔搭社区托管的 MCP 服务。
+
+**类型**: `ModelScopeConfig`
+**必填**: 否
+
+```json
+{
+  "modelscope": {
+    "apiKey": "<访问令牌>"
+  }
+}
+```
+
+**获取访问令牌**：访问 [魔搭社区](https://www.modelscope.cn/my/myaccesstoken) 获取 API Key。
+
+---
+
+### platforms
+
+平台集成配置，用于连接第三方平台（如扣子 Coze）。
+
+**类型**: `PlatformsConfig`
+**必填**: 否
+
+```json
+{
+  "platforms": {
+    "coze": {
+      "token": "<扣子凭证>"
+    }
+  }
+}
+```
+
+**获取扣子凭证**：访问 [扣子空间-API管理](https://www.coze.cn/open/oauth/sats) → 服务身份及凭证 → 添加。
+
+<Callout type="info">
+扣子工作流集成所需最小权限：团队空间管理（listWorkspace）、工作流（listWorkflow、run）。
+</Callout>
+
+---
+
+## 完整配置示例
+
+### 基本配置
+
+```json
+{
+  "mcpEndpoint": "wss://api.xiaozhi.me/mcp/endpoint-1",
+  "mcpServers": {
+    "calculator": {
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/calculator-mcp"]
+    }
+  },
+  "connection": {
+    "heartbeatInterval": 30000,
+    "heartbeatTimeout": 10000,
+    "reconnectInterval": 5000
+  },
+  "webUI": {
+    "port": 9999
+  }
+}
+```
+
+### 本地语音互动配置
+
+```json
+{
+  "mcpEndpoint": "",
+  "mcpServers": {
+    "calculator": {
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/calculator-mcp"]
+    }
+  },
+  "asr": {
+    "model": "doubao",
+    "appid": "<appid>",
+    "accessToken": "<accessToken>",
+    "vadEndWindowSize": 800
+  },
+  "tts": {
+    "model": "doubao",
+    "appid": "<appid>",
+    "accessToken": "<accessToken>",
+    "voice_type": "zh_female_xiaohe_uranus_bigtts"
+  },
+  "llm": {
+    "prompt": "./prompts/default.md",
+    "model": "gpt-4o-mini",
+    "apiKey": "<apiKey>",
+    "baseURL": "https://api.openai.com/v1"
+  },
+  "connection": {
+    "heartbeatInterval": 30000,
+    "heartbeatTimeout": 10000,
+    "reconnectInterval": 5000
+  },
+  "webUI": {
+    "port": 9999
+  }
+}
+```
+
+### 魔搭社区集成配置
+
+```json
+{
+  "mcpEndpoint": "",
+  "mcpServers": {
+    "modelscope-12306": {
+      "type": "sse",
+      "url": "https://mcp.api-inference.modelscope.net/f89ef6f3597d48/sse"
+    }
+  },
+  "modelscope": {
+    "apiKey": "<访问令牌>"
+  },
+  "asr": {
+    "model": "doubao",
+    "appid": "<appid>",
+    "accessToken": "<accessToken>"
+  },
+  "tts": {
+    "model": "doubao",
+    "appid": "<appid>",
+    "accessToken": "<accessToken>",
+    "voice_type": "zh_female_xiaohe_uranus_bigtts"
+  },
+  "llm": {
+    "prompt": "./prompts/default.md",
+    "model": "<model>",
+    "apiKey": "<apiKey>",
+    "baseURL": "<baseURL>"
+  },
+  "connection": {
+    "heartbeatInterval": 30000,
+    "heartbeatTimeout": 10000,
+    "reconnectInterval": 5000
+  },
+  "webUI": {
+    "port": 9999
+  }
+}
+```
+
+### 多端点配置
+
+```json
+{
+  "mcpEndpoint": [
+    "wss://api.xiaozhi.me/mcp/endpoint-1",
+    "wss://api.xiaozhi.me/mcp/endpoint-2",
+    "wss://api.xiaozhi.me/mcp/endpoint-3"
+  ],
+  "mcpServers": {
+    "calculator": {
+      "command": "npx",
+      "args": ["-y", "@xiaozhi-client/calculator-mcp"]
+    }
+  },
+  "connection": {
+    "heartbeatInterval": 30000,
+    "heartbeatTimeout": 10000,
+    "reconnectInterval": 5000
+  },
+  "webUI": {
+    "port": 9999
+  }
+}
+```
+
+### 扣子工作流集成配置
+
+```json
+{
+  "mcpEndpoint": "wss://api.xiaozhi.me/mcp/endpoint-1",
+  "mcpServers": {},
+  "platforms": {
+    "coze": {
+      "token": "<扣子凭证>"
+    }
+  },
+  "connection": {
+    "heartbeatInterval": 30000,
+    "heartbeatTimeout": 10000,
+    "reconnectInterval": 5000
+  },
+  "webUI": {
+    "port": 9999
+  }
+}
+```
+
+---
+
+## 配置验证
+
+### 通过 CLI 验证
+
+```bash
+# 查看服务状态
+xiaozhi status
+
+# 查看 MCP 服务列表
+xiaozhi mcp list
+
+# 查看 MCP 工具列表
+xiaozhi mcp list --tools
+```
+
+### 通过 Web UI 验证
+
+访问 `http://localhost:9999`，检查：
+- 小智接入点状态卡片是否显示连接正常
+- MCP 服务列表是否显示已配置的服务
+- 工具列表是否正确显示
+
+---
+
+## 常见问题
+
+### Q: 配置修改后如何生效？
+
+配置修改后需要重启服务：
+
+```bash
+xiaozhi stop
+xiaozhi start
+```
+
+或通过 Web UI 点击"重启服务"按钮。
+
+### Q: 如何获取小智接入点地址？
+
+访问 [小智服务端](https://xiaozhi.me/console/agents)，找到对应设备，在设备配置中获取 MCP 接入点地址。
+
+### Q: ASR/TTS 凭证在哪里获取？
+
+访问 [豆包语音控制台](https://console.volcengine.com/speech/app)：
+1. 进入应用管理界面
+2. 检查是否有 `default` 应用，如果没有则创建
+3. 点击 **豆包流式语音识别模型2.0** 获取 `appid` 和 `accessToken`
+
+### Q: 支持哪些 LLM 服务？
+
+xiaozhi-client 使用 OpenAI SDK，兼容所有支持 OpenAI API 格式的服务：
+- OpenAI（GPT-4, GPT-4o-mini 等）
+- Azure OpenAI
+- 本地模型（通过 Ollama）
+- 其他兼容服务（通义千问、DeepSeek、智谱 AI 等）
+
+### Q: 多端点配置时如何切换？
+
+多端点配置时，每个端点完全独立管理，不进行自动切换。应用程序可以直接访问特定端点。
+
+### Q: 配置文件找不到怎么办？
+
+如果配置文件不存在，可以使用以下命令创建：
+
+```bash
+xiaozhi create
+```
+
+这将创建默认配置文件和必要的目录结构。
+
+### Q: 如何查看当前使用的配置？
+
+```bash
+xiaozhi status
+```
+
+或在 Web UI 中查看全局配置页面。
