@@ -1,13 +1,13 @@
 ---
-title: "ESP32 SDK 集成指南"
-description: "学习如何在你的项目中完整集成 @xiaozhi-client/esp32，包含实际代码示例和最佳实践。"
+title: "ESP32 模块集成指南"
+description: "学习如何在项目中使用 ESP32 模块，包含实际代码示例和最佳实践。"
 ---
 
 import { Callout, Steps, Tabs } from "nextra/components";
 
 # 集成指南
 
-本文档以 `src/server`（项目的 Web 服务器）为实际案例，详细说明如何在自己的项目中完整集成 `@xiaozhi-client/esp32`。
+本文档以 `src/server`（项目的 Web 服务器）为实际案例，详细说明如何使用 ESP32 模块。
 
 <Callout type="info">
   在开始之前，建议先阅读 [快速上手](/esp32/quick-start) 了解基本概念。
@@ -15,7 +15,7 @@ import { Callout, Steps, Tabs } from "nextra/components";
 
 ## 集成模式总览
 
-集成 `@xiaozhi-client/esp32` 需要在你的 HTTP 服务中完成以下工作：
+使用 ESP32 模块需要在你的 HTTP 服务中完成以下工作：
 
 ```mermaid
 graph LR
@@ -37,35 +37,28 @@ graph LR
 
 <Steps>
 
-## 步骤 1：安装依赖与声明 peerDependencies
+## 步骤 1：确认依赖已安装
+
+ESP32 模块已包含在 `xiaozhi-client` 包中。确保你的项目已安装该包：
 
 ```bash
-# 安装 ESP32 SDK
-pnpm add @xiaozhi-client/esp32
-
-# 安装 peer dependencies
-pnpm add ws @xiaozhi-client/config
+pnpm add xiaozhi-client
 ```
 
-如果你的项目使用 pnpm workspace，还需要在 `package.json` 中声明 peerDependencies：
+同时需要安装 WebSocket 依赖（peer dependency）：
 
-```json
-{
-  "peerDependencies": {
-    "ws": "^8.x",
-    "@xiaozhi-client/config": "workspace:*"
-  }
-}
+```bash
+pnpm add ws
 ```
 
 ## 步骤 2：实现 IESP32ConfigProvider 接口
 
-`IESP32ConfigProvider` 是 SDK 与你的配置系统之间的桥梁。你需要实现以下四个方法：
+`IESP32ConfigProvider` 是 ESP32 模块与你的配置系统之间的桥梁。你需要实现以下四个方法：
 
 ```typescript
-import type { IESP32ConfigProvider } from "@xiaozhi-client/esp32";
-import type { ASRConfig, LLMConfig, TTSConfig } from "@xiaozhi-client/shared-types";
-import { configManager } from "@xiaozhi-client/config";
+import type { IESP32ConfigProvider } from "@/esp32";
+import type { ASRConfig, LLMConfig, TTSConfig } from "@/types";
+import { configManager } from "@/config";
 
 /**
  * 基于 configManager 的配置提供者实现
@@ -116,13 +109,13 @@ export const esp32ConfigProvider = new Esp32ConfigProvider();
 ```
 
 <Callout type="info">
-  以上代码来自 `src/server/WebServer.ts` 中的实际实现。如果你不使用 `@xiaozhi-client/config`，可以从任何来源返回配置对象——文件、数据库、环境变量均可。
+  以上代码来自 `src/server/WebServer.ts` 中的实际实现。如果不使用 `@/config`，可以从任何来源返回配置对象——文件、数据库、环境变量均可。
 </Callout>
 
 ## 步骤 3：创建 ESP32DeviceManager 实例
 
 ```typescript
-import { ESP32DeviceManager } from "@xiaozhi-client/esp32";
+import { ESP32DeviceManager } from "@/esp32";
 import { esp32ConfigProvider } from "./Esp32ConfigProvider";
 import { logger } from "./Logger"; // 你的日志实现
 
@@ -139,13 +132,13 @@ const esp32Manager = new ESP32DeviceManager({
 
 ## 步骤 4：处理 OTA HTTP 请求（薄适配层模式）
 
-ESP32 设备上电后的第一个动作是向 OTA 接口发送 HTTP POST 请求。你需要一个**薄适配层**将 HTTP 请求转化为 SDK 方法调用：
+ESP32 设备上电后的第一个动作是向 OTA 接口发送 HTTP POST 请求。你需要一个**薄适配层**将 HTTP 请求转化为 ESP32 模块方法调用：
 
 ```typescript
 // src/server/handlers/esp32.handler.ts（简化版）
 import type { Context } from "hono";
-import type { ESP32DeviceManager, ESP32DeviceReport } from "@xiaozhi-client/esp32";
-import { ESP32ErrorCode } from "@xiaozhi-client/esp32";
+import type { ESP32DeviceManager, ESP32DeviceReport } from "@/esp32";
+import { ESP32ErrorCode } from "@/esp32";
 
 export class ESP32Handler {
   constructor(private esp32Manager: ESP32DeviceManager) {}
@@ -217,12 +210,12 @@ export class ESP32Handler {
 ```
 
 <Callout type="info">
-  **薄适配层模式**：Handler 本身不做业务逻辑，只负责从 HTTP 请求中提取参数，然后委托给 `ESP32DeviceManager` 处理。这样 SDK 的核心逻辑完全独立于 HTTP 框架。
+  **薄适配层模式**：Handler 本身不做业务逻辑，只负责从 HTTP 请求中提取参数，然后委托给 `ESP32DeviceManager` 处理。这样 ESP32 模块的核心逻辑完全独立于 HTTP 框架。
 </Callout>
 
 ## 步骤 5：处理 WebSocket 连接升级
 
-设备获取到 WebSocket URL 后会发起 WebSocket 连接。你需要在 WebSocket 服务器的 `connection` 事件中将连接委托给 SDK：
+设备获取到 WebSocket URL 后会发起 WebSocket 连接。你需要在 WebSocket 服务器的 `connection` 事件中将连接委托给 ESP32 模块：
 
 ```typescript
 // 在你的 HTTP 服务器启动代码中
@@ -271,7 +264,7 @@ wss.on("connection", (ws: WebSocket, req) => {
 
 ## 步骤 6：生命周期管理（destroy）
 
-当你的服务关闭时，必须调用 `destroy()` 方法清理 SDK 占用的资源：
+当你的服务关闭时，必须调用 `destroy()` 方法清理 ESP32 模块占用的资源：
 
 ```typescript
 class MyServer {

@@ -1,13 +1,13 @@
 ---
-title: "ESP32 SDK 架构设计"
-description: "深入理解 @xiaozhi-client/esp32 的架构分层、核心模块设计和关键设计决策。"
+title: "ESP32 模块架构设计"
+description: "深入理解 ESP32 模块的架构分层、核心模块设计和关键设计决策。"
 ---
 
 import { Callout, Tabs } from "nextra/components";
 
 # 架构设计
 
-本文档深入介绍 `@xiaozhi-client/esp32` 的内部架构设计，适合需要理解设计原理的贡献者和深度集成者。
+本文档深入介绍 ESP32 模块的内部架构设计，适合需要理解设计原理的贡献者和深度集成者。
 
 ## 整体架构分层
 
@@ -65,7 +65,7 @@ graph TB
 
 ### ESP32DeviceManager — 设备编排层
 
-**文件**: `packages/esp32/src/esp32-manager.ts`
+**文件**: `src/esp32/esp32-manager.ts`
 
 这是 SDK 的**核心入口类**，负责协调所有子模块的工作：
 
@@ -85,7 +85,7 @@ graph TB
 
 ### ESP32Connection — 连接管理层
 
-**文件**: `packages/esp32/src/connection.ts`
+**文件**: `src/esp32/connection.ts`
 
 管理**单个设备**的 WebSocket 连接生命周期：
 
@@ -101,7 +101,7 @@ graph TB
 
 ### DeviceRegistryService — 设备注册表
 
-**文件**: `packages/esp32/src/device-registry.ts`
+**文件**: `src/esp32/device-registry.ts`
 
 维护所有已注册 ESP32 设备的状态信息：
 
@@ -112,7 +112,7 @@ graph TB
 
 ### ASRService — 语音识别服务
 
-**文件**: `packages/esp32/src/services/asr.service.ts`
+**文件**: `src/esp32/services/asr.service.ts`
 
 负责将设备上传的 Opus 音频数据转换为文本：
 
@@ -123,7 +123,7 @@ graph TB
 
 ### LLMService — 大语言模型服务
 
-**文件**: `packages/esp32/src/services/llm.service.ts`
+**文件**: `src/esp32/services/llm.service.ts`
 
 将 ASR 识别出的文本发送给大语言模型获取回复：
 
@@ -133,7 +133,7 @@ graph TB
 
 ### TTSService — 语音合成服务
 
-**文件**: `packages/esp32/src/services/tts.service.ts`
+**文件**: `src/esp32/services/tts.service.ts`
 
 将 LLM 的文本回复合成为 Opus 音频并发送给设备：
 
@@ -144,7 +144,7 @@ graph TB
 
 ### audio-protocol.ts — 二进制协议编解码
 
-**文件**: `packages/esp32/src/audio-protocol.ts`
+**文件**: `src/esp32/audio-protocol.ts`
 
 处理固件上传的二进制音频数据的编解码：
 
