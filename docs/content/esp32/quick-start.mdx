@@ -3,8 +3,6 @@ title: "ESP32 SDK 快速上手"
 description: "5 分钟跑通 ESP32 设备连接和完整语音交互流程。"
 ---
 
-import { Callout, Steps, Tabs } from "nextra/components";
-
 # 快速上手
 
 本指南将引导你在 5 分钟内完成 `@xiaozhi-client/esp32` 的基本集成，实现从设备连接到语音交互的完整流程。
@@ -22,7 +20,7 @@ import { Callout, Steps, Tabs } from "nextra/components";
 ## 安装依赖
 
 <Tabs items={['pnpm', 'npm']}>
-  <Tabs.Tab>
+  <Tab>
   ```bash
   # 安装 ESP32 SDK
   pnpm add @xiaozhi-client/esp32
@@ -30,8 +28,8 @@ import { Callout, Steps, Tabs } from "nextra/components";
   # 安装 WebSocket 依赖（peer dependency）
   pnpm add ws
   ```
-  </Tabs.Tab>
-  <Tabs.Tab>
+  </Tab>
+  <Tab>
   ```bash
   # 安装 ESP32 SDK
   npm install @xiaozhi-client/esp32
@@ -39,7 +37,7 @@ import { Callout, Steps, Tabs } from "nextra/components";
   # 安装 WebSocket 依赖（peer dependency）
   npm install ws
   ```
-  </Tabs.Tab>
+  </Tab>
 </Tabs>
 
 ## 创建设备管理器

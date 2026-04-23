@@ -3,8 +3,6 @@ title: "快速上手 - Xiaozhi Client"
 description: "快速入门指南将会向你展示最快速的安装、配置、启动方式。"
 ---
 
-import { Callout, Steps, Tabs } from "nextra/components";
-
 # 快速上手
 
 快速入门指南将会向你展示最快速的安装、配置、启动方式。
@@ -29,7 +27,7 @@ import { Callout, Steps, Tabs } from "nextra/components";
     以下为 node:24 + pnpm 的安装方式
 
     <Tabs items={['macos / linux', 'windows']}>
-      <Tabs.Tab>
+      <Tab>
         ```bash
         # 下载并安装 nvm:
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
@@ -49,9 +47,9 @@ import { Callout, Steps, Tabs } from "nextra/components";
         # 验证 pnpm 版本:
         pnpm -v
         ```
-      </Tabs.Tab>
+      </Tab>
 
-      <Tabs.Tab>
+      <Tab>
         ```bash
         # 下载并安装 Chocolatey:
         powershell -c "irm https://community.chocolatey.org/install.ps1|iex"
@@ -68,26 +66,26 @@ import { Callout, Steps, Tabs } from "nextra/components";
         # 验证 pnpm 版本:
         pnpm -v
         ```
-    </Tabs.Tab>
+    </Tab>
     </Tabs>
 
 ## 安装 xiaozhi-client 命令行工具
     <Tabs items={['pnpm', 'npm']}>
-    <Tabs.Tab>
+    <Tab>
     ```bash
     pnpm install -g xiaozhi-client
     ```
-    </Tabs.Tab>
-    <Tabs.Tab>
+    </Tab>
+    <Tab>
     ```bash
     npm install -g xiaozhi-client
     ```
-    </Tabs.Tab>
+    </Tab>
     </Tabs>
 
 ## 创建应用
     <Tabs items={['pnpm', 'npm']}>
-    <Tabs.Tab>
+    <Tab>
     ```bash
     # 创建应用
     xiaozhi create my-app
@@ -98,13 +96,13 @@ import { Callout, Steps, Tabs } from "nextra/components";
     # 安装依赖
     pnpm install
     ```
-    </Tabs.Tab>
-    <Tabs.Tab>
+    </Tab>
+    <Tab>
     ```bash
     # 创建应用
     xiaozhi create my-app
     ```
-    </Tabs.Tab>
+    </Tab>
     </Tabs>
 
 ## 设置小智接入点

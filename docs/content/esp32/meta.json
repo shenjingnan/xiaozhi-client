@@ -1,0 +1,11 @@
+{
+  "title": "Esp32",
+  "pages": [
+    "architecture",
+    "audio-protocol",
+    "integration",
+    "overview",
+    "quick-start",
+    "websocket"
+  ]
+}

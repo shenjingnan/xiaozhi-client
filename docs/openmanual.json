@@ -1,0 +1,122 @@
+{
+  "name": "Xiaozhi Client",
+  "description": "",
+  "contentDir": "content",
+  "outputDir": "out",
+  "favicon": "/favicon.svg",
+  "siteUrl": "https://xiaozhi-client.shenjingnan.com",
+  "locale": "zh",
+  "navbar": {
+    "logo": {
+      "light": "/logo.svg",
+      "dark": "/logo-dark.svg"
+    },
+    "github": "https://github.com/shenjingnan/xiaozhi-client"
+  },
+  "sidebar": [
+    {
+      "group": "入门",
+      "collapsed": false,
+      "pages": [
+        {
+          "slug": "index",
+          "title": "介绍"
+        },
+        {
+          "slug": "quickstart",
+          "title": "快速上手"
+        }
+      ]
+    },
+    {
+      "group": "使用指南",
+      "collapsed": false,
+      "pages": [
+        {
+          "slug": "usage/as-mcp",
+          "title": "作为 MCP 使用"
+        },
+        {
+          "slug": "usage/multi-endpoint",
+          "title": "多端点配置"
+        },
+        {
+          "slug": "usage/docker",
+          "title": "Docker 部署"
+        },
+        {
+          "slug": "usage/modelscope",
+          "title": "ModelScope 使用"
+        },
+        {
+          "slug": "usage/coze-workflow",
+          "title": "Coze 工作流"
+        },
+        {
+          "slug": "usage/local-voice",
+          "title": "本地语音"
+        }
+      ]
+    },
+    {
+      "group": "ESP32 开发",
+      "collapsed": false,
+      "pages": [
+        {
+          "slug": "esp32/overview",
+          "title": "概述"
+        },
+        {
+          "slug": "esp32/quick-start",
+          "title": "快速开始"
+        },
+        {
+          "slug": "esp32/architecture",
+          "title": "架构"
+        },
+        {
+          "slug": "esp32/integration",
+          "title": "集成"
+        },
+        {
+          "slug": "esp32/audio-protocol",
+          "title": "音频协议"
+        },
+        {
+          "slug": "esp32/websocket",
+          "title": "WebSocket"
+        }
+      ]
+    },
+    {
+      "group": "参考文档",
+      "collapsed": true,
+      "pages": [
+        {
+          "slug": "reference/command",
+          "title": "命令参考"
+        }
+      ]
+    },
+    {
+      "group": "贡献指南",
+      "collapsed": true,
+      "pages": [
+        {
+          "slug": "contribution/unified-response-format",
+          "title": "统一响应格式"
+        }
+      ]
+    }
+  ],
+  "theme": {
+    "primaryHue": 240,
+    "darkMode": true
+  },
+  "search": {
+    "enabled": true
+  },
+  "mdx": {
+    "latex": true
+  }
+}
