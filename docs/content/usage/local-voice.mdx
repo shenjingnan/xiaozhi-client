@@ -1,4 +1,6 @@
-import { ImageZoom, Steps, Tabs, Callout } from "nextra/components";
+---
+title: 使用本地语音互动
+---
 
 # 使用本地语音互动
 
@@ -16,21 +18,21 @@ xiaozhi-client 目前已支持 ASR - LLM - TTS 的本地语音互动，你可以
 
 另外，你也可以访问 [ffmpeg 下载页面](https://www.ffmpeg.org/download.html) 手动下载安装包进行安装。
 <Tabs items={['MacOS', 'Linux', 'Windows']}>
-  <Tabs.Tab>
+  <Tab>
   ```bash
   brew install ffmpeg
   ```
-  </Tabs.Tab>
-  <Tabs.Tab>
+  </Tab>
+  <Tab>
   ```bash
   sudo apt install ffmpeg
   ```
-  </Tabs.Tab>
-  <Tabs.Tab>
+  </Tab>
+  <Tab>
   ```bash
   choco install ffmpeg
   ```
-  </Tabs.Tab>
+  </Tab>
 </Tabs>
 
 ## 配置语音功能
@@ -42,11 +44,11 @@ xiaozhi-client 目前已支持 ASR - LLM - TTS 的本地语音互动，你可以
 首先打开 [豆包语音](https://console.volcengine.com/speech/app) 控制台 进入 应用管理 界面
 
 这里可以检查下，是否已经有一个名为 default 的默认应用，如果有的话，什么都不用做。如果没有应用的话需要自己手动创建一下
-<ImageZoom style={{ margin: '10px 0'}} src="/images/config-asr-doubao/1-create-app.png" alt="第一步：打开豆包语音控制台 进入 应用管理 界面" />
+<img style={{ margin: '10px 0'}} src="/images/config-asr-doubao/1-create-app.png" alt="第一步：打开豆包语音控制台 进入 应用管理 界面" />
 
 然后在菜单中点击 **豆包流式语音识别模型2.0**
 获取对应的 `appid` 和 `accessToken`
-<ImageZoom style={{ margin: '10px 0'}} src="/images/config-asr-doubao/2-get-appid-and-access-token.png" alt="获取对应的 `appid` 和 `accessToken`" />
+<img style={{ margin: '10px 0'}} src="/images/config-asr-doubao/2-get-appid-and-access-token.png" alt="获取对应的 `appid` 和 `accessToken`" />
 
 然后将获取到的配置填入到 `xiaozhi.config.json` 中
 
@@ -150,21 +152,21 @@ TTS 的配置方式和 ASR 服务类似，还是以 豆包TTS服务 举例
 我们首先要获取当前电脑的IP地址
 
 <Tabs items={['MacOS', 'Linux', 'Windows']}>
-  <Tabs.Tab>
+  <Tab>
   ```bash
   ipconfig getifaddr en0
   ```
-  </Tabs.Tab>
-  <Tabs.Tab>
+  </Tab>
+  <Tab>
   ```bash
   hostname -I
   ```
-  </Tabs.Tab>
-  <Tabs.Tab>
+  </Tab>
+  <Tab>
   ```bash
   Get-NetIPAddress
   ```
-  </Tabs.Tab>
+  </Tab>
 </Tabs>
 
 ### 调整固件代码
@@ -182,10 +184,10 @@ idf.py menuconfig
 ```
 
 在菜单中选择 `Xiaozhi Assistant` 这个菜单项，然后按下 `Enter` 键进入配置菜单
-<ImageZoom style={{ margin: '10px 0'}} src="/images/change-ota-config-url/1-select-menu-xiaozhi-assistant.png" alt="在菜单中选择 `Xiaozhi Assistant` 这个菜单项，然后按下 `Enter` 键进入配置菜单" />
+<img style={{ margin: '10px 0'}} src="/images/change-ota-config-url/1-select-menu-xiaozhi-assistant.png" alt="在菜单中选择 `Xiaozhi Assistant` 这个菜单项，然后按下 `Enter` 键进入配置菜单" />
 
 然后选择 `OTA Config URL` 这个选项，然后按下 `Enter` 键进入配置菜单，输入 `http://<你的IP地址>:9999/xiaozhi/ota/`
-<ImageZoom style={{ margin: '10px 0'}} src="/images/change-ota-config-url/2-change-ota-url.png" alt="修改 OTA Config URL" />
+<img style={{ margin: '10px 0'}} src="/images/change-ota-config-url/2-change-ota-url.png" alt="修改 OTA Config URL" />
 
 然后按 S 保存，再按 Q 退出
 

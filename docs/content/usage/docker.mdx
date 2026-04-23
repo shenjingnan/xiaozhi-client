@@ -3,8 +3,6 @@ title: "使用 Docker 部署 - Xiaozhi Client"
 description: "使用 Docker 或 Docker Compose 快速部署 xiaozhi-client 服务。"
 ---
 
-import { Tabs, Tab, Steps, Callout } from "nextra/components";
-
 # 使用 Docker 部署
 
 <Callout type="info">
@@ -24,17 +22,17 @@ import { Tabs, Tab, Steps, Callout } from "nextra/components";
 
 
 <Tabs items={['github', 'gitee']}>
-  <Tabs.Tab>
+  <Tab>
   ```bash
   # 下载脚本
   curl -fsSL https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker/scripts/start.sh | bash
   ```
-  </Tabs.Tab>
-  <Tabs.Tab>
+  </Tab>
+  <Tab>
  ```bash
  curl -fsSL https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker/scripts/start.sh | bash
  ```
-  </Tabs.Tab>
+  </Tab>
 </Tabs>
 
 ### 方式二：使用 Docker Compose
@@ -42,16 +40,16 @@ import { Tabs, Tab, Steps, Callout } from "nextra/components";
 <Steps>
   ## 获取 docker-compose.yml
 <Tabs items={['github', 'gitee']}>
-  <Tabs.Tab>
+  <Tab>
   ```bash
       curl -O https://raw.githubusercontent.com/shenjingnan/xiaozhi-client/main/docker/docker-compose.yml
   ```
-  </Tabs.Tab>
-  <Tabs.Tab>
+  </Tab>
+  <Tab>
 ```bash
       curl -O https://gitee.com/shenjingnan/xiaozhi-client/raw/main/docker/docker-compose.yml
 ```
-  </Tabs.Tab>
+  </Tab>
 </Tabs>
 
 ## 启动服务
