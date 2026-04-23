@@ -3,7 +3,7 @@ title: "使用 Docker 部署 - Xiaozhi Client"
 description: "使用 Docker 或 Docker Compose 快速部署 xiaozhi-client 服务。"
 ---
 
-import { Tabs, Tab, Steps, Callout } from "nextra/components";
+import { Tabs, Tab, Steps, Callout, ImageZoom } from "nextra/components";
 
 # 使用 Docker 部署
 
@@ -91,8 +91,35 @@ import { Tabs, Tab, Steps, Callout } from "nextra/components";
     如果你是在单独的设备部署容器，请确保你的电脑和单独的容器设备在同一个局域网，然后打开对应IP地址：http://\{容器IP\}:9999
 
 ## 配置小智接入点
-  TODO
+  在 Web UI 界面中，点击侧边栏的 **全局配置** 菜单
+
+  <ImageZoom style={{ margin: '10px 0'}} src="/images/use-multi-xiaozhi-mcp-endpoints/step-1.png" alt="点击小智接入点状态卡片右下角的配置按钮" />
+
+  <Callout type="info">获取小智官方服务端的接入点可以直接点击右侧的 **打开小智服务端** 按钮</Callout>
+
+  <ImageZoom style={{ margin: '10px 0'}} src="/images/use-multi-xiaozhi-mcp-endpoints/step-2.png" alt="点击添加小智服务端接入点按钮" />
+
+  在弹窗中填入你的接入点地址，然后点击 **确定** 按钮
+
+  <ImageZoom style={{ margin: '10px 0'}} src="/images/use-multi-xiaozhi-mcp-endpoints/step-3.png" alt="在添加接入点弹窗中填入接入点并点击确定" />
 
 ## 重启服务
-  TODO
+  配置完成后，需要重启服务才能生效
+
+  使用以下命令重启 Docker 容器：
+
+  <Tabs items={['Docker Compose（推荐）', 'Docker 命令']}>
+    <Tabs.Tab>
+    ```bash
+    docker-compose restart
+    ```
+    </Tabs.Tab>
+    <Tabs.Tab>
+    ```bash
+    docker restart xiaozhi-client
+    ```
+    </Tabs.Tab>
+  </Tabs>
+
+  <Callout type="info">重启完成后（约 5-10 秒），请重新打开 Web UI 界面验证配置是否生效</Callout>
 </Steps>
