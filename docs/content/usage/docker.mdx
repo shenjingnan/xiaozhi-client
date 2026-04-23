@@ -91,8 +91,38 @@ import { Tabs, Tab, Steps, Callout } from "nextra/components";
     如果你是在单独的设备部署容器，请确保你的电脑和单独的容器设备在同一个局域网，然后打开对应IP地址：http://\{容器IP\}:9999
 
 ## 配置小智接入点
-  TODO
+
+1. 在管理界面中，找到并点击"接入点管理"按钮
+2. 在弹出的对话框中，点击"添加接入点"按钮
+3. 输入小智服务端提供的接入点地址：
+   - 格式：`wss://api.xiaozhi.me/mcp/?token=YOUR_TOKEN`
+   - 或：`ws://your-server:port/mcp`
+4. 点击"确认"保存接入点配置
+5. 等待连接状态显示为"已连接"（绿色图标）
+
+<Callout type="warning">
+  **注意**：接入点地址必须以 `ws://` 或 `wss://` 开头，否则会被认为格式无效。
+</Callout>
 
 ## 重启服务
-  TODO
+
+配置更改后，可以通过以下两种方式重启服务：
+
+### 方式一：通过 Web UI 重启（推荐）
+
+1. 在管理界面中，找到并点击"重启服务"按钮
+2. 确认重启操作
+3. 等待服务重启完成（按钮会显示"重启中..."状态）
+
+### 方式二：通过 Docker 命令重启
+
+```bash
+# 使用 docker-compose
+docker-compose restart
+
+# 或使用 docker 命令
+docker restart xiaozhi-client
+```
+
+重启后，访问 http://localhost:9999 查看服务状态。
 </Steps>
