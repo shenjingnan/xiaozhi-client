@@ -1,11 +1,11 @@
 {
   "name": "Xiaozhi Client",
-  "description": "",
+  "description": "Xiaozhi Client 文档 — MCP 聚合工具使用指南",
   "contentDir": "content",
   "outputDir": "out",
+  "locale": "zh",
   "favicon": "/favicon.svg",
   "siteUrl": "https://xiaozhi-client.shenjingnan.com",
-  "locale": "zh",
   "navbar": {
     "logo": {
       "light": "/logo.svg",
@@ -55,36 +55,6 @@
         {
           "slug": "usage/local-voice",
           "title": "本地语音"
-        }
-      ]
-    },
-    {
-      "group": "ESP32 开发",
-      "collapsed": false,
-      "pages": [
-        {
-          "slug": "esp32/overview",
-          "title": "概述"
-        },
-        {
-          "slug": "esp32/quick-start",
-          "title": "快速开始"
-        },
-        {
-          "slug": "esp32/architecture",
-          "title": "架构"
-        },
-        {
-          "slug": "esp32/integration",
-          "title": "集成"
-        },
-        {
-          "slug": "esp32/audio-protocol",
-          "title": "音频协议"
-        },
-        {
-          "slug": "esp32/websocket",
-          "title": "WebSocket"
         }
       ]
     },

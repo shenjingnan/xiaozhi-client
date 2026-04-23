@@ -2,7 +2,6 @@
   "name": "docs",
   "version": "1.0.0",
   "type": "module",
-  "description": "Univoice documentation",
   "scripts": {
     "dev": "openmanual dev",
     "build": "openmanual build",
@@ -10,6 +9,6 @@
     "start": "npx -y serve out -p 3000"
   },
   "devDependencies": {
-    "openmanual": "^0.15.3"
+    "openmanual": "^0.16.1"
   }
 }
