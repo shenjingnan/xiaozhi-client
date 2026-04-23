@@ -78,7 +78,6 @@
     "eventsource": "^4.0.0",
     "express": "^5.1.0",
     "hono": "^4.12.7",
-    "list": "link:../../../Library/pnpm/global/5/node_modules/list",
     "node-cache": "^5.1.2",
     "openai": "^6.24.0",
     "ora": "^8.2.0",

@@ -103,9 +103,6 @@ importers:
       hono:
         specifier: '>=4.12.12'
         version: 4.12.12
-      list:
-        specifier: link:../../../Library/pnpm/global/5/node_modules/list
-        version: link:../../../Library/pnpm/global/5/node_modules/list
       node-cache:
         specifier: ^5.1.2
         version: 5.1.2
