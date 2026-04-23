@@ -127,7 +127,7 @@
       "cspell --no-must-find-files --no-progress"
     ]
   },
-  "packageManager": "pnpm@10.13.1",
+  "packageManager": "pnpm@10.30.3",
   "pnpm": {
     "overrides": {
       "tar": ">=7.5.11",
