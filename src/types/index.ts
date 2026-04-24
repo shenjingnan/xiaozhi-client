@@ -32,21 +32,28 @@ export type { ToolType, MCPToolData } from "./api";
 
 // 配置相关类型
 export type {
+  // MCP 服务配置
+  HTTPMCPServerConfig,
   LocalMCPServerConfig,
-  MCPToolConfig,
-  MCPServerToolsConfig,
-  ConnectionConfig,
-  AppConfig,
-  ModelScopeConfig,
-  WebUIConfig,
-  PlatformsConfig,
-  PlatformConfig,
   MCPServerConfig,
+  MCPServerToolsConfig,
+  MCPToolConfig,
   SSEMCPServerConfig,
+  // 向后兼容别名
   StreamableHTTPMCPServerConfig,
+  // 应用主配置
+  AppConfig,
+  ConnectionConfig,
+  // 子系统配置
   ASRConfig,
-  TTSConfig,
+  CozePlatformConfig,
   LLMConfig,
+  ModelScopeConfig,
+  PlatformConfig,
+  PlatformsConfig,
+  ToolCallLogConfig,
+  TTSConfig,
+  WebUIConfig,
 } from "./config";
 
 // 前端相关类型

@@ -39,122 +39,55 @@ import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import dayjs from "dayjs";
+import type {
+  ASRConfig,
+  AppConfig as BaseAppConfig,
+  ConnectionConfig,
+  CozePlatformConfig,
+  LLMConfig,
+  MCPServerConfig,
+  MCPServerToolsConfig,
+  MCPToolConfig,
+  ModelScopeConfig,
+  PlatformConfig,
+  TTSConfig,
+  ToolCallLogConfig,
+  WebUIConfig,
+} from "../types";
 import { ConfigResolver } from "./resolver.js";
+
+// 内部使用的完整 AppConfig（扩展了 customMCP 字段）
+export interface AppConfig extends BaseAppConfig {
+  customMCP?: CustomMCPConfig;
+}
 
 // 在 ESM 中，需要从 import.meta.url 获取当前文件目录
 // 迁移后：src/config/manager.ts → __dirname = src/config/
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// 默认连接配置
+// 默认连接配置（完整版，包含所有字段）
 const DEFAULT_CONNECTION_CONFIG: Required<ConnectionConfig> = {
   heartbeatInterval: 30000, // 30秒心跳间隔
   heartbeatTimeout: 10000, // 10秒心跳超时
   reconnectInterval: 5000, // 5秒重连间隔
+  maxReconnectAttempts: 5, // 最大重连次数
+  connectionTimeout: 30000, // 连接超时时间（毫秒）
+  autoReconnect: true, // 是否启用自动重连
 };
 
-// 配置文件接口定义
-// 本地 MCP 服务配置
-export interface LocalMCPServerConfig {
-  command: string;
-  args: string[];
-  env?: Record<string, string>;
-}
-
-// SSE MCP 服务配置
-export interface SSEMCPServerConfig {
-  type: "sse";
-  url: string;
-  headers?: Record<string, string>;
-}
-
-// HTTP MCP 服务配置
-export interface HTTPMCPServerConfig {
-  type?: "http" | "streamable-http"; // 可选，默认就是 http
-  url: string;
-  headers?: Record<string, string>;
-}
-
-// 向后兼容的别名
-/** @deprecated 使用 HTTPMCPServerConfig 代替 */
-export type StreamableHTTPMCPServerConfig = HTTPMCPServerConfig;
-
-// 统一的 MCP 服务配置
-export type MCPServerConfig =
-  | LocalMCPServerConfig
-  | SSEMCPServerConfig
-  | HTTPMCPServerConfig;
-
-export interface MCPToolConfig {
-  description?: string;
-  enable: boolean;
-  usageCount?: number; // 工具使用次数
-  lastUsedTime?: string; // 最后使用时间（ISO 8601 格式）
-}
-
-export interface MCPServerToolsConfig {
-  tools: Record<string, MCPToolConfig>;
-}
-
-export interface ConnectionConfig {
-  heartbeatInterval?: number; // 心跳检测间隔（毫秒），默认30000
-  heartbeatTimeout?: number; // 心跳超时时间（毫秒），默认10000
-  reconnectInterval?: number; // 重连间隔（毫秒），默认5000
-}
-
-export interface ModelScopeConfig {
-  apiKey?: string; // ModelScope API 密钥
-}
-
-export interface WebUIConfig {
-  port?: number; // Web UI 端口号，默认 9999
-  autoRestart?: boolean; // 是否在配置更新后自动重启服务，默认 true
-}
-
-// 工具调用日志配置接口
-// TTS 配置接口
-export interface TTSConfig {
-  appid?: string; // 应用 ID
-  accessToken?: string; // 访问令牌
-  voice_type?: string; // 声音类型
-  encoding?: string; // 编码格式（默认 wav）
-  cluster?: string; // 集群类型
-  endpoint?: string; // WebSocket 端点
-}
-
-// ASR 配置接口
-export interface ASRConfig {
-  appid?: string; // 应用 ID
-  accessToken?: string; // 访问令牌
-  cluster?: string; // 集群类型（默认：volcengine_streaming_common）
-  wsUrl?: string; // WebSocket 端点
-}
-
-// LLM 配置接口
-export interface LLMConfig {
-  model: string; // 模型名称
-  apiKey: string; // API 密钥
-  baseURL: string; // API 基础地址
-  prompt?: string; // 自定义系统提示词（支持纯字符串或文件路径）
-}
-
-export interface ToolCallLogConfig {
-  maxRecords?: number; // 最大记录条数，默认 100
-  logFilePath?: string; // 自定义日志文件路径（可选）
-}
-
-// CustomMCP 相关接口定义
+// ==================== CustomMCP 工具处理器配置类型 ====================
+// 注意：这些类型是配置管理器内部使用的工具处理器配置结构，
+// 与 src/types/mcp/tool-definition.ts 中的类型保持同步
 
 // 代理处理器配置
 export interface ProxyHandlerConfig {
   type: "proxy";
   platform: "coze" | "openai" | "anthropic" | "custom";
   config: {
-    // Coze 平台配置
     workflow_id?: string;
     bot_id?: string;
     api_key?: string;
     base_url?: string;
-    // 通用配置
     timeout?: number;
     retry_count?: number;
     retry_delay?: number;
@@ -180,9 +113,9 @@ export interface HttpHandlerConfig {
     api_key?: string;
     api_key_header?: string;
   };
-  body_template?: string; // 支持模板变量替换
+  body_template?: string;
   response_mapping?: {
-    success_path?: string; // JSONPath 表达式
+    success_path?: string;
     error_path?: string;
     data_path?: string;
   };
@@ -191,27 +124,27 @@ export interface HttpHandlerConfig {
 // 函数处理器配置
 export interface FunctionHandlerConfig {
   type: "function";
-  module: string; // 模块路径
-  function: string; // 函数名
+  module: string;
+  function: string;
   timeout?: number;
-  context?: Record<string, unknown>; // 函数执行上下文
+  context?: Record<string, unknown>;
 }
 
 // 脚本处理器配置
 export interface ScriptHandlerConfig {
   type: "script";
-  script: string; // 脚本内容或文件路径
+  script: string;
   interpreter?: "node" | "python" | "bash";
   timeout?: number;
-  env?: Record<string, string>; // 环境变量
+  env?: Record<string, string>;
 }
 
 // 链式处理器配置
 export interface ChainHandlerConfig {
   type: "chain";
-  tools: string[]; // 要链式调用的工具名称
-  mode: "sequential" | "parallel"; // 执行模式
-  error_handling: "stop" | "continue" | "retry"; // 错误处理策略
+  tools: string[];
+  mode: "sequential" | "parallel";
+  error_handling: "stop" | "continue" | "retry";
 }
 
 // MCP 处理器配置（用于同步的工具）
@@ -223,6 +156,7 @@ export interface MCPHandlerConfig {
   };
 }
 
+// 统一的处理器配置联合类型
 export type HandlerConfig =
   | ProxyHandlerConfig
   | HttpHandlerConfig
@@ -232,19 +166,14 @@ export type HandlerConfig =
   | MCPHandlerConfig;
 
 // CustomMCP 工具接口
-// TODO: 注意：此定义应与 @/types 中的 CustomMCPToolConfig 保持一致
-// 未来将迁移到从 shared-types 导入
 export interface CustomMCPTool {
-  // 确保必填字段
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
   handler: HandlerConfig;
-
-  // 使用统计信息（可选）
   stats?: {
-    usageCount?: number; // 工具使用次数
-    lastUsedTime?: string; // 最后使用时间（ISO 8601格式）
+    usageCount?: number;
+    lastUsedTime?: string;
   };
 }
 
@@ -256,37 +185,6 @@ export interface CustomMCPConfig {
 // Web 服务器实例接口（用于配置更新通知）
 export interface WebServerInstance {
   broadcastConfigUpdate(config: AppConfig): void;
-}
-
-export interface PlatformsConfig {
-  [platformName: string]: PlatformConfig;
-}
-
-export interface PlatformConfig {
-  token?: string;
-}
-
-/**
- * 扣子平台配置接口
- */
-export interface CozePlatformConfig extends PlatformConfig {
-  /** 扣子 API Token */
-  token: string;
-}
-
-export interface AppConfig {
-  mcpEndpoint: string | string[];
-  mcpServers: Record<string, MCPServerConfig>;
-  mcpServerConfig?: Record<string, MCPServerToolsConfig>;
-  customMCP?: CustomMCPConfig; // 新增 customMCP 配置支持
-  connection?: ConnectionConfig; // 连接配置（可选，用于向后兼容）
-  modelscope?: ModelScopeConfig; // ModelScope 配置（可选）
-  webUI?: WebUIConfig; // Web UI 配置（可选）
-  platforms?: PlatformsConfig; // 平台配置（可选）
-  toolCallLog?: ToolCallLogConfig; // 工具调用日志配置（可选）
-  tts?: TTSConfig; // TTS 配置（可选）
-  asr?: ASRConfig; // ASR 配置（可选）
-  llm?: LLMConfig; // LLM 配置（可选）
 }
 
 /**
@@ -1042,6 +940,15 @@ export class ConfigManager {
       reconnectInterval:
         connectionConfig.reconnectInterval ??
         DEFAULT_CONNECTION_CONFIG.reconnectInterval,
+      maxReconnectAttempts:
+        connectionConfig.maxReconnectAttempts ??
+        DEFAULT_CONNECTION_CONFIG.maxReconnectAttempts,
+      connectionTimeout:
+        connectionConfig.connectionTimeout ??
+        DEFAULT_CONNECTION_CONFIG.connectionTimeout,
+      autoReconnect:
+        connectionConfig.autoReconnect ??
+        DEFAULT_CONNECTION_CONFIG.autoReconnect,
     };
   }
 
