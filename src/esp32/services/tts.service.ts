@@ -227,7 +227,12 @@ export class TTSService implements ITTSService {
         `[TTSService] 缓冲区排空检查: deviceId=${deviceId}, buffer=${buffer?.length}, isProcessing=${isProcessing}`
       );
       if ((!buffer || buffer.length === 0) && !isProcessing) {
-        this.sendStopAndCleanup(deviceId);
+        void this.sendStopAndCleanup(deviceId).catch((error) => {
+          this.logger.error(
+            `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
+            error
+          );
+        });
         return true;
       }
 
