@@ -23,10 +23,55 @@
  */
 
 // =========================
-// 导出
+// 运行时导出
 // =========================
 
-export * from "./manager.js";
-export * from "./adapter.js";
-export * from "./resolver.js";
-export * from "./initializer.js";
+export { configManager, ConfigManager } from "./manager.js";
+export {
+  getConfigTypeDescription,
+  normalizeServiceConfig,
+  normalizeServiceConfigBatch,
+  isModelScopeURL,
+} from "./adapter.js";
+export { ConfigResolver } from "./resolver.js";
+export { ConfigInitializer } from "./initializer.js";
+
+// CustomMCP 工具处理器配置类型（定义在 manager.ts 中，不在 types/config 中）
+export type {
+  AppConfig,
+  ChainHandlerConfig,
+  CustomMCPConfig,
+  CustomMCPTool,
+  FunctionHandlerConfig,
+  HandlerConfig,
+  HttpHandlerConfig,
+  MCPHandlerConfig,
+  ProxyHandlerConfig,
+  ScriptHandlerConfig,
+  WebServerInstance,
+} from "./manager.js";
+
+// =========================
+// 类型导出：从唯一权威源 re-export
+// 确保 @/config 与 @/types 导出的类型完全一致
+// =========================
+
+export type {
+  ASRConfig,
+  ConnectionConfig,
+  CozePlatformConfig,
+  HTTPMCPServerConfig,
+  LLMConfig,
+  LocalMCPServerConfig,
+  MCPToolConfig,
+  MCPServerConfig,
+  MCPServerToolsConfig,
+  ModelScopeConfig,
+  PlatformConfig,
+  PlatformsConfig,
+  SSEMCPServerConfig,
+  StreamableHTTPMCPServerConfig,
+  ToolCallLogConfig,
+  TTSConfig,
+  WebUIConfig,
+} from "../types";

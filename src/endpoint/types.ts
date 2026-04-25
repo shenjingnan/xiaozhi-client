@@ -5,11 +5,29 @@
  * - 工具调用相关类型（ToolCallResult、ToolCallParams 等）
  * - JSON Schema 类型定义
  * - 工具信息类型（EnhancedToolInfo 等）
- * - MCP 服务配置类型
+ * - MCP 服务配置类型（从 @/types/config 导入并 re-export）
  * - 连接状态类型
  *
  * @module types
  */
+
+import type {
+  HTTPMCPServerConfig,
+  LocalMCPServerConfig,
+  MCPServerConfig,
+  SSEMCPServerConfig,
+} from "../types";
+
+// 向后兼容：re-export MCP 服务配置类型
+export type {
+  HTTPMCPServerConfig,
+  LocalMCPServerConfig,
+  MCPServerConfig,
+  SSEMCPServerConfig,
+};
+
+/** @deprecated 使用 HTTPMCPServerConfig 代替 */
+export type StreamableHTTPMCPServerConfig = HTTPMCPServerConfig;
 
 // =========================
 // 1. 工具调用相关类型
@@ -248,53 +266,6 @@ export interface ReconnectResult {
 // =========================
 // 7. 新 API 配置类型
 // =========================
-
-/**
- * MCP 服务器配置类型
- * 支持三种配置方式：
- * 1. 本地命令 (stdio): { command: string; args: string[]; env?: Record<string, string> }
- * 2. SSE: { type: "sse"; url: string; headers?: Record<string, string> }
- * 3. HTTP: { type?: "http"; url: string; headers?: Record<string, string> }
- *
- * 向后兼容：自动将 streamable-http/streamable_http/streamableHttp 转换为 http
- */
-export type MCPServerConfig =
-  | LocalMCPServerConfig
-  | SSEMCPServerConfig
-  | HTTPMCPServerConfig;
-
-/**
- * 本地 MCP 服务器配置
- */
-export interface LocalMCPServerConfig {
-  command: string;
-  args: string[];
-  env?: Record<string, string>;
-}
-
-/**
- * SSE MCP 服务器配置
- */
-export interface SSEMCPServerConfig {
-  type: "sse";
-  url: string;
-  headers?: Record<string, string>;
-}
-
-/**
- * HTTP MCP 服务器配置
- * 使用 type: "http"
- * 向后兼容 streamable-http 写法
- */
-export interface HTTPMCPServerConfig {
-  type?: "http" | "streamable-http"; // 可选，默认就是 http
-  url: string;
-  headers?: Record<string, string>;
-}
-
-// 向后兼容的别名
-/** @deprecated 使用 HTTPMCPServerConfig 代替 */
-export type StreamableHTTPMCPServerConfig = HTTPMCPServerConfig;
 
 /**
  * Endpoint 配置接口

@@ -32,14 +32,18 @@ export interface SSEMCPServerConfig {
 }
 
 /**
- * 可流式 HTTP MCP 服务器配置
+ * HTTP MCP 服务器配置
+ * 支持 type: "http" 和 type: "streamable-http" 两种模式
  */
-export interface StreamableHTTPMCPServerConfig {
-  type?: "streamable-http"; // 可选，因为默认就是 streamable-http
+export interface HTTPMCPServerConfig {
+  type?: "http" | "streamable-http"; // 可选，默认就是 http
   url: string;
   /** 请求头 */
   headers?: Record<string, string>;
 }
+
+/** @deprecated 使用 HTTPMCPServerConfig 代替 */
+export type StreamableHTTPMCPServerConfig = HTTPMCPServerConfig;
 
 /**
  * MCP 服务器配置联合类型
@@ -47,7 +51,7 @@ export interface StreamableHTTPMCPServerConfig {
 export type MCPServerConfig =
   | LocalMCPServerConfig
   | SSEMCPServerConfig
-  | StreamableHTTPMCPServerConfig;
+  | HTTPMCPServerConfig;
 
 /**
  * MCP 工具配置
@@ -83,6 +87,8 @@ export interface AppConfig {
   tts?: TTSConfig;
   /** LLM（大语言模型）配置 */
   llm?: LLMConfig;
+  /** 工具调用日志配置 */
+  toolCallLog?: ToolCallLogConfig;
 }
 
 /**
@@ -162,4 +168,23 @@ export interface LLMConfig {
   baseURL: string;
   /** 自定义系统提示词 */
   prompt?: string;
+}
+
+/**
+ * 工具调用日志配置接口
+ */
+export interface ToolCallLogConfig {
+  /** 最大记录条数，默认 100 */
+  maxRecords?: number;
+  /** 自定义日志文件路径（可选） */
+  logFilePath?: string;
+}
+
+/**
+ * 扣子平台配置接口
+ * 扩展自 PlatformConfig，要求 token 必填
+ */
+export interface CozePlatformConfig extends PlatformConfig {
+  /** 扣子 API Token（必填） */
+  token: string;
 }
