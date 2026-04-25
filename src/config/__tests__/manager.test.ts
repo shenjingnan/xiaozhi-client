@@ -1032,7 +1032,8 @@ describe("ConfigManager > ModelScope 配置", () => {
 
   it("getModelScopeApiKey() 都没有时应返回 undefined", () => {
     setupMockConfig(MINIMAL_VALID_CONFIG);
-    process.env.MODELSCOPE_API_TOKEN = undefined;
+    // biome-ignore lint/performance/noDelete: process.env 必须用 delete 才能真正移除属性
+    delete process.env.MODELSCOPE_API_TOKEN;
     const manager = createManager();
 
     expect(manager.getModelScopeApiKey()).toBeUndefined();
