@@ -14,6 +14,10 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import type { ClientStatus } from "../../types";
+import {
+  createSetErrorAction,
+  createSetLoadingAction,
+} from "./utils/loading-state-utils";
 
 /**
  * 重启状态接口
@@ -286,25 +290,8 @@ export const useStatusStore = create<StatusStore>()(
         );
       },
 
-      setLoading: (loading: Partial<StatusLoadingState>) => {
-        set(
-          (state) => ({
-            loading: { ...state.loading, ...loading },
-          }),
-          false,
-          "setLoading"
-        );
-      },
-
-      setError: (error: Error | null) => {
-        set(
-          (state) => ({
-            loading: { ...state.loading, lastError: error },
-          }),
-          false,
-          "setError"
-        );
-      },
+      setLoading: createSetLoadingAction<StatusStore>(set),
+      setError: createSetErrorAction<StatusStore>(set),
 
       // ==================== 异步操作 ====================
 
