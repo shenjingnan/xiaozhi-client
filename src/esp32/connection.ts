@@ -81,6 +81,19 @@ export class ESP32Connection implements IDeviceConnection {
   /** 日志器 */
   private readonly logger: ILogger;
 
+  /** 绑定的 WebSocket 监听器（用于清理） */
+  private boundHandlers: {
+    message: ((data: Buffer) => Promise<void>) | null;
+    close: (() => void) | null;
+    error: ((error: Error) => void) | null;
+    pong: (() => void) | null;
+  } = {
+    message: null,
+    close: null,
+    error: null,
+    pong: null,
+  };
+
   /**
    * 构造函数
    * @param deviceId - 设备 ID
@@ -129,24 +142,28 @@ export class ESP32Connection implements IDeviceConnection {
    * 设置 WebSocket 事件监听
    */
   private setupWebSocket(): void {
-    this.ws.on("message", async (data: Buffer) => {
+    // 保存绑定的监听器引用，以便后续清理
+    this.boundHandlers.message = async (data: Buffer) => {
       await this.handleMessage(data);
-    });
-
-    this.ws.on("close", () => {
+    };
+    this.boundHandlers.close = () => {
       this.logger.debug(`WebSocket连接关闭: deviceId=${this.deviceId}`);
       this.state = "disconnected";
       this.config.onClose();
-    });
-
-    this.ws.on("error", (error: Error) => {
+    };
+    this.boundHandlers.error = (error: Error) => {
       this.logger.error(`WebSocket连接错误: deviceId=${this.deviceId}`, error);
       this.config.onError(error);
-    });
-
-    this.ws.on("pong", () => {
+    };
+    this.boundHandlers.pong = () => {
       this.updateActivity();
-    });
+    };
+
+    // 注册监听器
+    this.ws.on("message", this.boundHandlers.message);
+    this.ws.on("close", this.boundHandlers.close);
+    this.ws.on("error", this.boundHandlers.error);
+    this.ws.on("pong", this.boundHandlers.pong);
   }
 
   /**
@@ -450,6 +467,24 @@ export class ESP32Connection implements IDeviceConnection {
     }
 
     this.logger.info(`关闭连接: deviceId=${this.deviceId}`);
+
+    // 移除 setupWebSocket() 注册的所有监听器
+    if (this.boundHandlers.message) {
+      this.ws.removeListener("message", this.boundHandlers.message);
+      this.boundHandlers.message = null;
+    }
+    if (this.boundHandlers.close) {
+      this.ws.removeListener("close", this.boundHandlers.close);
+      this.boundHandlers.close = null;
+    }
+    if (this.boundHandlers.error) {
+      this.ws.removeListener("error", this.boundHandlers.error);
+      this.boundHandlers.error = null;
+    }
+    if (this.boundHandlers.pong) {
+      this.ws.removeListener("pong", this.boundHandlers.pong);
+      this.boundHandlers.pong = null;
+    }
 
     // 如果连接已断开，直接返回
     if (
