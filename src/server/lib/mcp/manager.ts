@@ -5,10 +5,10 @@
  */
 
 import { EventEmitter } from "node:events";
+import { isModelScopeURL } from "@/config";
+import type { MCPToolConfig } from "@/config";
+import { configManager } from "@/config";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { isModelScopeURL } from "../../../config/index.js";
-import type { MCPToolConfig } from "../../../config/index.js";
-import { configManager } from "../../../config/index.js";
 import { logger } from "../../Logger.js";
 import { MCPService } from "../../lib/mcp";
 import { MCPCacheManager } from "../../lib/mcp";
