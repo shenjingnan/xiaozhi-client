@@ -1,6 +1,11 @@
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
+
+// 读取根目录 package.json 获取版本号
+const rootPkgPath = resolve(__dirname, "../package.json");
+const pkg = JSON.parse(readFileSync(rootPkgPath, "utf-8"));
 
 export default defineConfig({
   plugins: [react()],
@@ -28,8 +33,8 @@ export default defineConfig({
   },
   // 顶层 define 用于替换全局常量（Vitest 3.x 使用 oxc 而非 esbuild）
   define: {
-    __VERSION__: JSON.stringify("2.3.0-beta.6"),
-    __APP_NAME__: JSON.stringify("xiaozhi-client"),
+    __VERSION__: JSON.stringify(pkg.version),
+    __APP_NAME__: JSON.stringify(pkg.name),
   },
   resolve: {
     alias: {
