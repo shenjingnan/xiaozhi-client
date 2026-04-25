@@ -4,6 +4,52 @@ import { vi } from "vitest";
 const isBrowserEnvironment =
   typeof window !== "undefined" && typeof document !== "undefined";
 
+/**
+ * 清理 Radix UI 创建的 DOM 元素和样式
+ * 在 beforeEach 和 afterEach 中都需要调用以确保测试隔离
+ */
+function cleanupRadixUIElements(): void {
+  try {
+    const elementsToRemove = document.querySelectorAll("*");
+    for (const el of elementsToRemove) {
+      if (
+        el.getAttribute("role") === "dialog" ||
+        el.hasAttribute("data-radix-focus-guard") ||
+        el.hasAttribute("aria-hidden") ||
+        el.getAttribute("data-state") === "open" ||
+        (el.classList.contains("fixed") && el.classList.contains("inset-0"))
+      ) {
+        el.remove();
+      }
+      if (el.hasAttribute("data-scroll-locked")) {
+        el.removeAttribute("data-scroll-locked");
+      }
+      if (el.hasAttribute("data-aria-hidden")) {
+        el.removeAttribute("data-aria-hidden");
+      }
+      if (el.hasAttribute("aria-hidden")) {
+        el.removeAttribute("aria-hidden");
+      }
+      if (el instanceof HTMLElement) {
+        if (el.style.pointerEvents === "none") {
+          el.style.pointerEvents = "auto";
+        }
+        if (el.style.position === "fixed") {
+          el.style.position = "";
+        }
+        if (el.style.opacity === "0") {
+          el.style.opacity = "";
+        }
+        if (el.style.visibility === "hidden") {
+          el.style.visibility = "visible";
+        }
+      }
+    }
+  } catch {
+    // Ignore errors during cleanup
+  }
+}
+
 if (isBrowserEnvironment) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require("@testing-library/jest-dom");
@@ -198,89 +244,17 @@ beforeEach(() => {
     ?.setAttribute("data-testid", "test-modal-root");
 
   // Aggressively clean up any radix dialogs, portals, or focus guards
-  try {
-    const elementsToRemove = document.querySelectorAll("*");
-    for (const el of elementsToRemove) {
-      if (
-        el.getAttribute("role") === "dialog" ||
-        el.hasAttribute("data-radix-focus-guard") ||
-        el.hasAttribute("aria-hidden") ||
-        el.getAttribute("data-state") === "open" ||
-        (el.classList.contains("fixed") && el.classList.contains("inset-0"))
-      ) {
-        el.remove();
-      }
-      if (el.hasAttribute("data-scroll-locked")) {
-        el.removeAttribute("data-scroll-locked");
-      }
-      if (el.hasAttribute("data-aria-hidden")) {
-        el.removeAttribute("data-aria-hidden");
-      }
-      if (el.hasAttribute("aria-hidden")) {
-        el.removeAttribute("aria-hidden");
-      }
-      if (el instanceof HTMLElement) {
-        if (el.style.pointerEvents === "none") {
-          el.style.pointerEvents = "auto";
-        }
-        if (el.style.position === "fixed") {
-          el.style.position = "";
-        }
-        if (el.style.opacity === "0") {
-          el.style.opacity = "";
-        }
-        if (el.style.visibility === "hidden") {
-          el.style.visibility = "visible";
-        }
-      }
-    }
-  } catch {
-    // Ignore errors during cleanup
-  }
+  cleanupRadixUIElements();
 });
 
 afterEach(() => {
   if (!isBrowserEnvironment) return;
 
   // Clean up all dynamically created elements after each test
-  try {
-    const elementsToRemove = document.querySelectorAll("*");
-    for (const el of elementsToRemove) {
-      if (
-        el.getAttribute("role") === "dialog" ||
-        el.hasAttribute("data-radix-focus-guard") ||
-        el.hasAttribute("aria-hidden") ||
-        el.getAttribute("data-state") === "open" ||
-        (el.classList.contains("fixed") && el.classList.contains("inset-0"))
-      ) {
-        el.remove();
-      }
-      if (el.hasAttribute("data-scroll-locked")) {
-        el.removeAttribute("data-scroll-locked");
-      }
-      if (el.hasAttribute("data-aria-hidden")) {
-        el.removeAttribute("data-aria-hidden");
-      }
-      if (el.hasAttribute("aria-hidden")) {
-        el.removeAttribute("aria-hidden");
-      }
-      if (el instanceof HTMLElement) {
-        if (el.style.pointerEvents === "none") {
-          el.style.pointerEvents = "auto";
-        }
-        if (el.style.position === "fixed") {
-          el.style.position = "";
-        }
-        if (el.style.opacity === "0") {
-          el.style.opacity = "";
-        }
-        if (el.style.visibility === "hidden") {
-          el.style.visibility = "visible";
-        }
-      }
-    }
+  cleanupRadixUIElements();
 
-    // Reset body state after each test
+  // Reset body state after each test
+  try {
     if (document.body?.attributes) {
       while (document.body.attributes.length > 0) {
         document.body.removeAttribute(document.body.attributes[0].name);
