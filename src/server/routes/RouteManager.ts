@@ -116,12 +116,12 @@ export class RouteManager {
       }
     };
 
-    // 使用 switch-case 避免 Hono 4.11.4 的类型推断问题
-    // 注意：Hono 4.11.4 对展开中间件数组的类型推断更加严格，需要使用类型断言
+    // 使用 switch-case 避免 Hono 4.12.7 的类型推断问题
+    // 注意：Hono 4.12.7 对展开中间件数组的类型推断更加严格，需要使用 @ts-expect-error
     switch (method) {
       case "GET":
         if (middleware.length > 0) {
-          // @ts-expect-error Hono 4.11.4 类型系统限制：展开中间件数组时无法正确推断类型
+          // @ts-expect-error Hono 4.12.7 类型系统限制：展开中间件数组时无法正确推断类型
           app.get(path, ...middleware, wrappedHandler);
         } else {
           app.get(path, wrappedHandler);
@@ -129,7 +129,7 @@ export class RouteManager {
         break;
       case "POST":
         if (middleware.length > 0) {
-          // @ts-expect-error Hono 4.11.4 类型系统限制：展开中间件数组时无法正确推断类型
+          // @ts-expect-error Hono 4.12.7 类型系统限制：展开中间件数组时无法正确推断类型
           app.post(path, ...middleware, wrappedHandler);
         } else {
           app.post(path, wrappedHandler);
@@ -137,7 +137,7 @@ export class RouteManager {
         break;
       case "PUT":
         if (middleware.length > 0) {
-          // @ts-expect-error Hono 4.11.4 类型系统限制：展开中间件数组时无法正确推断类型
+          // @ts-expect-error Hono 4.12.7 类型系统限制：展开中间件数组时无法正确推断类型
           app.put(path, ...middleware, wrappedHandler);
         } else {
           app.put(path, wrappedHandler);
@@ -145,7 +145,7 @@ export class RouteManager {
         break;
       case "DELETE":
         if (middleware.length > 0) {
-          // @ts-expect-error Hono 4.11.4 类型系统限制：展开中间件数组时无法正确推断类型
+          // @ts-expect-error Hono 4.12.7 类型系统限制：展开中间件数组时无法正确推断类型
           app.delete(path, ...middleware, wrappedHandler);
         } else {
           app.delete(path, wrappedHandler);
@@ -153,7 +153,7 @@ export class RouteManager {
         break;
       case "PATCH":
         if (middleware.length > 0) {
-          // @ts-expect-error Hono 4.11.4 类型系统限制：展开中间件数组时无法正确推断类型
+          // @ts-expect-error Hono 4.12.7 类型系统限制：展开中间件数组时无法正确推断类型
           app.patch(path, ...middleware, wrappedHandler);
         } else {
           app.patch(path, wrappedHandler);
