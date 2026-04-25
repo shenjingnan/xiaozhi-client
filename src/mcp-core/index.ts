@@ -12,7 +12,10 @@
 export type {
   // 配置相关
   MCPServiceConfig,
+  InternalMCPServiceConfig,
+  LegacyMCPServiceConfig,
   ModelScopeSSEOptions,
+  HeartbeatConfig,
   UnifiedServerConfig,
   // 状态相关
   MCPServiceStatus,
@@ -22,6 +25,7 @@ export type {
   // 工具相关
   ToolInfo,
   EnhancedToolInfo,
+  ToolStatusFilter,
   ToolCallResult,
   ToolCallParams,
   ValidatedToolCallParams,
@@ -30,8 +34,12 @@ export type {
   JSONSchema,
   // 传输相关
   MCPServerTransport,
+  MCPTransportTypeInput,
+  MCPTransportTypeString,
   // 事件相关
   MCPServiceEventCallbacks,
+  // 向后兼容性别名
+  ServiceStatus,
 } from "./types.js";
 
 // =========================

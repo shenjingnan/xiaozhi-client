@@ -29,10 +29,41 @@
  * const result = await manager.callTool('tool-name', { param: 'value' });
  * ```
  */
-export * from "../../lib/mcp/manager.js";
-export * from "../../lib/mcp/connection.js";
+
+// =========================
+// 从 manager.ts 导出（server 本地实现）
+// =========================
+
+export { MCPServiceManager } from "../../lib/mcp/manager.js";
+
+// =========================
+// 从 connection.ts 导出
+// =========================
+
+export { MCPService } from "../../lib/mcp/connection.js";
+
+// =========================
+// 从 types.ts 导出（选择性重新导出 + 自定义类型）
+// =========================
+
 export * from "../../lib/mcp/types.js";
-export * from "../../lib/mcp/utils.js";
+
+// =========================
+// 从 utils.ts 导出（server 本地实现）
+// 注意：inferTransportTypeFromUrl, inferTransportTypeFromConfig, validateToolCallParams
+// 在 mcp-core 中也有定义，这里导出 server 版本
+// =========================
+
+export {
+  inferTransportTypeFromUrl,
+  inferTransportTypeFromConfig,
+  validateToolCallParams,
+} from "../../lib/mcp/utils.js";
+
+// =========================
+// 其他模块导出
+// =========================
+
 export * from "./message.js";
 export * from "../../lib/mcp/cache.js";
 export * from "./custom.js";
