@@ -179,6 +179,17 @@ export interface ESP32OTAResponse {
   serverTime?: ESP32ServerTime;
   /** 固件信息（可选） */
   firmware?: ESP32FirmwareInfo;
+  /** 音频参数（告知硬件端采样率等音频配置） */
+  audioParams?: {
+    /** 音频格式 */
+    format: "opus" | "pcm";
+    /** 采样率（Hz） */
+    sampleRate: number;
+    /** 声道数 */
+    channels: number;
+    /** 帧时长（毫秒） */
+    frameDuration: number;
+  };
 }
 
 /**

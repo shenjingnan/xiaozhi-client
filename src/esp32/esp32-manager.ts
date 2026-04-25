@@ -331,6 +331,13 @@ export class ESP32DeviceManager {
         url: this.options.firmwareUrl,
         force: this.options.forceUpdate,
       },
+      // 音频参数：告知硬件端 TTS 下发和播放使用的采样率
+      audioParams: {
+        format: "opus",
+        sampleRate: 24000,
+        channels: 1,
+        frameDuration: 60,
+      },
     };
 
     // 转换为下划线命名后返回

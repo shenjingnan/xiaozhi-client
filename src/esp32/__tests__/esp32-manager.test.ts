@@ -156,6 +156,14 @@ describe("ESP32DeviceManager", () => {
         .server_time as unknown as Record<string, unknown>;
       expect(Number(serverTime.timestamp)).toBeGreaterThan(0);
       expect(typeof serverTime.timezone_offset).toBe("number");
+
+      // 验证 audioParams 经 camelToSnakeCase 转换后存在且值正确
+      expect(response).toHaveProperty("audio_params");
+      const audioParams = response.audio_params as Record<string, unknown>;
+      expect(audioParams.format).toBe("opus");
+      expect(audioParams.sample_rate).toBe(24000);
+      expect(audioParams.channels).toBe(1);
+      expect(audioParams.frame_duration).toBe(60);
     });
 
     it("新设备自动注册", async () => {
