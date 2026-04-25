@@ -10,10 +10,10 @@
  */
 
 import { apiClient } from "@/services/api";
+import type { ClientStatus } from "@/types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
-import type { ClientStatus } from "../../types";
 
 /**
  * 重启状态接口

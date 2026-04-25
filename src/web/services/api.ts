@@ -15,7 +15,7 @@ import type {
   MCPServerListResponse,
   MCPServerStatus,
   VoicesResponse,
-} from "../../types";
+} from "@/types";
 
 /**
  * CustomMCPTool 接口定义
