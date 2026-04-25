@@ -718,48 +718,11 @@ export class WebServer {
         `检测到 MCP 服务添加: ${eventData.serverName}，工具数量: ${eventData.tools.length}`
       );
 
-      if (!this.endpointManager) {
-        this.logger.warn("EndpointManager 未初始化，跳过重连");
-        return;
-      }
-
-      try {
-        // 获取当前连接的端点数量
-        const connectionStatuses = this.endpointManager.getConnectionStatus();
-        const connectedEndpointCount = connectionStatuses.filter(
-          (status) => status.connected
-        ).length;
-
-        if (connectedEndpointCount === 0) {
-          this.logger.debug("当前没有已连接的端点，跳过重连");
-          return;
-        }
-
-        this.logger.info(`开始重连 ${connectedEndpointCount} 个接入点...`);
-
-        // 重连所有端点
-        await this.endpointManager.reconnect();
-
-        this.logger.info("接入点重连成功，新服务工具已同步");
-
-        // 发送重连完成事件
-        this.eventBus.emitEvent("endpoint:reconnect:completed", {
-          trigger: "mcp_server_added",
-          serverName: eventData.serverName,
-          endpointCount: connectedEndpointCount,
-          timestamp: Date.now(),
-        });
-      } catch (error) {
-        this.logger.error("接入点重连失败:", error);
-
-        // 发送重连失败事件
-        this.eventBus.emitEvent("endpoint:reconnect:failed", {
-          trigger: "mcp_server_added",
-          serverName: eventData.serverName,
-          error: error instanceof Error ? error.message : String(error),
-          timestamp: Date.now(),
-        });
-      }
+      await this.executeEndpointReconnect(
+        "mcp_server_added",
+        eventData.serverName,
+        "新服务工具已同步"
+      );
     };
 
     this.eventBus.onEvent("mcp:server:added", singleServerListener);
@@ -777,47 +740,15 @@ export class WebServer {
         `检测到批量 MCP 服务添加: ${eventData.addedCount} 个成功，${eventData.failedCount} 个失败`
       );
 
-      if (!this.endpointManager || eventData.addedCount === 0) {
+      if (eventData.addedCount === 0) {
         return;
       }
 
-      try {
-        // 获取当前连接的端点数量
-        const connectionStatuses = this.endpointManager.getConnectionStatus();
-        const connectedEndpointCount = connectionStatuses.filter(
-          (status) => status.connected
-        ).length;
-
-        if (connectedEndpointCount === 0) {
-          this.logger.debug("当前没有已连接的端点，跳过重连");
-          return;
-        }
-
-        this.logger.info(`开始重连 ${connectedEndpointCount} 个接入点...`);
-
-        // 重连所有端点
-        await this.endpointManager.reconnect();
-
-        this.logger.info("接入点重连成功，批量服务工具已同步");
-
-        // 发送重连完成事件
-        this.eventBus.emitEvent("endpoint:reconnect:completed", {
-          trigger: "mcp_server_batch_added",
-          serverName: undefined,
-          endpointCount: connectedEndpointCount,
-          timestamp: Date.now(),
-        });
-      } catch (error) {
-        this.logger.error("接入点重连失败:", error);
-
-        // 发送重连失败事件
-        this.eventBus.emitEvent("endpoint:reconnect:failed", {
-          trigger: "mcp_server_batch_added",
-          serverName: undefined,
-          error: error instanceof Error ? error.message : String(error),
-          timestamp: Date.now(),
-        });
-      }
+      await this.executeEndpointReconnect(
+        "mcp_server_batch_added",
+        undefined,
+        "批量服务工具已同步"
+      );
     };
 
     this.eventBus.onEvent("mcp:server:batch_added", batchServerListener);
@@ -826,6 +757,62 @@ export class WebServer {
     this.eventListenerUnsubscribers.push(() => {
       this.eventBus.offEvent("mcp:server:batch_added", batchServerListener);
     });
+  }
+
+  /**
+   * 执行端点重连逻辑
+   * 当添加新的 MCP 服务后，重连接入点以同步服务列表
+   * @param trigger 触发器标识（用于事件追踪）
+   * @param serverName 服务名称（可选，批量添加时为 undefined）
+   * @param successLogMessage 成功日志消息
+   */
+  private async executeEndpointReconnect(
+    trigger: "mcp_server_added" | "mcp_server_batch_added" | "manual" | "other",
+    serverName: string | undefined,
+    successLogMessage: string
+  ): Promise<void> {
+    if (!this.endpointManager) {
+      this.logger.warn("EndpointManager 未初始化，跳过重连");
+      return;
+    }
+
+    try {
+      // 获取当前连接的端点数量
+      const connectionStatuses = this.endpointManager.getConnectionStatus();
+      const connectedEndpointCount = connectionStatuses.filter(
+        (status) => status.connected
+      ).length;
+
+      if (connectedEndpointCount === 0) {
+        this.logger.debug("当前没有已连接的端点，跳过重连");
+        return;
+      }
+
+      this.logger.info(`开始重连 ${connectedEndpointCount} 个接入点...`);
+
+      // 重连所有端点
+      await this.endpointManager.reconnect();
+
+      this.logger.info(`接入点重连成功，${successLogMessage}`);
+
+      // 发送重连完成事件
+      this.eventBus.emitEvent("endpoint:reconnect:completed", {
+        trigger,
+        serverName,
+        endpointCount: connectedEndpointCount,
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      this.logger.error("接入点重连失败:", error);
+
+      // 发送重连失败事件
+      this.eventBus.emitEvent("endpoint:reconnect:failed", {
+        trigger,
+        serverName,
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: Date.now(),
+      });
+    }
   }
 
   public async start(): Promise<void> {
