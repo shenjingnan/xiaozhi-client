@@ -1665,9 +1665,14 @@ export class MCPServiceManager extends EventEmitter {
    * @returns 活跃连接数量
    */
   public getActiveConnectionCount(): number {
-    return this.getAllConnections().filter(
-      (conn) => conn.state === ConnectionState.CONNECTED
-    ).length;
+    // 直接遍历计算，避免创建临时数组
+    let count = 0;
+    for (const [, service] of this.services) {
+      if (service.isConnected()) {
+        count++;
+      }
+    }
+    return count;
   }
 
   // ===== 从 UnifiedMCPServer 移入的方法 =====
