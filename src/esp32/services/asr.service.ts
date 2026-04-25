@@ -334,7 +334,9 @@ export class ASRService implements IASRService {
 
     import("node:fs/promises")
       .then((fs) => fs.writeFile(filePath, opusData))
-      .catch(() => {}); // 写入失败静默忽略
+      .catch((error) => {
+        this.logger.debug(`调试音频文件写入失败: ${filePath}`, error);
+      });
   }
 
   /** 静音超时时间（毫秒），超过此时间无新音频数据则认为语音结束 */
