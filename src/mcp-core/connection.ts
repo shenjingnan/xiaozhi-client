@@ -9,6 +9,7 @@
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
+import { logger } from "../server/Logger.js";
 import { TransportFactory } from "./transport-factory.js";
 import type {
   MCPServerTransport,
@@ -97,7 +98,7 @@ export class MCPConnection {
    */
   private async attemptConnection(): Promise<void> {
     this.connectionState = ConnectionState.CONNECTING;
-    console.debug(`[MCP-${this.name}] 正在连接 MCP 服务: ${this.name}`);
+    logger.debug(`[MCP-${this.name}] 正在连接 MCP 服务: ${this.name}`);
 
     return new Promise((resolve, reject) => {
       // 设置连接超时（使用固定默认值 30 秒）
@@ -168,7 +169,7 @@ export class MCPConnection {
     this.connectionState = ConnectionState.CONNECTED;
     this.initialized = true;
 
-    console.info(`[MCP-${this.name}] MCP 服务 ${this.name} 连接已建立`);
+    logger.info(`[MCP-${this.name}] MCP 服务 ${this.name} 连接已建立`);
 
     // 启动心跳检测
     this.startHeartbeat();
@@ -181,7 +182,7 @@ export class MCPConnection {
     this.connectionState = ConnectionState.DISCONNECTED;
     this.initialized = false;
 
-    console.debug(`MCP 服务 ${this.name} 连接错误:`, error.message);
+    logger.debug(`MCP 服务 ${this.name} 连接错误:`, error.message);
 
     // 清理连接超时定时器
     if (this.connectionTimeout) {
@@ -252,13 +253,13 @@ export class MCPConnection {
         this.tools.set(tool.name, tool);
       }
 
-      console.debug(
+      logger.debug(
         `${this.name} 服务加载了 ${tools.length} 个工具: ${tools
           .map((t) => t.name)
           .join(", ")}`
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `${this.name} 获取工具列表失败:`,
         error instanceof Error ? error.message : String(error)
       );
@@ -270,7 +271,7 @@ export class MCPConnection {
    * 断开连接
    */
   async disconnect(): Promise<void> {
-    console.info(`主动断开 MCP 服务 ${this.name} 连接`);
+    logger.info(`主动断开 MCP 服务 ${this.name} 连接`);
 
     // 清理连接资源
     this.cleanupConnection();
@@ -314,7 +315,7 @@ export class MCPConnection {
    */
   private async reconnect(): Promise<void> {
     this.connectionState = ConnectionState.RECONNECTING;
-    console.debug(`[MCP-${this.name}] 检测到会话过期，正在重新连接...`);
+    logger.debug(`[MCP-${this.name}] 检测到会话过期，正在重新连接...`);
 
     // 清理旧连接
     this.cleanupConnection();
@@ -339,14 +340,14 @@ export class MCPConnection {
 
     this.heartbeatTimer = setInterval(() => {
       this.performHeartbeat().catch((error) => {
-        console.error(
+        logger.error(
           `[MCP-${this.name}] 心跳检测执行异常：`,
           error instanceof Error ? error.message : String(error)
         );
       });
     }, interval);
 
-    console.debug(`[MCP-${this.name}] 心跳检测已启动，间隔: ${interval}ms`);
+    logger.debug(`[MCP-${this.name}] 心跳检测已启动，间隔: ${interval}ms`);
   }
 
   /**
@@ -360,9 +361,9 @@ export class MCPConnection {
     try {
       // 调用 MCP SDK 的 ping() 方法
       await this.client.ping();
-      console.debug(`[MCP-${this.name}] 心跳检测成功`);
+      logger.debug(`[MCP-${this.name}] 心跳检测成功`);
     } catch (error) {
-      console.warn(
+      logger.warn(
         `[MCP-${this.name}] 心跳检测失败，尝试重连...`,
         error instanceof Error ? error.message : String(error)
       );
@@ -378,7 +379,7 @@ export class MCPConnection {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
-      console.debug(`[MCP-${this.name}] 心跳检测已停止`);
+      logger.debug(`[MCP-${this.name}] 心跳检测已停止`);
     }
   }
 
@@ -397,7 +398,7 @@ export class MCPConnection {
       throw new Error(`工具 ${name} 在服务 ${this.name} 中不存在`);
     }
 
-    console.debug(
+    logger.debug(
       `调用 ${this.name} 服务的工具 ${name}，参数:`,
       JSON.stringify(arguments_)
     );
@@ -408,7 +409,7 @@ export class MCPConnection {
         arguments: arguments_ || {},
       });
 
-      console.debug(
+      logger.debug(
         `工具 ${name} 调用成功，结果:`,
         `${JSON.stringify(result).substring(0, 500)}...`
       );
@@ -417,9 +418,7 @@ export class MCPConnection {
     } catch (error) {
       // 检测是否为会话过期错误
       if (this.isSessionExpiredError(error)) {
-        console.warn(
-          `[MCP-${this.name}] 检测到会话过期，尝试重新连接并重试...`
-        );
+        logger.warn(`[MCP-${this.name}] 检测到会话过期，尝试重新连接并重试...`);
 
         // 自动重连
         await this.reconnect();
@@ -432,7 +431,7 @@ export class MCPConnection {
       }
 
       // 其他错误正常抛出
-      console.error(
+      logger.error(
         `工具 ${name} 调用失败:`,
         error instanceof Error ? error.message : String(error)
       );
