@@ -28,6 +28,7 @@ vi.mock("../../../../config/index.js", () => ({
   configManager: {
     getCustomMCPTools: vi.fn(),
     getMcpServers: vi.fn(),
+    getMcpServerConfig: vi.fn().mockReturnValue({}),
     getToolCallLogConfig: vi.fn().mockReturnValue({
       maxRecords: 100,
     }),
