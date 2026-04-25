@@ -5,6 +5,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConnectionState } from "../types.js";
 
+// Mock Logger
+vi.mock("../../server/Logger.js", () => ({
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+  },
+}));
+
 // Mock WebSocket
 vi.mock("ws", () => {
   const { EventEmitter } = require("node:events");
@@ -83,6 +93,7 @@ vi.mock("../internal-mcp-manager.js", () => ({
 }));
 
 // 导入在 mock 之后
+import { logger } from "../../server/Logger.js";
 import { Endpoint } from "../endpoint.js";
 import type { IMCPServiceManager } from "../types.js";
 import { ToolCallError as ToolCallErrorClass } from "../types.js";
@@ -443,8 +454,8 @@ describe("Endpoint", () => {
 
   describe("sendErrorResponse", () => {
     it("应该成功发送错误响应", async () => {
-      const consoleErrorSpy = vi.spyOn(console, "error");
-      const consoleDebugSpy = vi.spyOn(console, "debug");
+      const loggerErrorSpy = vi.spyOn(logger, "error");
+      const loggerDebugSpy = vi.spyOn(logger, "debug");
 
       // 创建一个会抛出错误的 MCP 管理器
       const errorMCPManager = createMockMCPManager(async () => {
@@ -474,17 +485,17 @@ describe("Endpoint", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // 验证有错误日志输出
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
         "工具调用失败",
         expect.any(Object)
       );
 
-      consoleErrorSpy.mockRestore();
-      consoleDebugSpy.mockRestore();
+      loggerErrorSpy.mockRestore();
+      loggerDebugSpy.mockRestore();
     });
 
     it("应该在 ws.send 抛出异常时记录错误", async () => {
-      const consoleErrorSpy = vi.spyOn(console, "error");
+      const loggerErrorSpy = vi.spyOn(logger, "error");
 
       // 创建一个会抛出错误的 MCP 管理器
       const errorMCPManager = createMockMCPManager(async () => {
@@ -520,7 +531,7 @@ describe("Endpoint", () => {
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         // 验证错误被记录
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect(loggerErrorSpy).toHaveBeenCalledWith(
           "发送错误响应失败:",
           expect.objectContaining({
             id: "test-2",
@@ -535,11 +546,11 @@ describe("Endpoint", () => {
         ws.send = originalSend;
       }
 
-      consoleErrorSpy.mockRestore();
+      loggerErrorSpy.mockRestore();
     });
 
     it("应该在连接未建立时记录错误", async () => {
-      const consoleErrorSpy = vi.spyOn(console, "error");
+      const loggerErrorSpy = vi.spyOn(logger, "error");
 
       // 创建一个会抛出错误的 MCP 管理器
       const errorMCPManager = createMockMCPManager(async () => {
@@ -567,7 +578,7 @@ describe("Endpoint", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // 验证无法发送错误响应的日志
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
         "无法发送错误响应",
         expect.objectContaining({
           id: "test-3",
@@ -575,11 +586,11 @@ describe("Endpoint", () => {
         })
       );
 
-      consoleErrorSpy.mockRestore();
+      loggerErrorSpy.mockRestore();
     });
 
     it("应该在 WebSocket 非 OPEN 状态时记录错误", async () => {
-      const consoleErrorSpy = vi.spyOn(console, "error");
+      const loggerErrorSpy = vi.spyOn(logger, "error");
 
       // 创建一个会抛出错误的 MCP 管理器
       const errorMCPManager = createMockMCPManager(async () => {
@@ -612,7 +623,7 @@ describe("Endpoint", () => {
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         // 验证无法发送错误响应的日志
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect(loggerErrorSpy).toHaveBeenCalledWith(
           "无法发送错误响应",
           expect.objectContaining({
             id: "test-4",
@@ -625,7 +636,7 @@ describe("Endpoint", () => {
         ws.readyState = originalReadyState;
       }
 
-      consoleErrorSpy.mockRestore();
+      loggerErrorSpy.mockRestore();
     });
   });
 
