@@ -35,6 +35,33 @@ export class NPMManager {
   }
 
   /**
+   * 处理 NPM 进程的输出流日志
+   */
+  private handleProcessOutput(
+    stream: "stdout" | "stderr",
+    data: Buffer,
+    version: string,
+    installId: string
+  ): void {
+    const message = data.toString();
+    const logEntry = {
+      type: stream,
+      message,
+      timestamp: Date.now(),
+    };
+
+    // 写入日志流（SSE）
+    this.logStream?.pushLog(installId, logEntry);
+
+    // 发射日志事件（向后兼容 WebSocket）
+    this.eventBus.emitEvent("npm:install:log", {
+      version,
+      installId,
+      ...logEntry,
+    });
+  }
+
+  /**
    * 安装指定版本 - 这是核心功能
    *
    * @param version 要安装的版本号
@@ -114,41 +141,11 @@ export class NPMManager {
       });
 
       npmProcess.stdout.on("data", (data) => {
-        const message = data.toString();
-        const logEntry = {
-          type: "stdout" as const,
-          message,
-          timestamp: Date.now(),
-        };
-
-        // 写入日志流（SSE）
-        this.logStream?.pushLog(resolvedInstallId, logEntry);
-
-        // 发射日志事件（向后兼容 WebSocket）
-        this.eventBus.emitEvent("npm:install:log", {
-          version,
-          installId: resolvedInstallId,
-          ...logEntry,
-        });
+        this.handleProcessOutput("stdout", data, version, resolvedInstallId);
       });
 
       npmProcess.stderr.on("data", (data) => {
-        const message = data.toString();
-        const logEntry = {
-          type: "stderr" as const,
-          message,
-          timestamp: Date.now(),
-        };
-
-        // 写入日志流（SSE）
-        this.logStream?.pushLog(resolvedInstallId, logEntry);
-
-        // 发射日志事件（向后兼容 WebSocket）
-        this.eventBus.emitEvent("npm:install:log", {
-          version,
-          installId: resolvedInstallId,
-          ...logEntry,
-        });
+        this.handleProcessOutput("stderr", data, version, resolvedInstallId);
       });
 
       npmProcess.on("close", (code) => {
