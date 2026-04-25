@@ -2,6 +2,23 @@
 
 本文档记录项目的所有重要变更。
 
+## [2.4.0-beta.1](https://github.com/shenjingnan/xiaozhi-client/compare/v2.4.0-beta.0...v2.4.0-beta.1) (2026-04-25)
+
+### Features
+
+* **esp32:** 在 OTA 响应中添加 24kHz 采样率音频参数 ([#3499](https://github.com/shenjingnan/xiaozhi-client/issues/3499)) ([0ce2b4e](https://github.com/shenjingnan/xiaozhi-client/commit/0ce2b4ef4c9326263b3764efb76456f94b20ae7f))
+
+### Bug Fixes
+
+* **deps:** 修复依赖安全漏洞，添加 pnpm overrides 规则 ([#3495](https://github.com/shenjingnan/xiaozhi-client/issues/3495)) ([be58e63](https://github.com/shenjingnan/xiaozhi-client/commit/be58e639b6c7a1a0f3d9611fa108eb9491890a99))
+
+### Code Refactoring
+
+* **config:** 统一配置类型定义，消除重复与字段不一致 ([#3498](https://github.com/shenjingnan/xiaozhi-client/issues/3498)) ([a90b50e](https://github.com/shenjingnan/xiaozhi-client/commit/a90b50e08d02b58838d554d7547475595999a352))
+* **deps:** 精简 pnpm.overrides 从 62 条到 4 条 ([#3496](https://github.com/shenjingnan/xiaozhi-client/issues/3496)) ([1f3d03e](https://github.com/shenjingnan/xiaozhi-client/commit/1f3d03e7686e31a35576674af7de68b365302bc2))
+* **docs:** 将文档系统从 Nextra 迁移到 OpenManual ([#3494](https://github.com/shenjingnan/xiaozhi-client/issues/3494)) ([ca0810a](https://github.com/shenjingnan/xiaozhi-client/commit/ca0810ad3ac9ead5ceeb43e60107fd4b47d3deca))
+* **skills:** 精简 security-audit skill，采用优先升级策略 ([#3497](https://github.com/shenjingnan/xiaozhi-client/issues/3497)) ([cb9b9a0](https://github.com/shenjingnan/xiaozhi-client/commit/cb9b9a0ba211314ec3edae613ec7f43a305ef1be))
+
 ## [2.4.0-beta.0](https://github.com/shenjingnan/xiaozhi-client/compare/v2.3.1-beta.4...v2.4.0-beta.0) (2026-04-22)
 
 ### Features
