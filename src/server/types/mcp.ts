@@ -153,11 +153,12 @@ export type ToolCallResponse = ToolCallResult | TimeoutResponse;
 export function isToolCallResult(
   response: unknown
 ): response is ToolCallResult {
+  if (!response || typeof response !== "object" || response === null) {
+    return false;
+  }
+
   const content = (response as ToolCallResult).content;
   return (
-    !!response &&
-    typeof response === "object" &&
-    response !== null &&
     "content" in response &&
     Array.isArray(content) &&
     content.length > 0 &&
