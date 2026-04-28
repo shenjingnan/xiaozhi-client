@@ -1,11 +1,12 @@
 /**
- * MCPServiceManager customMCP 功能测试
- * 测试新增的 hasCustomMCPTool 和 getCustomMCPTools 方法
+ * MCPServiceManager 功能测试
+ * 测试 hasCustomMCPTool、getCustomMCPTools、callTool 重构后的子方法
  */
 
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MCPServiceManager } from "../../../lib/mcp";
+import type { ToolInfo } from "../../../lib/mcp/types";
 import type { CustomMCPHandler } from "../custom.js";
 
 // Mock dependencies
@@ -358,6 +359,369 @@ describe("MCPServiceManager - customMCP 支持", () => {
       // Assert - 应该返回空数组而不是抛出异常
       expect(result).toEqual([]);
     });
+  });
+});
+
+describe("MCPServiceManager - resolveToolTarget 工具目标解析", () => {
+  let serviceManager: MCPServiceManager;
+  let mockCustomMCPHandler: ReturnType<typeof vi.mocked<CustomMCPHandler>>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    serviceManager = new MCPServiceManager();
+    mockCustomMCPHandler = vi.mocked(serviceManager.getCustomMCPHandler());
+
+    // 确保基础 mock 方法存在
+    if (!mockCustomMCPHandler.hasTool) {
+      mockCustomMCPHandler.hasTool = vi.fn();
+    }
+    if (!mockCustomMCPHandler.getToolInfo) {
+      mockCustomMCPHandler.getToolInfo = vi.fn();
+    }
+
+    // 默认：不是 customMCP 工具
+    mockCustomMCPHandler.hasTool.mockReturnValue(false);
+    mockCustomMCPHandler.getToolInfo.mockReturnValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /**
+   * 通过 spyOn 访问私有方法 resolveToolTarget
+   */
+  function spyResolveToolTarget() {
+    return vi.spyOn(
+      serviceManager,
+      "resolveToolTarget" as keyof MCPServiceManager
+    ) as unknown as ReturnType<typeof vi.spyOn>;
+  }
+
+  describe("custom-mcp 类型工具", () => {
+    it("应该正确解析 handler.type === 'mcp' 的 customMCP 工具", () => {
+      // Arrange
+      const toolName = "mcp_sync_tool";
+      const mcpCustomTool = {
+        name: toolName,
+        description: "MCP 同步工具",
+        inputSchema: { type: "object" as const },
+        handler: {
+          type: "mcp" as const,
+          config: {
+            serviceName: "mcp-server-1",
+            toolName: "original_mcp_tool",
+          },
+        },
+      };
+
+      mockCustomMCPHandler.hasTool.mockReturnValue(true);
+      mockCustomMCPHandler.getToolInfo.mockReturnValue(
+        mcpCustomTool as unknown as (typeof mockCustomMCPHandler)["getToolInfo"] extends (
+          ...args: any
+        ) => infer R
+          ? R
+          : never
+      );
+
+      const spy = spyResolveToolTarget();
+
+      // Act
+      const result = (serviceManager as any).resolveToolTarget(toolName);
+
+      // Assert
+      expect(result.type).toBe("custom-mcp");
+      expect(result.toolName).toBe(toolName);
+      expect(result.statsServiceName).toBe("mcp-server-1");
+      expect(result.statsOriginalName).toBe("original_mcp_tool");
+      expect(result.customTool).toBe(mcpCustomTool);
+      expect(spy).toHaveBeenCalledWith(toolName);
+    });
+  });
+
+  describe("custom-other 类型工具", () => {
+    it("应该正确解析非 mcp 类型的 customMCP 工具（如 coze）", () => {
+      // Arrange
+      const toolName = "coze_workflow";
+      const cozeCustomTool = {
+        name: toolName,
+        description: "Coze 工作流",
+        inputSchema: { type: "object" as const },
+        handler: {
+          type: "coze" as const,
+          config: { workflowId: "wf_123" },
+        },
+      };
+
+      mockCustomMCPHandler.hasTool.mockReturnValue(true);
+      mockCustomMCPHandler.getToolInfo.mockReturnValue(
+        cozeCustomTool as unknown as (typeof mockCustomMCPHandler)["getToolInfo"] extends (
+          ...args: any
+        ) => infer R
+          ? R
+          : never
+      );
+
+      // Act
+      const result = (serviceManager as any).resolveToolTarget(toolName);
+
+      // Assert
+      expect(result.type).toBe("custom-other");
+      expect(result.toolName).toBe(toolName);
+      expect(result.statsServiceName).toBe("customMCP");
+      expect(result.statsOriginalName).toBe(toolName);
+      expect(result.customTool).toBe(cozeCustomTool);
+    });
+  });
+
+  describe("standard 标准类型工具", () => {
+    it("应该正确解析标准 MCP 工具", () => {
+      // Arrange
+      const toolName = "standard_tool";
+      const toolInfo: ToolInfo = {
+        serviceName: "server-a",
+        originalName: "original_standard_tool",
+        tool: {
+          name: toolName,
+          description: "标准工具",
+          inputSchema: { type: "object" as const },
+        } as Tool,
+      };
+
+      // 注入 tools Map — 通过设置内部状态模拟已注册的工具
+      (serviceManager as any).tools = new Map<string, ToolInfo>([
+        [toolName, toolInfo],
+      ]);
+
+      mockCustomMCPHandler.hasTool.mockReturnValue(false);
+
+      // Act
+      const result = (serviceManager as any).resolveToolTarget(toolName);
+
+      // Assert
+      expect(result.type).toBe("standard");
+      expect(result.toolName).toBe(toolName);
+      expect(result.logServerName).toBe("server-a");
+      expect(result.originalToolName).toBe("original_standard_tool");
+      expect(result.statsServiceName).toBe("server-a");
+      expect(result.statsOriginalName).toBe("original_standard_tool");
+      expect(result.toolInfo).toBe(toolInfo);
+    });
+  });
+
+  describe("工具不存在", () => {
+    it("当标准 MCP 工具不存在时应该抛出错误", () => {
+      // Arrange - 既不是 customMCP，也不在标准工具中
+      mockCustomMCPHandler.hasTool.mockReturnValue(false);
+      (serviceManager as any).tools = new Map<string, ToolInfo>();
+
+      // Act & Assert
+      expect(() => {
+        (serviceManager as any).resolveToolTarget("nonexistent_tool");
+      }).toThrow("未找到工具: nonexistent_tool");
+    });
+  });
+});
+
+describe("MCPServiceManager - recordToolCallStats 统计记录", () => {
+  let serviceManager: MCPServiceManager;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    serviceManager = new MCPServiceManager();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("成功调用时应该以 isSuccess=true 调用 updateToolStatsSafe", () => {
+    // Arrange
+    const spy = vi.spyOn(serviceManager, "updateToolStatsSafe" as any);
+    const target = {
+      type: "standard" as const,
+      toolName: "test_tool",
+      logServerName: "server-1",
+      originalToolName: "original_test",
+      statsServiceName: "server-1",
+      statsOriginalName: "original_test",
+    };
+
+    // Act
+    (serviceManager as any).recordToolCallStats(target, true);
+
+    // Assert
+    expect(spy).toHaveBeenCalledWith(
+      "test_tool",
+      "server-1",
+      "original_test",
+      true
+    );
+  });
+
+  it("失败调用时应该以 isSuccess=false 调用 updateToolStatsSafe", () => {
+    // Arrange
+    const spy = vi.spyOn(serviceManager, "updateToolStatsSafe" as any);
+    const target = {
+      type: "custom-other" as const,
+      toolName: "coze_tool",
+      logServerName: "coze",
+      originalToolName: "coze_tool",
+      statsServiceName: "customMCP",
+      statsOriginalName: "coze_tool",
+    };
+
+    // Act
+    (serviceManager as any).recordToolCallStats(target, false);
+
+    // Assert
+    expect(spy).toHaveBeenCalledWith(
+      "coze_tool",
+      "customMCP",
+      "coze_tool",
+      false
+    );
+  });
+
+  it("custom-mcp 类型工具应该使用正确的统计字段", () => {
+    // Arrange
+    const spy = vi.spyOn(serviceManager, "updateToolStatsSafe" as any);
+    const target = {
+      type: "custom-mcp" as const,
+      toolName: "sync_tool",
+      logServerName: "mcp-server-1",
+      originalToolName: "real_tool",
+      statsServiceName: "mcp-server-1",
+      statsOriginalName: "real_tool",
+    };
+
+    // Act
+    (serviceManager as any).recordToolCallStats(target, true);
+
+    // Assert
+    expect(spy).toHaveBeenCalledWith(
+      "sync_tool",
+      "mcp-server-1",
+      "real_tool",
+      true
+    );
+  });
+});
+
+describe("MCPServiceManager - callTool 编排流程", () => {
+  let serviceManager: MCPServiceManager;
+  let mockCustomMCPHandler: ReturnType<typeof vi.mocked<CustomMCPHandler>>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    serviceManager = new MCPServiceManager();
+    mockCustomMCPHandler = vi.mocked(serviceManager.getCustomMCPHandler());
+
+    if (!mockCustomMCPHandler.hasTool) {
+      mockCustomMCPHandler.hasTool = vi.fn();
+    }
+    if (!mockCustomMCPHandler.getToolInfo) {
+      mockCustomMCPHandler.getToolInfo = vi.fn();
+    }
+    if (!mockCustomMCPHandler.callTool) {
+      mockCustomMCPHandler.callTool = vi.fn();
+    }
+
+    mockCustomMCPHandler.hasTool.mockReturnValue(false);
+    mockCustomMCPHandler.callTool.mockResolvedValue({
+      content: [{ type: "text", text: "ok" }],
+      isError: false,
+    });
+
+    // 替换内部 toolCallLogger 为 mock，避免依赖真实 ToolCallLogger
+    (serviceManager as any).toolCallLogger = {
+      recordToolCall: vi.fn(),
+    };
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("custom-other 类型工具调用成功时应返回结果并更新统计", async () => {
+    // Arrange
+    const toolName = "coze_test";
+    mockCustomMCPHandler.hasTool.mockReturnValue(true);
+    mockCustomMCPHandler.getToolInfo.mockReturnValue({
+      name: toolName,
+      description: "测试 coze 工具",
+      inputSchema: { type: "object" as const },
+      handler: { type: "coze" as const, config: {} },
+    });
+
+    const statsSpy = vi.spyOn(serviceManager, "updateToolStatsSafe" as any);
+
+    // Act
+    const result = await serviceManager.callTool(
+      toolName,
+      { input: "hello" },
+      { timeout: 5000 }
+    );
+
+    // Assert
+    expect(result).toEqual({
+      content: [{ type: "text", text: "ok" }],
+      isError: false,
+    });
+    expect(mockCustomMCPHandler.callTool).toHaveBeenCalledWith(
+      toolName,
+      { input: "hello" },
+      { timeout: 5000 }
+    );
+    // 验证成功统计被调用
+    expect(statsSpy).toHaveBeenCalledWith(
+      toolName,
+      "customMCP",
+      toolName,
+      true
+    );
+  });
+
+  it("工具调用失败时应记录失败统计并重新抛出错误", async () => {
+    // Arrange
+    const toolName = "failing_tool";
+    const error = new Error("服务不可用");
+
+    mockCustomMCPHandler.hasTool.mockReturnValue(true);
+    mockCustomMCPHandler.getToolInfo.mockReturnValue({
+      name: toolName,
+      description: "会失败的工具",
+      inputSchema: { type: "object" as const },
+      handler: { type: "coze" as const, config: {} },
+    });
+    mockCustomMCPHandler.callTool.mockRejectedValue(error);
+
+    const statsSpy = vi.spyOn(serviceManager, "updateToolStatsSafe" as any);
+
+    // Act & Assert
+    await expect(serviceManager.callTool(toolName, {})).rejects.toThrow(
+      "服务不可用"
+    );
+
+    // 验证失败统计被调用
+    expect(statsSpy).toHaveBeenCalledWith(
+      toolName,
+      "customMCP",
+      toolName,
+      false
+    );
+  });
+
+  it("标准 MCP 工具不存在时应抛出未找到错误", async () => {
+    // Arrange
+    const toolName = "missing_standard";
+    mockCustomMCPHandler.hasTool.mockReturnValue(false);
+    (serviceManager as any).tools = new Map();
+
+    // Act & Assert
+    await expect(serviceManager.callTool(toolName, {})).rejects.toThrow(
+      `未找到工具: ${toolName}`
+    );
   });
 });
 
