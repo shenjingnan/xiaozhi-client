@@ -51,7 +51,7 @@ export { ToolCallError } from "@/mcp-core";
 export { isValidToolJSONSchema, ensureToolJSONSchema } from "@/mcp-core";
 
 // =========================
-// 从 mcp-core/types 直接导出（barrel 未暴露的类型）
+// 从 @/mcp-core 补充导出（之前通过深路径访问的类型）
 // =========================
 
 export type {
@@ -61,7 +61,7 @@ export type {
   LegacyMCPServiceConfig,
   InternalMCPServiceConfig,
   ToolStatusFilter,
-} from "../../../mcp-core/types.js";
+} from "@/mcp-core";
 
 // =========================
 // 本地差异类型（与 mcp-core 版本有明确区别）
@@ -79,7 +79,7 @@ export type {
 export interface ToolCallResult {
   content: Array<{
     type: string;
-    text: string;
+    text?: string;
   }>;
   isError?: boolean;
   [key: string]: unknown; // 支持其他未知字段，与 endpoint 包保持兼容

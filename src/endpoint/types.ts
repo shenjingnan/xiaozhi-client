@@ -62,7 +62,7 @@ export { ensureToolJSONSchema };
 export interface ToolCallResult {
   content: Array<{
     type: string;
-    text: string;
+    text?: string;
   }>;
   isError?: boolean;
   [key: string]: unknown;
