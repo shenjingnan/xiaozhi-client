@@ -4,8 +4,8 @@
  * 使用 @/mcp-core 的 MCPManager 实现真实的 MCP 功能
  */
 
+import { normalizeServiceConfig } from "@/config";
 import { MCPManager } from "@/mcp-core";
-import { normalizeServiceConfig } from "../config";
 import type { EnhancedToolInfo, ToolCallResult } from "./types.js";
 import type { IMCPServiceManager } from "./types.js";
 import type { EndpointConfig } from "./types.js";
