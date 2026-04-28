@@ -30,6 +30,27 @@ import type { MCPMessage } from "../../types/mcp.js";
 import { CustomMCPHandler } from "./custom.js";
 import { ToolCallLogger } from "./log.js";
 import { MCPMessageHandler } from "./message.js";
+
+/** 解析后的工具调用目标 */
+interface ResolvedToolTarget {
+  /** 工具类型 */
+  type: "custom-mcp" | "custom-other" | "standard";
+  /** 工具名称（查找时使用的 key） */
+  toolName: string;
+  /** 日志用的服务名 */
+  logServerName: string;
+  /** 日志用的原始工具名 */
+  originalToolName: string;
+  /** 统计用的服务名 */
+  statsServiceName: string;
+  /** 统计用的原始工具名 */
+  statsOriginalName: string;
+  /** customMCP 工具信息（仅 custom 类型有值） */
+  customTool?: CustomMCPTool;
+  /** 标准 MCP 工具信息（仅 standard 类型有值） */
+  toolInfo?: ToolInfo;
+}
+
 export class MCPServiceManager extends EventEmitter {
   private services: Map<string, MCPService> = new Map();
   private configs: Record<string, MCPServiceConfig> = {};
@@ -606,6 +627,134 @@ export class MCPServiceManager extends EventEmitter {
   }
 
   /**
+   * 解析工具名称，确定工具类型和元信息
+   * @param toolName 工具名称
+   * @returns 解析后的工具目标
+   * @throws 当标准 MCP 工具不存在时抛出错误
+   */
+  private resolveToolTarget(toolName: string): ResolvedToolTarget {
+    if (this.customMCPHandler.hasTool(toolName)) {
+      const customTool = this.customMCPHandler.getToolInfo(toolName);
+      const logServerName = this.getLogServerName(customTool!);
+      const originalToolName = this.getOriginalToolName(toolName, customTool);
+
+      if (customTool?.handler?.type === "mcp") {
+        const config = customTool.handler.config as {
+          serviceName: string;
+          toolName: string;
+        };
+        return {
+          type: "custom-mcp",
+          toolName,
+          logServerName,
+          originalToolName,
+          statsServiceName: config.serviceName,
+          statsOriginalName: config.toolName,
+          customTool,
+        };
+      }
+
+      return {
+        type: "custom-other",
+        toolName,
+        logServerName,
+        originalToolName,
+        statsServiceName: "customMCP",
+        statsOriginalName: toolName,
+        customTool,
+      };
+    }
+
+    // 标准 MCP 工具
+    const toolInfo = this.tools.get(toolName);
+    if (!toolInfo) {
+      throw new Error(`未找到工具: ${toolName}`);
+    }
+
+    return {
+      type: "standard",
+      toolName,
+      logServerName: toolInfo.serviceName,
+      originalToolName: toolInfo.originalName,
+      statsServiceName: toolInfo.serviceName,
+      statsOriginalName: toolInfo.originalName,
+      toolInfo,
+    };
+  }
+
+  /**
+   * 根据解析后的目标执行实际的工具调用
+   * @param target 解析后的工具目标
+   * @param arguments_ 工具调用参数
+   * @param options 调用选项（如超时时间）
+   * @returns 工具调用结果
+   */
+  private async executeToolCall(
+    target: ResolvedToolTarget,
+    arguments_: Record<string, unknown>,
+    options?: { timeout?: number }
+  ): Promise<ToolCallResult> {
+    switch (target.type) {
+      case "custom-mcp": {
+        return this.callMCPTool(
+          target.customTool!.name,
+          target.customTool!.handler!.config as {
+            serviceName: string;
+            toolName: string;
+          },
+          arguments_
+        );
+      }
+      case "custom-other": {
+        const result = await this.customMCPHandler.callTool(
+          target.customTool!.name,
+          arguments_,
+          options
+        );
+        logger.info(
+          `[MCPManager] CustomMCP 工具 ${target.customTool!.name} 调用成功`
+        );
+        return result as ToolCallResult;
+      }
+      case "standard": {
+        const service = this.services.get(target.toolInfo!.serviceName);
+        if (!service) {
+          throw new Error(`服务 ${target.toolInfo!.serviceName} 不可用`);
+        }
+        if (!service.isConnected()) {
+          throw new Error(`服务 ${target.toolInfo!.serviceName} 未连接`);
+        }
+        const result = (await service.callTool(
+          target.toolInfo!.originalName,
+          arguments_ || {}
+        )) as ToolCallResult;
+        logger.debug("[MCPManager] 工具调用成功", {
+          toolName: target.toolName,
+          result: result,
+        });
+        return result;
+      }
+    }
+  }
+
+  /**
+   * 记录工具调用的统计信息
+   * @param target 解析后的工具目标
+   * @param isSuccess 是否调用成功
+   */
+  private recordToolCallStats(
+    target: ResolvedToolTarget,
+    isSuccess: boolean
+  ): void {
+    this.updateToolStatsSafe(
+      target.toolName,
+      target.statsServiceName,
+      target.statsOriginalName,
+      isSuccess
+    );
+  }
+
+  /**
    * 调用 MCP 工具（支持标准 MCP 工具和 customMCP 工具）
    */
   async callTool(
@@ -615,105 +764,32 @@ export class MCPServiceManager extends EventEmitter {
   ): Promise<ToolCallResult> {
     const startTime = Date.now();
 
-    // 初始化日志信息
-    let logServerName = "unknown";
-    let originalToolName: string = toolName;
+    // 解析工具目标（同步前置校验，可能抛出 Tool Not Found）
+    const target = this.resolveToolTarget(toolName);
 
     try {
-      let result: ToolCallResult;
-
-      // 检查是否是 customMCP 工具
-      if (this.customMCPHandler.hasTool(toolName)) {
-        const customTool = this.customMCPHandler.getToolInfo(toolName);
-
-        // 设置日志信息（添加空值检查）
-        if (customTool) {
-          logServerName = this.getLogServerName(customTool);
-          originalToolName = this.getOriginalToolName(toolName, customTool);
-        }
-
-        if (customTool?.handler?.type === "mcp") {
-          // 对于 mcp 类型的工具，直接路由到对应的 MCP 服务
-          result = await this.callMCPTool(
-            toolName,
-            customTool.handler.config,
-            arguments_
-          );
-
-          // 异步更新工具调用统计（成功调用）
-          this.updateToolStatsSafe(
-            toolName,
-            customTool.handler.config.serviceName,
-            customTool.handler.config.toolName,
-            true
-          );
-        } else {
-          // 其他类型的 customMCP 工具正常处理，传递options参数
-          result = await this.customMCPHandler.callTool(
-            toolName,
-            arguments_,
-            options
-          );
-          logger.info(`[MCPManager] CustomMCP 工具 ${toolName} 调用成功`);
-
-          // 异步更新工具调用统计（成功调用）
-          this.updateToolStatsSafe(toolName, "customMCP", toolName, true);
-        }
-      } else {
-        // 如果不是 customMCP 工具，则查找标准 MCP 工具
-        const toolInfo = this.tools.get(toolName);
-        if (!toolInfo) {
-          throw new Error(`未找到工具: ${toolName}`);
-        }
-
-        // 设置日志信息
-        logServerName = toolInfo.serviceName;
-        originalToolName = toolInfo.originalName;
-
-        const service = this.services.get(toolInfo.serviceName);
-        if (!service) {
-          throw new Error(`服务 ${toolInfo.serviceName} 不可用`);
-        }
-
-        if (!service.isConnected()) {
-          throw new Error(`服务 ${toolInfo.serviceName} 未连接`);
-        }
-
-        result = (await service.callTool(
-          toolInfo.originalName,
-          arguments_ || {}
-        )) as ToolCallResult;
-
-        logger.debug("[MCPManager] 工具调用成功", {
-          toolName: toolName,
-          result: result,
-        });
-
-        // 异步更新工具调用统计（成功调用）
-        this.updateToolStatsSafe(
-          toolName,
-          toolInfo.serviceName,
-          toolInfo.originalName,
-          true
-        );
-      }
+      // 执行工具调用
+      const result = await this.executeToolCall(target, arguments_, options);
 
       // 记录成功的工具调用
       this.toolCallLogger.recordToolCall({
-        toolName: originalToolName,
-        serverName: logServerName,
+        toolName: target.originalToolName,
+        serverName: target.logServerName,
         arguments: arguments_,
         result: result,
         success: result.isError !== true,
         duration: Date.now() - startTime,
       });
 
+      // 更新成功统计
+      this.recordToolCallStats(target, true);
+
       return result as ToolCallResult;
     } catch (error) {
       // 记录失败的工具调用
       this.toolCallLogger.recordToolCall({
-        toolName: originalToolName,
-        serverName: logServerName,
+        toolName: target.originalToolName,
+        serverName: target.logServerName,
         arguments: arguments_,
         result: null,
         success: false,
@@ -722,35 +798,11 @@ export class MCPServiceManager extends EventEmitter {
       });
 
       // 更新失败统计
-      if (this.customMCPHandler.hasTool(toolName)) {
-        const customTool = this.customMCPHandler.getToolInfo(toolName);
-        if (customTool?.handler?.type === "mcp") {
-          this.updateToolStatsSafe(
-            toolName,
-            customTool.handler.config.serviceName,
-            customTool.handler.config.toolName,
-            false
-          );
-        } else {
-          this.updateToolStatsSafe(toolName, "customMCP", toolName, false);
-          logger.error(`[MCPManager] CustomMCP 工具 ${toolName} 调用失败`, {
-            error: (error as Error).message,
-          });
-        }
-      } else {
-        const toolInfo = this.tools.get(toolName);
-        if (toolInfo) {
-          this.updateToolStatsSafe(
-            toolName,
-            toolInfo.serviceName,
-            toolInfo.originalName,
-            false
-          );
-          logger.error(`[MCPManager] 工具 ${toolName} 调用失败`, {
-            error: (error as Error).message,
-          });
-        }
-      }
+      this.recordToolCallStats(target, false);
+
+      logger.error(`[MCPManager] 工具 ${toolName} 调用失败`, {
+        error: error instanceof Error ? error.message : String(error),
+      });
 
       throw error;
     }
