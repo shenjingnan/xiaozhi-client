@@ -176,9 +176,27 @@ export interface MCPServiceStatus {
 // 4. 工具调用相关类型
 // =========================
 
-// 从 MCP SDK 重新导出工具调用结果类型
-// 使用 CompatibilityCallToolResult 以支持新旧协议版本
-export type { CompatibilityCallToolResult as ToolCallResult } from "@modelcontextprotocol/sdk/types.js";
+// 从 MCP SDK 重新导出工具调用结果类型（原始 SDK 类型，供需要严格匹配的场景）
+export type { CompatibilityCallToolResult as CoreToolCallResult } from "@modelcontextprotocol/sdk/types.js";
+
+/**
+ * 工具调用结果接口（canonical 定义）
+ *
+ * 定义位置：mcp-core/types.ts（三方均可访问的公共层）
+ * 使用方：server/lib/mcp、endpoint 等所有模块均从此处导入
+ *
+ * 与 SDK 原始类型 CoreToolCallResult 的差异：
+ * - 使用自定义 interface + 索引签名，支持扩展字段
+ * - SDK 类型过于严格，无法满足跨模块数据传递的灵活性需求
+ */
+export interface ToolCallResult {
+  content?: Array<{
+    type: string;
+    text?: string;
+  }>;
+  isError?: boolean;
+  [key: string]: unknown;
+}
 
 /**
  * JSON Schema 类型定义

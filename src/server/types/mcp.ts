@@ -153,15 +153,16 @@ export type ToolCallResponse = ToolCallResult | TimeoutResponse;
 export function isToolCallResult(
   response: unknown
 ): response is ToolCallResult {
+  const content = (response as ToolCallResult).content;
   return (
     !!response &&
     typeof response === "object" &&
     response !== null &&
     "content" in response &&
-    Array.isArray((response as ToolCallResult).content) &&
-    (response as ToolCallResult).content.length > 0 &&
-    (response as ToolCallResult).content[0]?.type === "text" &&
-    typeof (response as ToolCallResult).content[0]?.text === "string"
+    Array.isArray(content) &&
+    content.length > 0 &&
+    content[0]?.type === "text" &&
+    typeof content[0]?.text === "string"
   );
 }
 

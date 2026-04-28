@@ -68,29 +68,11 @@ export type {
 // =========================
 
 /**
- * 工具调用结果接口
+ * 工具调用结果类型（从 mcp-core 导入的 canonical 定义）
  *
- * 与 mcp-core 版本（从 SDK re-export 的 CompatibilityCallToolResult）的差异：
- * - 使用自定义 interface + [key: string]: unknown 索引签名，支持扩展字段
- * - 服务端需要兼容 endpoint 包传入的额外字段
- *
- * 原因：SDK 类型过于严格，无法满足服务端跨模块数据传递的灵活性需求
+ * canonical 定义位于 mcp-core/types.ts，此处仅做 re-export。
  */
-export interface ToolCallResult {
-  content: Array<{
-    type: string;
-    text?: string;
-  }>;
-  isError?: boolean;
-  [key: string]: unknown; // 支持其他未知字段，与 endpoint 包保持兼容
-}
-
-/**
- * 向后兼容：SDK 原始工具调用结果类型
- *
- * 保留了从 SDK re-export 的原始类型，供需要严格类型匹配的场景使用。
- */
-export type { CompatibilityCallToolResult as CoreToolCallResult } from "@modelcontextprotocol/sdk/types.js";
+export type { ToolCallResult, CoreToolCallResult } from "@/mcp-core";
 
 // =========================
 // 向后兼容性别名

@@ -213,11 +213,11 @@ pnpm outdated
 **正确模式**:
 ```typescript
 // ✅ 推荐（使用路径别名）
-import { MCPServiceManager } from "@/mcp-core";
+import { MCPManager } from "@/mcp-core";
 import { ConfigService } from "@/config";
 
 // ❌ 避免（相对路径）
-import { MCPServiceManager } from "../mcp-core";
+import { MCPManager } from "../mcp-core";
 import { ConfigService } from "../config";
 ```
 

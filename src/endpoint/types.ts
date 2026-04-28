@@ -16,7 +16,7 @@ import type {
 } from "../types";
 
 // 本地接口定义需要用到的类型（从 @/mcp-core 导入）
-import type { EnhancedToolInfo } from "@/mcp-core";
+import type { EnhancedToolInfo, ToolCallResult } from "@/mcp-core";
 import type { ConnectionState } from "@/mcp-core";
 
 // 向后兼容：re-export MCP 服务配置类型
@@ -52,21 +52,8 @@ import { ensureToolJSONSchema } from "@/mcp-core";
 export type { JSONSchema };
 export { ensureToolJSONSchema };
 
-/**
- * 工具调用结果接口
- *
- * 注意：此类型与 server/lib/mcp/types.ts 中的 ToolCallResult 保持一致。
- * 由于 lint 规则 useImportRestrictions 禁止跨模块导入，此处保留本地定义。
- * 任何修改都应同步更新 server/lib/mcp/types.ts 中的对应定义。
- */
-export interface ToolCallResult {
-  content: Array<{
-    type: string;
-    text?: string;
-  }>;
-  isError?: boolean;
-  [key: string]: unknown;
-}
+// 工具调用结果接口（从 mcp-core 导入的 canonical 定义）
+export type { ToolCallResult };
 
 // =========================
 // Endpoint 专属类型

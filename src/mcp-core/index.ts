@@ -26,6 +26,7 @@ export type {
   ToolInfo,
   EnhancedToolInfo,
   ToolCallResult,
+  CoreToolCallResult,
   ToolCallParams,
   ValidatedToolCallParams,
   ToolCallValidationOptions,
@@ -56,7 +57,7 @@ export {
 
 export { ToolCallError } from "./types.js";
 export { MCPConnection } from "./connection.js";
-export { MCPManager, MCPServiceManager } from "./manager.js";
+export { MCPManager } from "./manager.js";
 
 // =========================
 // 传输工厂导出

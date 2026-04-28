@@ -1,6 +1,14 @@
 /**
- * MCP 服务管理器
- * 提供简洁的 API 来管理多个 MCP 服务
+ * MCP 协议层管理器（轻量级）
+ *
+ * 定位：提供纯净的 MCP 协议操作能力，不包含任何业务逻辑。
+ * 适用场景：Endpoint 层、CLI 工具、嵌入式集成等轻量级消费方。
+ *
+ * 与 server/lib/mcp 的 MCPServiceManager 分工：
+ * - 本类（MCPManager）：协议层 — 连接管理、工具发现、工具调用
+ * - MCPServiceManager：业务层 — 在协议层之上增加缓存、统计、CustomMCP、日志、重试等
+ *
+ * 如果需要完整的业务功能，请使用 server/lib/mcp 的 MCPServiceManager。
  */
 
 import { EventEmitter } from "node:events";
@@ -349,5 +357,5 @@ export class MCPManager extends EventEmitter {
   }
 }
 
-// 为了向后兼容，保留旧的 MCPServiceManager 类名作为别名
-export { MCPManager as MCPServiceManager };
+// 注意：MCPManager 是协议层管理器（轻量级），仅提供基础的连接管理和工具调用
+// 如需完整的业务功能（缓存、统计、CustomMCP、日志等），请使用 server/lib/mcp 的 MCPServiceManager
