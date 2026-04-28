@@ -11,9 +11,11 @@
  */
 
 import { configManager } from "../config";
+import type { ConfigManager } from "../config";
 import { VersionUtils } from "../utils/version";
 import { ErrorHandler } from "./errors/ErrorHandlers";
 import type { IDIContainer } from "./interfaces/Config";
+import type { ProcessManager as IProcessManager } from "./interfaces/Service";
 import { FileUtils } from "./utils/FileUtils";
 import { FormatUtils } from "./utils/FormatUtils";
 import { PathUtils } from "./utils/PathUtils";
@@ -154,14 +156,14 @@ export class DIContainer implements IDIContainer {
 
     container.registerSingleton("daemonManager", () => {
       const DaemonManagerModule = require("./services/DaemonManager.js");
-      const processManager = container.get("processManager") as any;
+      const processManager = container.get<IProcessManager>("processManager");
       return new DaemonManagerModule.DaemonManagerImpl(processManager);
     });
 
     container.registerSingleton("serviceManager", () => {
       const ServiceManagerModule = require("./services/ServiceManager.js");
-      const processManager = container.get("processManager") as any;
-      const configManager = container.get("configManager") as any;
+      const processManager = container.get<IProcessManager>("processManager");
+      const configManager = container.get<ConfigManager>("configManager");
       return new ServiceManagerModule.ServiceManagerImpl(
         processManager,
         configManager
