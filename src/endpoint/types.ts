@@ -2,11 +2,8 @@
  * Endpoint 包核心类型定义
  *
  * 定义小智接入点相关的所有核心类型，包括：
- * - 工具调用相关类型（ToolCallResult、ToolCallParams 等）
- * - JSON Schema 类型定义
- * - 工具信息类型（EnhancedToolInfo 等）
- * - MCP 服务配置类型（从 @/types/config 导入并 re-export）
- * - 连接状态类型
+ * - 从 @/mcp-core re-export 的 MCP 核心类型（ConnectionState、EnhancedToolInfo 等）
+ * - Endpoint 专属类型（连接状态、配置、Token 等）
  *
  * @module types
  */
@@ -17,6 +14,10 @@ import type {
   MCPServerConfig,
   SSEMCPServerConfig,
 } from "../types";
+
+// 本地接口定义需要用到的类型（从 @/mcp-core 导入）
+import type { EnhancedToolInfo } from "@/mcp-core";
+import type { ConnectionState } from "@/mcp-core";
 
 // 向后兼容：re-export MCP 服务配置类型
 export type {
@@ -30,112 +31,46 @@ export type {
 export type StreamableHTTPMCPServerConfig = HTTPMCPServerConfig;
 
 // =========================
-// 1. 工具调用相关类型
+// 从 @/mcp-core re-export 的 MCP 核心类型
 // =========================
 
-/**
- * 工具调用结果接口
- * 使用更宽松的类型定义以兼容不同来源的 ToolCallResult
- */
-export interface ToolCallResult {
-  content: Array<Record<string, unknown>>;
-  isError?: boolean;
-  _meta?: Record<string, unknown>;
-  toolResult?: unknown; // 支持旧协议版本
-  [key: string]: unknown; // 支持其他未知字段
-}
+// 工具调用参数
+export type { ToolCallParams, ValidatedToolCallParams } from "@/mcp-core";
 
-/**
- * 工具调用参数接口
- */
-export interface ToolCallParams {
-  name: string;
-  arguments?: Record<string, unknown>;
-}
+// 工具调用错误
+export { ToolCallErrorCode, ToolCallError } from "@/mcp-core";
 
-/**
- * 验证后的工具调用参数
- */
-export interface ValidatedToolCallParams {
-  name: string;
-  arguments?: Record<string, unknown>;
-}
+// 增强的工具信息
+export type { EnhancedToolInfo } from "@/mcp-core";
 
-/**
- * 工具调用错误码枚举
- */
-export enum ToolCallErrorCode {
-  /** 无效参数 */
-  INVALID_PARAMS = -32602,
-  /** 工具不存在 */
-  TOOL_NOT_FOUND = -32601,
-  /** 服务不可用 */
-  SERVICE_UNAVAILABLE = -32001,
-  /** 调用超时 */
-  TIMEOUT = -32002,
-  /** 工具执行错误 */
-  TOOL_EXECUTION_ERROR = -32000,
-}
+// 连接状态（mcp-core 版本包含完整的 6 个状态值）
+export { ConnectionState } from "@/mcp-core";
 
-/**
- * 工具调用错误类
- */
-export class ToolCallError extends Error {
-  constructor(
-    public code: ToolCallErrorCode,
-    message: string,
-    public data?: unknown
-  ) {
-    super(message);
-    this.name = "ToolCallError";
-  }
-}
-
-// =========================
-// 2. JSON Schema 类型
-// =========================
-
-// 从 mcp-core 重新导出 JSONSchema 类型和相关函数，避免重复定义
+// JSON Schema 类型和相关函数
 import type { JSONSchema } from "@/mcp-core";
 import { ensureToolJSONSchema } from "@/mcp-core";
-
-// 重新导出供外部使用
 export type { JSONSchema };
 export { ensureToolJSONSchema };
 
-// =========================
-// 3. 工具信息类型
-// =========================
-
 /**
- * 增强的工具信息接口
- * 包含工具的启用状态和使用统计信息
+ * 工具调用结果接口
+ *
+ * 注意：此类型与 server/lib/mcp/types.ts 中的 ToolCallResult 保持一致。
+ * 由于 lint 规则 useImportRestrictions 禁止跨模块导入，此处保留本地定义。
+ * 任何修改都应同步更新 server/lib/mcp/types.ts 中的对应定义。
  */
-export interface EnhancedToolInfo {
-  /** 工具唯一标识符，格式为 "{serviceName}__{originalName}" */
-  name: string;
-
-  /** 工具描述信息 */
-  description: string;
-
-  /** 工具输入参数的 JSON Schema 定义 */
-  inputSchema: JSONSchema;
-
-  /** 工具所属的 MCP 服务名称 */
-  serviceName: string;
-
-  /** 工具在 MCP 服务中的原始名称 */
-  originalName: string;
-
-  /** 工具是否启用 */
-  enabled: boolean;
-
-  /** 工具使用次数统计 */
-  usageCount: number;
-
-  /** 工具最后使用时间 (ISO 8601 格式字符串) */
-  lastUsedTime: string;
+export interface ToolCallResult {
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
+  isError?: boolean;
+  [key: string]: unknown;
 }
+
+// =========================
+// Endpoint 专属类型
+// =========================
 
 /**
  * MCP 服务管理器接口
@@ -158,20 +93,6 @@ export interface IMCPServiceManager {
   cleanup(): Promise<void>;
 }
 
-// =========================
-// 4. 连接状态类型
-// =========================
-
-/**
- * 连接状态枚举
- */
-export enum ConnectionState {
-  DISCONNECTED = "disconnected",
-  CONNECTING = "connecting",
-  CONNECTED = "connected",
-  FAILED = "failed",
-}
-
 /**
  * 连接选项接口
  */
@@ -181,10 +102,6 @@ export interface ConnectionOptions {
   /** 重连延迟时间（毫秒），默认 2000 */
   reconnectDelay?: number;
 }
-
-// =========================
-// 5. EndpointConnection 状态类型
-// =========================
 
 /**
  * EndpointConnection 状态接口
@@ -203,10 +120,6 @@ export interface EndpointConnectionStatus {
   /** 最后一次错误信息 */
   lastError: string | null;
 }
-
-// =========================
-// 6. EndpointManager 状态类型
-// =========================
 
 /**
  * 简单连接状态接口
@@ -264,7 +177,7 @@ export interface ReconnectResult {
 }
 
 // =========================
-// 7. 新 API 配置类型
+// 新 API 配置类型
 // =========================
 
 /**
@@ -289,7 +202,7 @@ export interface EndpointManagerConfig {
 }
 
 // =========================
-// 8. JWT Token 类型
+// JWT Token 类型
 // =========================
 
 /**
@@ -304,7 +217,7 @@ export interface EndpointManagerConfig {
  *   endpointId: "agent_1324149",
  *   purpose: "mcp-endpoint",
  *   iat: 1768480930,
- *   exp: 1800038530
+ *   exp: 1800038535
  * };
  * ```
  */

@@ -12,17 +12,11 @@
 
 import { createHash } from "node:crypto";
 import type { MCPToolsCache } from "../lib/mcp";
+import type { ToolCallResult } from "../lib/mcp/types.js";
 import type { TimeoutResponse } from "./timeout.js";
 
-// 工具调用结果接口（与 MCPServiceManager 保持一致）
-export interface ToolCallResult {
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-  isError?: boolean;
-  [key: string]: unknown; // 支持其他未知字段，与 lib/mcp/types 保持兼容
-}
+// re-export ToolCallResult 供本模块使用者直接导入
+export type { ToolCallResult };
 
 // MCP 消息接口 - 定义 JSON-RPC 2.0 标准消息格式
 export interface MCPMessage {
