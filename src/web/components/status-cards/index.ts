@@ -7,7 +7,6 @@
 // 组件导出
 export { MiniCircularProgress } from "./mini-circular-progress";
 export { EndpointStatusCard } from "./endpoint-status-card";
-export { ClientStatusCard } from "./client-status-card";
 export { ServerStatusCard } from "./server-status-card";
 export { SystemStatusCard } from "./system-status-card";
 export { VoiceInteractionCard } from "./voice-interaction-card";

@@ -78,9 +78,6 @@ vi.mock("@/components/mcp-endpoint-setting-button", () => ({
     <div data-testid="mcp-endpoint-setting-button" />
   ),
 }));
-vi.mock("@/components/web-url-setting-button", () => ({
-  WebUrlSettingButton: () => <div data-testid="web-url-setting-button" />,
-}));
 vi.mock("@/components/tool-call-logs-dialog", () => ({
   ToolCallLogsDialog: () => <div data-testid="tool-call-logs-dialog" />,
 }));
@@ -146,10 +143,6 @@ describe("DashboardStatusCard", () => {
     // 检查端点数量显示
     expect(screen.getByText("1")).toBeInTheDocument(); // 小智接入点: 1
 
-    // 检查Xiaozhi Client卡片
-    expect(screen.getByText("Xiaozhi Client")).toBeInTheDocument();
-    expect(screen.getByText("已连接")).toBeInTheDocument();
-
     // 检查MCP服务卡片 - 新格式为 "已连接 X 个，共 Y 个服务"
     expect(screen.getByText("MCP服务")).toBeInTheDocument();
     expect(screen.getByText("已连接 1 个，共 1 个服务")).toBeInTheDocument();
@@ -163,15 +156,7 @@ describe("DashboardStatusCard", () => {
     expect(
       screen.getByTestId("mcp-endpoint-setting-button")
     ).toBeInTheDocument();
-    expect(screen.getByTestId("web-url-setting-button")).toBeInTheDocument();
     expect(screen.getByTestId("tool-call-logs-dialog")).toBeInTheDocument();
-  });
-
-  it("应该正确显示服务端 URL", () => {
-    render(<DashboardStatusCard />);
-
-    // 基于 HTTP 的服务端 URL
-    expect(screen.getByText(/http:/)).toBeInTheDocument();
   });
 
   it("应该正确渲染多个MCP端点", () => {
@@ -195,7 +180,8 @@ describe("DashboardStatusCard", () => {
 
     render(<DashboardStatusCard />);
 
-    expect(screen.getByText("未连接")).toBeInTheDocument();
+    // 未连接状态下页面仍应正常渲染（ClientStatusCard 已移除）
+    expect(screen.getByText("小智接入点")).toBeInTheDocument();
   });
 
   it("应该正确处理空MCP服务器", () => {
@@ -228,14 +214,14 @@ describe("DashboardStatusCard", () => {
     const gridContainer = container.querySelector(".grid");
     expect(gridContainer).toHaveClass("grid-cols-1", "gap-4", "px-4");
     expect(gridContainer).toHaveClass("@xl/main:grid-cols-2");
-    expect(gridContainer).toHaveClass("@5xl/main:grid-cols-5");
+    expect(gridContainer).toHaveClass("@5xl/main:grid-cols-4");
   });
 
   it("应该正确渲染MiniCircularProgress组件", () => {
     const { container } = render(<DashboardStatusCard />);
 
-    // 检查是否有5个进度圆形组件（每个卡片一个）
+    // 检查是否有4个进度圆形组件（每个卡片一个）
     const progressCircles = container.querySelectorAll("svg");
-    expect(progressCircles.length).toBeGreaterThanOrEqual(5);
+    expect(progressCircles.length).toBeGreaterThanOrEqual(4);
   });
 });
