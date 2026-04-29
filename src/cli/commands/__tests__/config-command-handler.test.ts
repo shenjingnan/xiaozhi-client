@@ -399,6 +399,79 @@ describe("ConfigCommandHandler", () => {
           expect.stringContaining("sse-server: [SSE] http://localhost:3000/sse")
         );
       });
+
+      it("应该显示 HTTP 类型服务器配置", async () => {
+        mockConfigManager.configExists.mockReturnValue(true);
+        mockConfigManager.getConfig.mockReturnValue({
+          mcpServers: {
+            "http-server": {
+              type: "http",
+              url: "http://localhost:8080/mcp",
+            },
+          },
+        });
+
+        await handler.subcommands![1].execute(["mcpServers"], {});
+
+        expect(mockConsoleLog).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "http-server: [HTTP] http://localhost:8080/mcp"
+          )
+        );
+      });
+
+      it("应该显示 StreamableHTTP 类型服务器配置", async () => {
+        mockConfigManager.configExists.mockReturnValue(true);
+        mockConfigManager.getConfig.mockReturnValue({
+          mcpServers: {
+            "streamable-http-server": {
+              type: "streamable-http",
+              url: "http://localhost:9090/mcp",
+            },
+          },
+        });
+
+        await handler.subcommands![1].execute(["mcpServers"], {});
+
+        expect(mockConsoleLog).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "streamable-http-server: [HTTP] http://localhost:9090/mcp"
+          )
+        );
+      });
+
+      it("应该正确显示包含三种类型的混合服务器配置", async () => {
+        mockConfigManager.configExists.mockReturnValue(true);
+        mockConfigManager.getConfig.mockReturnValue({
+          mcpServers: {
+            "stdio-server": {
+              command: "npx",
+              args: ["-y", "@modelcontextprotocol/server-stdio"],
+            },
+            "sse-server": {
+              type: "sse",
+              url: "https://example.com/sse",
+            },
+            "http-server": {
+              url: "https://example.com/mcp",
+            },
+          },
+        });
+
+        await handler.subcommands![1].execute(["mcpServers"], {});
+
+        expect(mockConsoleLog).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "stdio-server: npx -y @modelcontextprotocol/server-stdio"
+          )
+        );
+        expect(mockConsoleLog).toHaveBeenCalledWith(
+          expect.stringContaining("sse-server: [SSE] https://example.com/sse")
+        );
+        expect(mockConsoleLog).toHaveBeenCalledWith(
+          expect.stringContaining("http-server: [HTTP] https://example.com/mcp")
+        );
+      });
     });
 
     describe("connection 配置获取", () => {
