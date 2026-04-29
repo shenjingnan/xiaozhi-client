@@ -88,6 +88,7 @@ interface RestartPollingConfig {
   interval: number; // 毫秒，重启检查间隔
   maxAttempts: number; // 最大检查次数
   currentAttempts: number; // 当前检查次数
+  consecutiveSuccessCount: number; // 连续成功次数（用于判断服务恢复）
   timeout: number; // 总超时时间（毫秒）
   startTime: number | null; // 开始时间戳
 }
@@ -212,6 +213,12 @@ let restartPollingTimer: NodeJS.Timeout | null = null;
  * 是否已完成初始化
  */
 let initialized = false;
+
+/**
+ * 连续成功阈值：API 连续响应 N 次即认为服务已恢复
+ * 用于解决 HTTP 轮询场景下 client.status 永远不为 "connected" 的问题
+ */
+const CONSECUTIVE_SUCCESS_THRESHOLD = 3;
 
 /**
  * 创建状态 Store
@@ -537,6 +544,7 @@ export const useStatusStore = create<StatusStore>()(
               ...state.restartPolling,
               enabled: true,
               currentAttempts: 0,
+              consecutiveSuccessCount: 0,
               startTime,
             },
           }),
@@ -564,29 +572,47 @@ export const useStatusStore = create<StatusStore>()(
             // 尝试获取状态以检查服务是否重连成功
             const status = await refreshStatus();
 
-            // 检查是否重连成功
-            const isReconnected = status.client?.status === "connected";
+            // 连续成功计数 +1
+            const newConsecutiveCount =
+              (currentRestartPolling.consecutiveSuccessCount || 0) + 1;
+            currentState.setRestartPollingConfig({
+              currentAttempts: attempts,
+              consecutiveSuccessCount: newConsecutiveCount,
+            });
 
-            if (isReconnected) {
-              console.log("[StatusStore] 服务重连成功，停止重启轮询");
+            // 检查是否通过 WebSocket 心跳标记为已连接（最优路径）
+            const isClientConnected = status.client?.status === "connected";
 
-              // 设置重启完成状态
-              setRestartStatus(
-                {
-                  status: "completed",
-                  timestamp: Date.now(),
-                },
-                "polling"
+            if (isClientConnected) {
+              console.log(
+                "[StatusStore] 服务重连成功（客户端已连接），停止重启轮询"
               );
 
-              // 停止重启轮询和loading状态
+              setRestartStatus(
+                { status: "completed", timestamp: Date.now() },
+                "polling"
+              );
               currentState.stopRestartPolling();
               setLoading({ isRestarting: false });
               return;
             }
 
-            // 更新尝试次数
-            currentState.setRestartPollingConfig({ currentAttempts: attempts });
+            // 检查 API 是否连续可达（HTTP 轮询场景下的恢复判断）
+            // 新进程启动后 client.status 默认为 "disconnected"，
+            // 但只要 API 能稳定响应就说明服务已恢复
+            if (newConsecutiveCount >= CONSECUTIVE_SUCCESS_THRESHOLD) {
+              console.log(
+                `[StatusStore] 服务已恢复（API 连续 ${newConsecutiveCount} 次成功），停止重启轮询`
+              );
+
+              setRestartStatus(
+                { status: "completed", timestamp: Date.now() },
+                "polling"
+              );
+              currentState.stopRestartPolling();
+              setLoading({ isRestarting: false });
+              return;
+            }
 
             // 检查是否超时或达到最大尝试次数
             if (
@@ -595,7 +621,6 @@ export const useStatusStore = create<StatusStore>()(
             ) {
               console.warn("[StatusStore] 重启重连检查超时或达到最大尝试次数");
 
-              // 设置重启失败状态
               setRestartStatus(
                 {
                   status: "failed",
@@ -604,19 +629,25 @@ export const useStatusStore = create<StatusStore>()(
                 },
                 "polling"
               );
-
-              // 停止重启轮询和loading状态
               currentState.stopRestartPolling();
               setLoading({ isRestarting: false });
             }
           } catch (error) {
+            // 请求失败：重置连续成功计数（旧进程 dying 阶段会触发）
+            currentState.setRestartPollingConfig({
+              currentAttempts: attempts,
+              consecutiveSuccessCount: 0,
+            });
             console.log(
               `[StatusStore] 重启重连检查失败 (第 ${attempts} 次):`,
               error
             );
 
-            // 更新尝试次数
-            currentState.setRestartPollingConfig({ currentAttempts: attempts });
+            // 更新尝试次数（超时检查在下面统一处理）
+            currentState.setRestartPollingConfig({
+              currentAttempts: attempts,
+              consecutiveSuccessCount: 0,
+            });
 
             // 检查是否超时或达到最大尝试次数
             if (
@@ -652,6 +683,7 @@ export const useStatusStore = create<StatusStore>()(
               ...state.restartPolling,
               enabled: false,
               currentAttempts: 0,
+              consecutiveSuccessCount: 0,
               startTime: null,
             },
           }),
