@@ -3,7 +3,8 @@
  */
 
 import type { Command } from "commander";
-import type { VersionUtils } from "../../utils/version";
+// biome-ignore lint: 需要值导入以支持 typeof 类型查询
+import { VersionUtils } from "../../utils/version";
 import { ErrorHandler } from "../errors/ErrorHandlers";
 import type {
   CommandHandler,
