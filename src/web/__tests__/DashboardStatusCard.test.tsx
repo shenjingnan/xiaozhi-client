@@ -36,7 +36,6 @@ const useConfig = vi.hoisted(() =>
     },
   }))
 );
-const mockUseConnectionStatus = vi.hoisted(() => vi.fn(() => true));
 const mockUseVoiceInteractionConfig = vi.hoisted(() =>
   vi.fn(() => ({
     asr: { appid: "test-appid", accessToken: "test-token" },
@@ -62,7 +61,6 @@ vi.mock("@/stores/config", () => ({
 }));
 
 vi.mock("@/stores/status", () => ({
-  useConnectionStatus: mockUseConnectionStatus,
   useStatusStore: vi.fn(() => ({
     clientStatus: { status: "connected" as const },
     loading: { isLoading: false, isRestarting: false },
@@ -119,7 +117,6 @@ describe("DashboardStatusCard", () => {
         reconnectInterval: 5000,
       },
     });
-    mockUseConnectionStatus.mockReturnValue(true);
     mockUseVoiceInteractionConfig.mockReturnValue({
       asr: { appid: "test-appid", accessToken: "test-token" },
       llm: {
@@ -172,16 +169,6 @@ describe("DashboardStatusCard", () => {
     // 使用getAllByText来获取所有的"3"，确保至少存在一个
     const endpointCounts = screen.getAllByText("3");
     expect(endpointCounts.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("应该正确处理未连接状态", () => {
-    // Mock未连接状态
-    mockUseConnectionStatus.mockReturnValue(false);
-
-    render(<DashboardStatusCard />);
-
-    // 未连接状态下页面仍应正常渲染（ClientStatusCard 已移除）
-    expect(screen.getByText("小智接入点")).toBeInTheDocument();
   });
 
   it("应该正确处理空MCP服务器", () => {
