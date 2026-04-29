@@ -40,7 +40,7 @@ interface ResolvedToolTarget {
   /** 日志用的服务名 */
   logServerName: string;
   /** 日志用的原始工具名 */
-  originalToolName: string;
+  originalName: string;
   /** 统计用的服务名 */
   statsServiceName: string;
   /** 统计用的原始工具名 */
@@ -636,7 +636,7 @@ export class MCPServiceManager extends EventEmitter {
     if (this.customMCPHandler.hasTool(toolName)) {
       const customTool = this.customMCPHandler.getToolInfo(toolName);
       const logServerName = this.getLogServerName(customTool!);
-      const originalToolName = this.getOriginalToolName(toolName, customTool);
+      const originalName = this.getOriginalToolName(toolName, customTool);
 
       if (customTool?.handler?.type === "mcp") {
         const config = customTool.handler.config as {
@@ -647,7 +647,7 @@ export class MCPServiceManager extends EventEmitter {
           type: "custom-mcp",
           toolName,
           logServerName,
-          originalToolName,
+          originalName,
           statsServiceName: config.serviceName,
           statsOriginalName: config.toolName,
           customTool,
@@ -658,7 +658,7 @@ export class MCPServiceManager extends EventEmitter {
         type: "custom-other",
         toolName,
         logServerName,
-        originalToolName,
+        originalName,
         statsServiceName: "customMCP",
         statsOriginalName: toolName,
         customTool,
@@ -675,7 +675,7 @@ export class MCPServiceManager extends EventEmitter {
       type: "standard",
       toolName,
       logServerName: toolInfo.serviceName,
-      originalToolName: toolInfo.originalName,
+      originalName: toolInfo.originalName,
       statsServiceName: toolInfo.serviceName,
       statsOriginalName: toolInfo.originalName,
       toolInfo,
@@ -773,7 +773,7 @@ export class MCPServiceManager extends EventEmitter {
 
       // 记录成功的工具调用
       this.toolCallLogger.recordToolCall({
-        toolName: target.originalToolName,
+        toolName: target.originalName,
         serverName: target.logServerName,
         arguments: arguments_,
         result: result,
@@ -788,7 +788,7 @@ export class MCPServiceManager extends EventEmitter {
     } catch (error) {
       // 记录失败的工具调用
       this.toolCallLogger.recordToolCall({
-        toolName: target.originalToolName,
+        toolName: target.originalName,
         serverName: target.logServerName,
         arguments: arguments_,
         result: null,
@@ -812,14 +812,14 @@ export class MCPServiceManager extends EventEmitter {
    * 更新工具调用统计信息的通用方法
    * @param toolName 工具名称
    * @param serviceName 服务名称
-   * @param originalToolName 原始工具名称
+   * @param originalName 原始工具名称
    * @param isSuccess 是否调用成功
    * @private
    */
   private async updateToolStats(
     toolName: string,
     serviceName: string,
-    originalToolName: string,
+    originalName: string,
     isSuccess: boolean
   ): Promise<void> {
     try {
@@ -833,7 +833,7 @@ export class MCPServiceManager extends EventEmitter {
         if (serviceName !== "customMCP") {
           await this.updateMCPServerToolStats(
             serviceName,
-            originalToolName,
+            originalName,
             currentTime
           );
         }
@@ -847,7 +847,7 @@ export class MCPServiceManager extends EventEmitter {
         if (serviceName !== "customMCP") {
           await this.updateMCPServerToolLastUsedTime(
             serviceName,
-            originalToolName,
+            originalName,
             currentTime
           );
         }
@@ -866,21 +866,21 @@ export class MCPServiceManager extends EventEmitter {
    * 统一的统计更新处理方法（带错误处理）
    * @param toolName 工具名称
    * @param serviceName 服务名称
-   * @param originalToolName 原始工具名称
+   * @param originalName 原始工具名称
    * @param isSuccess 是否调用成功
    * @private
    */
   private async updateToolStatsSafe(
     toolName: string,
     serviceName: string,
-    originalToolName: string,
+    originalName: string,
     isSuccess: boolean
   ): Promise<void> {
     try {
       await this.updateToolStats(
         toolName,
         serviceName,
-        originalToolName,
+        originalName,
         isSuccess
       );
     } catch (error) {
@@ -1012,10 +1012,10 @@ export class MCPServiceManager extends EventEmitter {
     config: { serviceName: string; toolName: string },
     arguments_: Record<string, unknown>
   ): Promise<ToolCallResult> {
-    const { serviceName, toolName: originalToolName } = config;
+    const { serviceName, toolName: originalName } = config;
 
     logger.debug(
-      `[MCPManager] 调用 MCP 同步工具 ${toolName} -> ${serviceName}.${originalToolName}`
+      `[MCPManager] 调用 MCP 同步工具 ${toolName} -> ${serviceName}.${originalName}`
     );
 
     const service = this.services.get(serviceName);
@@ -1028,7 +1028,7 @@ export class MCPServiceManager extends EventEmitter {
     }
 
     try {
-      const result = await service.callTool(originalToolName, arguments_ || {});
+      const result = await service.callTool(originalName, arguments_ || {});
       logger.debug(`[MCPManager] MCP 同步工具 ${toolName} 调用成功`);
       return result as ToolCallResult;
     } catch (error) {

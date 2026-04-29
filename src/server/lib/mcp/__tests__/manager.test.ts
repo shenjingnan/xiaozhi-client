@@ -502,7 +502,7 @@ describe("MCPServiceManager - resolveToolTarget 工具目标解析", () => {
       expect(result.type).toBe("standard");
       expect(result.toolName).toBe(toolName);
       expect(result.logServerName).toBe("server-a");
-      expect(result.originalToolName).toBe("original_standard_tool");
+      expect(result.originalName).toBe("original_standard_tool");
       expect(result.statsServiceName).toBe("server-a");
       expect(result.statsOriginalName).toBe("original_standard_tool");
       expect(result.toolInfo).toBe(toolInfo);
@@ -542,7 +542,7 @@ describe("MCPServiceManager - recordToolCallStats 统计记录", () => {
       type: "standard" as const,
       toolName: "test_tool",
       logServerName: "server-1",
-      originalToolName: "original_test",
+      originalName: "original_test",
       statsServiceName: "server-1",
       statsOriginalName: "original_test",
     };
@@ -566,7 +566,7 @@ describe("MCPServiceManager - recordToolCallStats 统计记录", () => {
       type: "custom-other" as const,
       toolName: "coze_tool",
       logServerName: "coze",
-      originalToolName: "coze_tool",
+      originalName: "coze_tool",
       statsServiceName: "customMCP",
       statsOriginalName: "coze_tool",
     };
@@ -590,7 +590,7 @@ describe("MCPServiceManager - recordToolCallStats 统计记录", () => {
       type: "custom-mcp" as const,
       toolName: "sync_tool",
       logServerName: "mcp-server-1",
-      originalToolName: "real_tool",
+      originalName: "real_tool",
       statsServiceName: "mcp-server-1",
       statsOriginalName: "real_tool",
     };

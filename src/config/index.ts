@@ -36,9 +36,11 @@ export {
 export { ConfigResolver } from "./resolver.js";
 export { ConfigInitializer } from "./initializer.js";
 
-// CustomMCP 工具处理器配置类型（定义在 manager.ts 中，不在 types/config 中）
+// 核心配置类型（仍定义在 manager.ts 中）
+export type { AppConfig, WebServerInstance } from "./manager.js";
+
+// CustomMCP 工具处理器配置类型（已移至 custom-mcp.ts）
 export type {
-  AppConfig,
   ChainHandlerConfig,
   CustomMCPConfig,
   CustomMCPTool,
@@ -48,8 +50,10 @@ export type {
   MCPHandlerConfig,
   ProxyHandlerConfig,
   ScriptHandlerConfig,
-  WebServerInstance,
-} from "./manager.js";
+} from "./custom-mcp.js";
+
+// CustomMCPManager 类
+export { CustomMCPManager } from "./custom-mcp.js";
 
 // =========================
 // 类型导出：从唯一权威源 re-export

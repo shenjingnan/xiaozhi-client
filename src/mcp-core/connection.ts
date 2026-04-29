@@ -210,11 +210,17 @@ export class MCPConnection {
     // 清理客户端
     if (this.client) {
       try {
-        this.client.close().catch(() => {
-          // 忽略关闭时的错误
+        this.client.close().catch((error) => {
+          console.debug(
+            `[MCP-${this.name}] 关闭连接时出错（已忽略）:`,
+            error instanceof Error ? error.message : String(error)
+          );
         });
       } catch (error) {
-        // 忽略关闭时的错误
+        console.debug(
+          `[MCP-${this.name}] 关闭连接时出错（已忽略）:`,
+          error instanceof Error ? error.message : String(error)
+        );
       }
       this.client = null;
     }
