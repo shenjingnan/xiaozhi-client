@@ -133,17 +133,23 @@ export class ServiceManagerImpl implements IServiceManager {
    */
   async restart(options: ServiceStartOptions): Promise<void> {
     try {
-      // 先停止服务
+      // 先尝试停止服务，失败不阻断启动流程
       const status = this.getStatus();
       if (status.running) {
-        await this.stop();
-        // 等待一下确保完全停止
-        await new Promise((resolve) =>
-          setTimeout(resolve, RETRY_CONSTANTS.DEFAULT_INTERVAL)
-        );
+        try {
+          await this.stop();
+          // 等待一下确保完全停止
+          await new Promise((resolve) =>
+            setTimeout(resolve, RETRY_CONSTANTS.DEFAULT_INTERVAL)
+          );
+        } catch (stopError) {
+          consola.warn(
+            `停止服务时出现警告（将继续启动）: ${stopError instanceof Error ? stopError.message : String(stopError)}`
+          );
+        }
       }
 
-      // 重新启动服务
+      // 无论停止是否成功，都尝试启动服务
       await this.start(options);
     } catch (error) {
       throw new ServiceError(

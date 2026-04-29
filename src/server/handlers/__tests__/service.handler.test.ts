@@ -74,7 +74,9 @@ describe("ServiceApiHandler", () => {
 
     // 模拟 spawn
     mockSpawn = vi.fn().mockReturnValue({
+      pid: 12345,
       unref: vi.fn(),
+      on: vi.fn(),
     });
     const { spawn } = await import("node:child_process");
     vi.mocked(spawn).mockImplementation(mockSpawn);
@@ -218,13 +220,25 @@ describe("ServiceApiHandler", () => {
     it("应该成功启动服务", async () => {
       await handler.startService(mockContext);
 
-      expect(mockSpawn).toHaveBeenCalledWith("xiaozhi", ["start", "--daemon"], {
-        detached: true,
-        stdio: "ignore",
-        env: expect.objectContaining({
-          XIAOZHI_CONFIG_DIR: expect.any(String),
-        }),
-      });
+      // 验证 spawn 使用 node 执行本地 CLI 脚本
+      const spawnArgs = mockSpawn.mock.calls[0];
+      expect(spawnArgs[0]).toBe("node");
+      // 第一个参数是 CLI 脚本路径，后续是命令参数
+      expect(spawnArgs[1].length).toBeGreaterThanOrEqual(3); // cliPath + start + --daemon
+      expect(spawnArgs[1]).toContain("start");
+      expect(spawnArgs[1]).toContain("--daemon");
+      // 验证 CLI 路径以 index.js 结尾
+      const cliPath = spawnArgs[1][0];
+      expect(cliPath).toMatch(/index\.js$/);
+      expect(spawnArgs[2]).toEqual(
+        expect.objectContaining({
+          detached: true,
+          stdio: "ignore",
+          env: expect.objectContaining({
+            XIAOZHI_CONFIG_DIR: expect.any(String),
+          }),
+        })
+      );
 
       expect(mockContext.success).toHaveBeenCalledWith(null, "启动请求已接收");
     });
@@ -266,9 +280,8 @@ describe("ServiceApiHandler", () => {
 
       await handler.startService(mockContext);
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "xiaozhi",
-        ["start", "--daemon"],
+      const spawnArgs = mockSpawn.mock.calls[0];
+      expect(spawnArgs[2]).toEqual(
         expect.objectContaining({
           env: expect.objectContaining({
             XIAOZHI_CONFIG_DIR: "/custom/config/dir",
@@ -290,19 +303,10 @@ describe("ServiceApiHandler", () => {
 
       await handler.startService(mockContext);
 
-      // Check that spawn was called with basic structure
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "xiaozhi",
-        ["start", "--daemon"],
-        expect.objectContaining({
-          detached: true,
-          stdio: "ignore",
-          env: expect.any(Object),
-        })
-      );
-
-      // Check that the environment contains XIAOZHI_CONFIG_DIR
+      // Check that spawn was called with node and local CLI path
       const spawnCall = mockSpawn.mock.calls[0];
+      expect(spawnCall[0]).toBe("node");
+      expect(spawnCall[1][0]).toMatch(/index\.js$/);
       const spawnOptions = spawnCall[2];
       expect(spawnOptions.env).toHaveProperty("XIAOZHI_CONFIG_DIR");
 
@@ -319,13 +323,19 @@ describe("ServiceApiHandler", () => {
     it("should stop service successfully", async () => {
       await handler.stopService(mockContext);
 
-      expect(mockSpawn).toHaveBeenCalledWith("xiaozhi", ["stop"], {
-        detached: true,
-        stdio: "ignore",
-        env: expect.objectContaining({
-          XIAOZHI_CONFIG_DIR: expect.any(String),
-        }),
-      });
+      const spawnArgs = mockSpawn.mock.calls[0];
+      expect(spawnArgs[0]).toBe("node");
+      expect(spawnArgs[1][0]).toMatch(/index\.js$/);
+      expect(spawnArgs[1]).toContain("stop");
+      expect(spawnArgs[2]).toEqual(
+        expect.objectContaining({
+          detached: true,
+          stdio: "ignore",
+          env: expect.objectContaining({
+            XIAOZHI_CONFIG_DIR: expect.any(String),
+          }),
+        })
+      );
 
       expect(mockContext.success).toHaveBeenCalledWith(null, "停止请求已接收");
     });
@@ -428,9 +438,12 @@ describe("ServiceApiHandler", () => {
       await vi.advanceTimersByTimeAsync(500);
 
       expect(mockMcpServiceManager.getStatus).toHaveBeenCalled();
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "xiaozhi",
-        ["restart", "--daemon"],
+      const spawnArgs = mockSpawn.mock.calls[0];
+      expect(spawnArgs[0]).toBe("node");
+      expect(spawnArgs[1][0]).toMatch(/index\.js$/);
+      expect(spawnArgs[1]).toContain("restart");
+      expect(spawnArgs[1]).toContain("--daemon");
+      expect(spawnArgs[2]).toEqual(
         expect.objectContaining({
           detached: true,
           stdio: "ignore",
@@ -456,14 +469,11 @@ describe("ServiceApiHandler", () => {
       // Fast-forward the initial timeout to trigger executeRestart
       await vi.advanceTimersByTimeAsync(500);
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "xiaozhi",
-        ["start", "--daemon"],
-        expect.objectContaining({
-          detached: true,
-          stdio: "ignore",
-        })
-      );
+      const spawnArgs = mockSpawn.mock.calls[0];
+      expect(spawnArgs[0]).toBe("node");
+      expect(spawnArgs[1][0]).toMatch(/index\.js$/);
+      expect(spawnArgs[1]).toContain("start");
+      expect(spawnArgs[1]).toContain("--daemon");
     });
 
     it("should handle restart execution error", async () => {
@@ -497,15 +507,12 @@ describe("ServiceApiHandler", () => {
       // Fast-forward the initial timeout to trigger executeRestart
       await vi.advanceTimersByTimeAsync(500);
 
-      // 注意：实际代码逻辑是始终使用 --daemon 模式
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "xiaozhi",
-        ["restart", "--daemon"],
-        expect.objectContaining({
-          detached: true,
-          stdio: "ignore",
-        })
-      );
+      // 注意：实际代码逻辑是始终使用 --daemon 模式，且使用 node 执行本地 CLI
+      const spawnArgs = mockSpawn.mock.calls[0];
+      expect(spawnArgs[0]).toBe("node");
+      expect(spawnArgs[1][0]).toMatch(/index\.js$/);
+      expect(spawnArgs[1]).toContain("restart");
+      expect(spawnArgs[1]).toContain("--daemon");
     });
   });
 
@@ -516,9 +523,8 @@ describe("ServiceApiHandler", () => {
 
       await handler.startService(mockContext);
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "xiaozhi",
-        ["start", "--daemon"],
+      const spawnArgs = mockSpawn.mock.calls[0];
+      expect(spawnArgs[2]).toEqual(
         expect.objectContaining({
           env: expect.objectContaining({
             PATH: originalPath,

@@ -1,9 +1,11 @@
+import { spawn } from "node:child_process";
+import type { ChildProcess } from "node:child_process";
 /**
  * 服务 API HTTP 路由处理器
  * 提供服务启动、停止、重启等相关的 RESTful API 接口
  */
-import { spawn } from "node:child_process";
-import type { ChildProcess } from "node:child_process";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Context } from "hono";
 import { logger } from "../Logger.js";
 import type { Logger } from "../Logger.js";
@@ -16,36 +18,84 @@ import type { AppContext } from "../types/hono.context.js";
 import { requireMCPServiceManager } from "../types/hono.context.js";
 
 /**
+ * 获取项目根目录
+ * 基于当前文件位置向上查找，确保无论从哪里启动都能正确定位
+ *
+ * 支持以下路径场景：
+ * - 源码开发：src/server/handlers/ → 向上 3 级
+ * - 独立构建（tsup）：dist/server/handlers/ → 向上 3 级
+ * - WebServer 打包产物：dist/backend/ → 向上 2 级
+ */
+function getProjectRoot(): string {
+  const currentFile = fileURLToPath(import.meta.url);
+  const currentDir = dirname(currentFile);
+
+  // WebServer 打包后的代码在 dist/backend/ 下，向上 2 级到项目根
+  if (
+    currentDir.endsWith("/dist/backend") ||
+    currentDir.endsWith("\\dist\\backend")
+  ) {
+    return join(currentDir, "..", "..");
+  }
+
+  // 构建产物在 dist/server/handlers/ 下，向上 3 级到项目根
+  if (
+    currentDir.endsWith("/dist/server/handlers") ||
+    currentDir.endsWith("\\dist\\server\\handlers")
+  ) {
+    return join(currentDir, "..", "..", "..");
+  }
+
+  // 源码在 src/server/handlers/ 下，向上 3 级到项目根
+  return join(currentDir, "..", "..", "..");
+}
+
+/**
  * 服务 API 处理器
  */
 export class ServiceApiHandler {
   private logger: Logger;
   private statusService: StatusService;
   private eventBus: EventBus;
+  /** 项目根目录路径 */
+  private readonly projectRoot: string;
 
   constructor(statusService: StatusService) {
     this.logger = logger;
     this.statusService = statusService;
     this.eventBus = getEventBus();
+    this.projectRoot = getProjectRoot();
   }
 
   /**
    * 通用的 xiaozhi 进程启动方法
-   * @param args 命令行参数（如 ["start", "--daemon"]）
+   * 使用 node 直接执行项目本地的 CLI 脚本，避免依赖全局安装的 xiaozhi 命令
+   * @param args CLI 命令行参数（如 ["start", "--daemon"]）
    * @returns 启动的子进程
    */
   private spawnXiaozhiProcess(args: string[]): ChildProcess {
-    const child = spawn("xiaozhi", args, {
+    const cliPath = join(this.projectRoot, "dist", "cli", "index.js");
+
+    const child = spawn("node", [cliPath, ...args], {
       detached: true,
       stdio: "ignore",
+      cwd: this.projectRoot,
       env: {
         ...process.env,
-        XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || process.cwd(),
+        XIAOZHI_CONFIG_DIR: process.env.XIAOZHI_CONFIG_DIR || this.projectRoot,
       },
     });
 
     child.unref();
-    this.logger.info(`MCP 服务命令已发送: xiaozhi ${args.join(" ")}`);
+
+    // 监听 spawn 错误（如命令不存在），避免错误被静默丢弃
+    child.on("error", (err) => {
+      this.logger.error(
+        `启动 xiaozhi 进程失败 (命令: node ${cliPath} ${args.join(" ")}): ${err.message}`
+      );
+    });
+
+    this.logger.info(`MCP 服务命令已发送: node ${cliPath} ${args.join(" ")}`);
 
     return child;
   }
@@ -111,24 +161,31 @@ export class ServiceApiHandler {
   ): Promise<void> {
     this.logger.info("正在重启 MCP 服务...");
 
-    try {
-      // 获取当前服务状态
-      const status = mcpServiceManager.getStatus();
+    // 获取当前服务状态
+    const status = mcpServiceManager.getStatus();
 
-      if (!status.isRunning) {
-        this.logger.warn("MCP 服务未运行，尝试启动服务");
+    if (!status.isRunning) {
+      this.logger.warn("MCP 服务未运行，尝试启动服务");
 
-        // 如果服务未运行，尝试启动服务
-        this.spawnXiaozhiProcess(["start", "--daemon"]);
-        return;
+      // 如果服务未运行，尝试启动服务
+      const child = this.spawnXiaozhiProcess(["start", "--daemon"]);
+      if (!child.pid) {
+        throw new Error("无法创建 xiaozhi 启动子进程");
       }
-
-      // 执行重启命令，始终使用 daemon 模式
-      this.spawnXiaozhiProcess(["restart", "--daemon"]);
-    } catch (error) {
-      this.logger.error("重启服务失败:", error);
-      throw error;
+      return;
     }
+
+    // 执行重启命令，始终使用 daemon 模式
+    const child = this.spawnXiaozhiProcess(["restart", "--daemon"]);
+
+    // 验证子进程是否成功创建
+    if (!child.pid) {
+      throw new Error("无法创建 xiaozhi 重启子进程");
+    }
+
+    this.logger.info(
+      `重启子进程已启动 (PID: ${child.pid}, 项目目录: ${this.projectRoot})`
+    );
   }
 
   /**
