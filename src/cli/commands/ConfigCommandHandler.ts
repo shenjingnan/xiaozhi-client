@@ -3,6 +3,12 @@
  */
 
 import path from "node:path";
+import type {
+  AppConfig,
+  HTTPMCPServerConfig,
+  MCPServerConfig,
+  SSEMCPServerConfig,
+} from "@/types";
 import chalk from "chalk";
 import ora from "ora";
 import type { Ora } from "ora";
@@ -13,6 +19,24 @@ import type {
   CommandOptions,
 } from "../interfaces/CommandTypes";
 import type { IDIContainer } from "../interfaces/Config";
+
+/**
+ * 检查是否为 SSE 类型的 MCP 服务器配置
+ */
+function isSSEServerConfig(
+  config: MCPServerConfig
+): config is SSEMCPServerConfig {
+  return "type" in config && config.type === "sse";
+}
+
+/**
+ * 检查是否为 HTTP 类型的 MCP 服务器配置
+ */
+function isHTTPServerConfig(
+  config: MCPServerConfig
+): config is HTTPMCPServerConfig {
+  return "url" in config && !("command" in config);
+}
 
 /**
  * 配置管理命令处理器
@@ -128,7 +152,7 @@ export class ConfigCommandHandler extends BaseCommandHandler {
       }
 
       const configManager = this.getService<any>("configManager");
-      const config = configManager.getConfig();
+      const config = configManager.getConfig() as AppConfig;
 
       switch (key) {
         case "mcpEndpoint": {
@@ -152,14 +176,14 @@ export class ConfigCommandHandler extends BaseCommandHandler {
           for (const [name, serverConfig] of Object.entries(
             config.mcpServers
           )) {
-            const server = serverConfig as any;
-            // 检查是否是 SSE 类型
-            if ("type" in server && server.type === "sse") {
-              console.log(chalk.gray(`  ${name}: [SSE] ${server.url}`));
+            if (isSSEServerConfig(serverConfig)) {
+              console.log(chalk.gray(`  ${name}: [SSE] ${serverConfig.url}`));
+            } else if (isHTTPServerConfig(serverConfig)) {
+              console.log(chalk.gray(`  ${name}: [HTTP] ${serverConfig.url}`));
             } else {
               console.log(
                 chalk.gray(
-                  `  ${name}: ${server.command} ${server.args.join(" ")}`
+                  `  ${name}: ${serverConfig.command} ${serverConfig.args.join(" ")}`
                 )
               );
             }

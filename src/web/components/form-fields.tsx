@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { dynamicPath } from "@/lib/form-helpers";
 import type { FieldConfig } from "@/types/form-config";
 import type { UseFormReturn } from "react-hook-form";
 import type { z } from "zod";
@@ -110,7 +111,7 @@ export function renderFormField<
     <FormField
       key={String(name)}
       control={form.control}
-      name={String(name) as any}
+      name={dynamicPath(String(name))}
       render={({ field }) => (
         <FormItem>
           <FormLabel>
@@ -159,7 +160,7 @@ export function renderSelectFieldWithHandler<
     <FormField
       key={String(name)}
       control={form.control}
-      name={String(name) as any}
+      name={dynamicPath(String(name))}
       render={({ field }) => (
         <FormItem>
           <FormLabel>

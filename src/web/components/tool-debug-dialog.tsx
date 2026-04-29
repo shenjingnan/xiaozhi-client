@@ -37,6 +37,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { COPY_FEEDBACK_DURATION } from "@/constants/timeouts";
+import { dynamicPath } from "@/lib/form-helpers";
 import {
   createDefaultValues,
   createZodSchemaFromJsonSchema,
@@ -92,7 +93,7 @@ const ArrayField = memo(function ArrayField({
 }: ArrayFieldProps) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: name as any,
+    name: dynamicPath(name),
   });
 
   const addItem = () => {
@@ -168,7 +169,7 @@ const ArrayField = memo(function ArrayField({
                 </span>
                 <FormField
                   control={form.control}
-                  name={`${name}.${index}` as any}
+                  name={dynamicPath(`${name}.${index}`)}
                   render={() => (
                     <FormItem>
                       {(() => {
@@ -251,7 +252,7 @@ const ObjectField = memo(function ObjectField({
           >
             <FormField
               control={form.control}
-              name={`${name}.${fieldName}` as any}
+              name={dynamicPath(`${name}.${fieldName}`)}
               render={() => (
                 <FormItem>
                   <div className="flex items-center gap-2">
@@ -370,7 +371,7 @@ const FormRenderer = memo(function FormRenderer({
               <FormField
                 key={`${tool.name}-${fieldName}`} // 添加工具名称作为前缀，确保 key 的唯一性和稳定性
                 control={form.control}
-                name={fieldName as any}
+                name={dynamicPath(fieldName)}
                 render={() => (
                   <FormItem>
                     <div className="flex items-center gap-2">
@@ -464,7 +465,7 @@ export function ToolDebugDialog({
 
   // 初始化表单
   const form = useForm({
-    resolver: zodResolver(formSchema as any),
+    resolver: zodResolver(formSchema as z.ZodType<Record<string, unknown>>),
     defaultValues,
     mode: "onChange",
   });
@@ -523,7 +524,7 @@ export function ToolDebugDialog({
           const parsedData = JSON.parse(jsonInput);
           // 使用 setValue 而不是 reset 来避免表单重新初始化导致的失焦
           for (const key of Object.keys(parsedData)) {
-            form.setValue(key as any, parsedData[key]);
+            form.setValue(dynamicPath(key), parsedData[key]);
           }
         } catch {
           // JSON 解析失败，保持表单数据不变
@@ -673,7 +674,7 @@ export function ToolDebugDialog({
           if (fieldSchema.enum) {
             return (
               <Controller
-                name={fieldName as any}
+                name={dynamicPath(fieldName)}
                 control={form.control}
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
@@ -696,7 +697,7 @@ export function ToolDebugDialog({
           }
           return (
             <Controller
-              name={fieldName as any}
+              name={dynamicPath(fieldName)}
               control={form.control}
               render={({ field }) => (
                 <FormControl>
@@ -716,7 +717,7 @@ export function ToolDebugDialog({
         case "integer":
           return (
             <Controller
-              name={fieldName as any}
+              name={dynamicPath(fieldName)}
               control={form.control}
               render={({ field }) => (
                 <FormControl>
@@ -738,7 +739,7 @@ export function ToolDebugDialog({
         case "boolean":
           return (
             <Controller
-              name={fieldName as any}
+              name={dynamicPath(fieldName)}
               control={form.control}
               render={({ field }) => (
                 <Select
@@ -783,7 +784,7 @@ export function ToolDebugDialog({
         default:
           return (
             <Controller
-              name={fieldName as any}
+              name={dynamicPath(fieldName)}
               control={form.control}
               render={({ field }) => (
                 <FormControl>

@@ -166,17 +166,20 @@ export function McpServerList({
 
       // 发生错误时回退到使用 mcpServerConfig
       if (mcpServerConfig) {
-        const fallbackTools = Object.entries(mcpServerConfig).flatMap(
-          ([serverName, value]) => {
-            return Object.entries(value?.tools || {}).map(
-              ([toolName, tool]) => ({
-                serverName,
-                toolName,
-                ...(tool as any),
-              })
-            );
-          }
-        );
+        const fallbackTools: ToolWithServerInfo[] = Object.entries(
+          mcpServerConfig
+        ).flatMap(([serverName, value]) => {
+          if (!value?.tools) return [];
+          return Object.entries(value.tools).map(([toolName, tool]) => ({
+            name: toolName,
+            serverName,
+            toolName,
+            enable: tool.enable,
+            description: tool.description,
+            usageCount: tool.usageCount,
+            lastUsedTime: tool.lastUsedTime,
+          }));
+        });
 
         const enabled = fallbackTools.filter((tool) => tool.enable !== false);
         const disabled = fallbackTools.filter((tool) => tool.enable === false);

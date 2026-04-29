@@ -9,6 +9,12 @@ import type { EnhancedToolInfo, ToolCallResult } from "../types.js";
 // Mock 依赖
 vi.mock("@/mcp-core", () => ({
   MCPManager: vi.fn(),
+  ensureToolJSONSchema: vi.fn((schema: unknown) => ({
+    type: "object" as const,
+    properties: (schema as Record<string, unknown>)?.properties ?? {},
+    required: (schema as Record<string, unknown>)?.required ?? [],
+    additionalProperties: true,
+  })),
 }));
 
 vi.mock("../../config", () => ({

@@ -144,11 +144,13 @@ export function McpServerTable({ className }: McpServerTableProps) {
   const { searchValue, setSearchValue, filteredServers, clearSearch } =
     useServerSearch(sortedServers);
 
-  // 使用分页 Hook（复用工具分页，泛型兼容）
-  const { currentPage, totalPages, paginatedTools, setPage } =
-    useToolPagination(filteredServers as unknown as any, 10);
-
-  const paginatedServers = paginatedTools as unknown as ServerRowData[];
+  // 使用分页 Hook
+  const {
+    currentPage,
+    totalPages,
+    paginatedTools: paginatedServers,
+    setPage,
+  } = useToolPagination(filteredServers, 10);
 
   // 手动刷新
   const handleRefresh = useCallback(async () => {
