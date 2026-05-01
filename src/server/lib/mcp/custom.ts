@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type {
   CustomMCPTool,
   HandlerConfig,
   ProxyHandlerConfig,
-} from "../../../config/index.js";
-import { configManager } from "../../../config/index.js";
+} from "@/config";
+import { configManager } from "@/config";
+import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 /**
  * 自定义 MCP 工具处理器模块
  *
