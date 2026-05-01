@@ -105,9 +105,9 @@ export class ToolCallLogger {
           try {
             const logObj = JSON.parse(chunk);
             const message = this.formatConsoleMessage(logObj);
-            console.log("[工具调用]", { message });
+            logger.info("[工具调用]", { message });
           } catch {
-            console.log("[工具调用]", { chunk: chunk.trim() });
+            logger.info("[工具调用]", { chunk: chunk.trim() });
           }
         },
       },
