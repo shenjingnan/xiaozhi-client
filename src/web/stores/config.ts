@@ -20,6 +20,10 @@ import type {
   ModelScopeConfig,
   WebUIConfig,
 } from "../../types";
+import {
+  createSetErrorAction,
+  createSetLoadingAction,
+} from "./utils/loading-state-utils";
 
 /**
  * 配置加载状态
@@ -137,25 +141,8 @@ export const useConfigStore = create<ConfigStore>()(
         );
       },
 
-      setLoading: (loading: Partial<ConfigLoadingState>) => {
-        set(
-          (state) => ({
-            loading: { ...state.loading, ...loading },
-          }),
-          false,
-          "setLoading"
-        );
-      },
-
-      setError: (error: Error | null) => {
-        set(
-          (state) => ({
-            loading: { ...state.loading, lastError: error },
-          }),
-          false,
-          "setError"
-        );
-      },
+      setLoading: createSetLoadingAction<ConfigStore>(set),
+      setError: createSetErrorAction<ConfigStore>(set),
 
       // ==================== 异步操作 ====================
 
