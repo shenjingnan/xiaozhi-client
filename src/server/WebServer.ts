@@ -887,6 +887,8 @@ export class WebServer {
       (async () => {
         try {
           if (this.endpointManager) {
+            // 移除所有外部注册的事件监听器，避免监听器累积
+            this.endpointManager.removeAllListeners();
             await this.endpointManager.cleanup();
             this.logger.debug("连接管理器已清理");
           }
