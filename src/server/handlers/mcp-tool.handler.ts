@@ -59,6 +59,51 @@ export class MCPToolHandler {
   private static readonly ALPHANUMERIC_UNDERSCORE_REGEX = /^[a-zA-Z0-9_-]+$/;
   private static readonly IDENTIFIER_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
+  // 预编译的中文到英文替换规则，避免每次调用创建新对象
+  private static readonly CHINESE_REPLACEMENTS: Array<{
+    regex: RegExp;
+    replacement: string;
+  }> = [
+    { regex: /工作流/g, replacement: "workflow" },
+    { regex: /测试/g, replacement: "test" },
+    { regex: /数据/g, replacement: "data" },
+    { regex: /处理/g, replacement: "process" },
+    { regex: /分析/g, replacement: "analysis" },
+    { regex: /生成/g, replacement: "generate" },
+    { regex: /查询/g, replacement: "query" },
+    { regex: /搜索/g, replacement: "search" },
+    { regex: /转换/g, replacement: "convert" },
+    { regex: /计算/g, replacement: "calculate" },
+    { regex: /统计/g, replacement: "statistics" },
+    { regex: /报告/g, replacement: "report" },
+    { regex: /文档/g, replacement: "document" },
+    { regex: /图片/g, replacement: "image" },
+    { regex: /视频/g, replacement: "video" },
+    { regex: /音频/g, replacement: "audio" },
+    { regex: /文本/g, replacement: "text" },
+    { regex: /翻译/g, replacement: "translate" },
+    { regex: /识别/g, replacement: "recognize" },
+    { regex: /检测/g, replacement: "detect" },
+    { regex: /监控/g, replacement: "monitor" },
+    { regex: /管理/g, replacement: "manage" },
+    { regex: /配置/g, replacement: "config" },
+    { regex: /设置/g, replacement: "setting" },
+    { regex: /用户/g, replacement: "user" },
+    { regex: /系统/g, replacement: "system" },
+    { regex: /服务/g, replacement: "service" },
+    { regex: /接口/g, replacement: "api" },
+    { regex: /数据库/g, replacement: "database" },
+    { regex: /网络/g, replacement: "network" },
+    { regex: /安全/g, replacement: "security" },
+    { regex: /备份/g, replacement: "backup" },
+    { regex: /恢复/g, replacement: "restore" },
+    { regex: /同步/g, replacement: "sync" },
+    { regex: /导入/g, replacement: "import" },
+    { regex: /导出/g, replacement: "export" },
+    { regex: /上传/g, replacement: "upload" },
+    { regex: /下载/g, replacement: "download" },
+  ];
+
   private logger: Logger;
   private ajv: Ajv;
   private static readonly TOOL_TYPE_VALUES = Object.values(ToolType);
@@ -1217,53 +1262,11 @@ export class MCPToolHandler {
    * 简单的中文到英文转换（可以扩展为更复杂的拼音转换）
    */
   private convertChineseToEnglish(text: string): string {
-    // 常见中文词汇的映射
-    const chineseToEnglishMap: Record<string, string> = {
-      工作流: "workflow",
-      测试: "test",
-      数据: "data",
-      处理: "process",
-      分析: "analysis",
-      生成: "generate",
-      查询: "query",
-      搜索: "search",
-      转换: "convert",
-      计算: "calculate",
-      统计: "statistics",
-      报告: "report",
-      文档: "document",
-      图片: "image",
-      视频: "video",
-      音频: "audio",
-      文本: "text",
-      翻译: "translate",
-      识别: "recognize",
-      检测: "detect",
-      监控: "monitor",
-      管理: "manage",
-      配置: "config",
-      设置: "setting",
-      用户: "user",
-      系统: "system",
-      服务: "service",
-      接口: "api",
-      数据库: "database",
-      网络: "network",
-      安全: "security",
-      备份: "backup",
-      恢复: "restore",
-      同步: "sync",
-      导入: "import",
-      导出: "export",
-      上传: "upload",
-      下载: "download",
-    };
-
     let result = text;
 
-    // 替换常见中文词汇
-    for (const [chinese, english] of Object.entries(chineseToEnglishMap)) {
-      result = result.replace(new RegExp(chinese, "g"), english);
+    // 使用预编译的正则表达式替换常见中文词汇
+    for (const { regex, replacement } of MCPToolHandler.CHINESE_REPLACEMENTS) {
+      result = result.replace(regex, replacement);
     }
 
     // 如果还有中文字符，用拼音前缀替代
