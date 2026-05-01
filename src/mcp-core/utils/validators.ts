@@ -9,6 +9,7 @@
  * @module validators
  */
 
+import { logger } from "../../server/Logger.js";
 import {
   MCPTransportType,
   ToolCallError,
@@ -48,16 +49,16 @@ export function inferTransportTypeFromUrl(
       return MCPTransportType.HTTP;
     }
 
-    // 默认类型 - 使用 console 输出
+    // 默认类型 - 使用 logger 输出
     if (options?.serviceName) {
-      console.info(
+      logger.info(
         `[MCP-${options.serviceName}] URL 路径 ${pathname} 不匹配特定规则，默认推断为 http 类型`
       );
     }
     return MCPTransportType.HTTP;
   } catch (error) {
     if (options?.serviceName) {
-      console.warn(
+      logger.warn(
         `[MCP-${options.serviceName}] URL 解析失败，默认推断为 http 类型`,
         error
       );

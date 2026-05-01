@@ -57,7 +57,17 @@
   },
   "overrides": [
     {
-      "include": ["src/cli/**", "src/web/**", "src/server/**"],
+      "include": [
+        "src/cli/**",
+        "src/web/**",
+        "src/server/**",
+        "src/mcp-core/**",
+        "src/endpoint/**",
+        "src/esp32/**",
+        "src/config/**",
+        "src/types/**",
+        "src/utils/**"
+      ],
       "linter": {
         "rules": {
           "nursery": {
