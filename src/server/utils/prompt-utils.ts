@@ -285,6 +285,31 @@ export function resolvePromptPath(relativePath: string): string {
 }
 
 /**
+ * 验证并解析路径，确保文件存在
+ *
+ * @param relativePath - 相对路径（如 ./prompts/default.md）
+ * @returns 绝对路径
+ * @throws 如果路径无效或文件不存在
+ */
+function validateAndResolvePath(relativePath: string): string {
+  // 验证路径
+  const validation = validatePromptPath(relativePath);
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
+  // 解析绝对路径
+  const absolutePath = resolvePromptPath(relativePath);
+
+  // 检查文件是否存在
+  if (!existsSync(absolutePath)) {
+    throw new Error(`文件不存在: ${relativePath}`);
+  }
+
+  return absolutePath;
+}
+
+/**
  * 提示词文件内容信息
  */
 export interface PromptFileContent {
@@ -304,19 +329,7 @@ export interface PromptFileContent {
  * @throws 如果路径无效或文件不存在
  */
 export function readPromptFile(relativePath: string): PromptFileContent {
-  // 验证路径
-  const validation = validatePromptPath(relativePath);
-  if (!validation.valid) {
-    throw new Error(validation.error);
-  }
-
-  // 解析绝对路径
-  const absolutePath = resolvePromptPath(relativePath);
-
-  // 检查文件是否存在
-  if (!existsSync(absolutePath)) {
-    throw new Error(`文件不存在: ${relativePath}`);
-  }
+  const absolutePath = validateAndResolvePath(relativePath);
 
   // 检查文件大小
   const stats = statSync(absolutePath);
@@ -345,24 +358,12 @@ export function updatePromptFile(
   relativePath: string,
   content: string
 ): PromptFileContent {
-  // 验证路径
-  const validation = validatePromptPath(relativePath);
-  if (!validation.valid) {
-    throw new Error(validation.error);
-  }
-
   // 验证内容大小（按 UTF-8 字节数，与文件大小限制保持一致）
   if (Buffer.byteLength(content, "utf8") > MAX_FILE_SIZE) {
     throw new Error("内容大小超过限制（最大 100KB）");
   }
 
-  // 解析绝对路径
-  const absolutePath = resolvePromptPath(relativePath);
-
-  // 检查文件是否存在
-  if (!existsSync(absolutePath)) {
-    throw new Error(`文件不存在: ${relativePath}`);
-  }
+  const absolutePath = validateAndResolvePath(relativePath);
 
   // 写入文件
   writeFileSync(absolutePath, content, "utf-8");
@@ -432,19 +433,7 @@ export function createPromptFile(
  * @throws 如果路径无效或文件不存在
  */
 export function deletePromptFile(relativePath: string): void {
-  // 验证路径
-  const validation = validatePromptPath(relativePath);
-  if (!validation.valid) {
-    throw new Error(validation.error);
-  }
-
-  // 解析绝对路径
-  const absolutePath = resolvePromptPath(relativePath);
-
-  // 检查文件是否存在
-  if (!existsSync(absolutePath)) {
-    throw new Error(`文件不存在: ${relativePath}`);
-  }
+  const absolutePath = validateAndResolvePath(relativePath);
 
   // 删除文件
   rmSync(absolutePath);
