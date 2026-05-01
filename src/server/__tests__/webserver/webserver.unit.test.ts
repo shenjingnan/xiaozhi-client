@@ -44,13 +44,35 @@ vi.mock("../../Logger.js", () => ({
   },
 }));
 
-// Mock EventBus
-vi.mock("../../services/EventBus.js", () => ({
+// Mock EventBus - 使用真实监听器存储，便于测试事件触发
+const mockEventBusListeners = new Map<string, ((...args: any[]) => any)[]>();
+vi.mock("../../services/event-bus.service.js", () => ({
+  EventBus: vi.fn(),
   getEventBus: vi.fn().mockReturnValue({
-    onEvent: vi.fn(),
-    emitEvent: vi.fn(),
-    removeAllListeners: vi.fn(),
+    onEvent: vi.fn((event: string, handler: (...args: any[]) => any) => {
+      if (!mockEventBusListeners.has(event)) {
+        mockEventBusListeners.set(event, []);
+      }
+      mockEventBusListeners.get(event)!.push(handler);
+    }),
+    offEvent: vi.fn((event: string, handler: (...args: any[]) => any) => {
+      const handlers = mockEventBusListeners.get(event);
+      if (handlers) {
+        const idx = handlers.indexOf(handler);
+        if (idx !== -1) handlers.splice(idx, 1);
+      }
+    }),
+    emitEvent: vi.fn((event: string, data: any) => {
+      const handlers = mockEventBusListeners.get(event) || [];
+      for (const handler of handlers) {
+        handler(data);
+      }
+    }),
+    removeAllListeners: vi.fn(() => {
+      mockEventBusListeners.clear();
+    }),
   }),
+  destroyEventBus: vi.fn(),
 }));
 
 // Mock EndpointManager
@@ -515,10 +537,11 @@ describe("WebServer setupMCPServerChangeListener 事件监听器", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockEventBusListeners.clear();
     webServer = new WebServer(3003);
   });
 
-  it("构造函数中应注册两个事件监听器", () => {
+  it("构造函数中应注册三个事件监听器", () => {
     // 通过验证 destroy 时清理函数数量来间接确认监听器注册
     const unsubscribersBefore = (webServer as any).eventListenerUnsubscribers;
     expect(unsubscribersBefore).toHaveLength(3);
@@ -539,6 +562,83 @@ describe("WebServer setupMCPServerChangeListener 事件监听器", () => {
 
     // 验证事件监听器清理函数已注册（构造函数中通过 setupMCPServerChangeListener 注册）
     expect((webServer as any).eventListenerUnsubscribers).toHaveLength(3);
+  });
+
+  it("应注册 mcp:server:removed 事件监听器", () => {
+    // 验证监听器已注册
+    const handlers = mockEventBusListeners.get("mcp:server:removed");
+    expect(handlers).toBeDefined();
+    expect(handlers!.length).toBe(1);
+  });
+
+  it("删除服务且存在已连接端点时应触发接入点重连", async () => {
+    // 设置 endpointManager
+    const mockManager = createMockEndpointManager();
+    mockManager.getConnectionStatus.mockReturnValue([
+      { endpoint: "ws://example.com", connected: true },
+    ]);
+    webServer.setXiaozhiConnectionManager(mockManager);
+
+    // 触发 mcp:server:removed 事件
+    const eventBus = (webServer as any).eventBus;
+    eventBus.emitEvent("mcp:server:removed", {
+      serverName: "test-server",
+      affectedTools: ["tool1", "tool2"],
+      timestamp: new Date(),
+    });
+
+    // 等待异步处理
+    await vi.waitFor(() => {
+      expect(mockManager.reconnect).toHaveBeenCalled();
+    });
+  });
+
+  it("删除服务但无已连接端点时应跳过重连", async () => {
+    const mockManager = createMockEndpointManager();
+    mockManager.getConnectionStatus.mockReturnValue([
+      { endpoint: "ws://example.com", connected: false },
+    ]);
+    webServer.setXiaozhiConnectionManager(mockManager);
+
+    const eventBus = (webServer as any).eventBus;
+    eventBus.emitEvent("mcp:server:removed", {
+      serverName: "test-server",
+      affectedTools: ["tool1"],
+      timestamp: new Date(),
+    });
+
+    // 给异步代码一点时间执行
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // 验证重连未被调用
+    expect(mockManager.reconnect).not.toHaveBeenCalled();
+  });
+
+  it("删除服务重连失败时应发射失败事件", async () => {
+    const mockManager = createMockEndpointManager();
+    mockManager.getConnectionStatus.mockReturnValue([
+      { endpoint: "ws://example.com", connected: true },
+    ]);
+    mockManager.reconnect.mockRejectedValue(new Error("重连失败"));
+    webServer.setXiaozhiConnectionManager(mockManager);
+
+    const eventBus = (webServer as any).eventBus;
+    eventBus.emitEvent("mcp:server:removed", {
+      serverName: "test-server",
+      affectedTools: ["tool1"],
+      timestamp: new Date(),
+    });
+
+    // 等待异步处理
+    await vi.waitFor(() => {
+      expect(eventBus.emitEvent).toHaveBeenCalledWith(
+        "endpoint:reconnect:failed",
+        expect.objectContaining({
+          trigger: "mcp_server_removed",
+          serverName: "test-server",
+        })
+      );
+    });
   });
 });
 
