@@ -21,6 +21,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNPMInstall } from "@/hooks/useNPMInstall";
+import type { InstallStatus } from "@/hooks/useNPMInstall";
 import {
   CheckCircleIcon,
   ChevronDownIcon,
@@ -79,64 +80,60 @@ export function InstallLogDialog({
     return () => clearTimeout(timer);
   });
 
-  // 计算进度条进度
+  // 状态配置映射，集中管理所有状态相关的配置
+  const STATUS_CONFIG = {
+    idle: {
+      text: "准备安装",
+      icon: null,
+      badgeVariant: "outline" as const,
+    },
+    installing: {
+      text: "正在安装...",
+      icon: <TerminalIcon className="h-4 w-4 animate-pulse" />,
+      badgeVariant: "default" as const,
+    },
+    completed: {
+      text: "安装完成",
+      icon: <CheckCircleIcon className="h-4 w-4 text-green-600" />,
+      badgeVariant: "secondary" as const,
+    },
+    failed: {
+      text: "安装失败",
+      icon: <XCircleIcon className="h-4 w-4 text-red-600" />,
+      badgeVariant: "destructive" as const,
+    },
+  } as const satisfies Record<
+    InstallStatus["status"],
+    {
+      text: string;
+      icon: React.ReactNode;
+      badgeVariant: "outline" | "default" | "secondary" | "destructive";
+    }
+  >;
+
+  // 获取当前状态配置
+  const currentStatusConfig =
+    STATUS_CONFIG[installStatus.status] ?? STATUS_CONFIG.idle;
+
+  // 计算进度条进度（installing 状态的进度需要动态计算）
   const getProgressValue = () => {
-    switch (installStatus.status) {
-      case "idle":
-        return 0;
-      case "installing":
-        // 基于日志数量估算进度，最多到90%
-        return Math.min(90, installStatus.logs.length * 2);
-      case "completed":
-        return 100;
-      case "failed":
-        return 100;
-      default:
-        return 0;
+    if (installStatus.status === "installing") {
+      // 基于日志数量估算进度，最多到90%
+      return Math.min(90, installStatus.logs.length * 2);
     }
+    if (
+      installStatus.status === "completed" ||
+      installStatus.status === "failed"
+    ) {
+      return 100;
+    }
+    return 0;
   };
 
-  // 获取简洁的状态描述
-  const getSimpleStatusText = () => {
-    switch (installStatus.status) {
-      case "installing":
-        return "正在安装...";
-      case "completed":
-        return "安装完成";
-      case "failed":
-        return "安装失败";
-      default:
-        return "准备安装";
-    }
-  };
-
-  // 获取状态图标
-  const getStatusIcon = () => {
-    switch (installStatus.status) {
-      case "installing":
-        return <TerminalIcon className="h-4 w-4 animate-pulse" />;
-      case "completed":
-        return <CheckCircleIcon className="h-4 w-4 text-green-600" />;
-      case "failed":
-        return <XCircleIcon className="h-4 w-4 text-red-600" />;
-      default:
-        return null;
-    }
-  };
-
-  // 获取状态徽章样式
-  const getStatusBadgeVariant = () => {
-    switch (installStatus.status) {
-      case "installing":
-        return "default";
-      case "completed":
-        return "secondary";
-      case "failed":
-        return "destructive";
-      default:
-        return "outline";
-    }
-  };
+  // 使用配置中的值
+  const statusText = currentStatusConfig.text;
+  const statusIcon = currentStatusConfig.icon;
+  const badgeVariant = currentStatusConfig.badgeVariant;
 
   // 格式化日志消息
   const formatLogMessage = (message: string) => {
@@ -188,12 +185,9 @@ export function InstallLogDialog({
               正在安装
             </DialogTitle>
             {installStatus.status !== "idle" && (
-              <Badge
-                variant={getStatusBadgeVariant()}
-                className="flex items-center gap-1"
-              >
-                {getStatusIcon()}
-                {getSimpleStatusText()}
+              <Badge variant={badgeVariant} className="flex items-center gap-1">
+                {statusIcon}
+                {statusText}
               </Badge>
             )}
           </div>
@@ -217,7 +211,7 @@ export function InstallLogDialog({
               className="w-full h-2"
             />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{getSimpleStatusText()}</span>
+              <span>{statusText}</span>
               {installStatus.duration && (
                 <span>耗时: {(installStatus.duration / 1000).toFixed(1)}s</span>
               )}
