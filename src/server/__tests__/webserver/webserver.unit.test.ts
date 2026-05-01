@@ -510,7 +510,7 @@ describe("WebServer initializeConnections 降级模式", () => {
   });
 });
 
-describe("WebServer setupMCPServerAddedListener 事件监听器", () => {
+describe("WebServer setupMCPServerChangeListener 事件监听器", () => {
   let webServer: WebServer;
 
   beforeEach(() => {
@@ -521,7 +521,7 @@ describe("WebServer setupMCPServerAddedListener 事件监听器", () => {
   it("构造函数中应注册两个事件监听器", () => {
     // 通过验证 destroy 时清理函数数量来间接确认监听器注册
     const unsubscribersBefore = (webServer as any).eventListenerUnsubscribers;
-    expect(unsubscribersBefore).toHaveLength(2);
+    expect(unsubscribersBefore).toHaveLength(3);
   });
 
   it("destroy() 应移除所有事件监听器", () => {
@@ -537,8 +537,8 @@ describe("WebServer setupMCPServerAddedListener 事件监听器", () => {
     // 不设置 endpointManager，确保为 null
     expect((webServer as any).endpointManager).toBeNull();
 
-    // 验证事件监听器清理函数已注册（构造函数中通过 setupMCPServerAddedListener 注册）
-    expect((webServer as any).eventListenerUnsubscribers).toHaveLength(2);
+    // 验证事件监听器清理函数已注册（构造函数中通过 setupMCPServerChangeListener 注册）
+    expect((webServer as any).eventListenerUnsubscribers).toHaveLength(3);
   });
 });
 

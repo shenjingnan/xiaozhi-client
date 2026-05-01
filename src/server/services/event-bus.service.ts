@@ -47,13 +47,23 @@ export interface EventBusEvents {
 
   // 接入点重连事件
   "endpoint:reconnect:completed": {
-    trigger: "mcp_server_added" | "mcp_server_batch_added" | "manual" | "other";
+    trigger:
+      | "mcp_server_added"
+      | "mcp_server_batch_added"
+      | "mcp_server_removed"
+      | "manual"
+      | "other";
     serverName?: string;
     endpointCount: number;
     timestamp: number;
   };
   "endpoint:reconnect:failed": {
-    trigger: "mcp_server_added" | "mcp_server_batch_added" | "manual" | "other";
+    trigger:
+      | "mcp_server_added"
+      | "mcp_server_batch_added"
+      | "mcp_server_removed"
+      | "manual"
+      | "other";
     serverName?: string;
     error: string;
     timestamp: number;

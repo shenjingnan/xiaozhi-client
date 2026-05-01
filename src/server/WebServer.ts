@@ -215,7 +215,7 @@ export class WebServer {
     this.app.notFound(notFoundHandlerMiddleware);
 
     // 监听 MCP 服务添加事件
-    this.setupMCPServerAddedListener();
+    this.setupMCPServerChangeListener();
   }
 
   /**
@@ -707,9 +707,9 @@ export class WebServer {
 
   /**
    * 设置 MCP 服务添加事件监听
-   * 当添加新的 MCP 服务后，自动重连接入点以同步服务列表
+   * 当 MCP 服务增删后，自动重连接入点以同步服务列表
    */
-  private setupMCPServerAddedListener(): void {
+  private setupMCPServerChangeListener(): void {
     // 监听单个服务添加事件
     const singleServerListener = async (
       eventData: EventBusEvents["mcp:server:added"]
@@ -825,6 +825,65 @@ export class WebServer {
     // 存储清理函数
     this.eventListenerUnsubscribers.push(() => {
       this.eventBus.offEvent("mcp:server:batch_added", batchServerListener);
+    });
+
+    // 监听服务删除事件
+    const removedServerListener = async (
+      eventData: EventBusEvents["mcp:server:removed"]
+    ) => {
+      this.logger.info(
+        `检测到 MCP 服务删除: ${eventData.serverName}，受影响工具: ${eventData.affectedTools.length} 个`
+      );
+
+      if (!this.endpointManager) {
+        this.logger.warn("EndpointManager 未初始化，跳过重连");
+        return;
+      }
+
+      try {
+        // 获取当前连接的端点数量
+        const connectionStatuses = this.endpointManager.getConnectionStatus();
+        const connectedEndpointCount = connectionStatuses.filter(
+          (status) => status.connected
+        ).length;
+
+        if (connectedEndpointCount === 0) {
+          this.logger.debug("当前没有已连接的端点，跳过重连");
+          return;
+        }
+
+        this.logger.info(`开始重连 ${connectedEndpointCount} 个接入点...`);
+
+        // 重连所有端点
+        await this.endpointManager.reconnect();
+
+        this.logger.info("接入点重连成功，已删除服务的工具已同步");
+
+        // 发送重连完成事件
+        this.eventBus.emitEvent("endpoint:reconnect:completed", {
+          trigger: "mcp_server_removed",
+          serverName: eventData.serverName,
+          endpointCount: connectedEndpointCount,
+          timestamp: Date.now(),
+        });
+      } catch (error) {
+        this.logger.error("接入点重连失败:", error);
+
+        // 发送重连失败事件
+        this.eventBus.emitEvent("endpoint:reconnect:failed", {
+          trigger: "mcp_server_removed",
+          serverName: eventData.serverName,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: Date.now(),
+        });
+      }
+    };
+
+    this.eventBus.onEvent("mcp:server:removed", removedServerListener);
+
+    // 存储清理函数
+    this.eventListenerUnsubscribers.push(() => {
+      this.eventBus.offEvent("mcp:server:removed", removedServerListener);
     });
   }
 
