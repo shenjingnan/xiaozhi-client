@@ -4,13 +4,13 @@
  */
 
 import { cozeApiClient } from "@/services/cozeApi";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   CozeUIState,
   CozeWorkflow,
   CozeWorkflowsParams,
   CozeWorkspace,
-} from "../../types";
+} from "@/types";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 /**
  * Hook 返回值类型

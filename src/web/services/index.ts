@@ -3,7 +3,7 @@
  * 整合 HTTP API 客户端
  */
 
-import type { AppConfig, ClientStatus } from "../../types";
+import type { AppConfig, ClientStatus } from "@/types";
 import { type ApiClient, apiClient } from "./api";
 
 /**

@@ -9,9 +9,6 @@
  */
 
 import { apiClient } from "@/services/api";
-import { create } from "zustand";
-import { devtools } from "zustand/middleware";
-import { useShallow } from "zustand/react/shallow";
 import type {
   AppConfig,
   ConnectionConfig,
@@ -19,7 +16,10 @@ import type {
   MCPServerStatus,
   ModelScopeConfig,
   WebUIConfig,
-} from "../../types";
+} from "@/types";
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
+import { useShallow } from "zustand/react/shallow";
 
 /**
  * 配置加载状态

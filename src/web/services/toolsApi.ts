@@ -13,7 +13,7 @@ import type {
   CozeWorkflow,
   JSONSchema,
   WorkflowParameterConfig,
-} from "../../types";
+} from "@/types";
 import { apiClient } from "./api";
 
 /**
