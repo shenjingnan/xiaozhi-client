@@ -70,6 +70,12 @@ export class ESP32DeviceManager {
   /** TTS 服务实例 */
   private ttsService: TTSService;
 
+  /** 测试音频文件路径（设置后 speak() 跳过 TTS API） */
+  private testAudioFilePath?: string;
+
+  /** 测试 TTS 文本（设置后 speak() 使用固定文本 + PCM→Opus） */
+  private testTtsText?: string;
+
   /** 配置选项 */
   private options: Required<
     Pick<
@@ -197,6 +203,8 @@ export class ESP32DeviceManager {
       },
       logger: this.options.logger,
       configProvider: this.options.configProvider,
+      testAudioFilePath: this.testAudioFilePath,
+      testTtsText: this.testTtsText,
     });
   }
 
@@ -258,6 +266,27 @@ export class ESP32DeviceManager {
     this.ttsService.setGetConnection((deviceId: string) => {
       return this.getConnection(deviceId);
     });
+  }
+
+  /**
+   * 设置测试音频文件路径
+   * 设置后，speak() 将跳过 TTS API 调用，改为从该路径读取 OGG 文件发送到硬件
+   * 用于验证音频数据传输管线是否正常
+   * @param filePath - OGG 文件路径，传 undefined 恢复正常的 TTS API 调用
+   */
+  setTestAudioFilePath(filePath: string | undefined): void {
+    this.testAudioFilePath = filePath;
+    this.ttsService.setTestAudioFilePath(filePath);
+  }
+
+  /**
+   * 设置测试 TTS 文本
+   * 设置后，speak() 将使用固定文本走 PCM→Opus 流程发送到硬件
+   * @param text - 固定 TTS 文本，传 undefined 恢复正常的 LLM 文本
+   */
+  setTestTtsText(text: string | undefined): void {
+    this.testTtsText = text;
+    this.ttsService.setTestTtsText(text);
   }
 
   /**

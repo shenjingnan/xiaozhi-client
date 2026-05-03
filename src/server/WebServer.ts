@@ -191,6 +191,24 @@ export class WebServer {
       configProvider: esp32ConfigProvider,
     });
 
+    // 如果设置了测试音频文件环境变量，跳过 TTS API 使用本地文件
+    const testAudioFile = process.env.XIAOZHI_TEST_TTS_FILE;
+    if (testAudioFile) {
+      logger.info(
+        `[WebServer] 检测到 XIAOZHI_TEST_TTS_FILE，TTS 将使用测试文件: ${testAudioFile}`
+      );
+      this.esp32Manager.setTestAudioFilePath(testAudioFile);
+    }
+
+    // 如果设置了测试 TTS 文本环境变量，使用固定文本 + PCM→Opus 流程
+    const testTtsText = process.env.XIAOZHI_TEST_TTS_TEXT;
+    if (testTtsText) {
+      logger.info(
+        `[WebServer] 检测到 XIAOZHI_TEST_TTS_TEXT，TTS 将使用固定文本: "${testTtsText}"`
+      );
+      this.esp32Manager.setTestTtsText(testTtsText);
+    }
+
     // 初始化 HTTP API 处理器
     this.configApiHandler = new ConfigApiHandler();
     this.statusApiHandler = new StatusApiHandler(this.statusService);
