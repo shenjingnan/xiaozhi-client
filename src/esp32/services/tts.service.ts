@@ -3,9 +3,10 @@
  * 处理语音合成功能
  */
 
+import { readFile } from "node:fs/promises";
 import { Readable } from "node:stream";
 import * as prism from "prism-media";
-import { createTTS } from "univoice";
+import { createTTS, pcmToOpus } from "univoice";
 import type {
   IDeviceConnection,
   IESP32ConfigProvider,
@@ -30,6 +31,12 @@ export class TTSService implements ITTSService {
 
   /** 配置提供者 */
   private readonly configProvider?: IESP32ConfigProvider;
+
+  /** 测试音频文件路径（设置后 speak() 跳过 TTS API，改为读取此文件） */
+  private testAudioFilePath?: string;
+
+  /** 测试 TTS 文本（设置后 speak() 使用固定文本 + PCM→Opus 流程，跳过 OGG 容器） */
+  private testTtsText?: string;
 
   /** 每个设备是否已触发 TTS（避免重复触发） */
   private readonly ttsTriggered = new Map<string, boolean>();
@@ -67,6 +74,8 @@ export class TTSService implements ITTSService {
     this.onTTSComplete = options.onTTSComplete;
     this.logger = options.logger ?? noopLogger;
     this.configProvider = options.configProvider;
+    this.testAudioFilePath = options.testAudioFilePath;
+    this.testTtsText = options.testTtsText;
   }
 
   /**
@@ -75,6 +84,26 @@ export class TTSService implements ITTSService {
    */
   setGetConnection(getConnection: TTSServiceOptions["getConnection"]): void {
     this.getConnection = getConnection;
+  }
+
+  /**
+   * 设置测试音频文件路径
+   * 设置后，speak() 将跳过 TTS API 调用，改为从该路径读取 OGG 文件发送
+   * @param filePath - OGG 文件路径，传 undefined 恢复正常的 TTS API 调用
+   */
+  setTestAudioFilePath(filePath: string | undefined): void {
+    this.testAudioFilePath = filePath;
+  }
+
+  /**
+   * 设置测试 TTS 文本
+   * 设置后，speak() 将使用固定文本走 PCM→Opus 流程：
+   * 文本 → TTS (PCM) → pcmToOpus() → 裸 Opus 包 → 直接发送硬件
+   * 跳过 OGG 容器封装和解封装，减少延迟
+   * @param text - 固定 TTS 文本，传 undefined 恢复正常的 LLM 文本
+   */
+  setTestTtsText(text: string | undefined): void {
+    this.testTtsText = text;
   }
 
   /**
@@ -101,7 +130,54 @@ export class TTSService implements ITTSService {
         return;
       }
 
-      // 获取 TTS 配置
+      // 所有前置条件满足后，再设置 ttsTriggered 状态
+      this.ttsTriggered.set(deviceId, true);
+
+      // ====================================================
+      // 路径 A: OGG 测试文件（仅当设置了 testAudioFilePath）
+      // ====================================================
+      if (this.testAudioFilePath) {
+        // 初始化 demuxer 所需的状态
+        this.audioDemuxers.set(deviceId, new prism.opus.OggDemuxer());
+        this.cumulativeTimestamps.set(deviceId, 0);
+        this.packetIndices.set(deviceId, 0);
+        this.ttsStarted.set(deviceId, false);
+        this.opusPacketBuffer.set(deviceId, []);
+        this.isProcessingBuffer.set(deviceId, false);
+        this.deviceConnections.set(deviceId, connection);
+
+        const demuxer = this.audioDemuxers.get(deviceId)!;
+        this.setupDemuxerEvents(deviceId, demuxer, connection);
+
+        this.logger.info(
+          `[TTSService] 触发测试音频播放: deviceId=${deviceId}, file=${this.testAudioFilePath}`
+        );
+        try {
+          const fileBuffer = await readFile(this.testAudioFilePath);
+          this.logger.info(
+            `[TTSService] 测试文件读取完成: deviceId=${deviceId}, size=${fileBuffer.length}`
+          );
+          demuxer.write(fileBuffer);
+          demuxer.end();
+        } catch (error) {
+          this.logger.error(
+            `[TTSService] 测试文件读取失败: deviceId=${deviceId}`,
+            error
+          );
+          void this.sendStopAndCleanup(deviceId).catch((cleanupError) => {
+            this.logger.error(
+              `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
+              cleanupError
+            );
+          });
+        }
+        return;
+      }
+
+      // ====================================================
+      // 路径 B: PCM→Opus（默认流程 和 testTtsText 测试）
+      // 文本 → TTS (PCM) → pcmToOpus() → 裸 Opus → sendBinaryProtocol2
+      // ====================================================
       const ttsConfig = this.configProvider?.getTTSConfig();
       if (
         !ttsConfig?.appid ||
@@ -112,12 +188,13 @@ export class TTSService implements ITTSService {
         return;
       }
 
-      // 所有前置条件满足后，再设置 ttsTriggered 状态
-      this.ttsTriggered.set(deviceId, true);
-      this.logger.info(`[TTSService] 触发流式 TTS: deviceId=${deviceId}`);
+      const effectiveText = this.testTtsText ?? text;
+      const textSource = this.testTtsText ? "测试文本" : "LLM";
+      this.logger.info(
+        `[TTSService] 触发 PCM→Opus TTS: deviceId=${deviceId}, source=${textSource}, text="${effectiveText.slice(0, 30)}..."`
+      );
 
-      // 初始化流式处理所需的状态
-      this.audioDemuxers.set(deviceId, new prism.opus.OggDemuxer());
+      // 初始化发送所需的状态（不需要 demuxer）
       this.cumulativeTimestamps.set(deviceId, 0);
       this.packetIndices.set(deviceId, 0);
       this.ttsStarted.set(deviceId, false);
@@ -125,43 +202,140 @@ export class TTSService implements ITTSService {
       this.isProcessingBuffer.set(deviceId, false);
       this.deviceConnections.set(deviceId, connection);
 
-      // 创建 demuxer 并设置事件处理
-      const demuxer = this.audioDemuxers.get(deviceId)!;
-      this.setupDemuxerEvents(deviceId, demuxer, connection);
-
-      // 创建 TTS 客户端（使用 univoice SDK）
+      // 创建 TTS 客户端，PCM 格式输出
       const tts = createTTS({
         provider: "doubao",
         appId: ttsConfig.appid!,
         accessToken: ttsConfig.accessToken!,
         voice: ttsConfig.voice_type!,
-        format: "ogg_opus",
+        format: "pcm",
         resourceId: mapClusterToResourceId(ttsConfig.cluster),
         sampleRate: 24000,
         ...(ttsConfig.endpoint && { baseUrl: ttsConfig.endpoint }),
       });
 
-      // 调用流式 TTS，边接收边处理
       try {
-        for await (const { audioChunk } of tts.speak(text, { stream: true })) {
-          // 直接将数据写入 demuxer 进行解封装
-          demuxer.write(Buffer.from(audioChunk));
+        // TTS 输出 PCM 流 → pcmToOpus 编码为 60ms 帧长的裸 Opus 包
+        const pcmStream = tts.speak(effectiveText, { stream: true });
+        const opusStream = pcmToOpus(pcmStream, {
+          sampleRate: 24000,
+          frameDurationMs: 60,
+        });
+
+        for await (const opusPacket of opusStream) {
+          // 首次发送 start 消息
+          if (!this.ttsStarted.get(deviceId)) {
+            await connection.send({
+              type: "tts",
+              session_id: connection.getSessionId(),
+              state: "start",
+            });
+            this.ttsStarted.set(deviceId, true);
+            this.logger.info(
+              `[TTSService] 发送 TTS start 消息: deviceId=${deviceId}`
+            );
+          }
+
+          // 计算时间戳和时长
+          const timestamp = this.cumulativeTimestamps.get(deviceId) || 0;
+          const duration = this.getPacketDuration(opusPacket);
+
+          // 发送 Opus 包到硬件
+          await connection.sendBinaryProtocol2(opusPacket, timestamp);
+
+          // 更新状态
+          const packetIndex = (this.packetIndices.get(deviceId) || 0) + 1;
+          this.packetIndices.set(deviceId, packetIndex);
+          this.cumulativeTimestamps.set(deviceId, timestamp + duration);
+
+          // 流控：按实时速率发送
+          await new Promise((resolve) => setTimeout(resolve, duration));
         }
-        // univoice 流自然结束表示完成，手动关闭 demuxer
-        this.logger.info(`[TTSService] TTS 数据接收完成: deviceId=${deviceId}`);
-        demuxer.end();
+
+        this.logger.info(
+          `[TTSService] PCM→Opus 发送完成: deviceId=${deviceId}, packets=${this.packetIndices.get(deviceId)}`
+        );
       } catch (error) {
         this.logger.error(
-          `[TTSService] TTS 调用失败: deviceId=${deviceId}`,
+          `[TTSService] PCM→Opus 处理失败: deviceId=${deviceId}`,
           error
         );
-        void this.sendStopAndCleanup(deviceId).catch((cleanupError) => {
-          this.logger.error(
-            `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
-            cleanupError
-          );
-        });
       }
+
+      // 发送 stop 并清理
+      void this.sendStopAndCleanup(deviceId).catch((cleanupError) => {
+        this.logger.error(
+          `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
+          cleanupError
+        );
+      });
+    }
+  }
+
+  /**
+   * 从本地 OGG 文件播放 TTS 音频
+   * 读取 OGG 文件，解封装为 Opus 包，通过现有管线发送到硬件
+   * 用于验证音频数据传输是否正常
+   * @param deviceId - 设备 ID
+   * @param filePath - OGG 文件路径
+   */
+  async speakFromFile(deviceId: string, filePath: string): Promise<void> {
+    // 如果 TTS 正在进行中或已完成，忽略
+    if (this.ttsTriggered.get(deviceId) || this.ttsCompleted.get(deviceId)) {
+      this.logger.debug(
+        `[TTSService] TTS 正在进行或已完成，忽略: deviceId=${deviceId}`
+      );
+      return;
+    }
+
+    // 获取设备连接
+    const connection = this.getConnection?.(deviceId);
+    if (!connection) {
+      this.logger.warn(`[TTSService] 无法获取设备连接: deviceId=${deviceId}`);
+      return;
+    }
+
+    // 标记 TTS 已触发
+    this.ttsTriggered.set(deviceId, true);
+    this.logger.info(
+      `[TTSService] 从文件播放 TTS: deviceId=${deviceId}, filePath=${filePath}`
+    );
+
+    // 初始化流式处理所需的状态
+    this.audioDemuxers.set(deviceId, new prism.opus.OggDemuxer());
+    this.cumulativeTimestamps.set(deviceId, 0);
+    this.packetIndices.set(deviceId, 0);
+    this.ttsStarted.set(deviceId, false);
+    this.opusPacketBuffer.set(deviceId, []);
+    this.isProcessingBuffer.set(deviceId, false);
+    this.deviceConnections.set(deviceId, connection);
+
+    // 创建 demuxer 并设置事件处理（复用现有方法）
+    const demuxer = this.audioDemuxers.get(deviceId)!;
+    this.setupDemuxerEvents(deviceId, demuxer, connection);
+
+    try {
+      // 读取 OGG 文件
+      const fileBuffer = await readFile(filePath);
+      this.logger.info(
+        `[TTSService] 文件读取完成: deviceId=${deviceId}, size=${fileBuffer.length}`
+      );
+
+      // 将文件数据写入 demuxer 进行解封装
+      demuxer.write(fileBuffer);
+      // 文件数据全部写入后关闭 demuxer
+      demuxer.end();
+    } catch (error) {
+      this.logger.error(
+        `[TTSService] 文件读取或处理失败: deviceId=${deviceId}`,
+        error
+      );
+      void this.sendStopAndCleanup(deviceId).catch((cleanupError) => {
+        this.logger.error(
+          `[TTSService] sendStopAndCleanup 执行失败: deviceId=${deviceId}`,
+          cleanupError
+        );
+      });
     }
   }
 

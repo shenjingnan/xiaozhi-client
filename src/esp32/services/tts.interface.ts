@@ -43,6 +43,20 @@ export interface TTSServiceOptions {
    * 配置提供者（可选，用于获取 TTS 配置）
    */
   configProvider?: import("../interfaces.js").IESP32ConfigProvider;
+
+  /**
+   * 测试音频文件路径（可选）
+   * 设置后，speak() 将跳过 TTS API 调用，改为从该路径读取 OGG 文件发送
+   * 用于验证音频数据传输管线是否正常
+   */
+  testAudioFilePath?: string;
+
+  /**
+   * 测试 TTS 文本（可选）
+   * 设置后，speak() 将使用固定文本走 PCM→Opus 流程发送到硬件
+   * 优先级高于 testAudioFilePath
+   */
+  testTtsText?: string;
 }
 
 /**
@@ -57,6 +71,14 @@ export interface ITTSService {
    * @param text - 要转换为语音的文本
    */
   speak(deviceId: string, text: string): Promise<void>;
+
+  /**
+   * 从本地 OGG 文件播放 TTS 音频
+   * 读取 OGG 文件，解封装为 Opus 包并发送到硬件
+   * @param deviceId - 设备 ID
+   * @param filePath - OGG 文件路径
+   */
+  speakFromFile(deviceId: string, filePath: string): Promise<void>;
 
   /**
    * 处理音频缓冲区
