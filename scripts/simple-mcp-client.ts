@@ -57,6 +57,23 @@ interface MCPTool {
 }
 
 /**
+ * 服务器版本信息接口
+ */
+interface ServerVersionInfo {
+  name: string;
+  version: string;
+  [key: string]: unknown;
+}
+
+/**
+ * 扩展的 MCP 客户端接口
+ * 包含标准 Client 接口外可能的扩展方法
+ */
+interface ExtendedClient extends Client {
+  getServerVersion?(): ServerVersionInfo;
+}
+
+/**
  * 工具列表响应接口
  */
 interface ListToolsResponse {
@@ -97,7 +114,7 @@ function log(level: LogLevel, message: string, data: unknown = null): void {
 /**
  * 创建 MCP 客户端
  */
-function createMCPClient(): Client {
+function createMCPClient(): ExtendedClient {
   log("info", "创建 MCP 客户端...");
 
   // 创建客户端实例
@@ -111,7 +128,7 @@ function createMCPClient(): Client {
         tools: {},
       },
     }
-  );
+  ) as ExtendedClient;
 
   log("success", "客户端创建成功");
   return client;
@@ -148,7 +165,7 @@ function createTransport(): StreamableHTTPClientTransport {
  * 连接到 MCP 服务
  */
 async function connectToMCPService(
-  client: Client,
+  client: ExtendedClient,
   transport: StreamableHTTPClientTransport
 ): Promise<boolean> {
   log("info", "正在连接到 MCP 服务...");
@@ -166,7 +183,7 @@ async function connectToMCPService(
 /**
  * 获取并显示工具列表
  */
-async function listTools(client: Client): Promise<MCPTool[]> {
+async function listTools(client: ExtendedClient): Promise<MCPTool[]> {
   log("info", "获取工具列表...");
 
   try {
@@ -212,12 +229,13 @@ async function listTools(client: Client): Promise<MCPTool[]> {
 /**
  * 获取服务器信息
  */
-async function getServerInfo(client: Client): Promise<unknown> {
+async function getServerInfo(
+  client: ExtendedClient
+): Promise<ServerVersionInfo | null> {
   log("info", "获取服务器信息...");
 
   try {
-    // 尝试获取服务器信息（如果支持的话）
-    const serverInfo = (client as any).getServerVersion?.() || null;
+    const serverInfo = client.getServerVersion?.() || null;
     if (serverInfo) {
       log("success", "服务器信息获取成功", serverInfo);
     } else {
@@ -243,7 +261,7 @@ async function main(): Promise<void> {
     type: "streamableHTTP",
   });
 
-  let client: Client | null = null;
+  let client: ExtendedClient | null = null;
   let transport: StreamableHTTPClientTransport | null = null;
 
   try {
