@@ -10,11 +10,15 @@ import { TTSService, mapClusterToResourceId } from "../tts.service.js";
 // 捕获所有创建的 demuxer 实例，支持手动触发事件模拟多包场景
 const demuxerInstances: Array<{
   emit: (event: string, ...args: unknown[]) => void;
+  destroyed: boolean;
+  listenersRemoved: boolean;
 }> = [];
 
 vi.mock("prism-media", () => {
   class MockOggDemuxer {
     private listeners: Record<string, Array<(...args: unknown[]) => void>> = {};
+    destroyed = false;
+    listenersRemoved = false;
 
     on(event: string, fn: (...args: unknown[]) => void): MockOggDemuxer {
       if (!this.listeners[event]) {
@@ -48,6 +52,17 @@ vi.mock("prism-media", () => {
 
     end(): void {
       // 不自动发射 end 事件，由测试手动控制
+    }
+
+    destroy(): this {
+      this.destroyed = true;
+      return this;
+    }
+
+    removeAllListeners(): this {
+      this.listeners = {};
+      this.listenersRemoved = true;
+      return this;
     }
 
     constructor() {
@@ -466,6 +481,27 @@ describe("TTSService", () => {
         packet3,
         30
       );
+    });
+
+    it("cleanup 销毁 demuxer 并移除其事件监听器", async () => {
+      const mockConn = createMockConnection();
+      const service = new TTSService({
+        configProvider: createValidConfigProvider(),
+      });
+      service.setGetConnection(() => mockConn as never);
+
+      vi.useFakeTimers();
+      await service.speak("device-1", "你好");
+      const demuxer = demuxerInstances[demuxerInstances.length - 1];
+
+      service.cleanup("device-1");
+
+      expect(demuxer.destroyed).toBe(true);
+      expect(demuxer.listenersRemoved).toBe(true);
+
+      // 排空 speak 中已排期的 sendStopAndCleanup 定时器
+      await vi.runAllTimersAsync();
+      vi.useRealTimers();
     });
 
     it("processBuffer 异常时 finally 块正确重置 isProcessingBuffer", async () => {
